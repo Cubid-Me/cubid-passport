@@ -1,37 +1,38 @@
+"use client"
+
 import "@/styles/globals.css"
 import { Metadata } from "next"
+import { OwnIDInit } from "@ownid/react"
+import { ToastContainer } from "react-toastify"
 
-import { siteConfig } from "@/config/site"
+import "react-toastify/dist/ReactToastify.css"
+import { getAuth, getIdToken, signInWithCustomToken } from "firebase/auth"
+import auth from "firebase/compat/auth"
+import { SessionProvider } from "next-auth/react"
+import { Provider } from "react-redux"
+
 import { fontSans } from "@/lib/fonts"
 import { cn } from "@/lib/utils"
 import { SiteHeader } from "@/components/site-header"
 import { TailwindIndicator } from "@/components/tailwind-indicator"
 import { ThemeProvider } from "@/components/theme-provider"
 
-export const metadata: Metadata = {
-  title: {
-    default: siteConfig.name,
-    template: `%s - ${siteConfig.name}`,
-  },
-  description: siteConfig.description,
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "white" },
-    { media: "(prefers-color-scheme: dark)", color: "black" },
-  ],
-  icons: {
-    icon: "/favicon.ico",
-    shortcut: "/favicon-16x16.png",
-    apple: "/apple-touch-icon.png",
-  },
-}
+import { store } from "../redux/store"
 
 interface RootLayoutProps {
   children: React.ReactNode
 }
 
-export default function RootLayout({ children }: RootLayoutProps) {
+export default function RootLayout(props: any) {
+  const { pageProps } = props
+
   return (
-    <>
+    <SessionProvider session={pageProps?.session}>
+      <OwnIDInit config={{ appId: 'p0zfroqndmvm30', firebaseAuth: {
+    getAuth,
+    getIdToken,
+    signInWithCustomToken
+  }}}/>
       <html lang="en" suppressHydrationWarning>
         <head />
         <body
@@ -43,12 +44,15 @@ export default function RootLayout({ children }: RootLayoutProps) {
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <div className="relative flex min-h-screen flex-col">
               <SiteHeader />
-              <div className="flex-1">{children}</div>
+              <Provider store={store}>
+                <div className="flex-1">{props.children}</div>
+                <ToastContainer />
+              </Provider>
             </div>
             <TailwindIndicator />
           </ThemeProvider>
         </body>
       </html>
-    </>
+    </SessionProvider>
   )
 }
