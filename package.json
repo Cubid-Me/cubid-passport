@@ -17,6 +17,7 @@
     "@firebase/app": "^0.9.19",
     "@heroicons/react": "^2.0.18",
     "@ownid/react": "^1.6.0",
+    "@radix-ui/react-select": "^2.0.0",
     "@radix-ui/react-slot": "^1.0.2",
     "@radix-ui/react-tabs": "^1.0.4",
     "@reduxjs/toolkit": "^1.9.5",

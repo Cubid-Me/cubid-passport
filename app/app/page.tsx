@@ -2,7 +2,10 @@
 
 import { useState } from "react"
 import { logout } from "@/redux/userSlice"
+import { About } from "components/about"
 import { Authenticated } from "components/auth/authenticated"
+import { Profile } from "components/profile"
+import { Stamps } from "components/stamps"
 import { useDispatch } from "react-redux"
 
 import { buttonVariants } from "@/components/ui/button"
@@ -10,15 +13,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function IndexPage() {
   const dispatch = useDispatch()
-  const [tab, setTab] = useState("profile")
+  const [tab, setTab] = useState("stamps")
 
   const profile = () => (
     <>
-      <div className="flex max-w-[980px] flex-col items-start gap-2">
-        <h1 className="text-3xl font-extrabold leading-tight tracking-tighter md:text-4xl">
-          Logged In
-        </h1>
-      </div>
       <div className="flex gap-4">
         <button
           onClick={() => {
@@ -42,26 +40,17 @@ export default function IndexPage() {
       >
         <TabsContent style={{ height: "100vh" }} value="profile">
           <div>
-            <div className="space-y-5 p-6">
-              {profile()}
-              <div>Profile Tab</div>
-            </div>
+            <Profile />
           </div>
         </TabsContent>
         <TabsContent style={{ height: "100vh" }} value="stamps">
           <div>
-            <div className="space-y-5 p-6">
-              {profile()}
-              <div>Stamps</div>
-            </div>
+            <Stamps />
           </div>
         </TabsContent>
         <TabsContent style={{ height: "100vh" }} value="settings">
           <div>
-            <div className="space-y-5 p-6">
-              {profile()}
-              <div>Settings</div>
-            </div>
+            <About />
           </div>
         </TabsContent>
         <TabsList
@@ -101,23 +90,19 @@ export default function IndexPage() {
           </TabsTrigger>
           <TabsTrigger style={{ width: "33.33%" }} value="settings">
             <svg
-              xmlns="http://www.w3.org/2000/svg"
+              width="15"
+              height="15"
+              viewBox="0 0 15 15"
               fill="none"
-              viewBox="0 0 24 24"
-              stroke-width="1.5"
-              stroke="currentColor"
               className="w-6 h-6"
+              xmlns="http://www.w3.org/2000/svg"
             >
               <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z"
-              />
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-              />
+                d="M7.49991 0.876892C3.84222 0.876892 0.877075 3.84204 0.877075 7.49972C0.877075 11.1574 3.84222 14.1226 7.49991 14.1226C11.1576 14.1226 14.1227 11.1574 14.1227 7.49972C14.1227 3.84204 11.1576 0.876892 7.49991 0.876892ZM1.82707 7.49972C1.82707 4.36671 4.36689 1.82689 7.49991 1.82689C10.6329 1.82689 13.1727 4.36671 13.1727 7.49972C13.1727 10.6327 10.6329 13.1726 7.49991 13.1726C4.36689 13.1726 1.82707 10.6327 1.82707 7.49972ZM8.24992 4.49999C8.24992 4.9142 7.91413 5.24999 7.49992 5.24999C7.08571 5.24999 6.74992 4.9142 6.74992 4.49999C6.74992 4.08577 7.08571 3.74999 7.49992 3.74999C7.91413 3.74999 8.24992 4.08577 8.24992 4.49999ZM6.00003 5.99999H6.50003H7.50003C7.77618 5.99999 8.00003 6.22384 8.00003 6.49999V9.99999H8.50003H9.00003V11H8.50003H7.50003H6.50003H6.00003V9.99999H6.50003H7.00003V6.99999H6.50003H6.00003V5.99999Z"
+                fill="currentColor"
+                fill-rule="evenodd"
+                clip-rule="evenodd"
+              ></path>
             </svg>
           </TabsTrigger>
         </TabsList>

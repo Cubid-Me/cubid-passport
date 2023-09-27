@@ -42,10 +42,10 @@ export default function RootLayout(props: any) {
           )}
         >
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-            <div className="relative flex min-h-screen flex-col">
+            <div>
               <SiteHeader />
               <Provider store={store}>
-                <div className="flex-1">{props.children}</div>
+                <div>{props.children}</div>
                 <ToastContainer />
               </Provider>
             </div>
