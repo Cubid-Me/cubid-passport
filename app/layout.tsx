@@ -17,7 +17,14 @@ import { SiteHeader } from "@/components/site-header"
 import { TailwindIndicator } from "@/components/tailwind-indicator"
 import { ThemeProvider } from "@/components/theme-provider"
 
+import { Wallet } from "../lib/nearWallet"
 import { store } from "../redux/store"
+
+export const wallet = new Wallet({
+  createAccessKeyFor: "registry.i-am-human.near",
+})
+
+wallet.startUp()
 
 interface RootLayoutProps {
   children: React.ReactNode
@@ -28,11 +35,16 @@ export default function RootLayout(props: any) {
 
   return (
     <SessionProvider session={pageProps?.session}>
-      <OwnIDInit config={{ appId: 'p0zfroqndmvm30', firebaseAuth: {
-    getAuth,
-    getIdToken,
-    signInWithCustomToken
-  }}}/>
+      <OwnIDInit
+        config={{
+          appId: "p0zfroqndmvm30",
+          firebaseAuth: {
+            getAuth,
+            getIdToken,
+            signInWithCustomToken,
+          },
+        }}
+      />
       <html lang="en" suppressHydrationWarning>
         <head />
         <body
