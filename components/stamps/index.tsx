@@ -513,6 +513,5 @@ export const Stamps = () => {
 }
 
 //allow multiple account - future
-// one metamask integration
-//near wallet integration
+// one metamask integration - ens
 //brightid
