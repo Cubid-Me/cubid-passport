@@ -8039,9 +8039,24 @@ valtio@1.11.2:
     proxy-compare "2.5.1"
     use-sync-external-store "1.2.0"
 
-viem@^1.0.0, viem@^1.14.0:
+viem@^1.0.0:
   version "1.15.4"
   resolved "https://registry.npmjs.org/viem/-/viem-1.15.4.tgz"
+  integrity sha512-kQtJiYbZ86rzGdAXkvAxf6ovsabzyn41loNiSjQNFXwvn24cGP3IbQhQcK5OYorQY9Pz7Dm54EBV5XhFxo+15g==
+  dependencies:
+    "@adraffy/ens-normalize" "1.9.4"
+    "@noble/curves" "1.2.0"
+    "@noble/hashes" "1.3.2"
+    "@scure/bip32" "1.3.2"
+    "@scure/bip39" "1.2.1"
+    "@types/ws" "^8.5.5"
+    abitype "0.9.8"
+    isomorphic-ws "5.0.0"
+    ws "8.13.0"
+
+viem@^1.15.4:
+  version "1.15.4"
+  resolved "https://registry.yarnpkg.com/viem/-/viem-1.15.4.tgz#422b2a23bc2c9e240d91758ae29a464ca6faed5b"
   integrity sha512-kQtJiYbZ86rzGdAXkvAxf6ovsabzyn41loNiSjQNFXwvn24cGP3IbQhQcK5OYorQY9Pz7Dm54EBV5XhFxo+15g==
   dependencies:
     "@adraffy/ens-normalize" "1.9.4"
