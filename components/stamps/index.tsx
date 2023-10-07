@@ -9,7 +9,9 @@ import dayjs from "dayjs"
 import { useSelector } from "react-redux"
 import { toast } from "react-toastify"
 import { useAccount } from "wagmi"
+import Web3 from "web3"
 
+import { pohABI } from "../../lib/contract_abi"
 import "@near-wallet-selector/modal-ui/styles.css"
 import { Button } from "@/components/ui/button"
 import {
@@ -90,6 +92,7 @@ export const Stamps = () => {
       },
     })
   }
+
   const [brightIdData, setBrightIdData] = useState(null)
   const [brightIdSheetOpen, setBrightIdSheetOpen] = useState(false)
   const [userState, setUserState] = useState({})
@@ -124,6 +127,66 @@ export const Stamps = () => {
       return data?.[0]
     }
   }, [email])
+
+  const connectToWeb3Node = useCallback(
+    (address: string) => {
+      const infuraUrl =
+        "https://mainnet.infura.io/v3/6f111f744ee54510a941cfee4716c3db"
+      const web3 = new Web3(new Web3.providers.HttpProvider(infuraUrl))
+      const contractAddress = "0xC5E9dDebb09Cd64DfaCab4011A0D5cEDaf7c9BDb"
+      let methodAbi = {
+        constant: true,
+        inputs: [
+          {
+            internalType: "address",
+            name: "_submissionID",
+            type: "address",
+          },
+        ],
+        name: "isRegistered",
+        outputs: [
+          {
+            internalType: "bool",
+            name: "",
+            type: "bool",
+          },
+        ],
+        payable: false,
+        stateMutability: "view",
+        type: "function",
+      }
+      const contract: any = new web3.eth.Contract([methodAbi], contractAddress)
+      contract.methods
+        .isRegistered(address)
+        .call()
+        .then(async (result: any) => {
+          console.log(result)
+          if (result) {
+            await axios.post("/api/supabase/update", {
+              match: { email },
+              table: "users",
+              body: {
+                poh_IsRegistered: true,
+              },
+            })
+            fetchStamps()
+          } else {
+            toast.error("You are not registered as a POH user")
+          }
+        })
+        .catch((err: any) => {
+          toast.error("An error occured")
+        })
+    },
+    [email, fetchStamps]
+  )
+  const { address } = useAccount()
+
+  useEffect(() => {
+    if (address) {
+      connectToWeb3Node(address)
+    }
+  }, [connectToWeb3Node, address])
 
   useEffect(() => {
     if (email) {
@@ -218,7 +281,6 @@ export const Stamps = () => {
   }, [fetchStamps])
 
   const { open } = useWeb3Modal()
-  const { address, isConnecting, isDisconnected } = useAccount()
 
   return (
     <div className="p-3 pb-16">
@@ -322,13 +384,13 @@ export const Stamps = () => {
           <CardHeader>
             <img
               src={
-                "data:image/png;base64,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"
+                "data:image/jpeg;base64,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"
               }
               alt="Image"
               className="mb-1 h-10 w-10 rounded-md"
             />
-            <CardTitle>Wallet Connect</CardTitle>
-            {Boolean((userState as any)?.walletAccount) ? (
+            <CardTitle>POH - Proof of Humanity</CardTitle>
+            {Boolean((userState as any)?.poh_IsRegistered) ? (
               <CardDescription>
                 <div className="flex items-center space-x-1">
                   <p>Your Wallet Account account is verified</p>
@@ -353,50 +415,9 @@ export const Stamps = () => {
             )}
           </CardHeader>
           <CardContent>
-            {Boolean((userState as any)?.walletAccount) ? (
+            {Boolean((userState as any)?.poh_IsRegistered) ? (
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <Button variant="default">Verified Stamp</Button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger>
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 15 15"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M2 5H13C13.5523 5 14 5.44772 14 6V9C14 9.55228 13.5523 10 13 10H2C1.44772 10 1 9.55228 1 9V6C1 5.44772 1.44772 5 2 5ZM0 6C0 4.89543 0.895431 4 2 4H13C14.1046 4 15 4.89543 15 6V9C15 10.1046 14.1046 11 13 11H2C0.89543 11 0 10.1046 0 9V6ZM4.5 6.75C4.08579 6.75 3.75 7.08579 3.75 7.5C3.75 7.91421 4.08579 8.25 4.5 8.25C4.91421 8.25 5.25 7.91421 5.25 7.5C5.25 7.08579 4.91421 6.75 4.5 6.75ZM6.75 7.5C6.75 7.08579 7.08579 6.75 7.5 6.75C7.91421 6.75 8.25 7.08579 8.25 7.5C8.25 7.91421 7.91421 8.25 7.5 8.25C7.08579 8.25 6.75 7.91421 6.75 7.5ZM10.5 6.75C10.0858 6.75 9.75 7.08579 9.75 7.5C9.75 7.91421 10.0858 8.25 10.5 8.25C10.9142 8.25 11.25 7.91421 11.25 7.5C11.25 7.08579 10.9142 6.75 10.5 6.75Z"
-                        fill="currentColor"
-                        fill-rule="evenodd"
-                        clip-rule="evenodd"
-                      ></path>
-                    </svg>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuItem
-                      onClick={() => {
-                        console.log(userState)
-                        setStampVerified({
-                          image:
-                            "https://bafybeid4hlg7litcsn4gjpk5qednyarcsgmadzjovjk5k7565xdtd2aulu.ipfs.nftstorage.link/",
-                          displayName: (userState as any)?.iah,
-                        })
-                      }}
-                    >
-                      View Stamp
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={() => {
-                        deleteStamp("iah")
-                      }}
-                      style={{ color: "red" }}
-                    >
-                      Remove Stamp
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
               </div>
             ) : (
               <Button
