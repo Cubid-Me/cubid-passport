@@ -12,6 +12,7 @@ import { useAccount } from "wagmi"
 import Web3 from "web3"
 
 import { pohABI } from "../../lib/contract_abi"
+import { useStamps } from "./../../hooks/useStamps"
 import "@near-wallet-selector/modal-ui/styles.css"
 import { Button } from "@/components/ui/button"
 import {
@@ -97,9 +98,11 @@ export const Stamps = () => {
   const [brightIdSheetOpen, setBrightIdSheetOpen] = useState(false)
   const [userState, setUserState] = useState({})
   const [stampVerified, setStampVerified] = useState<any>(null)
+  const [gitcoinStamps, setGitcoinStamps] = useState(false)
   const {
     user: { email },
   }: any = useSelector((state) => state)
+  const { stamps, stampCollector } = useStamps()
 
   const fetchStamps = useCallback(async () => {
     if (email) {
@@ -130,55 +133,60 @@ export const Stamps = () => {
 
   const connectToWeb3Node = useCallback(
     (address: string) => {
-      const infuraUrl =
-        "https://mainnet.infura.io/v3/6f111f744ee54510a941cfee4716c3db"
-      const web3 = new Web3(new Web3.providers.HttpProvider(infuraUrl))
-      const contractAddress = "0xC5E9dDebb09Cd64DfaCab4011A0D5cEDaf7c9BDb"
-      let methodAbi = {
-        constant: true,
-        inputs: [
-          {
-            internalType: "address",
-            name: "_submissionID",
-            type: "address",
-          },
-        ],
-        name: "isRegistered",
-        outputs: [
-          {
-            internalType: "bool",
-            name: "",
-            type: "bool",
-          },
-        ],
-        payable: false,
-        stateMutability: "view",
-        type: "function",
+      if (userState && !(userState as any)?.poh_IsRegistered) {
+        const infuraUrl =
+          "https://mainnet.infura.io/v3/6f111f744ee54510a941cfee4716c3db"
+        const web3 = new Web3(new Web3.providers.HttpProvider(infuraUrl))
+        const contractAddress = "0xC5E9dDebb09Cd64DfaCab4011A0D5cEDaf7c9BDb"
+        let methodAbi = {
+          constant: true,
+          inputs: [
+            {
+              internalType: "address",
+              name: "_submissionID",
+              type: "address",
+            },
+          ],
+          name: "isRegistered",
+          outputs: [
+            {
+              internalType: "bool",
+              name: "",
+              type: "bool",
+            },
+          ],
+          payable: false,
+          stateMutability: "view",
+          type: "function",
+        }
+        const contract: any = new web3.eth.Contract(
+          [methodAbi],
+          contractAddress
+        )
+        contract.methods
+          .isRegistered(address)
+          .call()
+          .then(async (result: any) => {
+            console.log(result)
+            if (result) {
+              await axios.post("/api/supabase/update", {
+                match: { email },
+                table: "users",
+                body: {
+                  poh_IsRegistered: true,
+                },
+              })
+              fetchStamps()
+            } else {
+              toast.error("You are not registered as a POH user")
+            }
+          })
+          .catch((err: any) => {
+            toast.error("An error occured")
+          })
       }
-      const contract: any = new web3.eth.Contract([methodAbi], contractAddress)
-      contract.methods
-        .isRegistered(address)
-        .call()
-        .then(async (result: any) => {
-          console.log(result)
-          if (result) {
-            await axios.post("/api/supabase/update", {
-              match: { email },
-              table: "users",
-              body: {
-                poh_IsRegistered: true,
-              },
-            })
-            fetchStamps()
-          } else {
-            toast.error("You are not registered as a POH user")
-          }
-        })
-        .catch((err: any) => {
-          toast.error("An error occured")
-        })
     },
-    [email, fetchStamps]
+    [email, fetchStamps, userState]
   )
   const { address } = useAccount()
 
@@ -204,7 +212,6 @@ export const Stamps = () => {
             user_metadata,
             email: social_email,
             phone,
-            created_at,
           }: any = session?.user
           const providerKey = allAuthType[app_metadata?.provider]
           const dataToSet = {
@@ -281,6 +288,11 @@ export const Stamps = () => {
   }, [fetchStamps])
 
   const { open } = useWeb3Modal()
+
+  function camelCaseToWords(s: string) {
+    const result = s.replace(/([A-Z])/g, ' $1');
+    return result.charAt(0).toUpperCase() + result.slice(1);
+  }
 
   return (
     <div className="p-3 pb-16">
@@ -609,6 +621,63 @@ export const Stamps = () => {
             )}
           </CardContent>
         </Card>
+        <Card>
+          <CardHeader>
+            <img
+              src={"https://passport.gitcoin.co/assets/gitcoinLogoWhite.svg"}
+              alt="Image"
+              className="mb-1 h-10 w-10 rounded-md"
+            />
+            <CardTitle>Gitcoin Passport</CardTitle>
+            <CardDescription>
+              Connect your web3 to be verified by gitcoin passport
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {Boolean(stampCollector) ? (
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <Button>Verified Stamp</Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger>
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 15 15"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M2 5H13C13.5523 5 14 5.44772 14 6V9C14 9.55228 13.5523 10 13 10H2C1.44772 10 1 9.55228 1 9V6C1 5.44772 1.44772 5 2 5ZM0 6C0 4.89543 0.895431 4 2 4H13C14.1046 4 15 4.89543 15 6V9C15 10.1046 14.1046 11 13 11H2C0.89543 11 0 10.1046 0 9V6ZM4.5 6.75C4.08579 6.75 3.75 7.08579 3.75 7.5C3.75 7.91421 4.08579 8.25 4.5 8.25C4.91421 8.25 5.25 7.91421 5.25 7.5C5.25 7.08579 4.91421 6.75 4.5 6.75ZM6.75 7.5C6.75 7.08579 7.08579 6.75 7.5 6.75C7.91421 6.75 8.25 7.08579 8.25 7.5C8.25 7.91421 7.91421 8.25 7.5 8.25C7.08579 8.25 6.75 7.91421 6.75 7.5ZM10.5 6.75C10.0858 6.75 9.75 7.08579 9.75 7.5C9.75 7.91421 10.0858 8.25 10.5 8.25C10.9142 8.25 11.25 7.91421 11.25 7.5C11.25 7.08579 10.9142 6.75 10.5 6.75Z"
+                        fill="currentColor"
+                        fill-rule="evenodd"
+                        clip-rule="evenodd"
+                      ></path>
+                    </svg>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        setGitcoinStamps(true)
+                      }}
+                    >
+                      View Stamp
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            ) : (
+              <Button
+                onClick={() => {
+                  open()
+                }}
+                variant="secondary"
+                style={{ width: "200px" }}
+              >
+                Connect Wallet
+              </Button>
+            )}
+          </CardContent>
+        </Card>
         <BrightIdConnectSheet
           modalOpen={brightIdSheetOpen}
           email={email}
@@ -616,6 +685,44 @@ export const Stamps = () => {
             setBrightIdSheetOpen(false)
           }}
         />
+        <Sheet
+          open={gitcoinStamps}
+          onOpenChange={(value) => {
+            if (value === false) {
+              setGitcoinStamps(false)
+            }
+          }}
+        >
+          <SheetContent style={{ width: 500 }}>
+            <SheetHeader>
+              <SheetTitle>Gitcoin Stamps</SheetTitle>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  flexWrap: "wrap",
+                }}
+              >
+                {stampCollector.map((item) => (
+                  <div
+                    style={{
+                      width: 160,
+                      textAlign: "center",
+                      marginBottom: 15,
+                    }}
+                  >
+                    <img
+                      style={{ width: 50, height: 50, margin: "auto" }}
+                      src={item.icon}
+                    />
+                    <p style={{ fontSize: 12, marginTop: 4 }}>{camelCaseToWords(item.stamp)}</p>
+                  </div>
+                ))}
+              </div>
+            </SheetHeader>
+          </SheetContent>
+        </Sheet>
         <Sheet
           open={Boolean(stampVerified)}
           onOpenChange={(value) => {
