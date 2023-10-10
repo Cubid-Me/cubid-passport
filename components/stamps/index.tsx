@@ -290,8 +290,8 @@ export const Stamps = () => {
   const { open } = useWeb3Modal()
 
   function camelCaseToWords(s: string) {
-    const result = s.replace(/([A-Z])/g, ' $1');
-    return result.charAt(0).toUpperCase() + result.slice(1);
+    const result = s.replace(/([A-Z])/g, " $1")
+    return result.charAt(0).toUpperCase() + result.slice(1)
   }
 
   return (
@@ -634,7 +634,7 @@ export const Stamps = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {Boolean(stampCollector) ? (
+            {stampCollector.length !== 0 ? (
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <Button>Verified Stamp</Button>
                 <DropdownMenu>
@@ -716,7 +716,9 @@ export const Stamps = () => {
                       style={{ width: 50, height: 50, margin: "auto" }}
                       src={item.icon}
                     />
-                    <p style={{ fontSize: 12, marginTop: 4 }}>{camelCaseToWords(item.stamp)}</p>
+                    <p style={{ fontSize: 12, marginTop: 4 }}>
+                      {camelCaseToWords(item.stamp)}
+                    </p>
                   </div>
                 ))}
               </div>
