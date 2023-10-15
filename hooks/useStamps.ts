@@ -28,7 +28,6 @@ export const useStamps = () => {
     const stampDataArray = []
     let counter = 0
     for (const i of stamps as any) {
-    console.log(i);
       let st = {
         id: counter,
         stamp: i?.credential?.credentialSubject?.provider,
@@ -39,6 +38,5 @@ export const useStamps = () => {
     }
     return stampDataArray
   }, [stamps])
-
   return { stamps, stampCollector }
 }
