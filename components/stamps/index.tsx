@@ -39,6 +39,7 @@ import { wallet } from "@/app/layout"
 
 import { supabase } from "../../lib/supabase"
 import { BrightIdConnectSheet } from "./brightIdConnectSheet"
+import { GooddollarConnect } from "./gooddollarConnect"
 
 const socialDataToMap = [
   {
@@ -131,6 +132,8 @@ export const Stamps = () => {
     }
   }, [email])
 
+  const [isPohVerified, setIsPohVerified] = useState<any>(null)
+
   const connectToWeb3Node = useCallback(
     (address: string) => {
       if (userState && !(userState as any)?.poh_IsRegistered) {
@@ -167,7 +170,6 @@ export const Stamps = () => {
           .isRegistered(address)
           .call()
           .then(async (result: any) => {
-            console.log(result)
             if (result) {
               await axios.post("/api/supabase/update", {
                 match: { email },
@@ -177,8 +179,9 @@ export const Stamps = () => {
                 },
               })
               fetchStamps()
+              setIsPohVerified(true)
             } else {
-              toast.error("You are not registered as a POH user")
+              setIsPohVerified(false)
             }
           })
           .catch((err: any) => {
@@ -427,19 +430,33 @@ export const Stamps = () => {
             )}
           </CardHeader>
           <CardContent>
-            {Boolean((userState as any)?.poh_IsRegistered) ? (
+            {Boolean((userState as any)?.poh_IsRegistered) && isPohVerified ? (
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <Button variant="default">Verified Stamp</Button>
               </div>
             ) : (
-              <Button
-                onClick={() => {
-                  open()
-                }}
-                variant="outline"
-              >
-                Connect Wallet
-              </Button>
+              <>
+                {isPohVerified === false && (
+                  <Button
+                    onClick={() => {
+                      open()
+                    }}
+                    variant="outline"
+                  >
+                    Not Verified
+                  </Button>
+                )}
+                {isPohVerified === null && (
+                  <Button
+                    onClick={() => {
+                      open()
+                    }}
+                    variant="outline"
+                  >
+                    Connect Wallet
+                  </Button>
+                )}
+              </>
             )}
           </CardContent>
         </Card>
@@ -678,6 +695,7 @@ export const Stamps = () => {
             )}
           </CardContent>
         </Card>
+        <GooddollarConnect />
         <BrightIdConnectSheet
           modalOpen={brightIdSheetOpen}
           email={email}
