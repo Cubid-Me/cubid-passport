@@ -3,6 +3,8 @@
 "use client"
 
 import React, { useCallback, useEffect, useState } from "react"
+import { newKitFromWeb3 } from "@celo/contractkit"
+import { ClaimSDK } from "@gooddollar/web3sdk-v2"
 import { useWeb3Modal } from "@web3modal/wagmi/react"
 import axios from "axios"
 import dayjs from "dayjs"
@@ -11,7 +13,7 @@ import { toast } from "react-toastify"
 import { useAccount } from "wagmi"
 import Web3 from "web3"
 
-import { pohABI } from "../../lib/contract_abi"
+import { gooddollar_ABI, pohABI } from "../../lib/contract_abi"
 import { useStamps } from "./../../hooks/useStamps"
 import "@near-wallet-selector/modal-ui/styles.css"
 import useAuth from "@/hooks/useAuth"
@@ -41,15 +43,54 @@ import { wallet } from "@/app/layout"
 import { supabase } from "../../lib/supabase"
 import { BrightIdConnectSheet } from "./brightIdConnectSheet"
 
+const nodeUrl = "https://forno.celo.org"
+const goodDollarAddress = "0xC361A6E67822a0EDc17D899227dd9FC50BD62F42" // replace with GoodDollar contract address
+
+const web3 = new Web3(nodeUrl)
+const kit = newKitFromWeb3(web3 as any)
+
+// Load the GoodDollar contract
+const goodDollarContract = new web3.eth.Contract(
+  require("@gooddollar/goodcontracts/build/contracts/Identity.json").abi,
+  goodDollarAddress
+)
+
 export const GooddollarConnect = () => {
   const [gooddollarConnect, setGooddollarConnect] = useState<any>(false)
   const [gooddolarOpen, setGooddollarOpen] = useState(false)
   const [stepState, setStepState] = useState(0)
+  const [whitelisted, setWhitelisted] = useState(false)
   const { open } = useWeb3Modal()
   const { address } = useAccount()
+  const authData = useAuth();
+
+  useEffect(() => {
+    if (address) {
+      (async () => {
+        try {
+          const isWhitelisted = await (goodDollarContract as any).methods
+            .isWhitelisted(address)
+            .call()
+          setWhitelisted(isWhitelisted)
+          if(isWhitelisted){
+          await axios.post("/api/supabase/insert", {
+            body: {
+              email: authData?.user?.email,
+              "wallet-address": address,
+              wallet_data: {},
+            },
+            table: "wallet_details",
+          })
+        }
+        } catch (err) {
+          console.log(err)
+        }
+      })()
+    }
+  }, [address, authData?.user?.email])
 
   const [gooddollarData, setGooddollarData] = useState<any>({})
-  const authData = useAuth()
+  
   const [showGooddollarDetails, setShowGooddollarDetails] = useState(false)
 
   useEffect(() => {
@@ -102,7 +143,7 @@ export const GooddollarConnect = () => {
 
   useEffect(() => {
     if (authData?.user?.email) fetchWalletDetails(authData?.user?.email)
-  }, [fetchWalletDetails, authData?.user?.email]);
+  }, [fetchWalletDetails, authData?.user?.email])
 
   const steps: any = {
     0: (
@@ -157,15 +198,24 @@ export const GooddollarConnect = () => {
 
           <p>Login with Gooddapp</p>
         </div>
-        <button
-          onClick={() => {
-            open()
-          }}
-          className="m-2 bg-blue-500 p-2 text-white rounded"
-        >
-          {" "}
-          Connect Gooddollar
-        </button>
+        <div className="mx-auto w-[fit-content]">
+          {address ? (
+            <>
+              <p>Account Connected</p>
+              <p>Is Whitelisted : {whitelisted?"Yes":"No"}</p>
+            </>
+          ) : (
+            <button
+              onClick={() => {
+                open()
+              }}
+              className="m-2 rounded bg-blue-500 p-2 text-white"
+            >
+              {" "}
+              Connect Gooddollar
+            </button>
+          )}
+        </div>
       </>
     ),
     2: (
@@ -191,36 +241,38 @@ export const GooddollarConnect = () => {
           </Button>
           <p>Login with Gooddollar Wallet</p>
         </div>
-        {Object.keys(gooddollarData).length === 0 ? (
-          <>
-            <button
-              onClick={() => {
-                window.open(
-                  `https://gooddollar-connect.netlify.app?website=${window.location.href}`,
-                  "_self"
-                )
-              }}
-              className="m-2 bg-blue-500 p-2 text-white rounded"
-            >
-              {" "}
-              Authorize Gooddollar
-            </button>
-          </>
-        ) : (
-          <div>
-            <p>Logged In</p>
-            <p>Name : {(gooddollarData as any).fullName}</p>
-            <button
-              onClick={() => {
-                setGooddollarData({})
-                window.location.href = "https://gooddollar.netlify.app"
-              }}
-              style={{ fontSize: 20, padding: 20 }}
-            >
-              Logout
-            </button>
-          </div>
-        )}
+        <div className="mx-auto w-[fit-content]">
+          {Object.keys(gooddollarData).length === 0 ? (
+            <>
+              <button
+                onClick={() => {
+                  window.open(
+                    `https://gooddollar-connect.netlify.app?website=${window.location.href}`,
+                    "_self"
+                  )
+                }}
+                className="m-2 rounded bg-blue-500 p-2 text-white"
+              >
+                {" "}
+                Authorize Gooddollar
+              </button>
+            </>
+          ) : (
+            <div>
+              <p>Logged In</p>
+              <p>Name : {(gooddollarData as any).fullName}</p>
+              <button
+                onClick={() => {
+                  setGooddollarData({})
+                  window.location.href = "https://gooddollar.netlify.app"
+                }}
+                style={{ fontSize: 20, padding: 20 }}
+              >
+                Logout
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     ),
   }
