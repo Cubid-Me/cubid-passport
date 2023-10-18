@@ -62,26 +62,26 @@ export const GooddollarConnect = () => {
   const [whitelisted, setWhitelisted] = useState(false)
   const { open } = useWeb3Modal()
   const { address } = useAccount()
-  const authData = useAuth();
+  const authData = useAuth()
 
   useEffect(() => {
     if (address) {
-      (async () => {
+      ;(async () => {
         try {
           const isWhitelisted = await (goodDollarContract as any).methods
             .isWhitelisted(address)
             .call()
           setWhitelisted(isWhitelisted)
-          if(isWhitelisted){
-          await axios.post("/api/supabase/insert", {
-            body: {
-              email: authData?.user?.email,
-              "wallet-address": address,
-              wallet_data: {},
-            },
-            table: "wallet_details",
-          })
-        }
+          if (isWhitelisted) {
+            await axios.post("/api/supabase/insert", {
+              body: {
+                email: authData?.user?.email,
+                "wallet-address": address,
+                wallet_data: {},
+              },
+              table: "wallet_details",
+            })
+          }
         } catch (err) {
           console.log(err)
         }
@@ -90,7 +90,7 @@ export const GooddollarConnect = () => {
   }, [address, authData?.user?.email])
 
   const [gooddollarData, setGooddollarData] = useState<any>({})
-  
+
   const [showGooddollarDetails, setShowGooddollarDetails] = useState(false)
 
   useEffect(() => {
@@ -144,6 +144,8 @@ export const GooddollarConnect = () => {
   useEffect(() => {
     if (authData?.user?.email) fetchWalletDetails(authData?.user?.email)
   }, [fetchWalletDetails, authData?.user?.email])
+
+  console.log(address)
 
   const steps: any = {
     0: (
@@ -199,10 +201,10 @@ export const GooddollarConnect = () => {
           <p>Login with Gooddapp</p>
         </div>
         <div className="mx-auto w-[fit-content]">
-          {address ? (
+          {Boolean(address) ? (
             <>
               <p>Account Connected</p>
-              <p>Is Whitelisted : {whitelisted?"Yes":"No"}</p>
+              <p>Is Whitelisted : {whitelisted ? "Yes" : "No"}</p>
             </>
           ) : (
             <button
