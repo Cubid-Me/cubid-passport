@@ -90,7 +90,7 @@ export const Stamps = () => {
     const { data: d, error: e } = await supabase.auth.signInWithOAuth({
       provider: socialName,
       options: {
-        redirectTo: "http://localhost:3000/app",
+        redirectTo: `${window.location.origin}/app`,
       },
     })
   }
