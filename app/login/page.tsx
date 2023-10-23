@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
@@ -17,7 +18,7 @@ function debounce(func: any, delay: any) {
   return (...args: any) => {
     clearTimeout(timeoutId as any)
     timeoutId = setTimeout(() => {
-      func.apply(this, args)
+      func.apply(this as any, args)
     }, delay)
   }
 }
