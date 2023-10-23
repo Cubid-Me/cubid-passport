@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
-import React from "react"
-import { useSelector } from "react-redux"
+import React, { useCallback, useEffect, useState } from "react"
+import axios from "axios"
+import { useDispatch, useSelector } from "react-redux"
 
 import { Button, buttonVariants } from "@/components/ui/button"
 import {
@@ -19,8 +20,49 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
+import { logout } from "../../redux/userSlice"
+
 export const Profile = () => {
-  const { email } = useSelector((state: any) => state.user)
+  const { email = "" } = useSelector((state: any) => state?.user) ?? {};
+  const dispatch = useDispatch()
+  const [userState, setUserState] = useState<any>({})
+  const [walletState, setWalletState] = useState<any>({})
+
+  const fetchStamps = useCallback(async () => {
+    if (email) {
+      const {
+        data: { data: userData },
+      } = await axios.post("/api/supabase/select", {
+        match: { email },
+        table: "users",
+      })
+      setUserState(userData?.[0])
+    }
+  }, [email])
+
+  const fetchWalletDetails = useCallback(async (email: string) => {
+    const {
+      data: { data: wallet_details },
+    } = await axios.post(`/api/supabase/select`, {
+      match: {
+        email,
+      },
+      table: "wallet_details",
+    })
+    if (wallet_details?.[0]) {
+      setWalletState(wallet_details?.[0])
+    } else {
+      setWalletState(null)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (email) {
+      fetchStamps()
+      fetchWalletDetails(email)
+    }
+  }, [fetchStamps, fetchWalletDetails, email])
+
   return (
     <div className="p-3">
       <h1 className="mb-2 text-3xl font-semibold">Profile</h1>
@@ -45,15 +87,16 @@ export const Profile = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              <Button className="block" variant="outline">
-                NEAR : harrydhillon.near
-              </Button>
-              <Button className="block" variant="outline">
-                ENS : 0x3uv9ns03c9wcos0afi
-              </Button>
-              <Button className="block" variant="outline">
-                G$ : 0xcacC3DC102112d2EcFF5e037276E5c93D56812d5
-              </Button>
+              {Boolean((userState as any)?.iah) && (
+                <Button className="block" variant="outline">
+                  NEAR : {(userState as any)?.iah}
+                </Button>
+              )}
+              {Boolean(walletState?.["wallet-address"]) && (
+                <Button className="block" variant="outline">
+                  G$ : {walletState?.["wallet-address"]}
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -111,6 +154,17 @@ export const Profile = () => {
             >
               Link to Cubid App
             </a>
+          </CardContent>
+        </Card>
+        <Card style={{ height: "fit-content", paddingTop: "15px" }}>
+          <CardContent>
+            <Button
+              onClick={() => {
+                dispatch(logout())
+              }}
+            >
+              Logout
+            </Button>
           </CardContent>
         </Card>
       </div>

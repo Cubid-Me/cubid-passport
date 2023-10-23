@@ -21,6 +21,9 @@ export default function IndexPage() {
               <Link href={"/login"} className={buttonVariants()}>
                 Login
               </Link>
+              <Link href={"/register"} className={buttonVariants()}>
+                Register
+              </Link>
               <Link
                 target="_blank"
                 rel="noreferrer"

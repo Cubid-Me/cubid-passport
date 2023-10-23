@@ -81,6 +81,7 @@ export const GooddollarConnect = () => {
               },
               table: "wallet_details",
             })
+            localStorage.deleteItem("connectGooddollar")
           }
         } catch (err) {
           console.log(err)
@@ -145,7 +146,14 @@ export const GooddollarConnect = () => {
     if (authData?.user?.email) fetchWalletDetails(authData?.user?.email)
   }, [fetchWalletDetails, authData?.user?.email])
 
-  console.log(address)
+  useEffect(() => {
+    console.log()
+    if (localStorage.getItem("connectGooddollar") === "true") {
+      setGooddollarOpen(true)
+      setStepState(1)
+      localStorage.removeItem("connectGooddollar")
+    }
+  }, [])
 
   const steps: any = {
     0: (
@@ -162,6 +170,9 @@ export const GooddollarConnect = () => {
           <Button
             onClick={() => {
               setStepState(1)
+              if (address) {
+                localStorage.setItem("connectGooddollar", "true")
+              }
             }}
           >
             Gooddapp
@@ -202,10 +213,11 @@ export const GooddollarConnect = () => {
         </div>
         <div className="mx-auto w-[fit-content]">
           {Boolean(address) ? (
-            <>
+            <div className="text-left">
               <p>Account Connected</p>
+              <p>Wallet Address: {address}</p>
               <p>Is Whitelisted : {whitelisted ? "Yes" : "No"}</p>
-            </>
+            </div>
           ) : (
             <button
               onClick={() => {
