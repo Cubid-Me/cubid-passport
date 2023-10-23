@@ -36,7 +36,6 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet"
 import { wallet } from "@/app/layout"
-
 import { supabase } from "../../lib/supabase"
 import { BrightIdConnectSheet } from "./brightIdConnectSheet"
 import { GooddollarConnect } from "./gooddollarConnect"
@@ -97,7 +96,7 @@ export const Stamps = () => {
 
   const [brightIdData, setBrightIdData] = useState(null)
   const [brightIdSheetOpen, setBrightIdSheetOpen] = useState(false)
-  const [userState, setUserState] = useState({})
+  const [userState, setUserState] = useState({});
   const [stampVerified, setStampVerified] = useState<any>(null)
   const [gitcoinStamps, setGitcoinStamps] = useState(false)
   const {
@@ -542,7 +541,7 @@ export const Stamps = () => {
             ) : (
               <Button
                 onClick={() => {
-                  open()
+                  wallet.signIn();
                 }}
                 variant="secondary"
                 style={{ width: "200px" }}
@@ -633,7 +632,7 @@ export const Stamps = () => {
                 variant="secondary"
                 style={{ width: "200px" }}
               >
-                Connect Wallet
+                Connect App
               </Button>
             )}
           </CardContent>
