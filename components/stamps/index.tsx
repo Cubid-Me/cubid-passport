@@ -36,6 +36,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet"
 import { wallet } from "@/app/layout"
+
 import { supabase } from "../../lib/supabase"
 import { BrightIdConnectSheet } from "./brightIdConnectSheet"
 import { GooddollarConnect } from "./gooddollarConnect"
@@ -96,7 +97,7 @@ export const Stamps = () => {
 
   const [brightIdData, setBrightIdData] = useState(null)
   const [brightIdSheetOpen, setBrightIdSheetOpen] = useState(false)
-  const [userState, setUserState] = useState({});
+  const [userState, setUserState] = useState({})
   const [stampVerified, setStampVerified] = useState<any>(null)
   const [gitcoinStamps, setGitcoinStamps] = useState(false)
   const {
@@ -208,6 +209,7 @@ export const Stamps = () => {
           twitter: "twitter_data",
           discord: "discord_data",
         }
+        console.log(session, "session")
         if (session?.user) {
           const {
             app_metadata,
@@ -215,7 +217,12 @@ export const Stamps = () => {
             email: social_email,
             phone,
           }: any = session?.user
-          const providerKey = allAuthType[app_metadata?.provider]
+          const providerKey =
+            allAuthType[
+              app_metadata?.providers?.[1]
+                ? app_metadata?.providers?.[1]
+                : app_metadata?.provider
+            ]
           const dataToSet = {
             [providerKey]: {
               email: social_email,
@@ -230,12 +237,36 @@ export const Stamps = () => {
             body: dataToSet,
             match: { email },
           })
+          const {
+            data: { data: supabaseData },
+          } = await axios.post("/api/supabase/select", {
+            match: { email, identifier: social_email },
+            table: "whitelist",
+          })
+          if (!supabaseData[0]) {
+            await axios.post("/api/supabase/insert", {
+              table: "whitelist",
+              body: {
+                email: email,
+                identifier: social_email,
+              },
+            })
+          } else {
+            await axios.post("/api/supabase/insert", {
+              table: "blacklist",
+              body: {
+                email: email,
+                identifier: social_email,
+              },
+            })
+          }
+
           fetchStamps()
           supabase.auth.signOut()
         }
       })
     }
-  }, [email, fetchStamps])
+  }, [email, fetchStamps, userState])
 
   useEffect(() => {
     fetchBrightIdData()
@@ -251,8 +282,32 @@ export const Stamps = () => {
           issuer: "fractal.i-am-human.near",
         },
       })
-      console.log(dataCategory)
       if (dataCategory?.[0]?.[1]?.[0]) {
+        const {
+          data: { data: supabaseData },
+        } = await axios.post("/api/supabase/select", {
+          match: { email, identifier: (wallet as any).accountId },
+          table: "whitelist",
+        })
+        if (!supabaseData[0]) {
+          await axios.post("/api/supabase/insert", {
+            table: "whitelist",
+            body: {
+              email: email,
+              identifier: (wallet as any).accountId,
+            },
+          })
+        } else {
+          if (supabaseData?.[0]?.email !== email) {
+            await axios.post("/api/supabase/insert", {
+              table: "blacklist",
+              body: {
+                email: email,
+                identifier: (wallet as any).accountId,
+              },
+            })
+          }
+        }
         await axios.post("/api/supabase/update", {
           body: {
             iah: (wallet as any).accountId,
@@ -261,6 +316,7 @@ export const Stamps = () => {
           match: { email },
         })
         fetchStamps()
+        wallet.signOut()
       } else {
         toast.error(
           "Please verify yourself with IAH to get a verified stamp with near"
@@ -268,6 +324,8 @@ export const Stamps = () => {
       }
     }
   }, [email, fetchStamps])
+
+  console.log({ wallet, userState })
 
   useEffect(() => {
     fetchNearWallet()
@@ -541,7 +599,7 @@ export const Stamps = () => {
             ) : (
               <Button
                 onClick={() => {
-                  wallet.signIn();
+                  wallet.signIn()
                 }}
                 variant="secondary"
                 style={{ width: "200px" }}
@@ -690,6 +748,91 @@ export const Stamps = () => {
                 style={{ width: "200px" }}
               >
                 Connect Wallet
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <img
+              src={
+                "https://images.unsplash.com/photo-1530319067432-f2a729c03db5?auto=format&fit=crop&q=80&w=2889&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+              }
+              alt="Image"
+              className="mb-1 h-10 w-10 object-cover rounded-md"
+            />
+            <CardTitle>Phone Number</CardTitle>
+            {Boolean((userState as any)?.phoneNumber) ? (
+              <CardDescription>
+                <div className="flex items-center space-x-1">
+                  <p>Your phone number is verified</p>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="#00e64d"
+                    className="h-6 w-6"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </div>
+              </CardDescription>
+            ) : (
+              <CardDescription>Verify your phone number</CardDescription>
+            )}
+          </CardHeader>
+          <CardContent>
+            {Boolean((userState as any)?.phoneNumber) ? (
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <Button>Verified Stamp</Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger>
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 15 15"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M2 5H13C13.5523 5 14 5.44772 14 6V9C14 9.55228 13.5523 10 13 10H2C1.44772 10 1 9.55228 1 9V6C1 5.44772 1.44772 5 2 5ZM0 6C0 4.89543 0.895431 4 2 4H13C14.1046 4 15 4.89543 15 6V9C15 10.1046 14.1046 11 13 11H2C0.89543 11 0 10.1046 0 9V6ZM4.5 6.75C4.08579 6.75 3.75 7.08579 3.75 7.5C3.75 7.91421 4.08579 8.25 4.5 8.25C4.91421 8.25 5.25 7.91421 5.25 7.5C5.25 7.08579 4.91421 6.75 4.5 6.75ZM6.75 7.5C6.75 7.08579 7.08579 6.75 7.5 6.75C7.91421 6.75 8.25 7.08579 8.25 7.5C8.25 7.91421 7.91421 8.25 7.5 8.25C7.08579 8.25 6.75 7.91421 6.75 7.5ZM10.5 6.75C10.0858 6.75 9.75 7.08579 9.75 7.5C9.75 7.91421 10.0858 8.25 10.5 8.25C10.9142 8.25 11.25 7.91421 11.25 7.5C11.25 7.08579 10.9142 6.75 10.5 6.75Z"
+                        fill="currentColor"
+                        fill-rule="evenodd"
+                        clip-rule="evenodd"
+                      ></path>
+                    </svg>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        console.log(userState)
+                        setStampVerified({
+                          displayName: "Phone Number",
+                          email:(userState as any)?.phoneNumber,
+                          image:
+                          "https://images.unsplash.com/photo-1530319067432-f2a729c03db5?auto=format&fit=crop&q=80&w=2889&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+                        })
+                      }}
+                    >
+                      View Stamp
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            ) : (
+              <Button
+                onClick={() => {
+                  setBrightIdSheetOpen(true)
+                }}
+                variant="secondary"
+                style={{ width: "200px" }}
+              >
+                Connect Phone Number
               </Button>
             )}
           </CardContent>
