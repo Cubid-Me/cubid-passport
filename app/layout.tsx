@@ -60,7 +60,7 @@ export default function RootLayout(props: any) {
         >
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <div>
-              <SiteHeader />
+              {!(window as any).location.href.includes("/allow") && <SiteHeader />}
               <Provider store={store}>
                 <div>{props.children}</div>
                 <ToastContainer />
