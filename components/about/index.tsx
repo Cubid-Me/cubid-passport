@@ -34,7 +34,7 @@ export const About = () => {
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle>Differences from Gitcoin passport</CardTitle>
+            <CardTitle>Differences from Gitcoin Passport</CardTitle>
             <CardDescription>How we&apos;re different and mutli chain compatible</CardDescription>
           </CardHeader>
           <CardContent>
