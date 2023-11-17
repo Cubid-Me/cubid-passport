@@ -12,7 +12,7 @@ import {
 
 import { Button } from "../ui/button"
 
-const redirectUri = "https://cubid-passport.vercel.app"
+const redirectUri = "https://cubid-passport.vercel.app/app"
 
 const InstagramAuth = () => {
   const handleLogin = () => {
