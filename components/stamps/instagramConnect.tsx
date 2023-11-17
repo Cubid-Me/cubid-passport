@@ -16,7 +16,7 @@ const redirectUri = "https://cubid-passport.vercel.app/app/"
 
 const InstagramAuth = () => {
   const handleLogin = () => {
-    const clientId = "876014740903400"
+    const clientId = "328555189879651"
     console.log(
       `https://api.instagram.com/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=user_profile&response_type=code`
     )
