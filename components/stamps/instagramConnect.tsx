@@ -48,15 +48,23 @@ export const InstagramConnect = ({
     async (code_fixes: string) => {
       if (authData?.user?.email) {
         console.log("api called")
+        const form = new FormData()
+        form.append("client_id", "876014740903400")
+        form.append("client_secret", "6125fa4a200efebf0d64a0cfdbae6eb3")
+        form.append("grant_type", "authorization_code")
+        form.append("redirect_uri", redirectUri)
+        form.append("code", code_fixes)
         const {
           data: { access_token, user_id },
-        } = await axios.post(`https://api.instagram.com/oauth/access_token`, {
-          client_id: "876014740903400",
-          client_secret: `6125fa4a200efebf0d64a0cfdbae6eb3`,
-          grant_type: "authorization_code",
-          redirect_uri: redirectUri,
-          code: code_fixes,
-        })
+        } = await axios.post(
+          "https://api.instagram.com/oauth/access_token",
+          form,
+          {
+            headers: {
+              ...(form as any)?.getHeaders(),
+            },
+          }
+        )
         axios
           .get(
             `https://graph.instagram.com/${user_id}?fields=id,username&access_token=${access_token}`
