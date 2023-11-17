@@ -26,10 +26,6 @@ export const wallet = new Wallet({
 
 wallet.startUp()
 
-interface RootLayoutProps {
-  children: React.ReactNode
-}
-
 export default function RootLayout(props: any) {
   const { pageProps } = props
 
