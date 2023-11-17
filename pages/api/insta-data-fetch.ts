@@ -13,7 +13,7 @@ export default async function handler(
 
   // Append your data
   formData.append("client_id", "876014740903400")
-  formData.append("client_secret", "6125fa4a200efebf0d64a0cfdbae6eb3")
+  formData.append("client_secret", "6a567d49fb0d7a3500f12dec14423945")
   formData.append("grant_type", "authorization_code")
   formData.append("redirect_uri", redirectUri) // replace with your value
   formData.append("code", code) // replace with your value
