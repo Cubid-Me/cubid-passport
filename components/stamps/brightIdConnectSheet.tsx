@@ -7,6 +7,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet"
 
+
 export const BrightIdConnectSheet = ({
   modalOpen,
   closeModal,

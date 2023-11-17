@@ -81,6 +81,31 @@ export const GooddollarConnect = () => {
               },
               table: "wallet_details",
             })
+            const {
+              data: { data: supabaseData },
+            } = await axios.post("/api/supabase/select", {
+              match: { email: authData?.user?.email, identifier: address },
+              table: "whitelist",
+            })
+            if (!supabaseData[0]) {
+              await axios.post("/api/supabase/insert", {
+                table: "whitelist",
+                body: {
+                  email: authData?.user?.email,
+                  identifier: address,
+                },
+              })
+            } else {
+              if (supabaseData?.[0]?.email !== authData?.user?.email) {
+                await axios.post("/api/supabase/insert", {
+                  table: "blacklist",
+                  body: {
+                    email: authData?.user?.email,
+                    identifier: address,
+                  },
+                })
+              }
+            }
             localStorage.deleteItem("connectGooddollar")
           }
         } catch (err) {
@@ -97,7 +122,7 @@ export const GooddollarConnect = () => {
   useEffect(() => {
     ;(async () => {
       const params = window.location.href?.split("?")
-      if (params[1]?.includes("gooddollardata")) {
+      if (params[1]?.includes("gooddollardata") && authData?.user?.email) {
         const jsonData = params[1]?.replace("gooddollardata=", "")
         const data = JSON.parse(decodeURIComponent(jsonData).replace("/", ""))
 
@@ -109,6 +134,34 @@ export const GooddollarConnect = () => {
           },
           table: "wallet_details",
         })
+        const {
+          data: { data: supabaseData },
+        } = await axios.post("/api/supabase/select", {
+          match: {
+            email: authData?.user?.email,
+            identifier: data?.walletAddress?.value,
+          },
+          table: "whitelist",
+        })
+        if (!supabaseData[0]) {
+          await axios.post("/api/supabase/insert", {
+            table: "whitelist",
+            body: {
+              email: authData?.user?.email,
+              identifier: data?.walletAddress?.value,
+            },
+          })
+        } else {
+          if (supabaseData?.[0]?.email !== authData?.user?.email) {
+            await axios.post("/api/supabase/insert", {
+              table: "blacklist",
+              body: {
+                email: authData?.user?.email,
+                identifier: data?.walletAddress?.value,
+              },
+            })
+          }
+        }
         toast.success("Successfully authenticated with gooddollar data")
         setTimeout(() => {
           window.history.replaceState(null, "", "/app")
