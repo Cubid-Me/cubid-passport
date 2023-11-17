@@ -5569,6 +5569,11 @@
     "@types/node" "*"
     "@types/responselike" "^1.0.0"
 
+"@types/caseless@*":
+  "integrity" "sha512-hWtVTC2q7hc7xZ/RLbxapMvDMgUnDvKvMOpKal4DrMyfGBUfB1oKaZlIRr6mJL+If3bAP6sV/QneGzF6tJjZDg=="
+  "resolved" "https://registry.npmjs.org/@types/caseless/-/caseless-0.12.5.tgz"
+  "version" "0.12.5"
+
 "@types/connect@^3.4.33":
   "integrity" "sha512-P63Zd/JUGq+PdrM1lv0Wv5SBYeA2+CORvbrXbngriYY0jzLUWfQMQQxOhjONEz/wlHOAxOdY7CY65rgQdTjq2w=="
   "resolved" "https://registry.npmjs.org/@types/connect/-/connect-3.4.36.tgz"
@@ -5678,6 +5683,16 @@
     "@types/scheduler" "*"
     "csstype" "^3.0.2"
 
+"@types/request@^2.48.12":
+  "integrity" "sha512-G3sY+NpsA9jnwm0ixhAFQSJ3Q9JkpLZpJbI3GMv0mIAT0y3mRabYeINzal5WOChIiaTEGQYlHOKgkaM9EisWHw=="
+  "resolved" "https://registry.npmjs.org/@types/request/-/request-2.48.12.tgz"
+  "version" "2.48.12"
+  dependencies:
+    "@types/caseless" "*"
+    "@types/node" "*"
+    "@types/tough-cookie" "*"
+    "form-data" "^2.5.0"
+
 "@types/responselike@^1.0.0":
   "integrity" "sha512-TiGnitEDxj2X0j+98Eqk5lv/Cij8oHd32bU4D/Yw6AOq7vvTk0gSD2GPj0G/HkvhMoVsdlhYF4yqqlyPBTM6Sg=="
   "resolved" "https://registry.npmjs.org/@types/responselike/-/responselike-1.0.1.tgz"
@@ -5701,6 +5716,11 @@
   "integrity" "sha512-n4sx2bqL0mW1tvDf/loQ+aMX7GQD3lc3fkCMC55VFNDu/vBOabO+LTIeXKM14xK0ppk5TUGcWRjiSpIlUpghKw=="
   "resolved" "https://registry.npmjs.org/@types/stylis/-/stylis-4.2.0.tgz"
   "version" "4.2.0"
+
+"@types/tough-cookie@*":
+  "integrity" "sha512-/Ad8+nIOV7Rl++6f1BdKxFSMgmoqEoYbHRpPcx3JEfv8VRsQe9Z4mCXeJBzxs7mbHY/XOZZuXlRNfhpVPbs6ZA=="
+  "resolved" "https://registry.npmjs.org/@types/tough-cookie/-/tough-cookie-4.0.5.tgz"
+  "version" "4.0.5"
 
 "@types/trusted-types@^2.0.2":
   "integrity" "sha512-IDaobHimLQhjwsQ/NMwRVfa/yL7L/wriQPMhw1ZJall0KX6E1oxk29XMDeilW5qTIg5aoiqf5Udy8U/51aNoQQ=="
@@ -10813,6 +10833,15 @@
   "resolved" "https://registry.npmjs.org/form-data-encoder/-/form-data-encoder-1.7.1.tgz"
   "version" "1.7.1"
 
+"form-data@^2.5.0":
+  "integrity" "sha512-m21N3WOmEEURgk6B9GLOE4RuWOFf28Lhh9qGYeNlGq4VDXUlJy2th2slBNU8Gp8EzloYZOibZJ7t5ecIrFSjVA=="
+  "resolved" "https://registry.npmjs.org/form-data/-/form-data-2.5.1.tgz"
+  "version" "2.5.1"
+  dependencies:
+    "asynckit" "^0.4.0"
+    "combined-stream" "^1.0.6"
+    "mime-types" "^2.1.12"
+
 "form-data@^3.0.0":
   "integrity" "sha512-RHkBKtLWUVwd7SqRIvCZMEvAMoGUp0XU+seQiZejj0COz3RI3hWP4sCv3gZWWLjJTd7rGwcsF5eKZGii0r/hbg=="
   "resolved" "https://registry.npmjs.org/form-data/-/form-data-3.0.1.tgz"
@@ -15229,7 +15258,7 @@
   dependencies:
     "jsesc" "~0.5.0"
 
-"request@^2.67.0", "request@^2.79.0", "request@^2.85.0":
+"request@^2.67.0", "request@^2.79.0", "request@^2.85.0", "request@^2.88.2":
   "integrity" "sha512-MsvtOrfG9ZcrOwAW+Qi+F6HbD0CWXEh9ou77uOb7FM2WPhwT7smM833PzanhJLsgXjN89Ir6V2PczXNnMpwKhw=="
   "resolved" "https://registry.npmjs.org/request/-/request-2.88.2.tgz"
   "version" "2.88.2"
