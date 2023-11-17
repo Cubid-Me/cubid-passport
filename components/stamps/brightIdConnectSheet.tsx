@@ -47,7 +47,7 @@ export const BrightIdConnectSheet = ({
         console.log(allUserData);
         if (allUserData) {
           closeModal()
-          window.location.reload();
+          (window as any).location.reload();
         }
       }, 1000);
     }
