@@ -29,7 +29,7 @@ wallet.startUp()
 export default function RootLayout(props: any) {
   const { pageProps } = props
 
-
+  if (typeof window !== "undefined") {
     // Client-side-only code
 
     return (
@@ -73,5 +73,7 @@ export default function RootLayout(props: any) {
         </html>
       </SessionProvider>
     )
-
+  } else {
+    return <></>
+  }
 }
