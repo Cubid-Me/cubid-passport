@@ -24,13 +24,19 @@ export default async function handler(
       headers: formData.getHeaders(),
     })
     .then(async (response) => {
-      const { access_token, user_id } = response.data
-      const { data } = await axios.get(
-        `https://graph.instagram.com/${user_id}?fields=id,username&access_token=${access_token}`
-      )
-      res.send(data)
+      const { access_token, user_id } = response.data;
+      res.send({
+        user_id,
+        access_token,
+        data: (await axios.get(`https://graph.instagram.com/${user_id}?fields=id,username&access_token=${access_token}`)).data,
+      })
     })
     .catch((error) => {
-      res.send({ error: error, message: "error is here" })
+      console.log(error, "err 2")
+      res.send({
+        error: error,
+        message: "v2 error",
+        msg: error?.response?.data?.error_message ?? "",
+      })
     })
 }

@@ -769,7 +769,7 @@ export const Stamps = () => {
             <CardDescription>Connect your instagram</CardDescription>
           </CardHeader>
           <CardContent>
-            {stampCollector.length !== 0 ? (
+            {Boolean((userState as any)?.instagram_data) ? (
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <Button>Verified Stamp</Button>
                 <DropdownMenu>
@@ -792,10 +792,24 @@ export const Stamps = () => {
                   <DropdownMenuContent>
                     <DropdownMenuItem
                       onClick={() => {
-                        setGitcoinStamps(true)
+                        console.log()
+                        setStampVerified({
+                          displayName: (userState as any)?.instagram_data
+                            ?.username,
+                          image:
+                            "https://static-00.iconduck.com/assets.00/social-instagram-icon-2048x2048-xuel0xhc.png",
+                        })
                       }}
                     >
                       View Stamp
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        deleteStamp('instagram_data')
+                      }}
+                      style={{ color: "red" }}
+                    >
+                      Remove Stamp
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -982,9 +996,10 @@ export const Stamps = () => {
         />
         <InstagramConnect
           open={instagramShow}
-          onOpen={()=>{
+          onOpen={() => {
             setInstagramShow(true)
           }}
+          fetchStamps={fetchStamps}
           onClose={() => {
             setInstagramShow(false)
           }}
