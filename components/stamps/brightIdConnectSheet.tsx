@@ -1,12 +1,12 @@
-import React,{useEffect,useCallback,useState} from "react"
-import axios from 'axios'
+import React, { useCallback, useEffect, useState } from "react"
+import axios from "axios"
+
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
-
 
 export const BrightIdConnectSheet = ({
   modalOpen,
@@ -17,44 +17,43 @@ export const BrightIdConnectSheet = ({
   closeModal: () => void
   email: string
 }) => {
-
-  const [brightIdData,setBrightIdData] = useState()
+  const [brightIdData, setBrightIdData] = useState()
 
   const fetchUserData = useCallback(async () => {
     if (email) {
       const {
-        data: { data }
-      } = await axios.post('/api/supabase/select', {
+        data: { data },
+      } = await axios.post("/api/supabase/select", {
         match: { email },
-        table: 'brightid-data'
-      });
+        table: "brightid-data",
+      })
       if (data?.[0]) {
-        setBrightIdData(data[0]);
+        setBrightIdData(data[0])
       }
-      return data?.[0];
+      return data?.[0]
     }
-  }, [email]);
+  }, [email])
 
   useEffect(() => {
-    fetchUserData();
-  }, [fetchUserData]);
+    fetchUserData()
+  }, [fetchUserData])
 
   useEffect(() => {
-    let interval:any;
+    let interval: any
     if (modalOpen) {
       interval = setInterval(async () => {
-        const allUserData = await fetchUserData();
-        console.log(allUserData);
+        const allUserData = await fetchUserData()
+        console.log(allUserData)
         if (allUserData) {
-          closeModal()
+          closeModal();
           (window as any).location.reload();
         }
-      }, 1000);
+      }, 1000)
     }
     return () => {
-      clearInterval(interval);
-    };
-  }, [modalOpen, fetchUserData,closeModal]);
+      clearInterval(interval)
+    }
+  }, [modalOpen, fetchUserData, closeModal])
 
   return (
     <>
