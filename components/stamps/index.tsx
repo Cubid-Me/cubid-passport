@@ -794,13 +794,22 @@ export const Stamps = () => {
                       onClick={() => {
                         console.log()
                         setStampVerified({
-                          displayName: (userState as any)?.instagram_data?.username,
+                          displayName: (userState as any)?.instagram_data
+                            ?.username,
                           image:
                             "https://static-00.iconduck.com/assets.00/social-instagram-icon-2048x2048-xuel0xhc.png",
                         })
                       }}
                     >
                       View Stamp
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        deleteStamp('instagram_data')
+                      }}
+                      style={{ color: "red" }}
+                    >
+                      Remove Stamp
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
