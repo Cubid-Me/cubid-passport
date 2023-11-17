@@ -11,7 +11,7 @@ const sendOtp = (req:any, res:any) => {
   client.verify.v2
     .services(verifySid)
     .verifications.create({ to: phone, channel: 'sms' })
-    .then((verification) => {
+    .then(() => {
       res.send('otp sent');
     });
 };
