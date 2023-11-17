@@ -2,6 +2,7 @@ import React, { useCallback, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
 import axios from "axios"
 
+import useAuth from "@/hooks/useAuth"
 import {
   Sheet,
   SheetContent,
@@ -41,26 +42,38 @@ export const InstagramConnect = ({
   onOpen: () => void
 }) => {
   const searchParams = useSearchParams()
+  const authData = useAuth()
 
-  const fetchData = useCallback(async (code_fixes: string) => {
-    console.log("api called")
-    const {
-      data: { access_token, user_id },
-    } = await axios.post(`https://api.instagram.com/oauth/access_token`, {
-      client_id: "876014740903400",
-      client_secret: `6125fa4a200efebf0d64a0cfdbae6eb3`,
-      grant_type: "authorization_code",
-      redirect_uri: redirectUri,
-      code: code_fixes,
-    })
-    axios
-      .get(
-        `https://graph.instagram.com/${user_id}?fields=id,username&access_token=${access_token}`
-      )
-      .then((data) => {
-        console.log(data)
-      })
-  }, [])
+  const fetchData = useCallback(
+    async (code_fixes: string) => {
+      if (authData?.user?.email) {
+        console.log("api called")
+        const {
+          data: { access_token, user_id },
+        } = await axios.post(`https://api.instagram.com/oauth/access_token`, {
+          client_id: "876014740903400",
+          client_secret: `6125fa4a200efebf0d64a0cfdbae6eb3`,
+          grant_type: "authorization_code",
+          redirect_uri: redirectUri,
+          code: code_fixes,
+        })
+        axios
+          .get(
+            `https://graph.instagram.com/${user_id}?fields=id,username&access_token=${access_token}`
+          )
+          .then(async (data) => {
+            await axios.post("/api/supabase/update", {
+              match: {
+                email: authData?.user?.email,
+              },
+              body: { instagram_data: data },
+              table: "users",
+            })
+          })
+      }
+    },
+    [authData]
+  )
 
   useEffect(() => {
     const code = searchParams?.get("code")
