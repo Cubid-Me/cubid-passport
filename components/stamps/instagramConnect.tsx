@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect } from "react"
-import { useSearchParams } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import axios from "axios"
 
 import useAuth from "@/hooks/useAuth"
@@ -36,34 +36,50 @@ export const InstagramConnect = ({
   open,
   onClose,
   onOpen,
+  fetchStamps,
 }: {
   open: boolean
   onClose: () => void
   onOpen: () => void
+  fetchStamps: () => Promise<void>
 }) => {
   const searchParams = useSearchParams()
   const authData = useAuth()
+  const router = useRouter()
 
   const fetchData = useCallback(
     async (code_fixes: string) => {
-      if (authData?.user?.email) {
+      if (typeof authData?.user?.email === "string") {
         console.log("api called")
-        const { data } = await axios.post("/api/insta-data-fetch", {
+        const {
+          data: { user_id, data },
+        } = await axios.post("/api/insta-data-fetch", {
           code: code_fixes,
           redirectUri: redirectUri,
+          email: authData?.user?.email,
         })
-        console.log(data)
+        if (user_id) {
+          await axios.post("/api/supabase/update", {
+            match: { email: authData?.user?.email },
+            body: { instagram_data: data },
+            table: "users",
+          })
+          router.push("/")
+          fetchStamps()
+        }
       }
     },
-    [authData]
+    [authData?.user?.email, fetchStamps, router]
   )
 
   useEffect(() => {
-    const code = searchParams?.get("code")
-    if (code) {
-      onOpen()
-      fetchData(code)
-    }
+    ;(async () => {
+      const code = searchParams?.get("code")
+
+      if (code) {
+        await fetchData(code)
+      }
+    })()
   }, [onOpen, searchParams, fetchData])
   return (
     <>
