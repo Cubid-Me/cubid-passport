@@ -59,11 +59,6 @@ export const InstagramConnect = ({
         } = await axios.post(
           "https://api.instagram.com/oauth/access_token",
           form,
-          {
-            headers: {
-              ...(form as any)?.getHeaders(),
-            },
-          }
         )
         axios
           .get(
