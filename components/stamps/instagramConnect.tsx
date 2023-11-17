@@ -18,9 +18,9 @@ const InstagramAuth = () => {
   const handleLogin = () => {
     const clientId = "876014740903400"
     console.log(
-      `https://api.instagram.com/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=user_profile,user_media&response_type=code`
+      `https://api.instagram.com/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=id,username&response_type=code`
     )
-    window.location.href = `https://api.instagram.com/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=user_profile,user_media&response_type=code`
+    window.location.href = `https://api.instagram.com/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=id,username&response_type=code`
   }
 
   return (
@@ -59,6 +59,9 @@ export const InstagramConnect = ({
         } = await axios.post(
           "https://api.instagram.com/oauth/access_token",
           form,
+          {
+            headers: { "Content-Type": "multipart/form-data" },
+          }
         )
         axios
           .get(
