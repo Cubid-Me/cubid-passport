@@ -12,7 +12,7 @@ export default async function handler(
   const formData = new FormData()
 
   // Append your data
-  formData.append("client_id", "876014740903400")
+  formData.append("client_id", "328555189879651")
   formData.append("client_secret", "6a567d49fb0d7a3500f12dec14423945")
   formData.append("grant_type", "authorization_code")
   formData.append("redirect_uri", redirectUri) // replace with your value
