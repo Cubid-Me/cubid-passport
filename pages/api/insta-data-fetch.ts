@@ -23,8 +23,12 @@ export default async function handler(
     .post("https://api.instagram.com/oauth/access_token", formData, {
       headers: formData.getHeaders(),
     })
-    .then((response) => {
-      res.send(response.data)
+    .then(async (response) => {
+      const { access_token, user_id } = response.data
+      const { data } = await axios.get(
+        `https://graph.instagram.com/${user_id}?fields=id,username&access_token=${access_token}`
+      )
+      res.send(data)
     })
     .catch((error) => {
       res.send({ error: error, message: "error is here" })
