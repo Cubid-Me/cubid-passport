@@ -1,5 +1,6 @@
-import React, { useEffect } from "react"
+import React, { useCallback, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
+import axios from "axios"
 
 import {
   Sheet,
@@ -10,10 +11,11 @@ import {
 
 import { Button } from "../ui/button"
 
+const redirectUri = "https://cubid-passport.vercel.app"
+
 const InstagramAuth = () => {
   const handleLogin = () => {
     const clientId = "876014740903400"
-    const redirectUri = "https://cubid-passport.vercel.app"
     console.log(
       `https://api.instagram.com/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=user_profile,user_media&response_type=code`
     )
@@ -40,12 +42,33 @@ export const InstagramConnect = ({
 }) => {
   const searchParams = useSearchParams()
 
+  const fetchData = useCallback(async (code_fixes: string) => {
+    console.log("api called")
+    const {
+      data: { access_token, user_id },
+    } = await axios.post(`https://api.instagram.com/oauth/access_token`, {
+      client_id: "876014740903400",
+      client_secret: `6125fa4a200efebf0d64a0cfdbae6eb3`,
+      grant_type: "authorization_code",
+      redirect_uri: redirectUri,
+      code: code_fixes,
+    })
+    axios
+      .get(
+        `https://graph.instagram.com/${user_id}?fields=id,username&access_token=${access_token}`
+      )
+      .then((data) => {
+        console.log(data)
+      })
+  }, [])
+
   useEffect(() => {
     const code = searchParams?.get("code")
     if (code) {
       onOpen()
+      fetchData(code)
     }
-  }, [onOpen, searchParams])
+  }, [onOpen, searchParams, fetchData])
   return (
     <>
       <Sheet
