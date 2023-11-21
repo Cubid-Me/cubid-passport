@@ -61,7 +61,7 @@ export const InstagramConnect = ({
         if (user_id) {
           await axios.post("/api/supabase/update", {
             match: { email: authData?.user?.email },
-            body: { instagram_data: data },
+            body: { instagram_data: { ...data, created_at: Date.now() } },
             table: "users",
           })
           router.push("/")

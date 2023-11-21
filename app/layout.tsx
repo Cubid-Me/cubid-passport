@@ -6,10 +6,13 @@ import { OwnIDInit } from "@ownid/react"
 import { ToastContainer } from "react-toastify"
 
 import "react-toastify/dist/ReactToastify.css"
+import { createWeb3Modal, defaultWagmiConfig } from "@web3modal/wagmi/react"
 import { getAuth, getIdToken, signInWithCustomToken } from "firebase/auth"
 import auth from "firebase/compat/auth"
 import { SessionProvider } from "next-auth/react"
 import { Provider } from "react-redux"
+import { WagmiConfig } from "wagmi"
+import { arbitrum, mainnet } from "wagmi/chains"
 
 import { fontSans } from "@/lib/fonts"
 import { cn } from "@/lib/utils"
@@ -26,50 +29,71 @@ export const wallet = new Wallet({
 
 wallet.startUp()
 
+// 1. Get projectId
+const projectId = "046f59ead3e8ec7acd1db6ba73cd23b7"
+
+// 2. Create wagmiConfig
+const metadata = {
+  name: "Web3Modal",
+  description: "Web3Modal Example",
+  url: "https://web3modal.com",
+  icons: ["https://avatars.githubusercontent.com/u/37784886"],
+}
+
+const chains = [mainnet, arbitrum]
+const wagmiConfig = defaultWagmiConfig({ chains, projectId, metadata })
+createWeb3Modal({ wagmiConfig, projectId, chains })
+
 export default function RootLayout(props: any) {
   const { pageProps } = props
 
   if (process.env.NODE_ENV === "development") {
     return (
-      <SessionProvider session={pageProps?.session}>
-        <OwnIDInit
-          config={{
-            appId: "p0zfroqndmvm30",
-            firebaseAuth: {
-              getAuth,
-              getIdToken,
-              signInWithCustomToken,
-            },
-          }}
-        />
-        <html lang="en" suppressHydrationWarning>
-          <head>
-            <link rel="preconnect" href="https://fonts.googleapis.com" />
-            <link rel="preconnect" href="https://fonts.gstatic.com" />
-            <link
-              href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700;1,800&family=Satisfy&display=swap"
-              rel="stylesheet"
-            />
-          </head>
-          <body
-            className={cn("min-h-screen bg-background !antialiased")}
-            style={{ fontFamily: "'Open Sans', sans-serif" }}
-          >
-            <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-              <div>
-                {!(window as any).location.href.includes("/allow") && (
-                  <SiteHeader />
-                )}
-                <Provider store={store}>
-                  <div>{props.children}</div>
-                  <ToastContainer />
-                </Provider>
-              </div>
-              <TailwindIndicator />
-            </ThemeProvider>
-          </body>
-        </html>
-      </SessionProvider>
+      <WagmiConfig config={wagmiConfig}>
+        <SessionProvider session={pageProps?.session}>
+          <OwnIDInit
+            config={{
+              appId: "p0zfroqndmvm30",
+              firebaseAuth: {
+                getAuth,
+                getIdToken,
+                signInWithCustomToken,
+              },
+            }}
+          />
+          <html lang="en" suppressHydrationWarning>
+            <head>
+              <link rel="preconnect" href="https://fonts.googleapis.com" />
+              <link rel="preconnect" href="https://fonts.gstatic.com" />
+              <link
+                href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700;1,800&family=Satisfy&display=swap"
+                rel="stylesheet"
+              />
+            </head>
+            <body
+              className={cn("min-h-screen bg-background !antialiased")}
+              style={{ fontFamily: "'Open Sans', sans-serif" }}
+            >
+              <ThemeProvider
+                attribute="class"
+                defaultTheme="system"
+                enableSystem
+              >
+                <div>
+                  {!(window as any).location.href.includes("/allow") && (
+                    <SiteHeader />
+                  )}
+                  <Provider store={store}>
+                    <div>{props.children}</div>
+                    <ToastContainer />
+                  </Provider>
+                </div>
+                <TailwindIndicator />
+              </ThemeProvider>
+            </body>
+          </html>
+        </SessionProvider>
+      </WagmiConfig>
     )
   }
 
@@ -77,45 +101,51 @@ export default function RootLayout(props: any) {
     // Client-side-only code
 
     return (
-      <SessionProvider session={pageProps?.session}>
-        <OwnIDInit
-          config={{
-            appId: "p0zfroqndmvm30",
-            firebaseAuth: {
-              getAuth,
-              getIdToken,
-              signInWithCustomToken,
-            },
-          }}
-        />
-        <html lang="en" suppressHydrationWarning>
-          <head>
-            <link rel="preconnect" href="https://fonts.googleapis.com" />
-            <link rel="preconnect" href="https://fonts.gstatic.com" />
-            <link
-              href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700;1,800&family=Satisfy&display=swap"
-              rel="stylesheet"
-            />
-          </head>
-          <body
-            className={cn("min-h-screen bg-background !antialiased")}
-            style={{ fontFamily: "'Open Sans', sans-serif" }}
-          >
-            <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-              <div>
-                {!(window as any).location.href.includes("/allow") && (
-                  <SiteHeader />
-                )}
-                <Provider store={store}>
-                  <div>{props.children}</div>
-                  <ToastContainer />
-                </Provider>
-              </div>
-              <TailwindIndicator />
-            </ThemeProvider>
-          </body>
-        </html>
-      </SessionProvider>
+      <WagmiConfig config={wagmiConfig}>
+        <SessionProvider session={pageProps?.session}>
+          <OwnIDInit
+            config={{
+              appId: "p0zfroqndmvm30",
+              firebaseAuth: {
+                getAuth,
+                getIdToken,
+                signInWithCustomToken,
+              },
+            }}
+          />
+          <html lang="en" suppressHydrationWarning>
+            <head>
+              <link rel="preconnect" href="https://fonts.googleapis.com" />
+              <link rel="preconnect" href="https://fonts.gstatic.com" />
+              <link
+                href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700;1,800&family=Satisfy&display=swap"
+                rel="stylesheet"
+              />
+            </head>
+            <body
+              className={cn("min-h-screen bg-background !antialiased")}
+              style={{ fontFamily: "'Open Sans', sans-serif" }}
+            >
+              <ThemeProvider
+                attribute="class"
+                defaultTheme="system"
+                enableSystem
+              >
+                <div>
+                  {!(window as any).location.href.includes("/allow") && (
+                    <SiteHeader />
+                  )}
+                  <Provider store={store}>
+                    <div>{props.children}</div>
+                    <ToastContainer />
+                  </Provider>
+                </div>
+                <TailwindIndicator />
+              </ThemeProvider>
+            </body>
+          </html>
+        </SessionProvider>
+      </WagmiConfig>
     )
   } else {
     return <></>

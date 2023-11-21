@@ -17,11 +17,24 @@ export const Authenticated = (props: any) => {
     }
 
     if (!user) {
+      if (window.location.href.includes("allow")) {
+        localStorage.setItem(
+          "allow_url",
+          window.location.href.replace(`${window.location.origin}/allow?`, "")
+        )
+      }
       router.push("/login")
     } else {
       setVerified(true)
     }
   }, [loading, router, user])
+
+  useEffect(() => {
+    if (localStorage.getItem("allow_url")) {
+      router.push(`/allow?=${localStorage.getItem("allow_url")}`);
+      localStorage.removeItem("allow_url");
+    }
+  }, [router]);
 
   if (!verified) {
     return null

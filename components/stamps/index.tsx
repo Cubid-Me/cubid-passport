@@ -792,10 +792,11 @@ export const Stamps = () => {
                   <DropdownMenuContent>
                     <DropdownMenuItem
                       onClick={() => {
-                        console.log()
                         setStampVerified({
                           displayName: (userState as any)?.instagram_data
                             ?.username,
+                          creationTime: (userState as any)?.instagram_data
+                            ?.creation_time,
                           image:
                             "https://static-00.iconduck.com/assets.00/social-instagram-icon-2048x2048-xuel0xhc.png",
                         })
@@ -805,7 +806,7 @@ export const Stamps = () => {
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() => {
-                        deleteStamp('instagram_data')
+                        deleteStamp("instagram_data")
                       }}
                       style={{ color: "red" }}
                     >
@@ -1008,7 +1009,3 @@ export const Stamps = () => {
     </div>
   )
 }
-
-//allow multiple account - future
-// one metamask integration - proof of humanity
-//brightid

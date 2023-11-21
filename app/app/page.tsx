@@ -2,32 +2,16 @@
 
 import { useState } from "react"
 import { logout } from "@/redux/userSlice"
-import { createWeb3Modal, defaultWagmiConfig } from "@web3modal/wagmi/react"
 import { About } from "components/about"
 import { Authenticated } from "components/auth/authenticated"
 import { Profile } from "components/profile"
 import { Stamps } from "components/stamps"
 import { useDispatch } from "react-redux"
-import { WagmiConfig } from "wagmi"
-import { arbitrum, mainnet } from "wagmi/chains"
+
 
 import { buttonVariants } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
-// 1. Get projectId
-const projectId = "046f59ead3e8ec7acd1db6ba73cd23b7"
-
-// 2. Create wagmiConfig
-const metadata = {
-  name: "Web3Modal",
-  description: "Web3Modal Example",
-  url: "https://web3modal.com",
-  icons: ["https://avatars.githubusercontent.com/u/37784886"],
-}
-
-const chains = [mainnet, arbitrum]
-const wagmiConfig = defaultWagmiConfig({ chains, projectId, metadata })
-createWeb3Modal({ wagmiConfig, projectId, chains })
 
 export default function IndexPage() {
   const dispatch = useDispatch()
@@ -49,7 +33,6 @@ export default function IndexPage() {
   )
 
   return (
-    <WagmiConfig config={wagmiConfig}>
       <Authenticated>
         <Tabs
           value={tab}
@@ -127,6 +110,5 @@ export default function IndexPage() {
           </TabsList>
         </Tabs>
       </Authenticated>
-    </WagmiConfig>
   )
 }

@@ -14,9 +14,11 @@ import {
 
 export const PhoneNumberConnect = ({
   open,
+  fetchStamps,
   onClose,
 }: {
   open: boolean
+  fetchStamps:()=>void
   onClose: () => void
 }) => {
   const [phoneInput, setPhoneInput] = React.useState("")
@@ -41,6 +43,7 @@ export const PhoneNumberConnect = ({
       toast.success("Otp Verified")
       setOtpSent(true)
       onClose()
+      fetchStamps()
       await axios.post("/api/supabase/update", {
         body: {
           phone: phoneInput,
