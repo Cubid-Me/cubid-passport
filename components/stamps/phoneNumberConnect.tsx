@@ -43,7 +43,7 @@ export const PhoneNumberConnect = ({
       toast.success("Otp Verified")
       setOtpSent(true)
       onClose()
-      fetchStamps()
+     
       await axios.post("/api/supabase/update", {
         body: {
           phone: phoneInput,
@@ -53,6 +53,7 @@ export const PhoneNumberConnect = ({
           email: email,
         },
       })
+      fetchStamps()
       // fetchSocial()
     }
   }

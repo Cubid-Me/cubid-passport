@@ -20,7 +20,9 @@ const dataToTransform = (allStamps: string[], userState: {}) => {
     })
   })
   keysToExtract.map((item) => {
-    ;(dataToSend as any)[item] = (userState as any)[item]
+    if ((userState as any)[item]) {
+      ;(dataToSend as any)[item] = (userState as any)[item]
+    }
   })
   return dataToSend
 }
@@ -33,22 +35,27 @@ const AllowPage = () => {
   const [dataToShare, setDataToShare] = useState({})
   const authData = useAuth()
   const email = authData?.user?.email
-
   const adminuid = searchParams.get("adminuid")
   const stamps = searchParams.get("stamps")
   const allStamps = stamps?.split(",")
   const urltoreturn = searchParams.get("href")
 
-  useEffect(() => {
-    if (allStamps && Object.keys(userState).length !== 0) {
-      setDataToShare(
-        dataToTransform(
-          allStamps.map((item: string) => item?.split("_")[0]),
-          userState
-        )
-      )
-    }
-  }, [userState, allStamps])
+  // useEffect(() => {
+  //   console.log('this ')
+  //   if (allStamps && Object.keys(userState).length !== 0) {
+  //     setDataToShare(
+  //       dataToTransform(
+  //         allStamps.map((item: string) => item?.split("_")[0]),
+  //         userState
+  //       )
+  //     )
+  //   }
+  // }, [userState, allStamps])
+
+  const allDataToShare = dataToTransform(
+    allStamps.map((item: string) => item?.split("_")[0]),
+    userState
+  )
 
   const fetchStamps = useCallback(async () => {
     if (email) {
@@ -86,11 +93,13 @@ const AllowPage = () => {
   const requiredStamps = allStamps.filter(
     (item: string) => !item.includes("optional")
   )
-
   const requiredDataAvailable =
     [
       ...requiredStamps.filter((item: any) => {
-        return Boolean((userState as any)?.[item as any])
+        const isKeyAvailable = Object.keys(allDataToShare).filter((_) =>
+          _.includes(item)
+        )
+        return isKeyAvailable.length !== 0
       }),
     ].length === requiredStamps.length
 
@@ -145,7 +154,7 @@ const AllowPage = () => {
                         </button>
                         <button
                           onClick={() => {
-                            const jsonString = JSON.stringify(userState)
+                            const jsonString = JSON.stringify(allDataToShare)
                             const base64Encoded = btoa(jsonString)
                             window.location.href = `${urltoreturn}?data=${base64Encoded}`
                           }}

@@ -332,8 +332,6 @@ export const StampFlow = ({ stampsToAdd, fetchAllStamps }: any) => {
     }
   }, [email, fetchStamps])
 
-  console.log({ wallet, userState })
-
   useEffect(() => {
     fetchNearWallet()
   }, [fetchNearWallet])
@@ -377,7 +375,11 @@ export const StampFlow = ({ stampsToAdd, fetchAllStamps }: any) => {
               className="mb-1 h-10 w-10 rounded-xl"
             />
             <CardTitle>Instagram</CardTitle>
-            <CardDescription>Connect your instagram</CardDescription>
+            <CardDescription>
+              {Boolean((userState as any)?.instagram_data)
+                ? "Instagram Connected"
+                : "Connect your instagram"}
+            </CardDescription>
           </CardHeader>
           <CardContent>
             {Boolean((userState as any)?.instagram_data) ? (
@@ -430,6 +432,13 @@ export const StampFlow = ({ stampsToAdd, fetchAllStamps }: any) => {
               <Button
                 onClick={() => {
                   setInstagramShow(true)
+                  localStorage.setItem(
+                    "allow_url",
+                    window.location.href.replace(
+                      `${window.location.origin}/allow?`,
+                      ""
+                    )
+                  )
                 }}
                 variant="secondary"
                 style={{ width: "200px" }}
@@ -527,6 +536,13 @@ export const StampFlow = ({ stampsToAdd, fetchAllStamps }: any) => {
               <Button
                 onClick={() => {
                   signInWithSocial(supabaseData.supabase_key)
+                  localStorage.setItem(
+                    "allow_url",
+                    window.location.href.replace(
+                      `${window.location.origin}/allow?`,
+                      ""
+                    )
+                  )
                 }}
                 variant="outline"
               >
@@ -545,7 +561,7 @@ export const StampFlow = ({ stampsToAdd, fetchAllStamps }: any) => {
                 "https://images.unsplash.com/photo-1530319067432-f2a729c03db5?auto=format&fit=crop&q=80&w=2889&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
               }
               alt="Image"
-              className="mb-1 h-10 w-10 object-cover rounded-md"
+              className="mb-1 h-10 w-10 rounded-md object-cover"
             />
             <CardTitle>Phone Number</CardTitle>
             {Boolean((userState as any)?.phoneNumber) ? (
@@ -629,7 +645,8 @@ export const StampFlow = ({ stampsToAdd, fetchAllStamps }: any) => {
 
   return (
     <div className="p-3 pb-16">
-      <h1 className="mb-2 text-3xl font-semibold text-white">Connect Stamps</h1>
+      <h1 className="mb-1 text-3xl font-semibold text-white">Connect Stamps</h1>
+      <p className="text-md mb-4 font-medium">There are some stamps that are required to authorize this app , please connect them in order to proceed</p>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
         {stampsToRender.map((item) => item)}
         <BrightIdConnectSheet
