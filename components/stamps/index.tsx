@@ -995,6 +995,7 @@ export const Stamps = () => {
         </Sheet>
         <PhoneNumberConnect
           open={phonenumber}
+          fetchStamps={fetchStamps}
           onClose={() => {
             setPhonenumber(false)
           }}
