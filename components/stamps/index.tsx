@@ -224,7 +224,9 @@ export const Stamps = () => {
           const providerKey =
             allAuthType[
               app_metadata?.providers?.[1]
-                ? app_metadata?.providers?.[1]
+                ? app_metadata?.provider === "google"
+                  ? app_metadata?.provider
+                  : app_metadata?.providers?.[1]
                 : app_metadata?.provider
             ]
           const dataToSet = {
@@ -328,8 +330,6 @@ export const Stamps = () => {
       }
     }
   }, [email, fetchStamps])
-
-  console.log({ wallet, userState })
 
   useEffect(() => {
     fetchNearWallet()
@@ -766,7 +766,11 @@ export const Stamps = () => {
               className="mb-1 h-10 w-10 rounded-xl"
             />
             <CardTitle>Instagram</CardTitle>
-            <CardDescription>Connect your instagram</CardDescription>
+            <CardDescription>
+              {Boolean((userState as any)?.instagram_data)
+                ? "Instagram Connected"
+                : "Connect your instagram"}
+            </CardDescription>
           </CardHeader>
           <CardContent>
             {Boolean((userState as any)?.instagram_data) ? (
@@ -792,10 +796,11 @@ export const Stamps = () => {
                   <DropdownMenuContent>
                     <DropdownMenuItem
                       onClick={() => {
-                        console.log()
                         setStampVerified({
                           displayName: (userState as any)?.instagram_data
                             ?.username,
+                          creationTime: (userState as any)?.instagram_data
+                            ?.creation_time,
                           image:
                             "https://static-00.iconduck.com/assets.00/social-instagram-icon-2048x2048-xuel0xhc.png",
                         })
@@ -805,7 +810,7 @@ export const Stamps = () => {
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() => {
-                        deleteStamp('instagram_data')
+                        deleteStamp("instagram_data")
                       }}
                       style={{ color: "red" }}
                     >
@@ -990,6 +995,7 @@ export const Stamps = () => {
         </Sheet>
         <PhoneNumberConnect
           open={phonenumber}
+          fetchStamps={fetchStamps}
           onClose={() => {
             setPhonenumber(false)
           }}
@@ -1008,7 +1014,3 @@ export const Stamps = () => {
     </div>
   )
 }
-
-//allow multiple account - future
-// one metamask integration - proof of humanity
-//brightid
