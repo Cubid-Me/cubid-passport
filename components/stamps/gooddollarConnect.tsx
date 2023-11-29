@@ -38,10 +38,6 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
-import { wallet } from "@/app/layout"
-
-import { supabase } from "../../lib/supabase"
-import { BrightIdConnectSheet } from "./brightIdConnectSheet"
 
 const nodeUrl = "https://forno.celo.org"
 const goodDollarAddress = "0xC361A6E67822a0EDc17D899227dd9FC50BD62F42" // replace with GoodDollar contract address
@@ -55,7 +51,7 @@ const goodDollarContract = new web3.eth.Contract(
   goodDollarAddress
 )
 
-export const GooddollarConnect = () => {
+export const GooddollarConnect = ({ isExistingStamp, fetchStamps }: any) => {
   const [gooddollarConnect, setGooddollarConnect] = useState<any>(false)
   const [gooddolarOpen, setGooddollarOpen] = useState(false)
   const [stepState, setStepState] = useState(0)
@@ -125,50 +121,34 @@ export const GooddollarConnect = () => {
       if (params[1]?.includes("gooddollardata") && authData?.user?.email) {
         const jsonData = params[1]?.replace("gooddollardata=", "")
         const data = JSON.parse(decodeURIComponent(jsonData).replace("/", ""))
-
-        await axios.post("/api/supabase/insert", {
-          body: {
-            email: authData?.user?.email,
-            "wallet-address": data?.walletAddress?.value,
-            wallet_data: data,
-          },
-          table: "wallet_details",
-        })
-        const {
-          data: { data: supabaseData },
-        } = await axios.post("/api/supabase/select", {
-          match: {
-            email: authData?.user?.email,
-            identifier: data?.walletAddress?.value,
-          },
-          table: "whitelist",
-        })
-        if (!supabaseData[0]) {
-          await axios.post("/api/supabase/insert", {
-            table: "whitelist",
-            body: {
-              email: authData?.user?.email,
-              identifier: data?.walletAddress?.value,
-            },
-          })
-        } else {
-          if (supabaseData?.[0]?.email !== authData?.user?.email) {
-            await axios.post("/api/supabase/insert", {
-              table: "blacklist",
-              body: {
-                email: authData?.user?.email,
-                identifier: data?.walletAddress?.value,
-              },
-            })
-          }
+        const gooddollar_data = {
+          email: authData?.user?.email,
+          "wallet-address": data?.walletAddress?.value,
+          wallet_data: data,
         }
+        const dbUser = await authData.getUser()
+        const dataToSet = {
+          created_by_user_id: dbUser.id,
+          unique_data: btoa(JSON.stringify(gooddollar_data)),
+          status: "Whitelisted",
+          user_id_and_uniquevalue: `${dbUser.id}-${btoa(
+            JSON.stringify(gooddollar_data)
+          )}`,
+          type: 12,
+        }
+        await axios.post("/api/supabase/insert", {
+          body: dataToSet,
+          table: "stamps",
+        })
+
+        fetchStamps()
         toast.success("Successfully authenticated with gooddollar data")
         setTimeout(() => {
           window.history.replaceState(null, "", "/app")
         }, 1500)
       }
     })()
-  }, [authData?.user?.email, gooddollarData])
+  }, [authData?.user?.email, gooddollarData, fetchStamps,authData])
 
   const fetchWalletDetails = useCallback(async (email: string) => {
     const {
@@ -344,6 +324,8 @@ export const GooddollarConnect = () => {
     ),
   }
 
+  console.log({isExistingStamp})
+
   return (
     <>
       <Card>
@@ -359,7 +341,7 @@ export const GooddollarConnect = () => {
           <CardDescription>Connect your web3 gooddollar</CardDescription>
         </CardHeader>
         <CardContent>
-          {gooddollarConnect ? (
+          {isExistingStamp ? (
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <Button>Verified Stamp</Button>
               <DropdownMenu>
@@ -425,9 +407,8 @@ export const GooddollarConnect = () => {
             <SheetTitle className="text-3xl">
               Gooddollar Wallet Connect
             </SheetTitle>
-            {gooddollarConnect ? (
+            {isExistingStamp ? (
               <>
-                <p></p>
               </>
             ) : (
               <div>{steps[stepState]}</div>

@@ -50,6 +50,7 @@ export const PhoneNumberConnect = ({
         created_by_user_id: dbUser.id,
         unique_data: btoa(phoneInput),
         status: "Whitelisted",
+        user_id_and_uniquevalue:`${dbUser.id}-${btoa(phoneInput)}`,
         type: stampId,
       };
       await axios.post("/api/supabase/insert", {

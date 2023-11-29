@@ -47,7 +47,7 @@ const socialDataToMap = [
   {
     local_key: "facebook_data",
     supabase_key: "facebook",
-    stampTypeId: "1",
+    stampTypeId: 1,
     title: "Facebook",
     image:
       "https://play-lh.googleusercontent.com/ccWDU4A7fX1R24v-vvT480ySh26AYp97g1VrIB_FIdjRcuQB2JP2WdY7h_wVVAeSpg",
@@ -56,7 +56,7 @@ const socialDataToMap = [
   {
     local_key: "github_data",
     supabase_key: "github",
-    stampTypeId: "2",
+    stampTypeId: 2,
     image:
       "https://play-lh.googleusercontent.com/PCpXdqvUWfCW1mXhH1Y_98yBpgsWxuTSTofy3NGMo9yBTATDyzVkqU580bfSln50bFU",
     title: "Github",
@@ -65,7 +65,7 @@ const socialDataToMap = [
   {
     local_key: "google_data",
     supabase_key: "google",
-    stampTypeId: "3",
+    stampTypeId: 3,
     image:
       "https://play-lh.googleusercontent.com/aFWiT2lTa9CYBpyPjfgfNHd0r5puwKRGj2rHpdPTNrz2N9LXgN_MbLjePd1OTc0E8Rl1=w240-h480-rw",
     title: "Google",
@@ -74,7 +74,7 @@ const socialDataToMap = [
   {
     local_key: "twitter_data",
     supabase_key: "twitter",
-    stampTypeId: "4",
+    stampTypeId: 4,
     image:
       "data:image/png;base64,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",
     title: "Twitter",
@@ -83,7 +83,7 @@ const socialDataToMap = [
   {
     local_key: "discord_data",
     supabase_key: "discord",
-    stampTypeId: "5",
+    stampTypeId: 5,
     image:
       "https://images-eds-ssl.xboxlive.com/image?url=Q_rwcVSTCIytJ0KOzcjWTYl.n38D8jlKWXJx7NRJmQKBAEDCgtTAQ0JS02UoaiwRCHTTX1RAopljdoYpOaNfVf5nBNvbwGfyR5n4DAs0DsOwxSO9puiT_GgKqinHT8HsW8VYeiiuU1IG3jY69EhnsQ--&format=source",
     title: "Discord",
@@ -265,6 +265,9 @@ export const Stamps = () => {
             created_by_user_id: dbUser.id,
             unique_data: btoa(JSON.stringify(user_metadata)),
             status: "Whitelisted",
+            user_id_and_uniquevalue: `${dbUser.id}-${btoa(
+              JSON.stringify(user_metadata)
+            )}`,
             type: stampId,
           }
           console.log("insert happened")
@@ -300,6 +303,9 @@ export const Stamps = () => {
           created_by_user_id: dbUser.id,
           unique_data: btoa((wallet as any).accountId),
           status: "Whitelisted",
+          user_id_and_uniquevalue: `${dbUser.id}-${btoa(
+            (wallet as any).accountId
+          )}`,
           type: stampId,
         }
         await axios.post("/api/supabase/insert", {
@@ -321,16 +327,15 @@ export const Stamps = () => {
     fetchNearWallet()
   }, [fetchNearWallet])
 
-  const deleteStamp = async (key_for_db: string) => {
-    const data = await axios.post("/api/supabase/update", {
-      match: { email },
-      body: {
-        [key_for_db]: null,
-      },
-      table: "users",
+  const deleteStamp = async (key_for_db: number) => {
+    const supabaseUser = await getUser()
+    const data = await axios.post("/api/supabase/delete", {
+      match: { type: key_for_db, created_by_user_id: supabaseUser?.id },
+      table: "stamps",
     })
     toast.success("Stamp removed successfully")
     fetchUserData()
+    fetchStampData()
   }
 
   useEffect(() => {
@@ -423,7 +428,7 @@ export const Stamps = () => {
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         onClick={() => {
-                          deleteStamp(item?.local_key)
+                          deleteStamp(item?.stampTypeId)
                         }}
                         style={{ color: "red" }}
                       >
@@ -580,7 +585,7 @@ export const Stamps = () => {
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       onClick={() => {
-                        deleteStamp("iah")
+                        deleteStamp(stampsWithId["near-wallet"])
                       }}
                       style={{ color: "red" }}
                     >
@@ -800,7 +805,7 @@ export const Stamps = () => {
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() => {
-                        deleteStamp("instagram_data")
+                        deleteStamp(stampsWithId.instagram)
                       }}
                       style={{ color: "red" }}
                     >
@@ -906,7 +911,13 @@ export const Stamps = () => {
             )}
           </CardContent>
         </Card>
-        <GooddollarConnect />
+        <GooddollarConnect
+          fetchStamps={() => {
+            fetchStampData()
+            fetchUserData()
+          }}
+          isExistingStamp={doesStampExist(stampsWithId.gooddollar)}
+        />
         <BrightIdConnectSheet
           modalOpen={brightIdSheetOpen}
           email={email}

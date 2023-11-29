@@ -67,6 +67,7 @@ export const InstagramConnect = ({
             created_by_user_id: dbUser.id,
             unique_data: btoa(JSON.stringify({ ...data, created_at: Date.now() })),
             status: "Whitelisted",
+            user_id_and_uniquevalue:`${dbUser.id}-${btoa(JSON.stringify({ ...data, created_at: Date.now() }))}`,
             type: stampId,
           };
           await axios.post("/api/supabase/insert", {
