@@ -11,6 +11,8 @@ import {
 } from "@/components/ui/sheet"
 
 import { Button } from "../ui/button"
+import { wallet } from "@/app/layout"
+import { stampsWithId } from "."
 
 const redirectUri = "https://cubid-passport.vercel.app/app/"
 
@@ -41,7 +43,7 @@ export const InstagramConnect = ({
   open: boolean
   onClose: () => void
   onOpen: () => void
-  fetchStamps: () => Promise<void>
+  fetchStamps: () => void
 }) => {
   const searchParams = useSearchParams()
   const authData = useAuth()
@@ -59,17 +61,24 @@ export const InstagramConnect = ({
           email: authData?.user?.email,
         })
         if (user_id) {
-          await axios.post("/api/supabase/update", {
-            match: { email: authData?.user?.email },
-            body: { instagram_data: { ...data, created_at: Date.now() } },
-            table: "users",
+          const stampId = (stampsWithId as any)['instagram']
+          const dbUser = await authData.getUser()
+          const dataToSet = {
+            created_by_user_id: dbUser.id,
+            unique_data: btoa(JSON.stringify({ ...data, created_at: Date.now() })),
+            status: "Whitelisted",
+            type: stampId,
+          };
+          await axios.post("/api/supabase/insert", {
+            table: "stamps",
+            body: dataToSet,
           })
           router.push("/")
           fetchStamps()
         }
       }
     },
-    [authData?.user?.email, fetchStamps, router]
+    [authData, fetchStamps, router]
   )
 
   useEffect(() => {

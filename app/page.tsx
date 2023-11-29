@@ -1,7 +1,6 @@
 import Link from "next/link"
 import { Guest } from "components/auth/guest"
 
-import { siteConfig } from "@/config/site"
 import { buttonVariants } from "@/components/ui/button"
 
 export default function IndexPage() {

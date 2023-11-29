@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import axios from "axios"
 import firebase from "lib/firebase"
 import { useDispatch } from "react-redux"
 
@@ -8,6 +9,7 @@ export const useAuth = () => {
   const [loading, setLoading] = useState(true)
   const dispatch = useDispatch()
   const [user, setUser] = useState<any>(null)
+  const [supabaseUser, setSupabaseUser] = useState<any>(null)
 
   useEffect(() => {
     const unsubscribe = firebase.auth().onAuthStateChanged((user) => {
@@ -30,7 +32,37 @@ export const useAuth = () => {
     return () => unsubscribe()
   }, [dispatch])
 
-  return { loading, user }
+  useEffect(() => {
+    ;(async () => {
+      if (user?.email) {
+        const {
+          data: { data: dbData },
+        } = await axios.post("/api/supabase/select", {
+          table: "users",
+          match: {
+            email: user?.email,
+          },
+        })
+        setSupabaseUser(dbData?.[0])
+      }
+    })()
+  }, [user])
+
+  const getUser = async () => {
+    if (user?.email) {
+      const {
+        data: { data: dbData },
+      } = await axios.post("/api/supabase/select", {
+        table: "users",
+        match: {
+          email: user?.email,
+        },
+      })
+      return dbData?.[0]
+    }
+  }
+
+  return { loading, user, supabaseUser,getUser }
 }
 
 export default useAuth

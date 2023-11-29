@@ -5,6 +5,7 @@ import { useAccount } from "wagmi"
 export const useStamps = () => {
   const [stamps, setStamps] = useState([])
   const { address } = useAccount()
+  console.log({address})
 
   const fetchAccount = useCallback(async () => {
     if (address) {

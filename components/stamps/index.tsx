@@ -11,9 +11,9 @@ import { toast } from "react-toastify"
 import { useAccount } from "wagmi"
 import Web3 from "web3"
 
-import { pohABI } from "../../lib/contract_abi"
 import { useStamps } from "./../../hooks/useStamps"
 import "@near-wallet-selector/modal-ui/styles.css"
+import useAuth from "@/hooks/useAuth"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -47,6 +47,7 @@ const socialDataToMap = [
   {
     local_key: "facebook_data",
     supabase_key: "facebook",
+    stampTypeId: "1",
     title: "Facebook",
     image:
       "https://play-lh.googleusercontent.com/ccWDU4A7fX1R24v-vvT480ySh26AYp97g1VrIB_FIdjRcuQB2JP2WdY7h_wVVAeSpg",
@@ -55,6 +56,7 @@ const socialDataToMap = [
   {
     local_key: "github_data",
     supabase_key: "github",
+    stampTypeId: "2",
     image:
       "https://play-lh.googleusercontent.com/PCpXdqvUWfCW1mXhH1Y_98yBpgsWxuTSTofy3NGMo9yBTATDyzVkqU580bfSln50bFU",
     title: "Github",
@@ -63,6 +65,7 @@ const socialDataToMap = [
   {
     local_key: "google_data",
     supabase_key: "google",
+    stampTypeId: "3",
     image:
       "https://play-lh.googleusercontent.com/aFWiT2lTa9CYBpyPjfgfNHd0r5puwKRGj2rHpdPTNrz2N9LXgN_MbLjePd1OTc0E8Rl1=w240-h480-rw",
     title: "Google",
@@ -71,6 +74,7 @@ const socialDataToMap = [
   {
     local_key: "twitter_data",
     supabase_key: "twitter",
+    stampTypeId: "4",
     image:
       "data:image/png;base64,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",
     title: "Twitter",
@@ -79,6 +83,7 @@ const socialDataToMap = [
   {
     local_key: "discord_data",
     supabase_key: "discord",
+    stampTypeId: "5",
     image:
       "https://images-eds-ssl.xboxlive.com/image?url=Q_rwcVSTCIytJ0KOzcjWTYl.n38D8jlKWXJx7NRJmQKBAEDCgtTAQ0JS02UoaiwRCHTTX1RAopljdoYpOaNfVf5nBNvbwGfyR5n4DAs0DsOwxSO9puiT_GgKqinHT8HsW8VYeiiuU1IG3jY69EhnsQ--&format=source",
     title: "Discord",
@@ -86,9 +91,26 @@ const socialDataToMap = [
   },
 ]
 
+export const stampsWithId = {
+  facebook: 1,
+  github: 2,
+  google: 3,
+  twitter: 4,
+  discord: 5,
+  poh: 6,
+  "near-wallet": 7,
+  brightid: 8,
+  gitcoin: 9,
+  instagram: 10,
+  phone: 11,
+  gooddollar: 12,
+}
+
 export const Stamps = () => {
   const signInWithSocial = async (socialName: any) => {
     await supabase.auth.signOut()
+    console.log(socialName)
+    localStorage.setItem("socialName", socialName)
     const { data: d, error: e } = await supabase.auth.signInWithOAuth({
       provider: socialName,
       options: {
@@ -104,12 +126,39 @@ export const Stamps = () => {
   const [phonenumber, setPhonenumber] = useState<any>(false)
   const [gitcoinStamps, setGitcoinStamps] = useState(false)
   const [instagramShow, setInstagramShow] = useState(false)
+  const [stampCategories, setStampCategories] = useState([])
+  const [allStamps, setAllStamps] = useState([])
   const {
     user: { email },
   }: any = useSelector((state) => state)
   const { stamps, stampCollector } = useStamps()
+  const { supabaseUser, getUser } = useAuth()
 
-  const fetchStamps = useCallback(async () => {
+  const fetchStampData = useCallback(async () => {
+    const {
+      data: { data },
+    } = await axios.post("/api/supabase/select", {
+      table: "stampcategories",
+    })
+    setStampCategories(data)
+    if (supabaseUser) {
+      const {
+        data: { data: dbData },
+      } = await axios.post(`/api/supabase/select`, {
+        table: "stamps",
+        match: {
+          created_by_user_id: supabaseUser?.id,
+        },
+      })
+      setAllStamps(dbData)
+    }
+  }, [supabaseUser])
+
+  useEffect(() => {
+    fetchStampData()
+  }, [fetchStampData])
+
+  const fetchUserData = useCallback(async () => {
     if (email) {
       const {
         data: { data: userData },
@@ -182,7 +231,7 @@ export const Stamps = () => {
                   poh_IsRegistered: true,
                 },
               })
-              fetchStamps()
+              fetchUserData()
               setIsPohVerified(true)
             } else {
               setIsPohVerified(false)
@@ -193,7 +242,7 @@ export const Stamps = () => {
           })
       }
     },
-    [email, fetchStamps, userState]
+    [email, fetchUserData, userState]
   )
   const { address } = useAccount()
 
@@ -206,73 +255,29 @@ export const Stamps = () => {
   useEffect(() => {
     if (email) {
       supabase.auth.onAuthStateChange(async (event, session) => {
-        const allAuthType: any = {
-          github: "github_data",
-          facebook: "facebook_data",
-          google: "google_data",
-          twitter: "twitter_data",
-          discord: "discord_data",
-        }
-        console.log(session, "session")
         if (session?.user) {
-          const {
-            app_metadata,
-            user_metadata,
-            email: social_email,
-            phone,
-          }: any = session?.user
-          const providerKey =
-            allAuthType[
-              app_metadata?.providers?.[1]
-                ? app_metadata?.provider === "google"
-                  ? app_metadata?.provider
-                  : app_metadata?.providers?.[1]
-                : app_metadata?.provider
-            ]
+          const { user_metadata }: any = session?.user
+          const providerKey = localStorage.getItem("socialName") ?? ""
+          const stampId = (stampsWithId as any)[providerKey]
+          const dbUser = await getUser()
+          console.log(dbUser)
           const dataToSet = {
-            [providerKey]: {
-              email: social_email,
-              displayName: user_metadata.full_name,
-              phoneNumber: phone,
-              photoURL: user_metadata.avatar_url,
-              creationTime: Date.now(),
-            },
+            created_by_user_id: dbUser.id,
+            unique_data: btoa(JSON.stringify(user_metadata)),
+            status: "Whitelisted",
+            type: stampId,
           }
-          await axios.post("/api/supabase/update", {
-            table: "users",
+          console.log("insert happened")
+          await axios.post("/api/supabase/insert", {
+            table: "stamps",
             body: dataToSet,
-            match: { email },
           })
-          const {
-            data: { data: supabaseData },
-          } = await axios.post("/api/supabase/select", {
-            match: { email, identifier: social_email },
-            table: "whitelist",
-          })
-          if (!supabaseData[0]) {
-            await axios.post("/api/supabase/insert", {
-              table: "whitelist",
-              body: {
-                email: email,
-                identifier: social_email,
-              },
-            })
-          } else {
-            await axios.post("/api/supabase/insert", {
-              table: "blacklist",
-              body: {
-                email: email,
-                identifier: social_email,
-              },
-            })
-          }
-
-          fetchStamps()
+          fetchStampData()
           supabase.auth.signOut()
         }
       })
     }
-  }, [email, fetchStamps, userState])
+  }, [email, fetchStampData, getUser, supabaseUser, userState])
 
   useEffect(() => {
     fetchBrightIdData()
@@ -289,39 +294,20 @@ export const Stamps = () => {
         },
       })
       if (dataCategory?.[0]?.[1]?.[0]) {
-        const {
-          data: { data: supabaseData },
-        } = await axios.post("/api/supabase/select", {
-          match: { email, identifier: (wallet as any).accountId },
-          table: "whitelist",
-        })
-        if (!supabaseData[0]) {
-          await axios.post("/api/supabase/insert", {
-            table: "whitelist",
-            body: {
-              email: email,
-              identifier: (wallet as any).accountId,
-            },
-          })
-        } else {
-          if (supabaseData?.[0]?.email !== email) {
-            await axios.post("/api/supabase/insert", {
-              table: "blacklist",
-              body: {
-                email: email,
-                identifier: (wallet as any).accountId,
-              },
-            })
-          }
+        const stampId = (stampsWithId as any)["near-wallet"]
+        const dbUser = await getUser()
+        const dataToSet = {
+          created_by_user_id: dbUser.id,
+          unique_data: btoa((wallet as any).accountId),
+          status: "Whitelisted",
+          type: stampId,
         }
-        await axios.post("/api/supabase/update", {
-          body: {
-            iah: (wallet as any).accountId,
-          },
-          table: "users",
-          match: { email },
+        await axios.post("/api/supabase/insert", {
+          table: "stamps",
+          body: dataToSet,
         })
-        fetchStamps()
+        fetchUserData()
+        fetchStampData()
         wallet.signOut()
       } else {
         toast.error(
@@ -329,7 +315,7 @@ export const Stamps = () => {
         )
       }
     }
-  }, [email, fetchStamps])
+  }, [email, fetchStampData, fetchUserData, getUser])
 
   useEffect(() => {
     fetchNearWallet()
@@ -344,12 +330,12 @@ export const Stamps = () => {
       table: "users",
     })
     toast.success("Stamp removed successfully")
-    fetchStamps()
+    fetchUserData()
   }
 
   useEffect(() => {
-    fetchStamps()
-  }, [fetchStamps])
+    fetchUserData()
+  }, [fetchUserData])
 
   const { open } = useWeb3Modal()
 
@@ -358,10 +344,13 @@ export const Stamps = () => {
     return result.charAt(0).toUpperCase() + result.slice(1)
   }
 
+  const doesStampExist = (stamp_id: number | string) =>
+    allStamps?.filter(({ type }) => type == stamp_id)?.[0]
+
   return (
     <div className="p-3 pb-16">
       <h1 className="mb-2 text-3xl font-semibold">Stamps</h1>
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
         {socialDataToMap.map((item) => (
           <Card style={{ height: "auto" }}>
             <CardHeader>
@@ -371,7 +360,7 @@ export const Stamps = () => {
                 className="mb-1 h-10 w-10 rounded-md"
               />
               <CardTitle>{item.title}</CardTitle>
-              {(userState as any)?.[item.local_key] ? (
+              {doesStampExist(item.stampTypeId) ? (
                 <CardDescription>
                   <div className="flex items-center space-x-1">
                     <p>Your {item.supabase_key} account is verified</p>
@@ -398,7 +387,7 @@ export const Stamps = () => {
               )}
             </CardHeader>
             <CardContent>
-              {(userState as any)?.[item.local_key] ? (
+              {doesStampExist(item.stampTypeId) ? (
                 <div
                   style={{ display: "flex", justifyContent: "space-between" }}
                 >
@@ -466,7 +455,7 @@ export const Stamps = () => {
               className="mb-1 h-10 w-10 rounded-md"
             />
             <CardTitle>POH - Proof of Humanity</CardTitle>
-            {Boolean((userState as any)?.poh_IsRegistered) ? (
+            {doesStampExist(stampsWithId.poh) ? (
               <CardDescription>
                 <div className="flex items-center space-x-1">
                   <p>Your Wallet Account account is verified</p>
@@ -491,7 +480,7 @@ export const Stamps = () => {
             )}
           </CardHeader>
           <CardContent>
-            {Boolean((userState as any)?.poh_IsRegistered) && isPohVerified ? (
+            {doesStampExist(stampsWithId.poh) && isPohVerified ? (
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <Button variant="default">Verified Stamp</Button>
               </div>
@@ -531,7 +520,7 @@ export const Stamps = () => {
               className="mb-1 h-10 w-10 rounded-md"
             />
             <CardTitle>Near Wallet - IAH Integration</CardTitle>
-            {Boolean((userState as any)?.iah) ? (
+            {doesStampExist(stampsWithId["near-wallet"]) ? (
               <CardDescription>
                 <div className="flex items-center space-x-1">
                   <p>Your NEAR account is verified</p>
@@ -556,7 +545,7 @@ export const Stamps = () => {
             )}
           </CardHeader>
           <CardContent>
-            {Boolean((userState as any)?.iah) ? (
+            {doesStampExist(stampsWithId["near-wallet"]) ? (
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <Button>Verified Stamp</Button>
                 <DropdownMenu>
@@ -623,7 +612,7 @@ export const Stamps = () => {
               className="mb-1 h-10 w-10 rounded-md"
             />
             <CardTitle>Bright Id Connect</CardTitle>
-            {Boolean(brightIdData) ? (
+            {doesStampExist(stampsWithId.brightid) ? (
               <CardDescription>
                 <div className="flex items-center space-x-1">
                   <p>Your brightid has been connected</p>
@@ -648,7 +637,7 @@ export const Stamps = () => {
             )}
           </CardHeader>
           <CardContent>
-            {Boolean(brightIdData) ? (
+            {doesStampExist(stampsWithId.brightid) ? (
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <Button>Verified Stamp</Button>
                 <DropdownMenu>
@@ -712,7 +701,8 @@ export const Stamps = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {stampCollector.length !== 0 ? (
+            {stampCollector.length !== 0 &&
+            doesStampExist(stampsWithId.gitcoin) ? (
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <Button>Verified Stamp</Button>
                 <DropdownMenu>
@@ -767,13 +757,13 @@ export const Stamps = () => {
             />
             <CardTitle>Instagram</CardTitle>
             <CardDescription>
-              {Boolean((userState as any)?.instagram_data)
+              {doesStampExist(stampsWithId.instagram)
                 ? "Instagram Connected"
                 : "Connect your instagram"}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {Boolean((userState as any)?.instagram_data) ? (
+            {doesStampExist(stampsWithId.instagram) ? (
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <Button>Verified Stamp</Button>
                 <DropdownMenu>
@@ -842,7 +832,7 @@ export const Stamps = () => {
               className="mb-1 h-10 w-10 object-cover rounded-md"
             />
             <CardTitle>Phone Number</CardTitle>
-            {Boolean((userState as any)?.phoneNumber) ? (
+            {doesStampExist(stampsWithId.phone) ? (
               <CardDescription>
                 <div className="flex items-center space-x-1">
                   <p>Your phone number is verified</p>
@@ -867,7 +857,7 @@ export const Stamps = () => {
             )}
           </CardHeader>
           <CardContent>
-            {Boolean((userState as any)?.phone) ? (
+            {doesStampExist(stampsWithId.phone) ? (
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <Button>Verified Stamp</Button>
                 <DropdownMenu>
@@ -890,7 +880,6 @@ export const Stamps = () => {
                   <DropdownMenuContent>
                     <DropdownMenuItem
                       onClick={() => {
-                        console.log(userState)
                         setStampVerified({
                           displayName: "Phone Number",
                           email: (userState as any)?.phone,
@@ -995,7 +984,10 @@ export const Stamps = () => {
         </Sheet>
         <PhoneNumberConnect
           open={phonenumber}
-          fetchStamps={fetchStamps}
+          fetchStamps={() => {
+            fetchUserData()
+            fetchStampData()
+          }}
           onClose={() => {
             setPhonenumber(false)
           }}
@@ -1005,7 +997,10 @@ export const Stamps = () => {
           onOpen={() => {
             setInstagramShow(true)
           }}
-          fetchStamps={fetchStamps}
+          fetchStamps={() => {
+            fetchUserData()
+            fetchStampData()
+          }}
           onClose={() => {
             setInstagramShow(false)
           }}

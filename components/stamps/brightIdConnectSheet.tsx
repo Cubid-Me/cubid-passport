@@ -28,7 +28,7 @@ export const BrightIdConnectSheet = ({
         table: "brightid-data",
       })
       if (data?.[0]) {
-        setBrightIdData(data[0])
+        setBrightIdData(data[0]) 
       }
       return data?.[0]
     }
@@ -43,7 +43,6 @@ export const BrightIdConnectSheet = ({
     if (modalOpen) {
       interval = setInterval(async () => {
         const allUserData = await fetchUserData()
-        console.log(allUserData)
         if (allUserData) {
           closeModal();
           (window as any).location.reload();
