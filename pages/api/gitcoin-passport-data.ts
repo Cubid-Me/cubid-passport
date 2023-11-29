@@ -14,7 +14,6 @@ export default async function handler(
   })
 
   const { address } = req.body
-  console.log({ address })
   const { data: stamps } = await axios.get(
     `https://api.scorer.gitcoin.co/registry/stamps/${address}?include_metadata=true`,
     {

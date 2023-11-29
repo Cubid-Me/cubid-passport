@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/sheet"
 import { wallet } from "@/app/layout"
 
+import { encode_data } from "../../lib/encode_data"
 import { supabase } from "../../lib/supabase"
 import { BrightIdConnectSheet } from "./brightIdConnectSheet"
 import { GooddollarConnect } from "./gooddollarConnect"
@@ -109,7 +110,6 @@ export const stampsWithId = {
 export const Stamps = () => {
   const signInWithSocial = async (socialName: any) => {
     await supabase.auth.signOut()
-    console.log(socialName)
     localStorage.setItem("socialName", socialName)
     const { data: d, error: e } = await supabase.auth.signInWithOAuth({
       provider: socialName,
@@ -131,7 +131,7 @@ export const Stamps = () => {
   const {
     user: { email },
   }: any = useSelector((state) => state)
-  const { stamps, stampCollector } = useStamps()
+  const { stampCollector } = useStamps()
   const { supabaseUser, getUser } = useAuth()
 
   const fetchStampData = useCallback(async () => {
@@ -260,7 +260,6 @@ export const Stamps = () => {
           const providerKey = localStorage.getItem("socialName") ?? ""
           const stampId = (stampsWithId as any)[providerKey]
           const dbUser = await getUser()
-          console.log(dbUser)
           const dataToSet = {
             created_by_user_id: dbUser.id,
             unique_data: btoa(JSON.stringify(user_metadata)),
@@ -270,13 +269,53 @@ export const Stamps = () => {
             )}`,
             type: stampId,
           }
-          console.log("insert happened")
-          await axios.post("/api/supabase/insert", {
+
+          const {
+            data: { error },
+          } = await axios.post("/api/supabase/insert", {
             table: "stamps",
             body: dataToSet,
           })
           fetchStampData()
           supabase.auth.signOut()
+          if (!error) {
+            const {
+              data: { data: uniqueStampData },
+            } = await axios.post("/api/supabase/select", {
+              table: "stamps",
+              match: {
+                unique_data: btoa(JSON.stringify(user_metadata)),
+              },
+            })
+            console.log(uniqueStampData)
+            const uniqueStampDataPayload = {
+              stamptype: stampId,
+              uniquedata: await encode_data(
+                btoa(JSON.stringify(user_metadata))
+              ),
+              created_by_user_id: dbUser.id,
+              blacklisted: uniqueStampData.length !== 1,
+              unencrypted_unique_data: user_metadata,
+            }
+            if (uniqueStampData.length !== 1) {
+              uniqueStampData.map(async (item:any) => {
+                await axios.post(`/api/supabase/update`, {
+                  table: "uniquestamps",
+                  match: {
+                    stamptype: item.stamptype,
+                    created_by_user_id: item.created_by_user_id,
+                  },
+                  body: {
+                    blacklisted: true,
+                  },
+                })
+              })
+            }
+            await axios.post("/api/supabase/insert", {
+              body: uniqueStampDataPayload,
+              table: "uniquestamps",
+            })
+          }
         }
       })
     }
@@ -308,10 +347,49 @@ export const Stamps = () => {
           )}`,
           type: stampId,
         }
-        await axios.post("/api/supabase/insert", {
+        const {
+          data: { error },
+        } = await axios.post("/api/supabase/insert", {
           table: "stamps",
           body: dataToSet,
         })
+        if (!error) {
+          const {
+            data: { data: uniqueStampData },
+          } = await axios.post("/api/supabase/select", {
+            table: "stamps",
+            match: {
+              unique_data: btoa((wallet as any).accountId),
+            },
+          })
+          const uniqueStampDataPayload = {
+            stamptype: stampId,
+            uniquedata: await encode_data(
+              JSON.stringify((wallet as any).accountId)
+            ),
+            created_by_user_id:  dbUser.id,
+            blacklisted: uniqueStampData.length !== 1,
+            unencrypted_unique_data: (wallet as any).accountId,
+          }
+          if (uniqueStampData.length !== 1) {
+            uniqueStampData.map(async (item:any) => {
+              await axios.post(`/api/supabase/update`, {
+                table: "uniquestamps",
+                match: {
+                  stamptype: item.stamptype,
+                  created_by_user_id: item.created_by_user_id,
+                },
+                body: {
+                  blacklisted: true,
+                },
+              })
+            })
+          }
+          await axios.post("/api/supabase/insert", {
+            body: uniqueStampDataPayload,
+            table: "uniquestamps",
+          })
+        }
         fetchUserData()
         fetchStampData()
         wallet.signOut()
@@ -450,7 +528,7 @@ export const Stamps = () => {
             </CardContent>
           </Card>
         ))}
-        <Card>
+        {/* <Card>
           <CardHeader>
             <img
               src={
@@ -514,7 +592,7 @@ export const Stamps = () => {
               </>
             )}
           </CardContent>
-        </Card>
+        </Card> */}
         <Card>
           <CardHeader>
             <img
@@ -665,7 +743,6 @@ export const Stamps = () => {
                   <DropdownMenuContent>
                     <DropdownMenuItem
                       onClick={() => {
-                        console.log(brightIdData)
                         setStampVerified({
                           displayName: (brightIdData as any).name,
                           image:
@@ -693,7 +770,7 @@ export const Stamps = () => {
             )}
           </CardContent>
         </Card>
-        <Card>
+        {/* <Card>
           <CardHeader>
             <img
               src={"https://passport.gitcoin.co/assets/gitcoinLogoWhite.svg"}
@@ -750,7 +827,7 @@ export const Stamps = () => {
               </Button>
             )}
           </CardContent>
-        </Card>
+        </Card> */}
         <Card>
           <CardHeader>
             <img

@@ -180,7 +180,6 @@ export const GooddollarConnect = ({ isExistingStamp, fetchStamps }: any) => {
   }, [fetchWalletDetails, authData?.user?.email])
 
   useEffect(() => {
-    console.log()
     if (localStorage.getItem("connectGooddollar") === "true") {
       setGooddollarOpen(true)
       setStepState(1)
@@ -323,8 +322,6 @@ export const GooddollarConnect = ({ isExistingStamp, fetchStamps }: any) => {
       </div>
     ),
   }
-
-  console.log({isExistingStamp})
 
   return (
     <>

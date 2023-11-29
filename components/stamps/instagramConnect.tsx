@@ -2,6 +2,7 @@ import React, { useCallback, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import axios from "axios"
 
+import { encode_data } from "@/lib/encode_data"
 import useAuth from "@/hooks/useAuth"
 import {
   Sheet,
@@ -9,19 +10,16 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
-
-import { Button } from "../ui/button"
 import { wallet } from "@/app/layout"
+
 import { stampsWithId } from "."
+import { Button } from "../ui/button"
 
 const redirectUri = "https://cubid-passport.vercel.app/app/"
 
 const InstagramAuth = () => {
   const handleLogin = () => {
     const clientId = "328555189879651"
-    console.log(
-      `https://api.instagram.com/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=user_profile&response_type=code`
-    )
     window.location.href = `https://api.instagram.com/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=user_profile&response_type=code`
   }
 
@@ -52,7 +50,6 @@ export const InstagramConnect = ({
   const fetchData = useCallback(
     async (code_fixes: string) => {
       if (typeof authData?.user?.email === "string") {
-        console.log("api called")
         const {
           data: { user_id, data },
         } = await axios.post("/api/insta-data-fetch", {
@@ -61,19 +58,64 @@ export const InstagramConnect = ({
           email: authData?.user?.email,
         })
         if (user_id) {
-          const stampId = (stampsWithId as any)['instagram']
+          const stampId = (stampsWithId as any)["instagram"]
           const dbUser = await authData.getUser()
           const dataToSet = {
             created_by_user_id: dbUser.id,
-            unique_data: btoa(JSON.stringify({ ...data, created_at: Date.now() })),
+            unique_data: btoa(
+              JSON.stringify({ ...data, created_at: Date.now() })
+            ),
             status: "Whitelisted",
-            user_id_and_uniquevalue:`${dbUser.id}-${btoa(JSON.stringify({ ...data, created_at: Date.now() }))}`,
+            user_id_and_uniquevalue: `${dbUser.id}-${btoa(
+              JSON.stringify({ ...data, created_at: Date.now() })
+            )}`,
             type: stampId,
-          };
-          await axios.post("/api/supabase/insert", {
+          }
+          const {
+            data: { error },
+          } = await axios.post("/api/supabase/insert", {
             table: "stamps",
             body: dataToSet,
           })
+          if (!error) {
+            const {
+              data: { data: uniqueStampData },
+            } = await axios.post("/api/supabase/select", {
+              table: "stamps",
+              match: {
+                unique_data: btoa(
+                  JSON.stringify({ ...data, created_at: Date.now() })
+                ),
+              },
+            })
+            const uniqueStampDataPayload = {
+              stamptype: stampId,
+              uniquedata: await encode_data(
+                btoa(JSON.stringify({ ...data, created_at: Date.now() }))
+              ),
+              created_by_user_id: dbUser.id,
+              blacklisted: uniqueStampData.length !== 1,
+              unencrypted_unique_data: { ...data, created_at: Date.now() },
+            }
+            if (uniqueStampData.length !== 1) {
+              uniqueStampData.map(async (item: any) => {
+                await axios.post(`/api/supabase/update`, {
+                  table: "uniquestamps",
+                  match: {
+                    stamptype: item.stamptype,
+                    created_by_user_id: item.created_by_user_id,
+                  },
+                  body: {
+                    blacklisted: true,
+                  },
+                })
+              })
+            }
+            await axios.post("/api/supabase/insert", {
+              body: uniqueStampDataPayload,
+              table: "uniquestamps",
+            })
+          }
           router.push("/")
           fetchStamps()
         }

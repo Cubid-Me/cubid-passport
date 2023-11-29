@@ -17,7 +17,6 @@ export default function AuthenticationPage() {
   const passwordField = useRef(null)
 
   const submit = async (values: any) => {
-    console.log(values, "values")
     try {
       localStorage.setItem("email", emailField.current.value)
 

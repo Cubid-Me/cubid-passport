@@ -30,7 +30,6 @@ export default function AuthenticationPage() {
   const [isEnabled, setIsEnabled] = useState(false)
   const [loading, setLoading] = useState(false)
   const submit = async (values: any) => {
-    console.log(values, "values")
     try {
       await firebase.auth().signInWithCustomToken(values.idToken)
       // axios.post('/api/login-create-user',{

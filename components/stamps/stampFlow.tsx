@@ -216,7 +216,6 @@ export const StampFlow = ({ stampsToAdd, fetchAllStamps }: any) => {
           twitter: "twitter_data",
           discord: "discord_data",
         }
-        console.log(session, "session")
         if (session?.user) {
           const {
             app_metadata,
@@ -612,7 +611,6 @@ export const StampFlow = ({ stampsToAdd, fetchAllStamps }: any) => {
                   <DropdownMenuContent>
                     <DropdownMenuItem
                       onClick={() => {
-                        console.log(userState)
                         setStampVerified({
                           displayName: "Phone Number",
                           email: (userState as any)?.phone,
