@@ -11,6 +11,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
+
 import { stampsWithId } from "."
 
 export const PhoneNumberConnect = ({
@@ -19,7 +20,7 @@ export const PhoneNumberConnect = ({
   onClose,
 }: {
   open: boolean
-  fetchStamps:()=> void
+  fetchStamps: () => void
   onClose: () => void
 }) => {
   const [phoneInput, setPhoneInput] = React.useState("")
@@ -32,7 +33,7 @@ export const PhoneNumberConnect = ({
     setOtpSent(true)
   }
 
-  const { user ,getUser} = useAuth()
+  const { user, getUser } = useAuth()
   const { email = "" } = user ?? {}
 
   const verifyOtp = async () => {
@@ -50,13 +51,23 @@ export const PhoneNumberConnect = ({
         created_by_user_id: dbUser.id,
         unique_data: btoa(phoneInput),
         status: "Whitelisted",
-        user_id_and_uniquevalue:`${dbUser.id}-${btoa(phoneInput)}`,
+        user_id_and_uniquevalue: `${dbUser.id}-${btoa(phoneInput)}`,
         type: stampId,
-      };
-      await axios.post("/api/supabase/insert", {
+      }
+      const { data } = await axios.post("/api/supabase/insert", {
         table: "stamps",
         body: dataToSet,
       })
+      if (data?.[0]?.id) {
+        await axios.post("/api/supabase/insert", {
+          table: "authorized_dapps",
+          body: {
+            dapp_id: 22,
+            dapp_and_stamp_id: `22 ${data?.[0]?.id}`,
+            stamp_id: data?.[0]?.id,
+          },
+        })
+      }
       fetchStamps()
       // fetchSocial()
     }

@@ -20,10 +20,12 @@ export const useAuth = () => {
           email: user.email,
           name: user.displayName || user.email,
         }
+        localStorage.setItem("email", user.email ?? "")
         setUser(setUserData)
         dispatch(login(setUserData as any)) // if a user is found, set user in Redux store
       } else {
         setUser(null)
+        localStorage.removeItem("email")
         dispatch(logout())
       }
       setLoading(false)
@@ -40,7 +42,7 @@ export const useAuth = () => {
         } = await axios.post("/api/supabase/select", {
           table: "users",
           match: {
-            email: user?.email,
+            email: localStorage.getItem("email") ?? user?.email,
           },
         })
         setSupabaseUser(dbData?.[0])
@@ -55,14 +57,14 @@ export const useAuth = () => {
       } = await axios.post("/api/supabase/select", {
         table: "users",
         match: {
-          email: user?.email,
+          email: localStorage.getItem("email") ?? user?.email,
         },
       })
       return dbData?.[0]
     }
   }
 
-  return { loading, user, supabaseUser,getUser }
+  return { loading, user, supabaseUser, getUser }
 }
 
 export default useAuth

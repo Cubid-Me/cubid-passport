@@ -72,11 +72,21 @@ export const InstagramConnect = ({
             type: stampId,
           }
           const {
-            data: { error },
+            data: { error, data:stampData },
           } = await axios.post("/api/supabase/insert", {
             table: "stamps",
             body: dataToSet,
           })
+          if (stampData?.[0]?.id) {
+            await axios.post("/api/supabase/insert", {
+              table: "authorized_dapps",
+              body: {
+                dapp_id: 22,
+                dapp_and_stamp_id: `22 ${stampData?.[0]?.id}`,
+                stamp_id: stampData?.[0]?.id,
+              },
+            })
+          }
           if (!error) {
             const {
               data: { data: uniqueStampData },
