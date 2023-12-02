@@ -138,7 +138,7 @@ export const Stamps = () => {
     const {
       data: { data },
     } = await axios.post("/api/supabase/select", {
-      table: "stampcategories",
+      table: "stamptypes",
     })
     setStampCategories(data)
     if (supabaseUser) {
