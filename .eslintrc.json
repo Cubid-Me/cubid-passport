@@ -20,7 +20,7 @@
     "next": {
       "rootDir": ["./"]
     }
-  },
+   },
   "overrides": [
     {
       "files": ["*.ts", "*.tsx"],
