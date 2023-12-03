@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/sheet"
 
 import { stampsWithId } from "."
+import { encode_data } from "@/lib/encode_data"
 
 export const PhoneNumberConnect = ({
   open,
@@ -47,14 +48,33 @@ export const PhoneNumberConnect = ({
       onClose()
       const stampId = stampsWithId.phone
       const dbUser = await getUser()
-      const dataToSet = {
-        created_by_user_id: dbUser.id,
-        unique_data: btoa(phoneInput),
-        status: "Whitelisted",
-        user_id_and_uniquevalue: `${dbUser.id}-${btoa(phoneInput)}`,
-        type: stampId,
+      const database = {
+        uniquehash: await encode_data(phoneInput),
+        stamptype: stampId,
+        created_by_user_id: dbUser?.id,
+        unencrypted_unique_data: phoneInput,
+        type_and_hash: `${stampId} ${await encode_data(
+          phoneInput
+        )}`,
       }
-      const { data } = await axios.post("/api/supabase/insert", {
+      const dataToSet = {
+        created_by_user_id: dbUser?.id,
+        created_by_app: 22,
+        stamptype: stampId,
+        uniquevalue: phoneInput,
+        unique_hash: await encode_data(phoneInput),
+        stamp_json: { phonenumber: phoneInput },
+        type_and_uniquehash: `${stampId} ${await encode_data(
+          phoneInput
+        )}`,
+      }
+      await axios.post("/api/supabase/insert", {
+        table: "uniquestamps",
+        body: database,
+      })
+      const {
+        data: { error, data },
+      } = await axios.post("/api/supabase/insert", {
         table: "stamps",
         body: dataToSet,
       })
@@ -65,9 +85,13 @@ export const PhoneNumberConnect = ({
             dapp_id: 22,
             dapp_and_stamp_id: `22 ${data?.[0]?.id}`,
             stamp_id: data?.[0]?.id,
+            can_read: true,
+            can_update: true,
+            can_delete: true,
           },
         })
       }
+
       fetchStamps()
       // fetchSocial()
     }

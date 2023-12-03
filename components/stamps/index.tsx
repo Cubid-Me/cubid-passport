@@ -260,16 +260,30 @@ export const Stamps = () => {
           const providerKey = localStorage.getItem("socialName") ?? ""
           const stampId = (stampsWithId as any)[providerKey]
           const dbUser = await getUser()
-          const dataToSet = {
-            created_by_user_id: dbUser.id,
-            unique_data: btoa(JSON.stringify(user_metadata)),
-            status: "Whitelisted",
-            user_id_and_uniquevalue: `${dbUser.id}-${btoa(
-              JSON.stringify(user_metadata)
+          const database = {
+            uniquehash: await encode_data(user_metadata?.email),
+            stamptype: stampId,
+            created_by_user_id: dbUser?.id,
+            unencrypted_unique_data: JSON.stringify(user_metadata),
+            type_and_hash: `${stampId} ${await encode_data(
+              user_metadata?.email
             )}`,
-            type: stampId,
           }
-
+          const dataToSet = {
+            created_by_user_id: dbUser?.id,
+            created_by_app: 22,
+            stamptype: stampId,
+            uniquevalue: user_metadata?.email,
+            unique_hash: await encode_data(user_metadata?.email),
+            stamp_json: user_metadata,
+            type_and_uniquehash: `${stampId} ${await encode_data(
+              user_metadata?.email
+            )}`,
+          }
+          await axios.post("/api/supabase/insert", {
+            table: "uniquestamps",
+            body: database,
+          })
           const {
             data: { error, data },
           } = await axios.post("/api/supabase/insert", {
@@ -283,49 +297,14 @@ export const Stamps = () => {
                 dapp_id: 22,
                 dapp_and_stamp_id: `22 ${data?.[0]?.id}`,
                 stamp_id: data?.[0]?.id,
+                can_read: true,
+                can_update: true,
+                can_delete: true,
               },
             })
           }
           fetchStampData()
           supabase.auth.signOut()
-          if (!error) {
-            const {
-              data: { data: uniqueStampData },
-            } = await axios.post("/api/supabase/select", {
-              table: "stamps",
-              match: {
-                unique_data: btoa(JSON.stringify(user_metadata)),
-              },
-            })
-            console.log(uniqueStampData)
-            const uniqueStampDataPayload = {
-              stamptype: stampId,
-              uniquedata: await encode_data(
-                btoa(JSON.stringify(user_metadata))
-              ),
-              created_by_user_id: dbUser.id,
-              blacklisted: uniqueStampData.length !== 1,
-              unencrypted_unique_data: user_metadata,
-            }
-            if (uniqueStampData.length !== 1) {
-              uniqueStampData.map(async (item: any) => {
-                await axios.post(`/api/supabase/update`, {
-                  table: "uniquestamps",
-                  match: {
-                    stamptype: item.stamptype,
-                    created_by_user_id: item.created_by_user_id,
-                  },
-                  body: {
-                    blacklisted: true,
-                  },
-                })
-              })
-            }
-            await axios.post("/api/supabase/insert", {
-              body: uniqueStampDataPayload,
-              table: "uniquestamps",
-            })
-          }
         }
       })
     }
@@ -345,18 +324,35 @@ export const Stamps = () => {
           issuer: "fractal.i-am-human.near",
         },
       })
-      if (dataCategory?.[0]?.[1]?.[0]) {
+      const dbUser = await getUser()
+      if (dataCategory?.[0]?.[1]?.[0] && dbUser?.id) {
         const stampId = (stampsWithId as any)["near-wallet"]
+
         const dbUser = await getUser()
-        const dataToSet = {
-          created_by_user_id: dbUser.id,
-          unique_data: btoa((wallet as any).accountId),
-          status: "Whitelisted",
-          user_id_and_uniquevalue: `${dbUser.id}-${btoa(
+        const database = {
+          uniquehash: await encode_data((wallet as any).accountId),
+          stamptype: stampId,
+          created_by_user_id: dbUser?.id,
+          unencrypted_unique_data: (wallet as any).accountId,
+          type_and_hash: `${stampId} ${await encode_data(
             (wallet as any).accountId
           )}`,
-          type: stampId,
         }
+        const dataToSet = {
+          created_by_user_id: dbUser?.id,
+          created_by_app: 22,
+          stamptype: stampId,
+          uniquevalue: (wallet as any).accountId,
+          unique_hash: await encode_data((wallet as any).accountId),
+          stamp_json: { account: (wallet as any).accountId },
+          type_and_uniquehash: `${stampId} ${await encode_data(
+            (wallet as any).accountId
+          )}`,
+        }
+        await axios.post("/api/supabase/insert", {
+          table: "uniquestamps",
+          body: database,
+        })
         const {
           data: { error, data },
         } = await axios.post("/api/supabase/insert", {
@@ -370,46 +366,13 @@ export const Stamps = () => {
               dapp_id: 22,
               dapp_and_stamp_id: `22 ${data?.[0]?.id}`,
               stamp_id: data?.[0]?.id,
+              can_read: true,
+              can_update: true,
+              can_delete: true,
             },
           })
         }
-        if (!error) {
-          const {
-            data: { data: uniqueStampData },
-          } = await axios.post("/api/supabase/select", {
-            table: "stamps",
-            match: {
-              unique_data: btoa((wallet as any).accountId),
-            },
-          })
-          const uniqueStampDataPayload = {
-            stamptype: stampId,
-            uniquedata: await encode_data(
-              JSON.stringify((wallet as any).accountId)
-            ),
-            created_by_user_id: dbUser.id,
-            blacklisted: uniqueStampData.length !== 1,
-            unencrypted_unique_data: (wallet as any).accountId,
-          }
-          if (uniqueStampData.length !== 1) {
-            uniqueStampData.map(async (item: any) => {
-              await axios.post(`/api/supabase/update`, {
-                table: "uniquestamps",
-                match: {
-                  stamptype: item.stamptype,
-                  created_by_user_id: item.created_by_user_id,
-                },
-                body: {
-                  blacklisted: true,
-                },
-              })
-            })
-          }
-          await axios.post("/api/supabase/insert", {
-            body: uniqueStampDataPayload,
-            table: "uniquestamps",
-          })
-        }
+
         fetchUserData()
         fetchStampData()
         wallet.signOut()
@@ -448,7 +411,7 @@ export const Stamps = () => {
   }
 
   const doesStampExist = (stamp_id: number | string) =>
-    allStamps?.filter(({ type }) => type == stamp_id)?.[0]
+    allStamps?.filter(({ stamptype }) => stamptype == stamp_id)?.[0]
 
   return (
     <div className="p-3 pb-16">

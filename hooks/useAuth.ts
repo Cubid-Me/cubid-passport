@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import axios from "axios"
 import firebase from "lib/firebase"
 import { useDispatch } from "react-redux"
@@ -50,19 +50,17 @@ export const useAuth = () => {
     })()
   }, [user])
 
-  const getUser = async () => {
-    if (user?.email) {
-      const {
-        data: { data: dbData },
-      } = await axios.post("/api/supabase/select", {
-        table: "users",
-        match: {
-          email: localStorage.getItem("email") ?? user?.email,
-        },
-      })
-      return dbData?.[0]
-    }
-  }
+  const getUser = useCallback(async () => {
+    const {
+      data: { data: dbData },
+    } = await axios.post("/api/supabase/select", {
+      table: "users",
+      match: {
+        email: localStorage.getItem("email"),
+      },
+    })
+    return dbData?.[0]
+  }, [])
 
   return { loading, user, supabaseUser, getUser }
 }

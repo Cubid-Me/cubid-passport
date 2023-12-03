@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react"
 import axios from "axios"
 
+import useAuth from "@/hooks/useAuth"
 import {
   Sheet,
   SheetContent,
@@ -18,21 +19,25 @@ export const BrightIdConnectSheet = ({
   email: string
 }) => {
   const [brightIdData, setBrightIdData] = useState()
+  const { getUser } = useAuth()
 
   const fetchUserData = useCallback(async () => {
     if (email) {
-      const {
-        data: { data },
-      } = await axios.post("/api/supabase/select", {
-        match: { email },
-        table: "brightid-data",
-      })
-      if (data?.[0]) {
-        setBrightIdData(data[0]) 
+      const user = await getUser()
+      if (user?.id) {
+        const {
+          data: { data },
+        } = await axios.post("/api/supabase/select", {
+          match: { created_by_user_id: user.id, stamptype: 8 },
+          table: "stamps",
+        })
+        if (data?.[0]) {
+          setBrightIdData?.(data[0])
+        }
+        return data?.[0]
       }
-      return data?.[0]
     }
-  }, [email])
+  }, [email, getUser])
 
   useEffect(() => {
     fetchUserData()
@@ -44,10 +49,12 @@ export const BrightIdConnectSheet = ({
       interval = setInterval(async () => {
         const allUserData = await fetchUserData()
         if (allUserData) {
-          closeModal();
-          (window as any).location.reload();
+          closeModal()
+          ;(window as any).location.reload()
         }
       }, 1000)
+    } else {
+      clearInterval(interval)
     }
     return () => {
       clearInterval(interval)

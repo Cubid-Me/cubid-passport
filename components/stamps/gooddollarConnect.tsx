@@ -38,6 +38,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
+import { encode_data } from "@/lib/encode_data"
 
 const nodeUrl = "https://forno.celo.org"
 const goodDollarAddress = "0xC361A6E67822a0EDc17D899227dd9FC50BD62F42" // replace with GoodDollar contract address
@@ -127,19 +128,49 @@ export const GooddollarConnect = ({ isExistingStamp, fetchStamps }: any) => {
           wallet_data: data,
         }
         const dbUser = await authData.getUser()
-        const dataToSet = {
-          created_by_user_id: dbUser.id,
-          unique_data: btoa(JSON.stringify(gooddollar_data)),
-          status: "Whitelisted",
-          user_id_and_uniquevalue: `${dbUser.id}-${btoa(
-            JSON.stringify(gooddollar_data)
+        const database = {
+          uniquehash: await encode_data(gooddollar_data["wallet-address"]),
+          stamptype: 12,
+          created_by_user_id: dbUser?.id,
+          unencrypted_unique_data: gooddollar_data["wallet-address"],
+          type_and_hash: `12 ${await encode_data(
+            gooddollar_data["wallet-address"]
           )}`,
-          type: 12,
+        }
+        const dataToSet = {
+          created_by_user_id: dbUser?.id,
+          created_by_app: 22,
+          stamptype: 12,
+          uniquevalue: gooddollar_data["wallet-address"],
+          unique_hash: await encode_data(gooddollar_data["wallet-address"]),
+          stamp_json: gooddollar_data,
+          type_and_uniquehash: `12 ${await encode_data(
+            gooddollar_data["wallet-address"]
+          )}`,
         }
         await axios.post("/api/supabase/insert", {
-          body: dataToSet,
-          table: "stamps",
+          table: "uniquestamps",
+          body: database,
         })
+        const {
+          data: { error, data:stampData },
+        } = await axios.post("/api/supabase/insert", {
+          table: "stamps",
+          body: dataToSet,
+        })
+        if (stampData?.[0]?.id) {
+          await axios.post("/api/supabase/insert", {
+            table: "authorized_dapps",
+            body: {
+              dapp_id: 22,
+              dapp_and_stamp_id: `22 ${stampData?.[0]?.id}`,
+              stamp_id: stampData?.[0]?.id,
+              can_read: true,
+              can_update: true,
+              can_delete: true,
+            },
+          })
+        }
 
         fetchStamps()
         toast.success("Successfully authenticated with gooddollar data")
