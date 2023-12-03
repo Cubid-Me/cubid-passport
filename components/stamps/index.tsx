@@ -391,7 +391,7 @@ export const Stamps = () => {
   const deleteStamp = async (key_for_db: number) => {
     const supabaseUser = await getUser()
     const data = await axios.post("/api/supabase/delete", {
-      match: { type: key_for_db, created_by_user_id: supabaseUser?.id },
+      match: { stamptype: key_for_db, created_by_user_id: supabaseUser?.id },
       table: "stamps",
     })
     toast.success("Stamp removed successfully")
