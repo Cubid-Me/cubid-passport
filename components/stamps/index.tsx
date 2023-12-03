@@ -388,12 +388,26 @@ export const Stamps = () => {
     fetchNearWallet()
   }, [fetchNearWallet])
 
-  const deleteStamp = async (key_for_db: number) => {
+  const deleteStamp = async (stamp_type: number) => {
     const supabaseUser = await getUser()
-    const data = await axios.post("/api/supabase/delete", {
-      match: { stamptype: key_for_db, created_by_user_id: supabaseUser?.id },
+    const { unique_hash, id } = allStamps.filter(
+      (item: any) => item.stamptype === stamp_type
+    )[0]
+    await axios.post("/api/supabase/delete", {
+      match: { dapp_id: 22, stamp_id: id },
+      table: "authorized_dapps",
+    })
+    await axios.post("/api/supabase/delete", {
+      match: { stamptype: stamp_type, created_by_user_id: supabaseUser?.id },
       table: "stamps",
     })
+    await axios.post("/api/supabase/delete", {
+      match: { uniquehash: unique_hash },
+      table: "uniquestamps",
+    })
+   
+   
+    
     toast.success("Stamp removed successfully")
     fetchUserData()
     fetchStampData()
