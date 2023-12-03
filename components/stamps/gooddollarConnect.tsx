@@ -52,7 +52,7 @@ const goodDollarContract = new web3.eth.Contract(
   goodDollarAddress
 )
 
-export const GooddollarConnect = ({ isExistingStamp, fetchStamps }: any) => {
+export const GooddollarConnect = ({ isExistingStamp, fetchStamps,deleteStamp }: any) => {
   const [gooddollarConnect, setGooddollarConnect] = useState<any>(false)
   const [gooddolarOpen, setGooddollarOpen] = useState(false)
   const [stepState, setStepState] = useState(0)
@@ -196,15 +196,6 @@ export const GooddollarConnect = ({ isExistingStamp, fetchStamps }: any) => {
       setGooddollarConnect(null)
     }
   }, [])
-
-  const deleteStamp = async () => {
-    const data = await axios.post("/api/supabase/delete", {
-      match: { email: authData?.user?.email },
-      table: "wallet_details",
-    })
-    toast.success("Stamp removed successfully")
-    fetchWalletDetails(authData?.user?.email)
-  }
 
   useEffect(() => {
     if (authData?.user?.email) fetchWalletDetails(authData?.user?.email)

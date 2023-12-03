@@ -405,9 +405,7 @@ export const Stamps = () => {
       match: { uniquehash: unique_hash },
       table: "uniquestamps",
     })
-   
-   
-    
+
     toast.success("Stamp removed successfully")
     fetchUserData()
     fetchStampData()
@@ -990,6 +988,7 @@ export const Stamps = () => {
             fetchStampData()
             fetchUserData()
           }}
+          deleteStamp={() => deleteStamp(stampsWithId.gooddollar)}
           isExistingStamp={doesStampExist(stampsWithId.gooddollar)}
         />
         <BrightIdConnectSheet
