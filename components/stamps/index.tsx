@@ -258,6 +258,7 @@ export const Stamps = () => {
         if (session?.user) {
           const { user_metadata }: any = session?.user
           const providerKey = localStorage.getItem("socialName") ?? ""
+          console.log(providerKey)
           const stampId = (stampsWithId as any)[providerKey]
           const dbUser = await getUser()
           const database = {

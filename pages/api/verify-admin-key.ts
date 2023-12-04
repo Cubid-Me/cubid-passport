@@ -7,7 +7,7 @@ export default async function handler(
   res: NextApiResponse
 ) {
   const { adminuid } = req.body;
-  const { data } = await supabase.from("cubid-superapps").select("*").match({
+  const { data } = await supabase.from("dapps").select("*").match({
     "admin-uid": adminuid,
   });
   res.status(200).json({adminValid:Boolean(data?.[0])})

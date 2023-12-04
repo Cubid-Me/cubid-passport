@@ -57,26 +57,26 @@ export const InstagramConnect = ({
           redirectUri: redirectUri,
           email: authData?.user?.email,
         })
-        const allData = data
+        const allData:any = data
         if (user_id) {
           const stampId = (stampsWithId as any)["instagram"]
           const dbUser = await authData.getUser()
 
           const database = {
-            uniquehash: await encode_data(user_id),
+            uniquehash: await encode_data(allData.username),
             stamptype: stampId,
             created_by_user_id: dbUser?.id,
-            unencrypted_unique_data: user_id,
-            type_and_hash: `${stampId} ${await encode_data(user_id)}`,
+            unencrypted_unique_data: allData.username,
+            type_and_hash: `${stampId} ${await encode_data(allData.username)}`,
           }
           const dataToSet: any = {
             created_by_user_id: dbUser?.id,
             created_by_app: 22,
             stamptype: stampId,
-            uniquevalue: user_id,
-            unique_hash: await encode_data(user_id),
+            uniquevalue: allData.username,
+            unique_hash: await encode_data(allData.username),
             stamp_json: allData as any,
-            type_and_uniquehash: `${stampId} ${await encode_data(user_id)}`,
+            type_and_uniquehash: `${stampId} ${await encode_data(allData.username)}`,
           }
           await axios.post("/api/supabase/insert", {
             table: "uniquestamps",

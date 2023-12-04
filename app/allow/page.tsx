@@ -6,33 +6,29 @@ import axios from "axios"
 
 import useAuth from "@/hooks/useAuth"
 import { Authenticated } from "@/components/auth/authenticated"
-import { StampFlow } from "@/components/stamps/stampFlow"
+import { stampsWithId } from "@/components/stamps"
+import { Stamps } from "@/components/stamps/stampFlow"
 
-const dataToTransform = (allStamps: string[], userState: {}) => {
-  const keysToExtract: string[] = []
-  const keysOfData = Object.keys(userState)
-  const dataToSend = {}
-  allStamps.map((_) => {
-    keysOfData.map((item) => {
-      if (item.includes(_)) {
-        keysToExtract.push(item)
-      }
-    })
-  })
-  keysToExtract.map((item) => {
-    if ((userState as any)[item]) {
-      ;(dataToSend as any)[item] = (userState as any)[item]
+const dataToTransform = (stampToShare: string[], userState: []) => {
+  const dataToShare: any = {}
+  stampToShare.map((item: any) => {
+    const stamp_id = (stampsWithId as any)[item]
+    const stamp_object: any = userState?.filter(
+      (item: any) => item.stamptype == stamp_id
+    )?.[0]
+    if (stamp_object) {
+      dataToShare[item] = stamp_object?.uniquevalue
     }
   })
-  return dataToSend
+  console.log(dataToShare)
+  return dataToShare
 }
 
 const AllowPage = () => {
   const searchParams: any = useSearchParams()
   const [loading, setLoading] = useState(true)
   const [isValid, setIsValid] = useState(false)
-  const [userState, setUserState] = useState({})
-  const [dataToShare, setDataToShare] = useState({})
+  const [userState, setUserState] = useState([])
   const authData = useAuth()
   const email = authData?.user?.email
   const adminuid = searchParams.get("adminuid")
@@ -40,34 +36,17 @@ const AllowPage = () => {
   const allStamps = stamps?.split(",")
   const urltoreturn = searchParams.get("href")
 
-  // useEffect(() => {
-  //   console.log('this ')
-  //   if (allStamps && Object.keys(userState).length !== 0) {
-  //     setDataToShare(
-  //       dataToTransform(
-  //         allStamps.map((item: string) => item?.split("_")[0]),
-  //         userState
-  //       )
-  //     )
-  //   }
-  // }, [userState, allStamps])
-
-  const allDataToShare = dataToTransform(
-    allStamps.map((item: string) => item?.split("_")[0]),
-    userState
-  )
-
   const fetchStamps = useCallback(async () => {
-    if (email) {
-      const {
-        data: { data: userData },
-      } = await axios.post("/api/supabase/select", {
-        match: { email },
-        table: "users",
-      })
-      setUserState(userData?.[0])
-    }
-  }, [email])
+    const { id } = await authData.getUser()
+    const {
+      data: { data: userData },
+    } = await axios.post("/api/supabase/select", {
+      match: { created_by_user_id: id },
+      table: "stamps",
+    })
+    console.log(userData)
+    setUserState(userData ?? [])
+  }, [])
 
   const fetchValidId = useCallback(async () => {
     setLoading(true)
@@ -93,13 +72,15 @@ const AllowPage = () => {
   const requiredStamps = allStamps.filter(
     (item: string) => !item.includes("optional")
   )
+  console.log(requiredStamps)
   const requiredDataAvailable =
     [
       ...requiredStamps.filter((item: any) => {
-        const isKeyAvailable = Object.keys(allDataToShare).filter((_) =>
-          _.includes(item)
-        )
-        return isKeyAvailable.length !== 0
+        const stamp_id = (stampsWithId as any)?.[item]
+        const stamp_valid = userState.filter(
+          (item: any) => item.stamptype === stamp_id
+        )?.[0]
+        return Boolean(stamp_valid)
       }),
     ].length === requiredStamps.length
 
@@ -154,7 +135,14 @@ const AllowPage = () => {
                         </button>
                         <button
                           onClick={() => {
-                            const jsonString = JSON.stringify(allDataToShare)
+                            const jsonString = JSON.stringify(
+                              dataToTransform(
+                                allStamps.map((item: string) =>
+                                  item.replace("_optional", "")
+                                ),
+                                userState
+                              )
+                            )
                             const base64Encoded = btoa(jsonString)
                             window.location.href = `${urltoreturn}?data=${base64Encoded}`
                           }}
@@ -167,7 +155,7 @@ const AllowPage = () => {
                   </div>
                 </>
               ) : (
-                <StampFlow
+                <Stamps
                   stampsToAdd={allStamps.map((item: string) =>
                     item.replace("_optional", "_")
                   )}
