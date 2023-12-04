@@ -140,7 +140,7 @@ const AllowPage = () => {
                                 allStamps.map((item: string) =>
                                   item.replace("_optional", "")
                                 ),
-                                userState
+                                userState as any
                               )
                             )
                             const base64Encoded = btoa(jsonString)
