@@ -16,6 +16,7 @@ import Web3 from "web3"
 import { gooddollar_ABI, pohABI } from "../../lib/contract_abi"
 import { useStamps } from "./../../hooks/useStamps"
 import "@near-wallet-selector/modal-ui/styles.css"
+import { encode_data } from "@/lib/encode_data"
 import useAuth from "@/hooks/useAuth"
 import { Button } from "@/components/ui/button"
 import {
@@ -38,7 +39,6 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
-import { encode_data } from "@/lib/encode_data"
 
 const nodeUrl = "https://forno.celo.org"
 const goodDollarAddress = "0xC361A6E67822a0EDc17D899227dd9FC50BD62F42" // replace with GoodDollar contract address
@@ -52,7 +52,11 @@ const goodDollarContract = new web3.eth.Contract(
   goodDollarAddress
 )
 
-export const GooddollarConnect = ({ isExistingStamp, fetchStamps,deleteStamp }: any) => {
+export const GooddollarConnect = ({
+  isExistingStamp,
+  fetchStamps,
+  deleteStamp,
+}: any) => {
   const [gooddollarConnect, setGooddollarConnect] = useState<any>(false)
   const [gooddolarOpen, setGooddollarOpen] = useState(false)
   const [stepState, setStepState] = useState(0)
@@ -60,6 +64,7 @@ export const GooddollarConnect = ({ isExistingStamp, fetchStamps,deleteStamp }: 
   const { open } = useWeb3Modal()
   const { address } = useAccount()
   const authData = useAuth()
+  const { getUser } = authData
 
   useEffect(() => {
     if (address) {
@@ -112,74 +117,81 @@ export const GooddollarConnect = ({ isExistingStamp, fetchStamps,deleteStamp }: 
     }
   }, [address, authData?.user?.email])
 
-  const [gooddollarData, setGooddollarData] = useState<any>({})
-
   const [showGooddollarDetails, setShowGooddollarDetails] = useState(false)
 
   useEffect(() => {
-    ;(async () => {
-      const params = window.location.href?.split("?")
-      if (params[1]?.includes("gooddollardata") && authData?.user?.email) {
-        const jsonData = params[1]?.replace("gooddollardata=", "")
-        const data = JSON.parse(decodeURIComponent(jsonData).replace("/", ""))
-        const gooddollar_data = {
-          email: authData?.user?.email,
-          "wallet-address": data?.walletAddress?.value,
-          wallet_data: data,
-        }
-        const dbUser = await authData.getUser()
-        const database = {
-          uniquehash: await encode_data(gooddollar_data["wallet-address"]),
-          stamptype: 12,
-          created_by_user_id: dbUser?.id,
-          unencrypted_unique_data: gooddollar_data["wallet-address"],
-          type_and_hash: `12 ${await encode_data(
-            gooddollar_data["wallet-address"]
-          )}`,
-        }
-        const dataToSet = {
-          created_by_user_id: dbUser?.id,
-          created_by_app: 22,
-          stamptype: 12,
-          uniquevalue: gooddollar_data["wallet-address"],
-          unique_hash: await encode_data(gooddollar_data["wallet-address"]),
-          stamp_json: gooddollar_data,
-          type_and_uniquehash: `12 ${await encode_data(
-            gooddollar_data["wallet-address"]
-          )}`,
-        }
-        await axios.post("/api/supabase/insert", {
-          table: "uniquestamps",
-          body: database,
-        })
-        const {
-          data: { error, data:stampData },
-        } = await axios.post("/api/supabase/insert", {
-          table: "stamps",
-          body: dataToSet,
-        })
-        if (stampData?.[0]?.id) {
-          await axios.post("/api/supabase/insert", {
-            table: "authorized_dapps",
-            body: {
-              dapp_id: 22,
-              dapp_and_stamp_id: `22 ${stampData?.[0]?.id}`,
-              stamp_id: stampData?.[0]?.id,
-              can_read: true,
-              can_update: true,
-              can_delete: true,
-            },
+    if (!localStorage.getItem("gooddollar_connect_flow")) {
+      ;(async () => {
+        const params = window.location.href?.split("?")
+        const userData = await getUser()
+        if (params[1]?.includes("gooddollardata") && userData?.email) {
+          localStorage.setItem("gooddollar_connect_flow", "true")
+          const jsonData = params[1]?.replace("gooddollardata=", "")
+          const data = JSON.parse(decodeURIComponent(jsonData).replace("/", ""))
+          const gooddollar_data = {
+            email: userData?.email,
+            "wallet-address": data?.walletAddress?.value,
+            wallet_data: data,
+          }
+          const dbUser = await getUser()
+          const database = {
+            uniquehash: await encode_data(gooddollar_data["wallet-address"]),
+            stamptype: 12,
+            created_by_user_id: dbUser?.id,
+            unencrypted_unique_data: gooddollar_data["wallet-address"],
+            type_and_hash: `12 ${await encode_data(
+              gooddollar_data["wallet-address"]
+            )}`,
+          }
+          const dataToSet = {
+            created_by_user_id: dbUser?.id,
+            created_by_app: 22,
+            stamptype: 12,
+            uniquevalue: gooddollar_data["wallet-address"],
+            unique_hash: await encode_data(gooddollar_data["wallet-address"]),
+            stamp_json: gooddollar_data,
+            type_and_uniquehash: `12 ${await encode_data(
+              gooddollar_data["wallet-address"]
+            )}`,
+          }
+          const {
+            data: { error: uniquestampsError },
+          } = await axios.post("/api/supabase/insert", {
+            table: "uniquestamps",
+            body: database,
           })
-        }
+          if (!uniquestampsError) {
+            const {
+              data: { error, data: stampData },
+            } = await axios.post("/api/supabase/insert", {
+              table: "stamps",
+              body: dataToSet,
+            })
 
-        fetchStamps()
-        toast.success("Successfully authenticated with gooddollar data")
-        setTimeout(() => {
-          window.history.replaceState(null, "", "/app")
-        }, 1500)
-      }
-    })()
-  }, [authData?.user?.email, gooddollarData, fetchStamps,authData])
+            if (stampData?.[0]?.id) {
+              await axios.post("/api/supabase/insert", {
+                table: "authorized_dapps",
+                body: {
+                  dapp_id: 22,
+                  dapp_and_stamp_id: `22 ${stampData?.[0]?.id}`,
+                  stamp_id: stampData?.[0]?.id,
+                  can_read: true,
+                  can_update: true,
+                  can_delete: true,
+                },
+              })
+            }
+            toast.success("Successfully authenticated with gooddollar data")
+            fetchStamps()
+            setTimeout(() => {
+              window.history.replaceState(null, "", "/app")
+            }, 1500)
+          }
+        }
+      })()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const fetchWalletDetails = useCallback(async (email: string) => {
     const {
@@ -310,36 +322,20 @@ export const GooddollarConnect = ({ isExistingStamp, fetchStamps,deleteStamp }: 
           <p>Login with Gooddollar Wallet</p>
         </div>
         <div className="mx-auto w-[fit-content]">
-          {Object.keys(gooddollarData).length === 0 ? (
-            <>
-              <button
-                onClick={() => {
-                  window.open(
-                    `https://gooddollar-connect.netlify.app?website=${window.location.href}`,
-                    "_self"
-                  )
-                }}
-                className="m-2 rounded bg-blue-500 p-2 text-white"
-              >
-                {" "}
-                Authorize Gooddollar
-              </button>
-            </>
-          ) : (
-            <div>
-              <p>Logged In</p>
-              <p>Name : {(gooddollarData as any).fullName}</p>
-              <button
-                onClick={() => {
-                  setGooddollarData({})
-                  window.location.href = "https://gooddollar.netlify.app"
-                }}
-                style={{ fontSize: 20, padding: 20 }}
-              >
-                Logout
-              </button>
-            </div>
-          )}
+          <>
+            <button
+              onClick={() => {
+                window.open(
+                  `https://gooddollar-connect.netlify.app?website=${window.location.href}`,
+                  "_self"
+                )
+              }}
+              className="m-2 rounded bg-blue-500 p-2 text-white"
+            >
+              {" "}
+              Authorize Gooddollar
+            </button>
+          </>
         </div>
       </div>
     ),
@@ -403,6 +399,7 @@ export const GooddollarConnect = ({ isExistingStamp, fetchStamps,deleteStamp }: 
           ) : (
             <Button
               onClick={() => {
+                localStorage.removeItem("gooddollar_connect_flow")
                 setGooddollarOpen(true)
               }}
               variant="secondary"
@@ -426,12 +423,7 @@ export const GooddollarConnect = ({ isExistingStamp, fetchStamps,deleteStamp }: 
             <SheetTitle className="text-3xl">
               Gooddollar Wallet Connect
             </SheetTitle>
-            {isExistingStamp ? (
-              <>
-              </>
-            ) : (
-              <div>{steps[stepState]}</div>
-            )}
+            {isExistingStamp ? <></> : <div>{steps[stepState]}</div>}
           </SheetHeader>
         </SheetContent>
       </Sheet>
