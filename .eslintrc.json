@@ -21,6 +21,7 @@
       "rootDir": ["./"]
     }
   },
+  
   "overrides": [
     {
       "files": ["*.ts", "*.tsx"],
