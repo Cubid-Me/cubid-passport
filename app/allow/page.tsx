@@ -20,7 +20,6 @@ const dataToTransform = (stampToShare: string[], userState: []) => {
       dataToShare[item] = stamp_object?.uniquevalue
     }
   })
-  console.log(dataToShare)
   return dataToShare
 }
 
@@ -29,33 +28,38 @@ const AllowPage = () => {
   const [loading, setLoading] = useState(true)
   const [isValid, setIsValid] = useState(false)
   const [userState, setUserState] = useState([])
-  const authData = useAuth()
-  const email = authData?.user?.email
+  const [adminAppData, setAdminAppData] = useState<any>({})
+  const { user, supabaseUser, getUser } = useAuth({
+    appId: adminAppData?.app_id,
+  })
+  const email = user?.email
   const adminuid = searchParams.get("adminuid")
   const stamps = searchParams.get("stamps")
   const allStamps = stamps?.split(",")
   const urltoreturn = searchParams.get("href")
 
   const fetchStamps = useCallback(async () => {
-    const { id } = await authData.getUser()
-    const {
-      data: { data: userData },
-    } = await axios.post("/api/supabase/select", {
-      match: { created_by_user_id: id },
-      table: "stamps",
-    })
-    console.log(userData)
-    setUserState(userData ?? [])
-  }, [])
+    const user = await getUser()
+    if (user) {
+      const {
+        data: { data: userData },
+      } = await axios.post("/api/supabase/select", {
+        match: { created_by_user_id: user?.id },
+        table: "stamps",
+      })
+      setUserState(userData ?? [])
+    }
+  }, [getUser])
 
   const fetchValidId = useCallback(async () => {
     setLoading(true)
     if (adminuid) {
       const {
-        data: { adminValid },
+        data: { adminValid, app_id },
       } = await axios.post("/api/verify-admin-key", {
         adminuid,
       })
+      setAdminAppData({ app_id })
       setIsValid(adminValid)
       setLoading(false)
     }
@@ -72,7 +76,6 @@ const AllowPage = () => {
   const requiredStamps = allStamps.filter(
     (item: string) => !item.includes("optional")
   )
-  console.log(requiredStamps)
   const requiredDataAvailable =
     [
       ...requiredStamps.filter((item: any) => {
@@ -85,7 +88,7 @@ const AllowPage = () => {
     ].length === requiredStamps.length
 
   return (
-    <Authenticated>
+    <>
       {loading ? (
         <>
           <div className="flex h-[100vh] w-[100vw] items-center justify-center">
@@ -159,6 +162,7 @@ const AllowPage = () => {
                   stampsToAdd={allStamps.map((item: string) =>
                     item.replace("_optional", "_")
                   )}
+                  appId={adminAppData?.app_id as any}
                   fetchAllStamps={fetchStamps}
                 />
               )}
@@ -170,7 +174,7 @@ const AllowPage = () => {
           )}
         </>
       )}
-    </Authenticated>
+    </>
   )
 }
 

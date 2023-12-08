@@ -19,10 +19,12 @@ export const PhoneNumberConnect = ({
   open,
   fetchStamps,
   onClose,
+  appId
 }: {
   open: boolean
   fetchStamps: () => void
   onClose: () => void
+  appId?:any
 }) => {
   const [phoneInput, setPhoneInput] = React.useState("")
   const [otpSent, setOtpSent] = React.useState(false)
@@ -34,7 +36,8 @@ export const PhoneNumberConnect = ({
     setOtpSent(true)
   }
 
-  const { user, getUser } = useAuth()
+  const { user, getUser } = useAuth({appId})
+  console.log({appId},'phone')
   const { email = "" } = user ?? {}
 
   const verifyOtp = async () => {
@@ -48,6 +51,7 @@ export const PhoneNumberConnect = ({
       onClose()
       const stampId = stampsWithId.phone
       const dbUser = await getUser()
+      console.log(dbUser)
       const database = {
         uniquehash: await encode_data(phoneInput),
         stamptype: stampId,

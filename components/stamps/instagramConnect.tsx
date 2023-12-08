@@ -37,14 +37,16 @@ export const InstagramConnect = ({
   onClose,
   onOpen,
   fetchStamps,
+  appId
 }: {
   open: boolean
   onClose: () => void
   onOpen: () => void
   fetchStamps: () => void
+  appId?:any
 }) => {
   const searchParams = useSearchParams()
-  const authData = useAuth()
+  const authData = useAuth({appId})
   const router = useRouter()
 
   const fetchData = useCallback(

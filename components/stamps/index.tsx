@@ -132,7 +132,7 @@ export const Stamps = () => {
     user: { email },
   }: any = useSelector((state) => state)
   const { stampCollector } = useStamps()
-  const { supabaseUser, getUser } = useAuth()
+  const { supabaseUser, getUser } = useAuth({})
 
   const fetchStampData = useCallback(async () => {
     const {
@@ -350,33 +350,37 @@ export const Stamps = () => {
             (wallet as any).accountId
           )}`,
         }
-        await axios.post("/api/supabase/insert", {
+        const {
+          data: { error: unique_data },
+        } = await axios.post("/api/supabase/insert", {
           table: "uniquestamps",
           body: database,
         })
-        const {
-          data: { error, data },
-        } = await axios.post("/api/supabase/insert", {
-          table: "stamps",
-          body: dataToSet,
-        })
-        if (data?.[0]?.id) {
-          await axios.post("/api/supabase/insert", {
-            table: "authorized_dapps",
-            body: {
-              dapp_id: 22,
-              dapp_and_stamp_id: `22 ${data?.[0]?.id}`,
-              stamp_id: data?.[0]?.id,
-              can_read: true,
-              can_update: true,
-              can_delete: true,
-            },
+        if (!unique_data) {
+          const {
+            data: { error, data },
+          } = await axios.post("/api/supabase/insert", {
+            table: "stamps",
+            body: dataToSet,
           })
-        }
+          if (data?.[0]?.id) {
+            await axios.post("/api/supabase/insert", {
+              table: "authorized_dapps",
+              body: {
+                dapp_id: 22,
+                dapp_and_stamp_id: `22 ${data?.[0]?.id}`,
+                stamp_id: data?.[0]?.id,
+                can_read: true,
+                can_update: true,
+                can_delete: true,
+              },
+            })
+          }
 
-        fetchUserData()
-        fetchStampData()
-        wallet.signOut()
+          fetchUserData()
+          fetchStampData()
+          wallet.signOut()
+        }
       } else {
         toast.error(
           "Please verify yourself with IAH to get a verified stamp with near"

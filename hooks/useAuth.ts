@@ -1,13 +1,22 @@
 import { useCallback, useEffect, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import axios from "axios"
 import firebase from "lib/firebase"
 import { useDispatch } from "react-redux"
 
 import { login, logout } from "../redux/userSlice"
 
-export const useAuth = () => {
+type hookProps =
+  | {
+      appId?: number
+    }
+  | undefined
+
+export const useAuth = (appHookProps: hookProps) => {
+  const appId = appHookProps?.appId
   const [loading, setLoading] = useState(true)
   const dispatch = useDispatch()
+  const searchParams: any = useSearchParams()
   const [user, setUser] = useState<any>(null)
   const [supabaseUser, setSupabaseUser] = useState<any>(null)
 
@@ -21,10 +30,12 @@ export const useAuth = () => {
           name: user.displayName || user.email,
         }
         localStorage.setItem("email", user.email ?? "")
+        localStorage.removeItem("unauthenticated_user")
         setUser(setUserData)
         dispatch(login(setUserData as any)) // if a user is found, set user in Redux store
       } else {
         setUser(null)
+        localStorage.setItem("unauthenticated_user", "true")
         localStorage.removeItem("email")
         dispatch(logout())
       }
@@ -51,16 +62,50 @@ export const useAuth = () => {
   }, [user])
 
   const getUser = useCallback(async () => {
-    const {
-      data: { data: dbData },
-    } = await axios.post("/api/supabase/select", {
-      table: "users",
-      match: {
-        email: localStorage.getItem("email"),
-      },
-    })
-    return dbData?.[0]
-  }, [])
+    if (!localStorage.getItem("unauthenticated_user")) {
+      const {
+        data: { data: dbData },
+      } = await axios.post("/api/supabase/select", {
+        table: "users",
+        match: {
+          email: localStorage.getItem("email"),
+        },
+      })
+      return dbData?.[0]
+    } else {
+      if (appId) {
+        if (
+          typeof localStorage.getItem("unauthenticated_user_db") === "string" &&
+          localStorage.getItem("unauthenticated_user_db") !== "undefined"
+        ) {
+          return JSON.parse(
+            localStorage.getItem("unauthenticated_user_db") as any
+          )
+        } else {
+          const {
+            data: { data },
+          } = await axios.post(`api/supabase/insert`, {
+            table: "users",
+            body: {
+              is_3rd_party: true,
+              created_by_app: appId,
+              email: searchParams.get("email"),
+            },
+          })
+          if (data?.[0]) {
+            localStorage.setItem(
+              "unauthenticated_user_db",
+              JSON.stringify(data?.[0])
+            )
+          }
+
+          return data?.[0] ?? localStorage.getItem("unauthenticated_user_db")
+            ? JSON.parse(localStorage.getItem("unauthenticated_user_db") as any)
+            : {}
+        }
+      }
+    }
+  }, [appId, searchParams])
 
   return { loading, user, supabaseUser, getUser }
 }
