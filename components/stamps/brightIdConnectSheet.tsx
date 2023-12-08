@@ -19,7 +19,7 @@ export const BrightIdConnectSheet = ({
   email: string
 }) => {
   const [brightIdData, setBrightIdData] = useState()
-  const { getUser } = useAuth()
+  const { getUser } = useAuth({})
 
   const fetchUserData = useCallback(async () => {
     if (email) {

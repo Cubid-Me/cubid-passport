@@ -8,7 +8,7 @@ import PropTypes from "prop-types"
 export const Authenticated = (props: any) => {
   const { children } = props
   const router = useRouter()
-  const { user, loading } = useAuth()
+  const { user, loading } = useAuth({})
   const [verified, setVerified] = useState(false)
 
   useEffect(() => {

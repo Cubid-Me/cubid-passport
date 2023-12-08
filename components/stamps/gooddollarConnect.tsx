@@ -63,7 +63,7 @@ export const GooddollarConnect = ({
   const [whitelisted, setWhitelisted] = useState(false)
   const { open } = useWeb3Modal()
   const { address } = useAccount()
-  const authData = useAuth()
+  const authData = useAuth({})
   const { getUser } = authData
 
   useEffect(() => {

@@ -7,7 +7,7 @@ import PropTypes from "prop-types"
 export const Guest = (props:any) => {
   const { children } = props
   const router = useRouter()
-  const { user, loading } = useAuth();
+  const { user, loading } = useAuth({});
   const [unverified, setUnverified] = useState(false)
 
   useEffect(() => {
