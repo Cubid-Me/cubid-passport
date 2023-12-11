@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/sheet"
 import { wallet } from "@/app/layout"
 
+import { dataToTransform } from "../../app/allow/page"
 import { encode_data } from "../../lib/encode_data"
 import { supabase } from "../../lib/supabase"
 import { BrightIdConnectSheet } from "./brightIdConnectSheet"
@@ -107,7 +108,15 @@ export const stampsWithId = {
   gooddollar: 12,
 }
 
-export const Stamps = ({ stampsToAdd, fetchAllStamps, appId }: any) => {
+export const Stamps = ({
+  stampsToAdd,
+  fetchAllStamps,
+  appId,
+  requiredDataAvailable,
+  urltoreturn,
+  userState,
+  fetchUserData,
+}: any) => {
   const signInWithSocial = async (socialName: any) => {
     await supabase.auth.signOut()
     localStorage.setItem("socialName", socialName)
@@ -118,10 +127,10 @@ export const Stamps = ({ stampsToAdd, fetchAllStamps, appId }: any) => {
       },
     })
   }
+  console.log(stampsToAdd)
 
   const [brightIdData, setBrightIdData] = useState(null)
   const [brightIdSheetOpen, setBrightIdSheetOpen] = useState(false)
-  const [userState, setUserState] = useState({})
   const [stampVerified, setStampVerified] = useState<any>(null)
   const [phonenumber, setPhonenumber] = useState<any>(false)
   const [gitcoinStamps, setGitcoinStamps] = useState(false)
@@ -158,18 +167,6 @@ export const Stamps = ({ stampsToAdd, fetchAllStamps, appId }: any) => {
   useEffect(() => {
     fetchStampData()
   }, [fetchStampData])
-
-  const fetchUserData = useCallback(async () => {
-    if (email) {
-      const {
-        data: { data: userData },
-      } = await axios.post("/api/supabase/select", {
-        match: { email },
-        table: "users",
-      })
-      setUserState(userData?.[0])
-    }
-  }, [email])
 
   const fetchBrightIdData = useCallback(async () => {
     if (email) {
@@ -400,6 +397,8 @@ export const Stamps = ({ stampsToAdd, fetchAllStamps, appId }: any) => {
     return result.charAt(0).toUpperCase() + result.slice(1)
   }
 
+  console.log({ requiredDataAvailable })
+
   const doesStampExist = (stamp_id: number | string) =>
     allStamps?.filter(({ stamptype }) => stamptype == stamp_id)?.[0]
   const stampsToRender: React.JSX.Element[] = []
@@ -521,7 +520,7 @@ export const Stamps = ({ stampsToAdd, fetchAllStamps, appId }: any) => {
                 "https://images.unsplash.com/photo-1530319067432-f2a729c03db5?auto=format&fit=crop&q=80&w=2889&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
               }
               alt="Image"
-              className="mb-1 h-10 w-10 object-cover rounded-md"
+              className="mb-1 h-10 w-10 rounded-md object-cover"
             />
             <CardTitle>Phone Number</CardTitle>
             {doesStampExist(stampsWithId.phone) ? (
@@ -683,6 +682,25 @@ export const Stamps = ({ stampsToAdd, fetchAllStamps, appId }: any) => {
           }}
         />
       </div>
+      {!email && (
+        <div className="ml-auto mt-4 w-[fit-content]">
+          <button
+            onClick={() => {
+              const jsonString = JSON.stringify(
+                dataToTransform(stampsToAdd, userState as any)
+              )
+              const base64Encoded = btoa(jsonString)
+              window.location.href = `${urltoreturn}?data=${base64Encoded}`
+            }}
+            disabled={!requiredDataAvailable}
+            className={`w-[180px] rounded ${
+              !requiredDataAvailable ? "opacity-60" : ""
+            } bg-blue-500 p-2 text-xs text-white`}
+          >
+            Allow
+          </button>
+        </div>
+      )}
     </div>
   )
 }

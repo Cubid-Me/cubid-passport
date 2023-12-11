@@ -9,7 +9,7 @@ import { Authenticated } from "@/components/auth/authenticated"
 import { stampsWithId } from "@/components/stamps"
 import { Stamps } from "@/components/stamps/stampFlow"
 
-const dataToTransform = (stampToShare: string[], userState: []) => {
+export const dataToTransform = (stampToShare: string[], userState: []) => {
   const dataToShare: any = {}
   stampToShare.map((item: any) => {
     const stamp_id = (stampsWithId as any)[item]
@@ -87,6 +87,21 @@ const AllowPage = () => {
       }),
     ].length === requiredStamps.length
 
+  // useEffect(() => {
+  //   if (requiredDataAvailable && !email) {
+  //     const jsonString = JSON.stringify(
+  //       dataToTransform(
+  //         allStamps.map((item: string) =>
+  //           item.replace("_optional", "")
+  //         ),
+  //         userState as any
+  //       )
+  //     )
+  //     const base64Encoded = btoa(jsonString)
+  //     window.location.href = `${urltoreturn}?data=${base64Encoded}`
+  //   }
+  // }, [requiredDataAvailable, email, allStamps, userState, urltoreturn])
+  console.log(email)
   return (
     <>
       {loading ? (
@@ -109,7 +124,7 @@ const AllowPage = () => {
         <>
           {isValid ? (
             <>
-              {requiredDataAvailable ? (
+              {requiredDataAvailable && email ? (
                 <>
                   <div className="flex h-[100vh] w-[100vw] items-center justify-center">
                     <div className="w-[650px] rounded border border-gray-200 p-6 text-center dark:border-gray-800">
@@ -160,10 +175,14 @@ const AllowPage = () => {
               ) : (
                 <Stamps
                   stampsToAdd={allStamps.map((item: string) =>
-                    item.replace("_optional", "_")
+                    item.replace("_optional", "")
                   )}
+                  urltoreturn={urltoreturn}
+                  requiredDataAvailable={requiredDataAvailable}
                   appId={adminAppData?.app_id as any}
                   fetchAllStamps={fetchStamps}
+                  userState={userState}
+                  fetchUserData={fetchStamps}
                 />
               )}
             </>
