@@ -37,13 +37,27 @@ import {
 } from "@/components/ui/sheet"
 import { wallet } from "@/app/layout"
 
-import { dataToTransform } from "../../app/allow/page"
 import { encode_data } from "../../lib/encode_data"
 import { supabase } from "../../lib/supabase"
 import { BrightIdConnectSheet } from "./brightIdConnectSheet"
 import { GooddollarConnect } from "./gooddollarConnect"
 import { InstagramConnect } from "./instagramConnect"
 import { PhoneNumberConnect } from "./phoneNumberConnect"
+
+const dataToTransform = (stampToShare: string[], userState: []) => {
+  const dataToShare: any = {}
+  stampToShare.map((item: any) => {
+    const stamp_id = (stampsWithId as any)[item]
+    const stamp_object: any = userState?.filter(
+      (item: any) => item.stamptype == stamp_id
+    )?.[0]
+    if (stamp_object) {
+      dataToShare[item] = stamp_object?.uniquevalue
+    }
+  })
+  return dataToShare
+}
+
 
 const socialDataToMap = [
   {

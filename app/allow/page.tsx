@@ -9,7 +9,7 @@ import { Authenticated } from "@/components/auth/authenticated"
 import { stampsWithId } from "@/components/stamps"
 import { Stamps } from "@/components/stamps/stampFlow"
 
-export const dataToTransform = (stampToShare: string[], userState: []) => {
+const dataToTransform = (stampToShare: string[], userState: []) => {
   const dataToShare: any = {}
   stampToShare.map((item: any) => {
     const stamp_id = (stampsWithId as any)[item]
