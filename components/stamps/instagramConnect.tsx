@@ -4,6 +4,7 @@ import axios from "axios"
 
 import { encode_data } from "@/lib/encode_data"
 import useAuth from "@/hooks/useAuth"
+import { useCreatedByAppId } from "@/hooks/useCreatedByApp"
 import {
   Sheet,
   SheetContent,
@@ -37,17 +38,18 @@ export const InstagramConnect = ({
   onClose,
   onOpen,
   fetchStamps,
-  appId
+  appId,
 }: {
   open: boolean
   onClose: () => void
   onOpen: () => void
   fetchStamps: () => void
-  appId?:any
+  appId?: any
 }) => {
   const searchParams = useSearchParams()
-  const authData = useAuth({appId})
+  const authData = useAuth({ appId })
   const router = useRouter()
+  const { getIdForApp } = useCreatedByAppId()
 
   const fetchData = useCallback(
     async (code_fixes: string) => {
@@ -59,7 +61,7 @@ export const InstagramConnect = ({
           redirectUri: redirectUri,
           email: authData?.user?.email,
         })
-        const allData:any = data
+        const allData: any = data
         if (user_id) {
           const stampId = (stampsWithId as any)["instagram"]
           const dbUser = await authData.getUser()
@@ -73,12 +75,14 @@ export const InstagramConnect = ({
           }
           const dataToSet: any = {
             created_by_user_id: dbUser?.id,
-            created_by_app: 22,
+            created_by_app: await getIdForApp(),
             stamptype: stampId,
             uniquevalue: allData.username,
             unique_hash: await encode_data(allData.username),
             stamp_json: allData as any,
-            type_and_uniquehash: `${stampId} ${await encode_data(allData.username)}`,
+            type_and_uniquehash: `${stampId} ${await encode_data(
+              allData.username
+            )}`,
           }
           await axios.post("/api/supabase/insert", {
             table: "uniquestamps",
@@ -108,7 +112,7 @@ export const InstagramConnect = ({
         }
       }
     },
-    [authData, fetchStamps, router]
+    [authData, fetchStamps, router, getIdForApp]
   )
 
   useEffect(() => {

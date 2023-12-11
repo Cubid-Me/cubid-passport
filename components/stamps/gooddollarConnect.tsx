@@ -39,6 +39,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
+import { useCreatedByAppId } from "@/hooks/useCreatedByApp"
 
 const nodeUrl = "https://forno.celo.org"
 const goodDollarAddress = "0xC361A6E67822a0EDc17D899227dd9FC50BD62F42" // replace with GoodDollar contract address
@@ -118,6 +119,7 @@ export const GooddollarConnect = ({
   }, [address, authData?.user?.email])
 
   const [showGooddollarDetails, setShowGooddollarDetails] = useState(false)
+  const {getIdForApp} = useCreatedByAppId()
 
   useEffect(() => {
     if (!localStorage.getItem("gooddollar_connect_flow")) {
@@ -145,7 +147,7 @@ export const GooddollarConnect = ({
           }
           const dataToSet = {
             created_by_user_id: dbUser?.id,
-            created_by_app: 22,
+            created_by_app:await getIdForApp(),
             stamptype: 12,
             uniquevalue: gooddollar_data["wallet-address"],
             unique_hash: await encode_data(gooddollar_data["wallet-address"]),

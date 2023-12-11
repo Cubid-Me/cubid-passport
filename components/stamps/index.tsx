@@ -14,6 +14,7 @@ import Web3 from "web3"
 import { useStamps } from "./../../hooks/useStamps"
 import "@near-wallet-selector/modal-ui/styles.css"
 import useAuth from "@/hooks/useAuth"
+import { useCreatedByAppId } from "@/hooks/useCreatedByApp"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -251,6 +252,7 @@ export const Stamps = () => {
       connectToWeb3Node(address)
     }
   }, [connectToWeb3Node, address])
+  const { getIdForApp } = useCreatedByAppId()
 
   useEffect(() => {
     if (email) {
@@ -272,7 +274,7 @@ export const Stamps = () => {
           }
           const dataToSet = {
             created_by_user_id: dbUser?.id,
-            created_by_app: 22,
+            created_by_app: await getIdForApp(),
             stamptype: stampId,
             uniquevalue: user_metadata?.email,
             unique_hash: await encode_data(user_metadata?.email),
@@ -309,7 +311,7 @@ export const Stamps = () => {
         }
       })
     }
-  }, [email, fetchStampData, getUser, supabaseUser, userState])
+  }, [email, fetchStampData, getUser, supabaseUser, userState, getIdForApp])
 
   useEffect(() => {
     fetchBrightIdData()
@@ -341,7 +343,7 @@ export const Stamps = () => {
         }
         const dataToSet = {
           created_by_user_id: dbUser?.id,
-          created_by_app: 22,
+          created_by_app: await getIdForApp(),
           stamptype: stampId,
           uniquevalue: (wallet as any).accountId,
           unique_hash: await encode_data((wallet as any).accountId),
@@ -387,7 +389,7 @@ export const Stamps = () => {
         )
       }
     }
-  }, [email, fetchStampData, fetchUserData, getUser])
+  }, [email, fetchStampData, fetchUserData, getUser, getIdForApp])
 
   useEffect(() => {
     fetchNearWallet()

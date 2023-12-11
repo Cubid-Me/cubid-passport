@@ -2,7 +2,9 @@ import React from "react"
 import axios from "axios"
 import { toast } from "react-toastify"
 
+import { encode_data } from "@/lib/encode_data"
 import useAuth from "@/hooks/useAuth"
+import { useCreatedByAppId } from "@/hooks/useCreatedByApp"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -13,18 +15,17 @@ import {
 } from "@/components/ui/sheet"
 
 import { stampsWithId } from "."
-import { encode_data } from "@/lib/encode_data"
 
 export const PhoneNumberConnect = ({
   open,
   fetchStamps,
   onClose,
-  appId
+  appId,
 }: {
   open: boolean
   fetchStamps: () => void
   onClose: () => void
-  appId?:any
+  appId?: any
 }) => {
   const [phoneInput, setPhoneInput] = React.useState("")
   const [otpSent, setOtpSent] = React.useState(false)
@@ -36,9 +37,10 @@ export const PhoneNumberConnect = ({
     setOtpSent(true)
   }
 
-  const { user, getUser } = useAuth({appId})
-  console.log({appId},'phone')
+  const { user, getUser } = useAuth({ appId })
+  console.log({ appId }, "phone")
   const { email = "" } = user ?? {}
+  const { getIdForApp } = useCreatedByAppId()
 
   const verifyOtp = async () => {
     const { data: verify_data } = await axios.post("/api/twillio/verify-otp", {
@@ -57,20 +59,16 @@ export const PhoneNumberConnect = ({
         stamptype: stampId,
         created_by_user_id: dbUser?.id,
         unencrypted_unique_data: phoneInput,
-        type_and_hash: `${stampId} ${await encode_data(
-          phoneInput
-        )}`,
+        type_and_hash: `${stampId} ${await encode_data(phoneInput)}`,
       }
       const dataToSet = {
         created_by_user_id: dbUser?.id,
-        created_by_app: 22,
+        created_by_app:await getIdForApp(),
         stamptype: stampId,
         uniquevalue: phoneInput,
         unique_hash: await encode_data(phoneInput),
         stamp_json: { phonenumber: phoneInput },
-        type_and_uniquehash: `${stampId} ${await encode_data(
-          phoneInput
-        )}`,
+        type_and_uniquehash: `${stampId} ${await encode_data(phoneInput)}`,
       }
       await axios.post("/api/supabase/insert", {
         table: "uniquestamps",
