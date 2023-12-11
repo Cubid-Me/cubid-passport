@@ -83,7 +83,7 @@ export const useAuth = (appHookProps: hookProps) => {
           )
         } else {
           const {
-            data: { data },
+            data: { data, error },
           } = await axios.post(`api/supabase/insert`, {
             table: "users",
             body: {
@@ -92,7 +92,21 @@ export const useAuth = (appHookProps: hookProps) => {
               email: searchParams.get("email"),
             },
           })
-          if (data?.[0]) {
+          if (error) {
+            const {
+              data: { data: data2, error },
+            } = await axios.post(`api/supabase/select`, {
+              table: "users",
+              match: {
+                email: searchParams.get("email"),
+              },
+            })
+            localStorage.setItem(
+              "unauthenticated_user_db",
+              JSON.stringify(data2?.[0])
+            )
+            return data2?.[0]
+          } else if (data?.[0]) {
             localStorage.setItem(
               "unauthenticated_user_db",
               JSON.stringify(data?.[0])
