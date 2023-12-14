@@ -130,6 +130,7 @@ export const Stamps = ({
   urltoreturn,
   userState,
   fetchUserData,
+  isStampOptional,
 }: any) => {
   const signInWithSocial = async (socialName: any) => {
     await supabase.auth.signOut()
@@ -412,8 +413,6 @@ export const Stamps = ({
     return result.charAt(0).toUpperCase() + result.slice(1)
   }
 
-  console.log({ requiredDataAvailable })
-
   const doesStampExist = (stamp_id: number | string) =>
     allStamps?.filter(({ stamptype }) => stamptype == stamp_id)?.[0]
   const stampsToRender: React.JSX.Element[] = []
@@ -434,7 +433,12 @@ export const Stamps = ({
             <CardDescription>
               {doesStampExist((stampsWithId as any)["instagram"])
                 ? "Instagram Connected"
-                : "Connect your instagram"}
+                : "Connect your instagram"}{" "}
+              {isStampOptional[_] ? (
+                <span style={{ fontWeight: "bold" }}>(Optional)</span>
+              ) : (
+                <span style={{ fontWeight: "bold" }}>(Required)</span>
+              )}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -500,7 +504,12 @@ export const Stamps = ({
               </CardDescription>
             ) : (
               <CardDescription>
-                Connect your existing account to verify
+                Connect your existing account to verify{" "}
+                {isStampOptional[_] ? (
+                  <span style={{ fontWeight: "bold" }}>(Optional)</span>
+                ) : (
+                  <span style={{ fontWeight: "bold" }}>(Required)</span>
+                )}
               </CardDescription>
             )}
           </CardHeader>
@@ -559,7 +568,14 @@ export const Stamps = ({
                 </div>
               </CardDescription>
             ) : (
-              <CardDescription>Verify your phone number</CardDescription>
+              <CardDescription>
+                Verify your phone number{" "}
+                {isStampOptional[_] ? (
+                  <span style={{ fontWeight: "bold" }}>(Optional)</span>
+                ) : (
+                  <span style={{ fontWeight: "bold" }}>(Required)</span>
+                )}
+              </CardDescription>
             )}
           </CardHeader>
           <CardContent>
@@ -585,9 +601,30 @@ export const Stamps = ({
     }
   })
 
+  stampsToRender.push(
+    <Card>
+      <CardHeader>
+        <img
+          src={
+            "https://img.freepik.com/premium-vector/kyc-know-your-customer-idea-business-identification-finance-safety_100456-10462.jpg"
+          }
+          alt="Image"
+          className="mb-1 h-10 w-10 rounded-xl"
+        />
+        <CardTitle>KYC</CardTitle>
+        <CardDescription>Connect and get verified with KYC</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <span className="text-xl" style={{ fontWeight: "bold" }}>
+          (Coming Soon)
+        </span>
+      </CardContent>
+    </Card>
+  )
+
   return (
     <div className="p-3 pb-16">
-      <h1 className="mb-1 text-3xl font-semibold">Stamps</h1>
+      <h1 className="mb-1 text-3xl font-semibold">Identity Verification</h1>
       <>
         <h1 className="mb-5 text-xl">
           You need to connect these stamps in order to authorise passport data{" "}

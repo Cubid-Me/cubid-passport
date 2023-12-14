@@ -101,7 +101,17 @@ const AllowPage = () => {
   //     window.location.href = `${urltoreturn}?data=${base64Encoded}`
   //   }
   // }, [requiredDataAvailable, email, allStamps, userState, urltoreturn])
-  console.log(email)
+
+  const isStampOptional: any = {};
+  ([...stamps.split(",")] ?? [])?.map((item: string) => {
+    if (item.includes("_optional")) {
+      isStampOptional[item.replace("_optional", "")] = true;
+    } else {
+      isStampOptional[item] = false
+    }
+  })
+  console.log({isStampOptional})
+
   return (
     <>
       {loading ? (
@@ -181,6 +191,7 @@ const AllowPage = () => {
                   requiredDataAvailable={requiredDataAvailable}
                   appId={adminAppData?.app_id as any}
                   fetchAllStamps={fetchStamps}
+                  isStampOptional={isStampOptional}
                   userState={userState}
                   fetchUserData={fetchStamps}
                 />
