@@ -627,7 +627,7 @@ export const Stamps = ({
       <h1 className="mb-1 text-3xl font-semibold">Identity Verification</h1>
       <>
         <h1 className="mb-5 text-xl">
-          You need to connect these stamps in order to authorise passport data{" "}
+          You need to connect these accounts in order to authorise passport data{" "}
         </h1>
       </>
 
