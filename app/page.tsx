@@ -16,17 +16,29 @@ export default function IndexPage() {
     const code = searchParams?.get("code")
     if (code) {
       ;(async () => {
-        const { data } = await axios.post("/api/fractal", {
+        let data
+        const { data: data_1st } = await axios.post("/api/fractal", {
           code,
         })
-        if (localStorage.getItem("unauthenticated_user") && typeof data==="object") {
+        data = data_1st
+        if (data_1st === true) {
+          const { data: data_2nd } = await axios.post("/api/fractal", {
+            code,
+          })
+          data = data_2nd
+        }
+
+        if (
+          localStorage.getItem("unauthenticated_user") &&
+          typeof data === "object"
+        ) {
           localStorage.setItem("kyc_fractal", JSON.stringify(data))
           router.push(`/allow?=${localStorage.getItem("allow_url")}`)
           localStorage.removeItem("allow_url")
         }
       })()
     }
-  }, [searchParams,router])
+  }, [searchParams, router])
 
   return (
     <Guest>
