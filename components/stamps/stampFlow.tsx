@@ -60,10 +60,10 @@ const dataToTransform = (stampToShare: string[], userState: []) => {
     delete dataToShare.fractal
     const kycData: any = userState.find((item: any) => item.stamptype == 17)
     dataToShare.kyc = {
-      approved: kycData.stamp_json.verification_cases[0].status,
-      expiry_date: dayjs(
-        kycData.stamp_json.verification_cases[0].created_at
-      ).add(1, "year").format('DD/MM/YYYY'),
+      status: kycData.stamp_json.verification_cases[0].status,
+      expiry_date: dayjs(kycData.stamp_json.verification_cases[0].created_at)
+        .add(1, "year")
+        .format("DD/MM/YYYY"),
     }
   }
   return dataToShare
@@ -821,14 +821,13 @@ export const Stamps = ({
         <div className="ml-auto mt-4 w-[fit-content]">
           <button
             onClick={() => {
-           
               const jsonString = JSON.stringify(
                 dataToTransform(stampsToAdd, userState as any)
               )
               const base64Encoded = btoa(jsonString)
+              window.location.href = `${urltoreturn}?data=${base64Encoded}`
               localStorage.clear()
               sessionStorage.clear()
-              window.location.href = `${urltoreturn}?data=${base64Encoded}`
             }}
             disabled={!requiredDataAvailable}
             className={`w-[180px] rounded ${
