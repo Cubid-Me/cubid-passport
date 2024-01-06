@@ -695,7 +695,7 @@ export const Stamps = ({
                 "_self"
               )
             }}
-            variant="outlined"
+            variant="outline"
             style={{ width: "200px" }}
           >
             Connect KYC
