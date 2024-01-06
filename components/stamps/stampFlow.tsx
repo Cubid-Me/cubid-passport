@@ -56,6 +56,16 @@ const dataToTransform = (stampToShare: string[], userState: []) => {
       dataToShare[item] = stamp_object?.uniquevalue
     }
   })
+  if (dataToShare.fractal) {
+    delete dataToShare.fractal
+    const kycData: any = userState.find((item: any) => item.stamptype == 17)
+    dataToShare.kyc = {
+      approved: kycData.stamp_json.verification_cases[0].status,
+      expiry_date: dayjs(
+        kycData.stamp_json.verification_cases[0].created_at
+      ).add(1, "year").format('DD/MM/YYYY'),
+    }
+  }
   return dataToShare
 }
 
@@ -120,6 +130,7 @@ export const stampsWithId = {
   instagram: 10,
   phone: 11,
   gooddollar: 12,
+  fractal: 17,
 }
 
 export const Stamps = ({
@@ -406,6 +417,56 @@ export const Stamps = ({
     fetchUserData()
   }, [fetchUserData])
 
+  useEffect(() => {
+    ;(async () => {
+      if (localStorage.getItem("kyc_fractal")) {
+        const kyc_fractal = JSON.parse(
+          localStorage.getItem("kyc_fractal") ?? ""
+        )
+        const { verification_cases, uid } = kyc_fractal
+        const { created_at, status } = verification_cases?.[0]
+        const database = {
+          uniquehash: await encode_data(uid),
+          stamptype: 17,
+          created_by_user_id: ((await getUser()) as any).id,
+          unencrypted_unique_data: uid,
+          type_and_hash: `17 ${await encode_data(uid)}`,
+        }
+        await axios.post("/api/supabase/insert", {
+          table: "uniquestamps",
+          body: database,
+        })
+        const {
+          data: { error, data },
+        } = await axios.post("/api/supabase/insert", {
+          table: "stamps",
+          body: {
+            created_by_user_id: ((await getUser()) as any).id,
+            stamptype: 17,
+            created_by_app: appId,
+            stamp_json: kyc_fractal,
+            uniquevalue: uid,
+            unique_hash: await encode_data(uid),
+            type_and_uniquehash: `17 ${await encode_data(uid)}`,
+          },
+        })
+        await axios.post("/api/supabase/insert", {
+          table: "authorized_dapps",
+          body: {
+            dapp_id: 22,
+            dapp_and_stamp_id: `22 ${data?.[0]?.id}`,
+            stamp_id: data?.[0]?.id,
+            can_read: true,
+            can_update: true,
+            can_delete: true,
+          },
+        })
+        localStorage.removeItem("kyc_fractal")
+        fetchStampData()
+      }
+    })()
+  }, [getUser, appId])
+
   const { open } = useWeb3Modal()
 
   function camelCaseToWords(s: string) {
@@ -615,9 +676,31 @@ export const Stamps = ({
         <CardDescription>Connect and get verified with KYC</CardDescription>
       </CardHeader>
       <CardContent>
-        <span className="text-xl" style={{ fontWeight: "bold" }}>
-          (Coming Soon)
-        </span>
+        {doesStampExist(17) ? (
+          <>
+            <Button>Verified Stamp</Button>
+          </>
+        ) : (
+          <Button
+            onClick={() => {
+              localStorage.setItem(
+                "allow_url",
+                window.location.href.replace(
+                  `${window.location.origin}/allow?`,
+                  ""
+                )
+              )
+              window.open(
+                "https://app.next.fractal.id/authorize?client_id=HiOtrTXl-1Racpv9pbRtt8hDZRlOvljVCjFP5LyWlnk&redirect_uri=http%3A%2F%2Flocalhost%3A3000%2F&response_type=code&scope=contact%3Aread%20verification.basic%3Aread%20verification.basic.details%3Aread%20verification.liveness%3Aread%20verification.liveness.details%3Aread",
+                "_self"
+              )
+            }}
+            variant="outlined"
+            style={{ width: "200px" }}
+          >
+            Connect KYC
+          </Button>
+        )}
       </CardContent>
     </Card>
   )
@@ -738,6 +821,7 @@ export const Stamps = ({
         <div className="ml-auto mt-4 w-[fit-content]">
           <button
             onClick={() => {
+           
               const jsonString = JSON.stringify(
                 dataToTransform(stampsToAdd, userState as any)
               )

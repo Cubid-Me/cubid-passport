@@ -106,6 +106,7 @@ export const stampsWithId = {
   instagram: 10,
   phone: 11,
   gooddollar: 12,
+  fractal:17,
 }
 
 export const Stamps = () => {

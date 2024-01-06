@@ -13,7 +13,16 @@ export default async function handler(req: any, res: any) {
         redirect_uri: "http://localhost:3000/",
       }
     )
-    res.send(data);
+    const { data: data2 } = await axios.get(
+      `https://resource.next.fractal.id/users/me`,
+      {
+        headers: {
+          Authorization: `Bearer ${data.access_token}`,
+        },
+      }
+    )
+    console.log(data2)
+    res.send(data2)
   } catch (err) {
     console.log(err)
   }

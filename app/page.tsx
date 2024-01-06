@@ -1,7 +1,8 @@
-'use client'
+"use client"
+
 import { useEffect } from "react"
 import Link from "next/link"
-import { useSearchParams } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import axios from "axios"
 import { Guest } from "components/auth/guest"
 
@@ -9,17 +10,23 @@ import { buttonVariants } from "@/components/ui/button"
 
 export default function IndexPage() {
   const searchParams = useSearchParams()
+  const router = useRouter()
 
   useEffect(() => {
     const code = searchParams?.get("code")
     if (code) {
-      (async () => {
-        await axios.post("/api/fractal", {
+      ;(async () => {
+        const { data } = await axios.post("/api/fractal", {
           code,
         })
+        if (localStorage.getItem("unauthenticated_user") && typeof data==="object") {
+          localStorage.setItem("kyc_fractal", JSON.stringify(data))
+          router.push(`/allow?=${localStorage.getItem("allow_url")}`)
+          localStorage.removeItem("allow_url")
+        }
       })()
     }
-  }, [searchParams])
+  }, [searchParams,router])
 
   return (
     <Guest>
