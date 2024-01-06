@@ -691,7 +691,7 @@ export const Stamps = ({
                 )
               )
               window.open(
-                "https://app.next.fractal.id/authorize?client_id=HiOtrTXl-1Racpv9pbRtt8hDZRlOvljVCjFP5LyWlnk&redirect_uri=http%3A%2F%2Flocalhost%3A3000%2F&response_type=code&scope=contact%3Aread%20verification.basic%3Aread%20verification.basic.details%3Aread%20verification.liveness%3Aread%20verification.liveness.details%3Aread",
+                "https://app.next.fractal.id/authorize?client_id=HiOtrTXl-1Racpv9pbRtt8hDZRlOvljVCjFP5LyWlnk&redirect_uri=https%3A%2F%2Fcubid-passport.vercel.app&response_type=code&scope=contact%3Aread%20verification.basic%3Aread%20verification.basic.details%3Aread%20verification.liveness%3Aread%20verification.liveness.details%3Aread",
                 "_self"
               )
             }}
