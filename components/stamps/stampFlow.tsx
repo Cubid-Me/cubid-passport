@@ -742,6 +742,8 @@ export const Stamps = ({
                 dataToTransform(stampsToAdd, userState as any)
               )
               const base64Encoded = btoa(jsonString)
+              localStorage.clear()
+              sessionStorage.clear()
               window.location.href = `${urltoreturn}?data=${base64Encoded}`
             }}
             disabled={!requiredDataAvailable}

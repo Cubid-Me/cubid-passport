@@ -102,15 +102,15 @@ const AllowPage = () => {
   //   }
   // }, [requiredDataAvailable, email, allStamps, userState, urltoreturn])
 
-  const isStampOptional: any = {};
-  ([...stamps.split(",")] ?? [])?.map((item: string) => {
+  const isStampOptional: any = {}
+  ;([...stamps.split(",")] ?? [])?.map((item: string) => {
     if (item.includes("_optional")) {
-      isStampOptional[item.replace("_optional", "")] = true;
+      isStampOptional[item.replace("_optional", "")] = true
     } else {
       isStampOptional[item] = false
     }
   })
-  console.log({isStampOptional})
+  console.log({ isStampOptional })
 
   return (
     <>
@@ -172,6 +172,7 @@ const AllowPage = () => {
                               )
                             )
                             const base64Encoded = btoa(jsonString)
+
                             window.location.href = `${urltoreturn}?data=${base64Encoded}`
                           }}
                           className="w-[180px] rounded bg-blue-500 p-2 text-xs text-white"

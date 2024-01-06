@@ -1,9 +1,26 @@
+'use client'
+import { useEffect } from "react"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
+import axios from "axios"
 import { Guest } from "components/auth/guest"
 
 import { buttonVariants } from "@/components/ui/button"
 
 export default function IndexPage() {
+  const searchParams = useSearchParams()
+
+  useEffect(() => {
+    const code = searchParams?.get("code")
+    if (code) {
+      (async () => {
+        await axios.post("/api/fractal", {
+          code,
+        })
+      })()
+    }
+  }, [searchParams])
+
   return (
     <Guest>
       <div className="flex h-[85vh] items-center">
