@@ -21,12 +21,6 @@ export default function IndexPage() {
           code,
         })
         data = data_1st
-        if (data_1st === true) {
-          const { data: data_2nd } = await axios.post("/api/fractal", {
-            code,
-          })
-          data = data_2nd
-        }
 
         if (
           localStorage.getItem("unauthenticated_user") &&
@@ -38,7 +32,8 @@ export default function IndexPage() {
         }
       })()
     }
-  }, [searchParams, router])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
     <Guest>
