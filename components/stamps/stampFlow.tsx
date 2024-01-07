@@ -503,7 +503,8 @@ export const Stamps = ({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {doesStampExist((stampsWithId as any)["instagram"]) ? (
+            <p className="text-2xl font-bold text-white">(Coming Soon)</p>
+            {/* {doesStampExist((stampsWithId as any)["instagram"]) ? (
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <Button>Verified Stamp</Button>
               </div>
@@ -524,7 +525,7 @@ export const Stamps = ({
               >
                 Connect Instagram
               </Button>
-            )}
+            )} */}
           </CardContent>
         </Card>
       )
@@ -575,7 +576,8 @@ export const Stamps = ({
             )}
           </CardHeader>
           <CardContent>
-            {doesStampExist(
+            <p className="text-2xl font-bold text-white">(Coming Soon)</p>
+            {/* {doesStampExist(
               (stampsWithId as any)[supabaseData.supabase_key]
             ) ? (
               <div style={{ display: "flex", justifyContent: "space-between" }}>
@@ -592,7 +594,7 @@ export const Stamps = ({
               >
                 Connect Account
               </Button>
-            )}
+            )} */}
           </CardContent>
         </Card>
       )
@@ -634,7 +636,7 @@ export const Stamps = ({
                 {isStampOptional[_] ? (
                   <span style={{ fontWeight: "bold" }}>(Optional)</span>
                 ) : (
-                  <span style={{ fontWeight: "bold" }}>(Required)</span>
+                  <span style={{ fontWeight: "bold" }}>(Optional)</span>
                 )}
               </CardDescription>
             )}
@@ -691,7 +693,7 @@ export const Stamps = ({
                 )
               )
               window.open(
-                "https://app.next.fractal.id/authorize?client_id=HiOtrTXl-1Racpv9pbRtt8hDZRlOvljVCjFP5LyWlnk&redirect_uri=https%3A%2F%2Fcubid-passport.vercel.app&response_type=code&scope=contact%3Aread%20verification.basic%3Aread%20verification.basic.details%3Aread%20verification.liveness%3Aread%20verification.liveness.details%3Aread",
+                "https://app.fractal.id/authorize?client_id=Zh7_RqOPeQoV1lZJ_ZUF1b88VGyJwaxzQVQbpvxq4S4&redirect_uri=https%3A%2F%2Fpassport.cubid.me%2F&response_type=code&scope=contact%3Aread%20verification.basic%3Aread%20verification.basic.details%3Aread%20verification.liveness%3Aread%20verification.liveness.details%3Aread",
                 "_self"
               )
             }}
