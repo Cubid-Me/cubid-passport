@@ -4,7 +4,7 @@ export default async function handler(req: any, res: any) {
   const { code } = req.body
   try {
     const { data } = await axios.post(
-      "https://auth.next.fractal.id/oauth/token",
+      "https://auth.fractal.id/oauth/token",
       {
         client_id: "Zh7_RqOPeQoV1lZJ_ZUF1b88VGyJwaxzQVQbpvxq4S4",
         client_secret: "vmS0iHz95domUcD8Lo7E0mt1axdU16rR4XYUTWngY1o",
@@ -14,7 +14,7 @@ export default async function handler(req: any, res: any) {
       }
     )
     const { data: data2 } = await axios.get(
-      `https://resource.next.fractal.id/users/me`,
+      `https://resource.fractal.id/users/me`,
       {
         headers: {
           Authorization: `Bearer ${data.access_token}`,
