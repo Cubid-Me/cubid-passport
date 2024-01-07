@@ -27,7 +27,7 @@ export default function IndexPage() {
           typeof data === "object"
         ) {
           localStorage.setItem("kyc_fractal", JSON.stringify(data))
-          router.push(`/allow?=${localStorage.getItem("allow_url")}`)
+          router.push(`/allow?${localStorage.getItem("allow_url")}`)
           localStorage.removeItem("allow_url")
         }
       })()
