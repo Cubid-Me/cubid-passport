@@ -10,7 +10,7 @@ export default async function handler(req: any, res: any) {
         client_secret: "vmS0iHz95domUcD8Lo7E0mt1axdU16rR4XYUTWngY1o",
         code: code,
         grant_type: "authorization_code",
-        redirect_uri: "https://cubid-passport.vercel.app/",
+        redirect_uri: "https://passport.cubid.me/",
       }
     )
     const { data: data2 } = await axios.get(
