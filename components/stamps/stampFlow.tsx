@@ -826,7 +826,7 @@ export const Stamps = ({
               const jsonString = JSON.stringify(
                 dataToTransform(stampsToAdd, userState as any)
               )
-              const base64Encoded = encodeURIComponent(jsonString)
+              const base64Encoded = btoa(jsonString)
               window.location.href = `${urltoreturn}?data=${base64Encoded}`
               localStorage.clear()
               sessionStorage.clear()
