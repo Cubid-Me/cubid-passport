@@ -171,7 +171,7 @@ const AllowPage = () => {
                                 userState as any
                               )
                             )
-                            const base64Encoded = btoa(jsonString)
+                            const base64Encoded = btoa(encodeURIComponent(jsonString))
 
                             window.location.href = `${urltoreturn}?data=${base64Encoded}`
                           }}
