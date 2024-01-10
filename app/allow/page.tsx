@@ -170,8 +170,9 @@ const AllowPage = () => {
                                 ),
                                 userState as any
                               )
-                            );
-                            const base64Encoded = encodeURIComponent(jsonString);
+                            )
+                            const base64Encoded = btoa(jsonString)
+
                             window.location.href = `${urltoreturn}?data=${base64Encoded}`
                           }}
                           className="w-[180px] rounded bg-blue-500 p-2 text-xs text-white"
