@@ -577,24 +577,6 @@ export const Stamps = ({
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold text-white">(Coming Soon)</p>
-            {/* {doesStampExist(
-              (stampsWithId as any)[supabaseData.supabase_key]
-            ) ? (
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <Button variant="default">Verified Stamp</Button>
-              </div>
-            ) : (
-              <Button
-                onClick={() => {
-                  signInWithSocial(
-                    (stampsWithId as any)[supabaseData.supabase_key]
-                  )
-                }}
-                variant="outline"
-              >
-                Connect Account
-              </Button>
-            )} */}
           </CardContent>
         </Card>
       )
@@ -643,10 +625,7 @@ export const Stamps = ({
           </CardHeader>
           <CardContent>
             {doesStampExist(stampsWithId.phone) ? (
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <Button>Verified Stamp</Button>
-                <></>{" "}
-              </div>
+              <></>
             ) : (
               <Button
                 onClick={() => {
@@ -675,13 +654,35 @@ export const Stamps = ({
           className="mb-1 h-10 w-10 rounded-xl"
         />
         <CardTitle>KYC</CardTitle>
-        <CardDescription>Connect and get verified with KYC</CardDescription>
+        <CardDescription>
+          {doesStampExist(17) ? (
+            <>
+              <div className="flex items-center space-x-1">
+                <p>Your have connected with KYC</p>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="#00e64d"
+                  className="h-6 w-6"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              </div>
+            </>
+          ) : (
+            "Connect and get verified with KYC"
+          )}
+        </CardDescription>
       </CardHeader>
       <CardContent>
         {doesStampExist(17) ? (
-          <>
-            <Button>Verified Stamp</Button>
-          </>
+          <></>
         ) : (
           <Button
             onClick={() => {
