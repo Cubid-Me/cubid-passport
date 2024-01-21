@@ -115,6 +115,15 @@ const socialDataToMap = [
     title: "Discord",
     color: "error",
   },
+  {
+    local_key: "linkedin_data",
+    supabase_key: "linkedin",
+    stampTypeId: 22,
+    image:
+      "https://images-eds-ssl.xboxlive.com/image?url=Q_rwcVSTCIytJ0KOzcjWTYl.n38D8jlKWXJx7NRJmQKBAEDCgtTAQ0JS02UoaiwRCHTTX1RAopljdoYpOaNfVf5nBNvbwGfyR5n4DAs0DsOwxSO9puiT_GgKqinHT8HsW8VYeiiuU1IG3jY69EhnsQ--&format=source",
+    title: "Linkedin",
+    color: "error",
+  },
 ]
 
 export const stampsWithId = {
@@ -131,6 +140,7 @@ export const stampsWithId = {
   phone: 11,
   gooddollar: 12,
   fractal: 17,
+  linkedin:22
 }
 
 export const Stamps = ({
@@ -478,6 +488,23 @@ export const Stamps = ({
     allStamps?.filter(({ stamptype }) => stamptype == stamp_id)?.[0]
   const stampsToRender: React.JSX.Element[] = []
   const supabaseStamps = socialDataToMap.map((item) => item.supabase_key)
+  stampsToRender.push(
+    <Card>
+      <CardHeader>
+        <img
+          src={
+            "data:image/png;base64,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"
+          }
+          alt="Image"
+          className="mb-1 h-10 w-10 rounded-xl"
+        />
+        <CardTitle>Linkedin</CardTitle>
+      </CardHeader>
+      <CardContent>
+      <p className="text-2xl font-bold ">(Coming Soon)</p>
+      </CardContent>
+    </Card>
+  )
   stampsToAdd.map((_: string) => {
     if (_ === "instagram") {
       stampsToRender.push(
@@ -503,7 +530,7 @@ export const Stamps = ({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-white">(Coming Soon)</p>
+            <p className="text-2xl font-bold">(Coming Soon)</p>
             {/* {doesStampExist((stampsWithId as any)["instagram"]) ? (
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <Button>Verified Stamp</Button>
@@ -576,7 +603,7 @@ export const Stamps = ({
             )}
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-white">(Coming Soon)</p>
+            <p className="text-2xl font-bold ">(Coming Soon)</p>
           </CardContent>
         </Card>
       )
@@ -632,7 +659,7 @@ export const Stamps = ({
                   setPhonenumber(true)
                 }}
                 variant="secondary"
-                style={{ width: "200px" }}
+                style={{ width: "200px",backgroundColor:"#3b82f6" }}
               >
                 Connect Phone Number
               </Button>
@@ -642,6 +669,8 @@ export const Stamps = ({
       )
     }
   })
+
+  
 
   stampsToRender.push(
     <Card>
@@ -653,7 +682,7 @@ export const Stamps = ({
           alt="Image"
           className="mb-1 h-10 w-10 rounded-xl"
         />
-        <CardTitle>KYC</CardTitle>
+        <CardTitle>Government Issued ID</CardTitle>
         <CardDescription>
           {doesStampExist(17) ? (
             <>
@@ -699,7 +728,7 @@ export const Stamps = ({
               )
             }}
             variant="outline"
-            style={{ width: "200px" }}
+            style={{ width: "200px",backgroundColor:"#3b82f6" }}
           >
             Connect KYC
           </Button>
@@ -837,7 +866,7 @@ export const Stamps = ({
               !requiredDataAvailable ? "opacity-60" : ""
             } bg-blue-500 p-2 text-xs text-white`}
           >
-            Allow
+            Import to 3oC
           </button>
         </div>
       )}
