@@ -106,7 +106,7 @@ export const stampsWithId = {
   instagram: 10,
   phone: 11,
   gooddollar: 12,
-  fractal:17,
+  fractal: 17,
 }
 
 export const Stamps = () => {
@@ -984,7 +984,7 @@ export const Stamps = () => {
                   setPhonenumber(true)
                 }}
                 variant="secondary"
-                style={{ width: "200px" }}
+                style={{ width: "200px", backgroundColor: "#3b82f6" }}
               >
                 Connect Phone Number
               </Button>
