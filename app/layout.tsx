@@ -4,6 +4,7 @@
 import "@/styles/globals.css"
 import { OwnIDInit } from "@ownid/react"
 import { ToastContainer } from "react-toastify"
+import 'react-phone-input-2/lib/style.css'
 
 import "react-toastify/dist/ReactToastify.css"
 import { createWeb3Modal, defaultWagmiConfig } from '@web3modal/wagmi/react'
