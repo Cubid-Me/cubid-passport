@@ -140,7 +140,7 @@ export const stampsWithId = {
   phone: 11,
   gooddollar: 12,
   fractal: 17,
-  linkedin:22
+  linkedin: 22,
 }
 
 export const Stamps = ({
@@ -499,9 +499,10 @@ export const Stamps = ({
           className="mb-1 h-10 w-10 rounded-xl"
         />
         <CardTitle>Linkedin</CardTitle>
+        <CardDescription>Connect your Linkedin</CardDescription>
       </CardHeader>
       <CardContent>
-      <p className="text-2xl font-bold ">(Coming Soon)</p>
+        <p className="text-2xl font-bold ">(Coming Soon)</p>
       </CardContent>
     </Card>
   )
@@ -659,7 +660,7 @@ export const Stamps = ({
                   setPhonenumber(true)
                 }}
                 variant="secondary"
-                style={{ width: "200px",backgroundColor:"#3b82f6" }}
+                style={{ width: "200px", backgroundColor: "#3b82f6" }}
               >
                 Connect Phone Number
               </Button>
@@ -669,8 +670,6 @@ export const Stamps = ({
       )
     }
   })
-
-  
 
   stampsToRender.push(
     <Card>
@@ -728,7 +727,7 @@ export const Stamps = ({
               )
             }}
             variant="outline"
-            style={{ width: "200px",backgroundColor:"#3b82f6" }}
+            style={{ width: "200px", backgroundColor: "#3b82f6" }}
           >
             Connect KYC
           </Button>

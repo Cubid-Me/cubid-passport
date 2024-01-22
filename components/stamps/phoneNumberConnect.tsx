@@ -1,6 +1,7 @@
 import React from "react"
 import axios from "axios"
 import { toast } from "react-toastify"
+import PhoneInput from 'react-phone-input-2'
 
 import { encode_data } from "@/lib/encode_data"
 import useAuth from "@/hooks/useAuth"
@@ -134,12 +135,16 @@ export const PhoneNumberConnect = ({
                 </>
               ) : (
                 <>
-                  <Input
+                  <PhoneInput
                     placeholder="Phone Number"
                     value={phoneInput}
                     type="number"
+                    inputClass="!bg-black"
+                    dropdownClass="!text-black"
+                    country="us"
                     onChange={(e) => {
-                      setPhoneInput(e.target.value)
+                      console.log(e)
+                      setPhoneInput(e)
                     }}
                   />
                   <Button
