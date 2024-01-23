@@ -16,11 +16,52 @@ export const About = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
           <CardHeader>
-            <CardTitle>Cubid</CardTitle>
+            <CardTitle>About Cubid</CardTitle>
             <CardDescription>Your gateway to a decentralized future</CardDescription>
           </CardHeader>
           <CardContent>
             <p>CUBID is an ecosystem of apps, all designed to build your own personal proof-of-personhood. We do this by sharing data between the apps and awarding points for all the activities you do and verifications you collect. The more you interact with the various apps, the stronger your "human score" will be. Why is this importat? Some apps, such as voting, need to know that you are a real human. In a world of bots and AI, we are fighting the good fight for humanity.</p>
+          </CardContent>
+        </Card>
+        <Card style={{ height: "fit-content" }}>
+          <CardHeader>
+            <CardTitle>Other Cubid Apps</CardTitle>
+            <CardDescription>Explore the Cubid ecosystem of apps for a much more detailed view for your profile
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <a
+              target="_blank"
+              className={`${buttonVariants({ variant: "link" })} text-blue-500`}
+              rel="noopener noreferrer"
+              href="https://app.3oc.world/"
+            >
+              Three of Cups, trust and safety before meeting IRL
+            </a>
+            <a
+              target="_blank"
+              className={`${buttonVariants({ variant: "link" })} text-blue-500`}
+              rel="noopener noreferrer"
+              href="https://app.shoppingbuddy.org/"
+            >
+              ShoppingBuddy, verify each other before buying & selling online
+            </a>
+            <a
+              target="_blank"
+              className={`${buttonVariants({ variant: "link" })} text-blue-500`}
+              rel="noopener noreferrer"
+              href="https://app.ubifinder.org/"
+            >
+              Find UBI projects and sign up to receive Universal Basic Income
+            </a>
+            <a
+              target="_blank"
+              className={`${buttonVariants({ variant: "link" })} text-blue-500`}
+              rel="noopener noreferrer"
+              href="https://app.cubid.me/"
+            >
+              The Cubid SuperApp
+            </a>
           </CardContent>
         </Card>
         <Card>
