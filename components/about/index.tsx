@@ -20,13 +20,13 @@ export const About = () => {
             <CardDescription>Your gateway to a decentralized future</CardDescription>
           </CardHeader>
           <CardContent>
-            <p>Card Content</p>
+            <p>CUBID is an ecosystem of apps, all designed to build your own personal proof-of-personhood. We do this by sharing data between the apps and awarding points for all the activities you do and verifications you collect. The more you interact with the various apps, the stronger your "human score" will be. Why is this importat? Some apps, such as voting, need to know that you are a real human. In a world of bots and AI, we are fighting the good fight for humanity.</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader>
             <CardTitle>Passport and Stamps</CardTitle>
-            <CardDescription>A way to verify yourself online</CardDescription>
+            <CardDescription>Stamps in your physical passport shows where you've been and become part of your identity. With CUBID you collect "digital stamps" in a similar way to verify yourself online. Different stamps carry different weight. Your Facebook account for example carries a low score, since it's easy for one person to create multiple Facebook accounts. If you proove youre national identification number on the other hand then this carries a high score, since it's clos to impossible for one person to have more than one such ID.</CardDescription>
           </CardHeader>
           <CardContent>
             <p>Card Content</p>
@@ -38,16 +38,16 @@ export const About = () => {
             <CardDescription>How we&apos;re different and mutli chain compatible</CardDescription>
           </CardHeader>
           <CardContent>
-            <p>Card Content</p>
+            <p>We toook inspiration from another protocol called Gitcoin Passport (GP) when we built CUBID. We are different in a few ways: GP is a "web3" protocol that require you to set up a wallet and a private key before you can use it. With Cubid you can sign in with email or social accounts. GP is limited to anonymized data, whereas Cubid also collects more personal information about you, such as your name, profile picture and government issued ID. Wtih GP it's all about your own accounts, but with Cubid you can also tell us who your friends are, and you can validate each other. Because as humans we are not only defined by our accounts, we are also defined by who we know and who knows us. We are very similar to GP in how we collect stamps. We both keep your data in two places: a central database and a copy on a public ledger (IPFS). We also both allow you an option to "mint" your credentials to various blockchains in the form of Soulbound Tokens</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader>
             <CardTitle>Links to Documentation</CardTitle>
-            <CardDescription>Everything you need to know about us</CardDescription>
+            <CardDescription>Everything you need to know about us.</CardDescription>
           </CardHeader>
           <CardContent>
-            <p>Card Content</p>
+            <p>(coming soon)</p>
           </CardContent>
         </Card>
         <Card>
@@ -56,7 +56,7 @@ export const About = () => {
             <CardDescription>All terms and conditions we need</CardDescription>
           </CardHeader>
           <CardContent>
-            <p>Card Content</p>
+            <p>(coming soon)</p>
           </CardContent>
         </Card>
       </div>
