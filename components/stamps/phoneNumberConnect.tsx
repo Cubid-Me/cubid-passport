@@ -138,7 +138,6 @@ export const PhoneNumberConnect = ({
                   <PhoneInput
                     placeholder="Phone Number"
                     value={phoneInput}
-                    type="number"
                     inputClass="!bg-black"
                     dropdownClass="!text-black"
                     country="us"
