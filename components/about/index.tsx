@@ -26,7 +26,7 @@ export const About = () => {
         <Card style={{ height: "fit-content" }}>
           <CardHeader>
             <CardTitle>Other Cubid Apps</CardTitle>
-            <CardDescription>Explore the Cubid ecosystem of apps for a much more detailed view for your profile
+            <CardDescription>Explore the Cubid ecosystem of apps, all with a shared view of your identity
             </CardDescription>
           </CardHeader>
           <CardContent>
