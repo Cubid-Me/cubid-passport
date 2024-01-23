@@ -605,7 +605,7 @@ export const Stamps = () => {
               alt="Image"
               className="mb-1 h-10 w-10 rounded-md"
             />
-            <CardTitle>Near Wallet - IAH Integration</CardTitle>
+            <CardTitle>I-Am-Human</CardTitle>
             {doesStampExist(stampsWithId["near-wallet"]) ? (
               <CardDescription>
                 <div className="flex items-center space-x-1">
@@ -627,7 +627,7 @@ export const Stamps = () => {
                 </div>
               </CardDescription>
             ) : (
-              <CardDescription>Connect your wallet connect</CardDescription>
+              <CardDescription>Use a NEAR wallet to connect your IAH-verified account</CardDescription>
             )}
           </CardHeader>
           <CardContent>
@@ -697,11 +697,11 @@ export const Stamps = () => {
               alt="Image"
               className="mb-1 h-10 w-10 rounded-md"
             />
-            <CardTitle>Bright Id Connect</CardTitle>
+            <CardTitle>BrightID</CardTitle>
             {doesStampExist(stampsWithId.brightid) ? (
               <CardDescription>
                 <div className="flex items-center space-x-1">
-                  <p>Your brightid has been connected</p>
+                  <p>Your BrightID has been connected</p>
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     fill="none"
@@ -719,7 +719,7 @@ export const Stamps = () => {
                 </div>
               </CardDescription>
             ) : (
-              <CardDescription>Connect your bright id wallet</CardDescription>
+              <CardDescription>Connect your BrightID wallet</CardDescription>
             )}
           </CardHeader>
           <CardContent>
@@ -782,7 +782,7 @@ export const Stamps = () => {
             />
             <CardTitle>Gitcoin Passport</CardTitle>
             <CardDescription>
-              Connect your web3 to be verified by gitcoin passport
+              Connect to import your existing Gitcoin Passport
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -844,7 +844,7 @@ export const Stamps = () => {
             <CardDescription>
               {doesStampExist(stampsWithId.instagram)
                 ? "Instagram Connected"
-                : "Connect your instagram"}
+                : "Connect your existing Instagram account"}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -938,7 +938,7 @@ export const Stamps = () => {
                 </div>
               </CardDescription>
             ) : (
-              <CardDescription>Verify your phone number</CardDescription>
+              <CardDescription>Verify your mobile phone number</CardDescription>
             )}
           </CardHeader>
           <CardContent>

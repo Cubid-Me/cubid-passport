@@ -137,25 +137,6 @@ export const Profile = () => {
             </div>
           </CardContent>
         </Card>
-        <Card style={{ height: "fit-content" }}>
-          <CardHeader>
-            <CardTitle>Cubid Super App</CardTitle>
-            <CardDescription>
-              Head on the cubid app for a much more detailed view for your
-              profile
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <a
-              target="_blank"
-              className={`${buttonVariants({ variant: "link" })} text-blue-500`}
-              rel="noopener noreferrer"
-              href="https://app.cubid.me/"
-            >
-              Link to Cubid App
-            </a>
-          </CardContent>
-        </Card>
         <Card style={{ height: "fit-content", paddingTop: "15px" }}>
           <CardContent>
             <Button
