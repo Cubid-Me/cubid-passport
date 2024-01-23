@@ -26,19 +26,19 @@ export const About = () => {
         <Card>
           <CardHeader>
             <CardTitle>Passport and Stamps</CardTitle>
-            <CardDescription>Stamps in your physical passport shows where you've been and become part of your identity. With CUBID you collect "digital stamps" in a similar way to verify yourself online. Different stamps carry different weight. Your Facebook account for example carries a low score, since it's easy for one person to create multiple Facebook accounts. If you proove youre national identification number on the other hand then this carries a high score, since it's clos to impossible for one person to have more than one such ID.</CardDescription>
+            <CardDescription>A new way to verify yourself online</CardDescription>
           </CardHeader>
           <CardContent>
-            <p>Card Content</p>
+            <p>Stamps in your physical passport shows where you've been, which becomes part of your identity. With CUBID you collect "digital stamps" in a similar way, to build your identity and use it to verify yourself as a real human online. Different stamps carry different weight. Your Facebook account for example carries a low score, since it's easy for one person to create multiple Facebook accounts. If you proove youre national identification number (e.g. SSN, SIN, etc.) on the other hand, then this carries a high score since it's close to impossible for one person to have more than one such ID.</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader>
             <CardTitle>Differences from Gitcoin passport</CardTitle>
-            <CardDescription>How we&apos;re different and mutli chain compatible</CardDescription>
+            <CardDescription>How we&apos;re different and mutli-chain compatible</CardDescription>
           </CardHeader>
           <CardContent>
-            <p>We toook inspiration from another protocol called Gitcoin Passport (GP) when we built CUBID. We are different in a few ways: GP is a "web3" protocol that require you to set up a wallet and a private key before you can use it. With Cubid you can sign in with email or social accounts. GP is limited to anonymized data, whereas Cubid also collects more personal information about you, such as your name, profile picture and government issued ID. Wtih GP it's all about your own accounts, but with Cubid you can also tell us who your friends are, and you can validate each other. Because as humans we are not only defined by our accounts, we are also defined by who we know and who knows us. We are very similar to GP in how we collect stamps. We both keep your data in two places: a central database and a copy on a public ledger (IPFS). We also both allow you an option to "mint" your credentials to various blockchains in the form of Soulbound Tokens</p>
+            <p>We toook inspiration from another protocol called Gitcoin Passport (GP) when we built CUBID. We are different in a few ways: GP is a "web3" protocol that require you to set up a wallet and a private key before you can use it. With Cubid you can sign in with email or social accounts. GP is limited to anonymized data, whereas Cubid also collects more personal information about you, such as your name, profile picture and government issued ID. Wtih GP it's all about your own accounts, but with Cubid you can also tell us who your friends are, and you can validate each other. Because as humans we are not only defined by our accounts, we are also defined by who we know and who knows us. We are very similar to GP in how we collect stamps. We both keep your data in two places: a central database and a copy on a public ledger (IPFS). We also both allow you an option to "mint" your credentials to various blockchains in the form of Soulbound Tokens. Cubid is compatible with all chains, where GP is limited to only EVM-chains.</p>
           </CardContent>
         </Card>
         <Card>
@@ -47,7 +47,7 @@ export const About = () => {
             <CardDescription>Everything you need to know about us.</CardDescription>
           </CardHeader>
           <CardContent>
-            <p>(coming soon)</p>
+            <p>(GitBook coming soon)</p>
           </CardContent>
         </Card>
         <Card>
@@ -56,7 +56,7 @@ export const About = () => {
             <CardDescription>All terms and conditions we need</CardDescription>
           </CardHeader>
           <CardContent>
-            <p>(coming soon)</p>
+            <p>(Legalese coming soon)</p>
           </CardContent>
         </Card>
       </div>
