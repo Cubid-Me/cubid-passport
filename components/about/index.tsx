@@ -13,11 +13,13 @@ export const About = () => {
   return (
     <div className="p-3">
       <h1 className="mb-2 text-3xl font-semibold">About</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Cubid</CardTitle>
-            <CardDescription>Your gateway to a decentralized future</CardDescription>
+            <CardDescription>
+              Your gateway to a decentralized future
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <p>Card Content</p>
@@ -35,7 +37,9 @@ export const About = () => {
         <Card>
           <CardHeader>
             <CardTitle>Differences from Gitcoin passport</CardTitle>
-            <CardDescription>How we&apos;re different and mutli chain compatible</CardDescription>
+            <CardDescription>
+              How we&apos;re different and mutli chain compatible
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <p>Card Content</p>
@@ -44,7 +48,9 @@ export const About = () => {
         <Card>
           <CardHeader>
             <CardTitle>Links to Documentation</CardTitle>
-            <CardDescription>Everything you need to know about us</CardDescription>
+            <CardDescription>
+              Everything you need to know about us
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <p>Card Content</p>
@@ -63,7 +69,6 @@ export const About = () => {
     </div>
   )
 }
-
 
 // about Cubid
 // - about Passport and Stamps
