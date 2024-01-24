@@ -8,12 +8,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { buttonVariants } from "../ui/button"
 
 export const About = () => {
   return (
     <div className="p-3">
       <h1 className="mb-2 text-3xl font-semibold">About</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>About Cubid</CardTitle>
@@ -104,7 +105,6 @@ export const About = () => {
     </div>
   )
 }
-
 
 // about Cubid
 // - about Passport and Stamps
