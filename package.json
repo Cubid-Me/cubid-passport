@@ -61,6 +61,7 @@
     "pino-pretty": "^10.2.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-form-stepper": "^2.0.3",
     "react-phone-input-2": "^2.15.1",
     "react-phone-number-input": "^3.3.7",
     "react-redux": "^8.1.2",
