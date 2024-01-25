@@ -100,12 +100,13 @@ export const stampsWithId = {
   twitter: 4,
   discord: 5,
   poh: 6,
-  "near-wallet": 7,
+  iah: 7,
   brightid: 8,
   gitcoin: 9,
   instagram: 10,
   phone: 11,
   gooddollar: 12,
+  "near-wallet": 15,
   fractal: 17,
 }
 
@@ -331,6 +332,7 @@ export const Stamps = () => {
       const dbUser = await getUser()
       if (dataCategory?.[0]?.[1]?.[0] && dbUser?.id) {
         const stampId = (stampsWithId as any)["near-wallet"]
+        const stamp2Id = (stampsWithId as any)["iah"]
 
         const dbUser = await getUser()
         const database = {
@@ -339,6 +341,15 @@ export const Stamps = () => {
           created_by_user_id: dbUser?.id,
           unencrypted_unique_data: (wallet as any).accountId,
           type_and_hash: `${stampId} ${await encode_data(
+            (wallet as any).accountId
+          )}`,
+        }
+        const database_iah = {
+          uniquehash: await encode_data((wallet as any).accountId),
+          stamptype: stamp2Id,
+          created_by_user_id: dbUser?.id,
+          unencrypted_unique_data: (wallet as any).accountId,
+          type_and_hash: `${stamp2Id} ${await encode_data(
             (wallet as any).accountId
           )}`,
         }
@@ -353,12 +364,50 @@ export const Stamps = () => {
             (wallet as any).accountId
           )}`,
         }
+        const dataToSet_iah = {
+          created_by_user_id: dbUser?.id,
+          created_by_app: await getIdForApp(),
+          stamptype: stamp2Id,
+          uniquevalue: (wallet as any).accountId,
+          unique_hash: await encode_data((wallet as any).accountId),
+          stamp_json: { account: (wallet as any).accountId },
+          type_and_uniquehash: `${stamp2Id} ${await encode_data(
+            (wallet as any).accountId
+          )}`,
+        }
         const {
           data: { error: unique_data },
         } = await axios.post("/api/supabase/insert", {
           table: "uniquestamps",
           body: database,
         })
+        const {
+          data: { error: unique_data_iah },
+        } = await axios.post("/api/supabase/insert", {
+          table: "uniquestamps",
+          body: database_iah,
+        })
+        if (!unique_data_iah) {
+          const {
+            data: { error, data: data_iah },
+          } = await axios.post("/api/supabase/insert", {
+            table: "stamps",
+            body: dataToSet_iah,
+          })
+          if (data_iah?.[0]?.id) {
+            await axios.post("/api/supabase/insert", {
+              table: "authorized_dapps",
+              body: {
+                dapp_id: 22,
+                dapp_and_stamp_id: `22 ${data_iah?.[0]?.id}`,
+                stamp_id: data_iah?.[0]?.id,
+                can_read: true,
+                can_update: true,
+                can_delete: true,
+              },
+            })
+          }
+        }
         if (!unique_data) {
           const {
             data: { error, data },
@@ -627,13 +676,27 @@ export const Stamps = () => {
                 </div>
               </CardDescription>
             ) : (
-              <CardDescription>Use a NEAR wallet to connect your IAH-verified account</CardDescription>
+              <CardDescription>
+                Use a NEAR wallet to connect your IAH-verified account
+              </CardDescription>
             )}
           </CardHeader>
           <CardContent>
             {doesStampExist(stampsWithId["near-wallet"]) ? (
               <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <Button>Verified Stamp</Button>
+                <div className="flex items-center space-x-2">
+                  <Button>Verified Stamp</Button>
+                  <Button
+                    onClick={() => {
+                      wallet.signIn()
+                    }}
+                    variant="secondary"
+                    style={{ width: "200px" }}
+                  >
+                    Connect Wallet
+                  </Button>
+                </div>
+
                 <DropdownMenu>
                   <DropdownMenuTrigger>
                     <svg
