@@ -95,7 +95,7 @@ export const NearFlow = () => {
         styleConfig={{
           activeBgColor: "#3B82F6",
           completedBgColor: "#1E40AF",
-        }}
+        } as any}
       />
       {switchUI(stepFlow)}
     </div>
