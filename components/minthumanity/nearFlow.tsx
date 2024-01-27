@@ -3,7 +3,6 @@
 
 import React, { useCallback, useEffect, useState } from "react"
 import axios from "axios"
-import { Stepper } from "react-form-stepper"
 
 import useAuth from "@/hooks/useAuth"
 
