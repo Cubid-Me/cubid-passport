@@ -437,6 +437,7 @@ export const Stamps = () => {
         toast.error(
           "Please verify yourself with IAH to get a verified stamp with near"
         )
+        wallet.signOut()
       }
     }
   }, [email, fetchStampData, fetchUserData, getUser, getIdForApp])

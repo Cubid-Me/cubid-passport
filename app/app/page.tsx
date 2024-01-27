@@ -3,8 +3,8 @@
 import { useState } from "react"
 import { logout } from "@/redux/userSlice"
 import { About } from "components/about"
-import { MintHumanity } from "components/minthumanity"
 import { Authenticated } from "components/auth/authenticated"
+import { MintHumanity } from "components/minthumanity"
 import { Profile } from "components/profile"
 import { Stamps } from "components/stamps"
 import { useDispatch } from "react-redux"
@@ -55,10 +55,16 @@ export default function IndexPage() {
           </div>
         </TabsContent>
         <TabsContent style={{ height: "100vh" }} value="minthumanity">
-            <MintHumanity />
+          <MintHumanity />
         </TabsContent>
         <TabsList
-          style={{ width: "100%", position: "fixed", bottom: 10, left: 0 }}
+          style={{
+            width: "95%",
+            marginLeft: "2.5%",
+            position: "fixed",
+            bottom: 10,
+            left: 0,
+          }}
         >
           <TabsTrigger style={{ width: "33.33%" }} value="profile">
             <svg
@@ -109,7 +115,10 @@ export default function IndexPage() {
               ></path>
             </svg>
           </TabsTrigger>
-          <TabsTrigger style={{ width: "33.33%",height:"36px" }} value="minthumanity">
+          <TabsTrigger
+            style={{ width: "33.33%", height: "36px" }}
+            value="minthumanity"
+          >
             <div className="translate-y-[4px]">
               <svg
                 viewBox="0 0 24 30"

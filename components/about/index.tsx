@@ -12,7 +12,7 @@ import { buttonVariants } from "../ui/button"
 
 export const About = () => {
   return (
-    <div className="p-3">
+    <div className="p-3 pb-10">
       <h1 className="mb-2 text-3xl font-semibold">About</h1>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <Card>
