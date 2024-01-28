@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useState } from "react"
 import axios from "axios"
 import { useDispatch, useSelector } from "react-redux"
 
+import useAuth from "@/hooks/useAuth"
 import { Button, buttonVariants } from "@/components/ui/button"
 import {
   Card,
@@ -23,7 +24,7 @@ import {
 import { logout } from "../../redux/userSlice"
 
 export const Profile = () => {
-  const { email = "" } = useSelector((state: any) => state?.user) ?? {};
+  const { email = "" } = useSelector((state: any) => state?.user) ?? {}
   const dispatch = useDispatch()
   const [userState, setUserState] = useState<any>({})
   const [walletState, setWalletState] = useState<any>({})
@@ -63,6 +64,29 @@ export const Profile = () => {
     }
   }, [fetchStamps, fetchWalletDetails, email])
 
+  const [nearAcc, setNearAcc] = useState([])
+  const { supabaseUser } = useAuth({})
+
+  const fetchNearStamps = useCallback(async () => {
+    if (supabaseUser?.id) {
+      const {
+        data: { data },
+      } = await axios.post("/api/supabase/select", {
+        match: {
+          created_by_user_id: supabaseUser.id,
+          stamptype: 15,
+        },
+        table: "stamps",
+      })
+      const allNearAcc = data.map((item: any) => item.uniquevalue)
+      setNearAcc(allNearAcc)
+    }
+  }, [supabaseUser])
+
+  useEffect(() => {
+    fetchNearStamps()
+  }, [fetchNearStamps])
+
   return (
     <div className="p-3">
       <h1 className="mb-2 text-3xl font-semibold">Profile</h1>
@@ -97,6 +121,11 @@ export const Profile = () => {
                   G$ : {walletState?.["wallet-address"]}
                 </Button>
               )}
+              {nearAcc.map((item) => (
+                <Button className="block" key={item} variant="outline">
+                  {item}
+                </Button>
+              ))}
             </div>
           </CardContent>
         </Card>
