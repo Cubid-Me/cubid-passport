@@ -60,28 +60,9 @@ export const NearFlow = () => {
             />
           </button>
         </div>
-        <div className={stepFlow >= 1 ? "" : "pointer-events-none opacity-20"}>
-          <p className="p-2 text-xl font-semibold">Choose Passport</p>
-          <button
-            onClick={() => {
-              setStepFlow(2)
-              setFormState((d) => ({ ...d, passport: "gitcoin" }))
-            }}
-            className={`rounded-lg p-2 ${
-              formState.passport === "gitcoin"
-                ? "border-4 border-blue-500"
-                : "border-2 border-gray-700 "
-            }`}
-          >
-            <img
-              className="h-[100px] w-[250px] rounded-md object-cover"
-              src="https://images.mirror-media.xyz/nft/7XcbbnpLqNd0w-Qeh7xB8.png"
-            />
-          </button>
-        </div>
         <div
           className={
-            stepFlow === 2
+            stepFlow >= 1
               ? "space-y-2"
               : "pointer-events-none space-y-2 opacity-20"
           }
@@ -92,6 +73,7 @@ export const NearFlow = () => {
           {nearAcc.map((item: string) => (
             <div
               onClick={() => {
+                setStepFlow(2)
                 setFormState((d) => ({ ...d, wallet: item }))
               }}
               className={`rounded border-2 px-3 py-2 ${
@@ -144,21 +126,40 @@ export const NearFlow = () => {
                 "Create New Account"
               )}
             </button>
-            <button
-              onClick={async () => {
-                await axios.post("/api/mint-sbt", {
-                  nearAccount: formState.wallet,
-                });
-                toast.success("SBT minted successfully ")
-              }}
-              className={`w-full rounded bg-blue-500 py-2 text-white ${
-                !formState.wallet && "opacity-25"
-              }`}
-            >
-              Mint SBT
-            </button>
           </div>
         </div>
+        <div className={stepFlow === 2 ? "" : "pointer-events-none opacity-20"}>
+          <p className="p-2 text-xl font-semibold">Choose Passport</p>
+          <button
+            onClick={() => {
+              setFormState((d) => ({ ...d, passport: "gitcoin" }))
+            }}
+            className={`rounded-lg p-2 ${
+              formState.passport === "gitcoin"
+                ? "border-4 border-blue-500"
+                : "border-2 border-gray-700 "
+            }`}
+          >
+            <img
+              className="h-[100px] w-[250px] rounded-md object-cover"
+              src="https://images.mirror-media.xyz/nft/7XcbbnpLqNd0w-Qeh7xB8.png"
+            />
+          </button>
+        </div>
+        <button
+          onClick={async () => {
+            await axios.post("/api/mint-sbt", {
+              nearAccount: formState.wallet,
+            })
+            toast.success("SBT minted successfully ")
+          }}
+          disabled={Boolean(formState.passport)}
+          className={`w-full rounded bg-blue-500 py-2 text-white ${
+            !formState.passport && "opacity-25"
+          }`}
+        >
+          Mint SBT
+        </button>
       </div>
     )
   }
