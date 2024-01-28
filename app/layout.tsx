@@ -1,18 +1,19 @@
 // @ts-nocheck
 
 "use client"
+
 import "@/styles/globals.css"
 import { OwnIDInit } from "@ownid/react"
 import { ToastContainer } from "react-toastify"
-import 'react-phone-input-2/lib/style.css'
 
+import "react-phone-input-2/lib/style.css"
 import "react-toastify/dist/ReactToastify.css"
-import { createWeb3Modal, defaultWagmiConfig } from '@web3modal/wagmi/react'
+import { createWeb3Modal, defaultWagmiConfig } from "@web3modal/wagmi/react"
 import { getAuth, getIdToken, signInWithCustomToken } from "firebase/auth"
 import { SessionProvider } from "next-auth/react"
 import { Provider } from "react-redux"
+import { arbitrum, mainnet } from "viem/chains"
 import { WagmiConfig } from "wagmi"
-import { arbitrum, mainnet } from 'viem/chains'
 
 import { cn } from "@/lib/utils"
 import { SiteHeader } from "@/components/site-header"
@@ -73,9 +74,8 @@ export default function RootLayout(props: any) {
           >
             <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
               <div>
-                {!(window as any).location.href.includes("/allow") && (
-                  <SiteHeader />
-                )}
+                <SiteHeader />
+
                 <Provider store={store}>
                   <WagmiConfig config={wagmiConfig}>
                     <div>{props.children}</div>
@@ -120,7 +120,7 @@ export default function RootLayout(props: any) {
           >
             <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
               <div>
-                {!(window as any).location.href.includes("/allow") && (
+                {!(window as any)?.location?.href?.includes("/allow") && (
                   <SiteHeader />
                 )}
                 <Provider store={store}>
