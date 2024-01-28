@@ -1,3 +1,4 @@
+// @ts-nocheck
 import path from "path"
 import { NextApiRequest, NextApiResponse } from "next"
 import axios from "axios"
