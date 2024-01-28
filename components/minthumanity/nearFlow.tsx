@@ -3,6 +3,7 @@
 
 import React, { useCallback, useEffect, useState } from "react"
 import axios from "axios"
+import { toast } from "react-toastify"
 
 import useAuth from "@/hooks/useAuth"
 
@@ -89,7 +90,15 @@ export const NearFlow = () => {
             Choose the near account you want to mint Humanity SBT with{" "}
           </p>
           {nearAcc.map((item: string) => (
-            <div className="rounded border px-3 py-2" key={item}>
+            <div
+              onClick={() => {
+                setFormState((d) => ({ ...d, wallet: item }))
+              }}
+              className={`rounded border-2 px-3 py-2 ${
+                item === formState.wallet && "border-blue-500"
+              }`}
+              key={item}
+            >
               <p className="">{item}</p>
             </div>
           ))}
@@ -135,7 +144,17 @@ export const NearFlow = () => {
                 "Create New Account"
               )}
             </button>
-            <button className="w-full rounded bg-blue-500 py-2 text-white">
+            <button
+              onClick={async () => {
+                await axios.post("/api/mint-sbt", {
+                  nearAccount: formState.wallet,
+                });
+                toast.success("SBT minted successfully ")
+              }}
+              className={`w-full rounded bg-blue-500 py-2 text-white ${
+                !formState.wallet && "opacity-25"
+              }`}
+            >
               Mint SBT
             </button>
           </div>
