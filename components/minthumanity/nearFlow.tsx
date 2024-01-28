@@ -108,7 +108,7 @@ export const NearFlow = () => {
                 if (!loading) {
                   try {
                     setLoading(true)
-                    await axios.post("/api/create-new-near-acc", {
+                    await axios.post("/api/createnewnearacc", {
                       userId: supabaseUser?.id,
                     })
                     await fetchNearStamps()
