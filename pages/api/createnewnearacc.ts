@@ -75,8 +75,6 @@ export default async function handler(
   const { userId } = req.body;
   const myKeyStore = new keyStores.InMemoryKeyStore()
   const PRIVATE_KEY = process.env.private_key_near ?? "";
-  res.send(PRIVATE_KEY);
-  return ;
   // creates a public / private key pair using the provided private key
   const keyPairString = KeyPair.fromString(PRIVATE_KEY)
   // adds the keyPair you created to keyStore
