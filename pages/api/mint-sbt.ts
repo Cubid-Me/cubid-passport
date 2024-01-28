@@ -13,7 +13,7 @@ export default async function handler(
   const { nearAccount } = req.body
   const myKeyStore = new keyStores.InMemoryKeyStore()
   const PRIVATE_KEY =
-    "ed25519:5iCem58HUk9M1DkidrhAKzBR3abQgRWyormu5fxaboWn7MSHVNDimTX2XannYXtgmcF1UENiha4DSqUsNUu9y8ky"
+   process.env.private_key_near;
   // creates a public / private key pair using the provided private key
   const keyPairString = KeyPair.fromString(PRIVATE_KEY)
   // adds the keyPair you created to keyStore
