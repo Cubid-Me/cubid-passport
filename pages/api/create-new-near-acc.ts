@@ -39,7 +39,7 @@ const encode_data = async (str: string) => {
   return 4294967296 * (2097151 & h2) + (h1 >>> 0)
 }
 
-function numberStringToAlphabets(numberString:string) {
+function numberStringToAlphabets(numberString: string) {
   // Initialize the result string
   let result = ""
 
@@ -74,8 +74,7 @@ export default async function handler(
 ) {
   const { userId } = req.body
   const myKeyStore = new keyStores.InMemoryKeyStore()
-  const PRIVATE_KEY =
-    "ed25519:5iCem58HUk9M1DkidrhAKzBR3abQgRWyormu5fxaboWn7MSHVNDimTX2XannYXtgmcF1UENiha4DSqUsNUu9y8ky"
+  const PRIVATE_KEY = process.env.private_key_near ?? ""
   // creates a public / private key pair using the provided private key
   const keyPairString = KeyPair.fromString(PRIVATE_KEY)
   // adds the keyPair you created to keyStore
@@ -95,7 +94,9 @@ export default async function handler(
   const keyPair = KeyPair.fromRandom("ed25519")
   const publicKey = keyPairString.getPublicKey().toString()
   const randomString = generateRandomString()
-  const accountToCreate = `${numberStringToAlphabets(`${userId}`)}${randomString}`.toLowerCase()
+  const accountToCreate = `${numberStringToAlphabets(
+    `${userId}`
+  )}${randomString}`.toLowerCase()
   console.log(accountToCreate)
   await myKeyStore.setKey(
     connectionConfig.networkId,
