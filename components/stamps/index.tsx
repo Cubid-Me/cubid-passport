@@ -294,6 +294,7 @@ export const Stamps = () => {
           })
       }
       disconnect()
+      fetchUserData()
     },
     [disconnect, email, fetchUserData, getIdForApp, getUser, userState]
   )
@@ -387,7 +388,7 @@ export const Stamps = () => {
         },
       })
       const dbUser = await getUser()
-      if (dataCategory?.[0]?.[1]?.[0] && dbUser?.id) {
+      if (dbUser?.id) {
         const stampId = (stampsWithId as any)["near-wallet"]
         const stamp2Id = (stampsWithId as any)["iah"]
 
@@ -444,56 +445,48 @@ export const Stamps = () => {
           table: "uniquestamps",
           body: database_iah,
         })
-        if (!unique_data_iah) {
-          const {
-            data: { error, data: data_iah },
-          } = await axios.post("/api/supabase/insert", {
-            table: "stamps",
-            body: dataToSet_iah,
+        const {
+          data: { data: data_iah },
+        } = await axios.post("/api/supabase/insert", {
+          table: "stamps",
+          body: dataToSet_iah,
+        })
+        if (data_iah?.[0]?.id) {
+          await axios.post("/api/supabase/insert", {
+            table: "authorized_dapps",
+            body: {
+              dapp_id: 22,
+              dapp_and_stamp_id: `22 ${data_iah?.[0]?.id}`,
+              stamp_id: data_iah?.[0]?.id,
+              can_read: true,
+              can_update: true,
+              can_delete: true,
+            },
           })
-          if (data_iah?.[0]?.id) {
-            await axios.post("/api/supabase/insert", {
-              table: "authorized_dapps",
-              body: {
-                dapp_id: 22,
-                dapp_and_stamp_id: `22 ${data_iah?.[0]?.id}`,
-                stamp_id: data_iah?.[0]?.id,
-                can_read: true,
-                can_update: true,
-                can_delete: true,
-              },
-            })
-          }
         }
-        if (!unique_data) {
-          const {
-            data: { error, data },
-          } = await axios.post("/api/supabase/insert", {
-            table: "stamps",
-            body: dataToSet,
-          })
-          if (data?.[0]?.id) {
-            await axios.post("/api/supabase/insert", {
-              table: "authorized_dapps",
-              body: {
-                dapp_id: 22,
-                dapp_and_stamp_id: `22 ${data?.[0]?.id}`,
-                stamp_id: data?.[0]?.id,
-                can_read: true,
-                can_update: true,
-                can_delete: true,
-              },
-            })
-          }
 
-          fetchUserData()
-          fetchStampData()
-          wallet.signOut()
+        const {
+          data: { data },
+        } = await axios.post("/api/supabase/insert", {
+          table: "stamps",
+          body: dataToSet,
+        })
+        if (data?.[0]?.id) {
+          await axios.post("/api/supabase/insert", {
+            table: "authorized_dapps",
+            body: {
+              dapp_id: 22,
+              dapp_and_stamp_id: `22 ${data?.[0]?.id}`,
+              stamp_id: data?.[0]?.id,
+              can_read: true,
+              can_update: true,
+              can_delete: true,
+            },
+          })
         }
-      } else {
-        toast.error(
-          "Please verify yourself with IAH to get a verified stamp with near"
-        )
+
+        fetchUserData()
+        fetchStampData()
         wallet.signOut()
       }
     }
