@@ -8,7 +8,7 @@ import axios from "axios"
 import dayjs from "dayjs"
 import { useSelector } from "react-redux"
 import { toast } from "react-toastify"
-import { useAccount } from "wagmi"
+import { useAccount, useDisconnect } from "wagmi"
 import Web3 from "web3"
 
 import { useStamps } from "./../../hooks/useStamps"
@@ -189,9 +189,57 @@ export const Stamps = () => {
   }, [email])
 
   const [isPohVerified, setIsPohVerified] = useState<any>(null)
+  const { disconnect } = useDisconnect()
+  const { getIdForApp } = useCreatedByAppId()
 
   const connectToWeb3Node = useCallback(
-    (address: string) => {
+    async (address: string) => {
+      if (address) {
+        const {
+          data: { stamps, scores },
+        } = await axios.post("/api/gitcoin-passport-data", { address })
+        const stampId = stampsWithId.gitcoin
+        const dbUser = await getUser()
+        const database = {
+          uniquehash: await encode_data(address),
+          stamptype: stampId,
+          created_by_user_id: dbUser?.id,
+          unencrypted_unique_data: JSON.stringify(scores),
+          type_and_hash: `${stampId} ${await encode_data(address)}`,
+        }
+        const dataToSet = {
+          created_by_user_id: dbUser?.id,
+          created_by_app: await getIdForApp(),
+          stamptype: stampId,
+          uniquevalue: address,
+          unique_hash: await encode_data(address),
+          stamp_json: { stamps, scores },
+          type_and_uniquehash: `${stampId} ${await encode_data(address)}`,
+        }
+        await axios.post("/api/supabase/insert", {
+          table: "uniquestamps",
+          body: database,
+        })
+        const {
+          data: { error, data },
+        } = await axios.post("/api/supabase/insert", {
+          table: "stamps",
+          body: dataToSet,
+        })
+        if (data?.[0]?.id) {
+          await axios.post("/api/supabase/insert", {
+            table: "authorized_dapps",
+            body: {
+              dapp_id: 22,
+              dapp_and_stamp_id: `22 ${data?.[0]?.id}`,
+              stamp_id: data?.[0]?.id,
+              can_read: true,
+              can_update: true,
+              can_delete: true,
+            },
+          })
+        }
+      }
       if (userState && !(userState as any)?.poh_IsRegistered) {
         const infuraUrl =
           "https://mainnet.infura.io/v3/6f111f744ee54510a941cfee4716c3db"
@@ -239,13 +287,15 @@ export const Stamps = () => {
             } else {
               setIsPohVerified(false)
             }
+            disconnect()
           })
           .catch((err: any) => {
             toast.error("An error occured")
           })
       }
+      disconnect()
     },
-    [email, fetchUserData, userState]
+    [disconnect, email, fetchUserData, getIdForApp, getUser, userState]
   )
   const { address } = useAccount()
 
@@ -254,7 +304,6 @@ export const Stamps = () => {
       connectToWeb3Node(address)
     }
   }, [connectToWeb3Node, address])
-  const { getIdForApp } = useCreatedByAppId()
 
   useEffect(() => {
     if (email) {
@@ -313,7 +362,15 @@ export const Stamps = () => {
         }
       })
     }
-  }, [email, fetchStampData, getUser, supabaseUser, userState, getIdForApp])
+  }, [
+    email,
+    fetchStampData,
+    getUser,
+    supabaseUser,
+    userState,
+    getIdForApp,
+    disconnect,
+  ])
 
   useEffect(() => {
     fetchBrightIdData()
@@ -837,7 +894,7 @@ export const Stamps = () => {
             )}
           </CardContent>
         </Card>
-        {/* <Card>
+        <Card>
           <CardHeader>
             <img
               src={"https://passport.gitcoin.co/assets/gitcoinLogoWhite.svg"}
@@ -850,8 +907,7 @@ export const Stamps = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {stampCollector.length !== 0 &&
-            doesStampExist(stampsWithId.gitcoin) ? (
+            {doesStampExist(stampsWithId.gitcoin) ? (
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <Button>Verified Stamp</Button>
                 <DropdownMenu>
@@ -894,7 +950,7 @@ export const Stamps = () => {
               </Button>
             )}
           </CardContent>
-        </Card> */}
+        </Card>
         <Card>
           <CardHeader>
             <img

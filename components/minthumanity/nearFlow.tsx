@@ -105,6 +105,7 @@ export const NearFlow = () => {
           <p className="text-xl font-medium">
             Choose the near account you want to mint Humanity SBT with{" "}
           </p>
+          {nearAcc.length === 0 && <p>No accounts found</p>}
           {nearAcc.map((item: string) => (
             <div
               onClick={() => {
@@ -163,23 +164,62 @@ export const NearFlow = () => {
             </button>
           </div>
         </div>
-        <div className={stepFlow === 2 ? "" : "pointer-events-none opacity-20"}>
-          <p className="p-2 text-xl font-semibold">Choose Passport</p>
+        <p
+          className={
+            "pointer-events-none flex flex-wrap p-2 text-xl font-semibold opacity-20"
+          }
+        >
+          Choose Passport
+        </p>
+        <div
+          className={
+            stepFlow === 2
+              ? "flex flex-wrap space-x-2"
+              : "pointer-events-none flex flex-wrap space-x-2 opacity-20"
+          }
+        >
           <button
-            onClick={() => {
-              setFormState((d) => ({ ...d, passport: "gitcoin" }))
-            }}
-            className={`rounded-lg p-2 ${
+            className={`h-[fit-content] rounded-lg p-2 ${
               formState.passport === "gitcoin"
                 ? "border-4 border-blue-500"
                 : "border-2 border-gray-700 "
             }`}
+            onClick={() => {
+              setFormState((d) => ({ ...d, passport: "gitcoin" }))
+            }}
           >
             <img
               className="h-[100px] w-[250px] rounded-md object-cover"
               src="https://images.mirror-media.xyz/nft/7XcbbnpLqNd0w-Qeh7xB8.png"
             />
           </button>
+          <button
+            className={`h-[fit-content] rounded-lg  p-2 opacity-20 ${
+              formState.passport === "kyc"
+                ? "border-4 border-blue-500"
+                : "border-2 border-gray-700 "
+            }`}
+          >
+            <img
+              className="h-[100px] w-[250px] rounded-md object-cover"
+              src="https://www.atworthy.com/wp-content/uploads/2022/10/kyc-know-your-customer-with-business-verifying-identity-its-clients.png"
+            />
+          </button>
+          <div className="opacity-20">
+            <button
+              className={`rounded-lg  p-2 ${
+                formState.passport === "gitcoinStamps"
+                  ? "border-4 border-blue-500"
+                  : "border-2 border-gray-700 "
+              }`}
+            >
+              <img
+                className="h-[100px] w-[250px] rounded-md object-cover"
+                src="https://www.lifespan.io/wp-content/uploads/2021/12/Gitcoin.png"
+              />
+            </button>
+            <p>Gitcoin Passport With Stamps</p>
+          </div>
         </div>
         <button
           onClick={async () => {
