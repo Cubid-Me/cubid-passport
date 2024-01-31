@@ -3,12 +3,12 @@
 "use client"
 
 import React, { useCallback, useEffect, useState } from "react"
-import { useWeb3Modal } from "@web3modal/wagmi/react"
+// import { useWeb3Modal } from "@web3modal/wagmi1/react"
 import axios from "axios"
 import dayjs from "dayjs"
 import { useSelector } from "react-redux"
 import { toast } from "react-toastify"
-import { useAccount } from "wagmi"
+// import { useAccount } from "wagmi"
 import Web3 from "web3"
 
 import { useStamps } from "./../../hooks/useStamps"
@@ -278,7 +278,8 @@ export const Stamps = ({
     },
     [email, fetchUserData, userState]
   )
-  const { address } = useAccount()
+  // const { address } = useAccount()
+  const address=undefined;
 
   useEffect(() => {
     if (address) {
@@ -477,7 +478,8 @@ export const Stamps = ({
     })()
   }, [getUser, appId])
 
-  const { open } = useWeb3Modal()
+  // const { open } = useWeb3Modal()
+  const open = ()=>{}
 
   function camelCaseToWords(s: string) {
     const result = s.replace(/([A-Z])/g, " $1")

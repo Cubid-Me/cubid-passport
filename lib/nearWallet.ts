@@ -2,6 +2,9 @@
 
 // near api js
 import { providers } from 'near-api-js';
+if (!global?.window) {
+  require('localstorage-polyfill');
+}
 
 // wallet selector UI
 import '@near-wallet-selector/modal-ui/styles.css';
