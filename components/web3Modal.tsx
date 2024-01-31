@@ -55,4 +55,4 @@ export function Web3Modal({
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     </WagmiProvider>
   )
-}
+};
