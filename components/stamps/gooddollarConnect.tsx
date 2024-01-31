@@ -5,7 +5,7 @@
 import React, { useCallback, useEffect, useState } from "react"
 import { newKitFromWeb3 } from "@celo/contractkit"
 import { ClaimSDK } from "@gooddollar/web3sdk-v2"
-import { useWeb3Modal } from "@web3modal/wagmi1/react"
+// import { useWeb3Modal } from "@web3modal/wagmi1/react"
 import axios from "axios"
 import dayjs from "dayjs"
 import { useSelector } from "react-redux"
