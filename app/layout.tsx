@@ -62,7 +62,7 @@ export default function RootLayout(props: any) {
                 <SiteHeader />
 
                 <Provider store={store}>
-                  <Web3Modal initialState={initialState}>
+                  <Web3Modal >
                     <div>{props.children}</div>
                   </Web3Modal>
                   <ToastContainer />
@@ -109,7 +109,7 @@ export default function RootLayout(props: any) {
                   <SiteHeader />
                 )}
                 <Provider store={store}>
-                  <Web3Modal initialState={initialState}>
+                  <Web3Modal >
                     <div>{props.children}</div>
                   </Web3Modal>
                   <ToastContainer />
