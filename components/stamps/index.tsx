@@ -3,7 +3,7 @@
 "use client"
 
 import React, { useCallback, useEffect, useState } from "react"
-import { useWeb3Modal } from "@web3modal/wagmi/react"
+import { useWeb3Modal } from "@web3modal/react"
 import axios from "axios"
 import dayjs from "dayjs"
 import { useSelector } from "react-redux"
