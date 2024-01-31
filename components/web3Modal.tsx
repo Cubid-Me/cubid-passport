@@ -31,4 +31,4 @@ export function Web3Modal({ children }: any) {
       <Web3Modal projectId={projectId} ethereumClient={ethereumClient} />
     </>
   )
-}
+};
