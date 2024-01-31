@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function IndexPage() {
   const dispatch = useDispatch()
-  const [tab, setTab] = useState("stamps")
+  const [tab, setTab] = useState("stamps");
 
   const profile = () => (
     <>
