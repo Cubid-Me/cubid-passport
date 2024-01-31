@@ -1,32 +1,58 @@
-// 'use client'
+'use client'
 
-// // import { createWeb3Modal, defaultWagmiConfig } from '@web3modal/wagmi1/react'
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { createWeb3Modal } from "@web3modal/wagmi/react"
+import { defaultWagmiConfig } from "@web3modal/wagmi/react/config"
+import { State, WagmiProvider, cookieStorage, createStorage } from "wagmi"
+import { mainnet, sepolia } from "wagmi/chains"
 
-// import { WagmiConfig } from 'wagmi'
-// import { arbitrum, mainnet } from 'viem/chains'
+// Setup queryClient
+const queryClient = new QueryClient()
 
-// // 1. Get projectId at https://cloud.walletconnect.com
-// const projectId = '6833ed2c1539b9d27e8840c51f53bd0c'
+// Get projectId at https://cloud.walletconnect.com
+export const projectId = '6833ed2c1539b9d27e8840c51f53bd0c'
 
-// // 2. Create wagmiConfig
-// const metadata = {
-//   name: 'Web3Modal',
-//   description: 'Web3Modal Example',
-//   url: 'https://web3modal.com',
-//   icons: ['https://avatars.githubusercontent.com/u/37784886']
-// }
+if (!projectId) throw new Error("Project ID is not defined")
 
-// const chains = [mainnet, arbitrum]
-// const wagmiConfig = defaultWagmiConfig({ chains, projectId, metadata })
+const metadata = {
+  name: "Web3Modal",
+  description: "Web3Modal Example",
+  url: "https://web3modal.com", // origin must match your domain & subdomain
+  icons: ["https://avatars.githubusercontent.com/u/37784886"],
+}
 
-// // 3. Create modal
-// createWeb3Modal({
-//   wagmiConfig,
-//   projectId,
-//   chains,
-//   enableAnalytics: true // Optional - defaults to your Cloud configuration
-// })
+// Create wagmiConfig
+export const config = defaultWagmiConfig({
+  chains: [mainnet, sepolia], // required
+  projectId, // required
+  metadata, // required
+  ssr: true,
+  storage: createStorage({
+    storage: cookieStorage,
+  }),
+  enableWalletConnect: true, // Optional - true by default
+  enableInjected: true, // Optional - true by default
+  enableEIP6963: true, // Optional - true by default
+  enableCoinbase: true, // Optional - true by default
+})
 
-// export function Web3Modal({ children }:any) {
-//   return <WagmiConfig config={wagmiConfig}>{children}</WagmiConfig>
-// }
+// Create modal
+createWeb3Modal({
+  wagmiConfig: config,
+  projectId,
+  enableAnalytics: true, // Optional - defaults to your Cloud configuration
+})
+
+export function Web3Modal({
+  children,
+  initialState,
+}: {
+  children: JSX.Element;
+  initialState?: State
+}) {
+  return (
+    <WagmiProvider config={config} initialState={initialState}>
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    </WagmiProvider>
+  )
+}

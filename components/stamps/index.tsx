@@ -3,12 +3,12 @@
 "use client"
 
 import React, { useCallback, useEffect, useState } from "react"
-// import { useWeb3Modal } from "@web3modal/wagmi1/react"
+import { useWeb3Modal } from "@web3modal/wagmi/react"
 import axios from "axios"
 import dayjs from "dayjs"
 import { useSelector } from "react-redux"
 import { toast } from "react-toastify"
-// import { useAccount, useDisconnect } from "wagmi"
+import { useAccount, useDisconnect } from "wagmi"
 import Web3 from "web3"
 
 import { useStamps } from "./../../hooks/useStamps"
@@ -189,8 +189,7 @@ export const Stamps = () => {
   }, [email])
 
   const [isPohVerified, setIsPohVerified] = useState<any>(null)
-  // const { disconnect } = useDisconnect()
-  const disconnect = () => {}
+  const { disconnect } = useDisconnect()
   const { getIdForApp } = useCreatedByAppId()
 
   const connectToWeb3Node = useCallback(
@@ -240,6 +239,8 @@ export const Stamps = () => {
             },
           })
         }
+        disconnect()
+        fetchUserData()
       }
       if (userState && !(userState as any)?.poh_IsRegistered) {
         const infuraUrl =
@@ -299,8 +300,7 @@ export const Stamps = () => {
     },
     [disconnect, email, fetchUserData, getIdForApp, getUser, userState]
   )
-  // const { address } = useAccount()
-  const address = undefined
+  const { address } = useAccount()
 
   useEffect(() => {
     if (address) {
@@ -525,8 +525,7 @@ export const Stamps = () => {
     fetchUserData()
   }, [fetchUserData])
 
-  // const { open } = useWeb3Modal()
-  const open = () => {}
+  const { open } = useWeb3Modal()
 
   function camelCaseToWords(s: string) {
     const result = s.replace(/([A-Z])/g, " $1")
