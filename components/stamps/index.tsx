@@ -241,6 +241,7 @@ export const Stamps = () => {
         }
         disconnect()
         fetchUserData()
+        fetchStampData()
       }
       if (userState && !(userState as any)?.poh_IsRegistered) {
         const infuraUrl =
@@ -297,6 +298,7 @@ export const Stamps = () => {
       }
       disconnect()
       fetchUserData()
+      fetchStampData()
     },
     [disconnect, email, fetchUserData, getIdForApp, getUser, userState]
   )
