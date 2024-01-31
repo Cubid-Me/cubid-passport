@@ -18,7 +18,7 @@ import { SiteHeader } from "@/components/site-header"
 import { TailwindIndicator } from "@/components/tailwind-indicator"
 import { ThemeProvider } from "@/components/theme-provider"
 
-import { Web3Modal, config } from "../components/web3Modal"
+import { Web3Modal } from "../components/web3Modal"
 import { Wallet } from "../lib/nearWallet"
 import { store } from "../redux/store"
 
@@ -30,7 +30,6 @@ wallet.startUp()
 
 export default function RootLayout(props: any) {
   const { pageProps } = props
-  const initialState = cookieToInitialState(config)
 
   if (process.env.NODE_ENV === "development") {
     return (
