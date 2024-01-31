@@ -10,7 +10,7 @@ import { mainnet, sepolia } from "wagmi/chains"
 const queryClient = new QueryClient()
 
 // Get projectId at https://cloud.walletconnect.com
-export const projectId = '6833ed2c1539b9d27e8840c51f53bd0c'
+export const projectId = 'a22385802b21cd5e16bdba9cbe7c7de0'
 
 if (!projectId) throw new Error("Project ID is not defined")
 
