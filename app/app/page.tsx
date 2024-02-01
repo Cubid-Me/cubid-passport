@@ -16,7 +16,12 @@ import { buttonVariants } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function IndexPage() {
-  const [wagmiConfig, setWagmiConfig] = useState(undefined)
+  const [wagmiConfig, setWagmiConfig] = useState(defaultWagmiConfig({ chains:[mainnet, arbitrum], projectId:"046f59ead3e8ec7acd1db6ba73cd23b7", metadata:{
+    name: "Web3Modal",
+    description: "Web3Modal Example",
+    url: "https://web3modal.com",
+    icons: ["https://avatars.githubusercontent.com/u/37784886"],
+  } }))
   useEffect(() => {
     // 1. Get projectId
     const projectId = "046f59ead3e8ec7acd1db6ba73cd23b7"
