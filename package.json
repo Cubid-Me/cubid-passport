@@ -16,6 +16,7 @@
   "dependencies": {
     "@celo/contractkit": "^5.0.4",
     "@firebase/app": "^0.9.19",
+    "@gooddollar/bridge-contracts": "^1.0.17",
     "@gooddollar/goodcontracts": "^2.6.6",
     "@gooddollar/web3sdk-v2": "^0.1.121",
     "@heroicons/react": "^2.0.18",
