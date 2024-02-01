@@ -5,7 +5,7 @@
 import React, { useCallback, useEffect, useState } from "react"
 import { newKitFromWeb3 } from "@celo/contractkit"
 import { ClaimSDK } from "@gooddollar/web3sdk-v2"
-// import { useWeb3Modal } from "@web3modal/wagmi1/react"
+import { useWeb3Modal } from "@web3modal/wagmi/react"
 import axios from "axios"
 import dayjs from "dayjs"
 import { useSelector } from "react-redux"
@@ -62,7 +62,7 @@ export const GooddollarConnect = ({
   const [gooddolarOpen, setGooddollarOpen] = useState(false)
   const [stepState, setStepState] = useState(0)
   const [whitelisted, setWhitelisted] = useState(false)
-  // const { open } = useWeb3Modal()
+  const { open } = useWeb3Modal()
   const { address } = useAccount()
   const authData = useAuth({})
   const { getUser } = authData
@@ -289,7 +289,7 @@ export const GooddollarConnect = ({
           ) : (
             <button
               onClick={() => {
-                // open()
+                open()
               }}
               className="m-2 rounded bg-blue-500 p-2 text-white"
             >

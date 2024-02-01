@@ -67,6 +67,7 @@ export const PhoneNumberConnect = ({
         created_by_app:await getIdForApp(),
         stamptype: stampId,
         uniquevalue: phoneInput,
+        user_id_and_uniqueval:`${dbUser?.id} ${stampId} ${phoneInput}`,
         unique_hash: await encode_data(phoneInput),
         stamp_json: { phonenumber: phoneInput },
         type_and_uniquehash: `${stampId} ${await encode_data(phoneInput)}`,

@@ -3,12 +3,12 @@
 "use client"
 
 import React, { useCallback, useEffect, useState } from "react"
-// import { useWeb3Modal } from "@web3modal/wagmi1/react"
+import { useWeb3Modal } from "@web3modal/wagmi/react"
 import axios from "axios"
 import dayjs from "dayjs"
 import { useSelector } from "react-redux"
 import { toast } from "react-toastify"
-// import { useAccount } from "wagmi"
+import { useAccount } from "wagmi"
 import Web3 from "web3"
 
 import { useStamps } from "./../../hooks/useStamps"
@@ -278,8 +278,7 @@ export const Stamps = ({
     },
     [email, fetchUserData, userState]
   )
-  // const { address } = useAccount()
-  const address=undefined;
+  const { address } = useAccount()
 
   useEffect(() => {
     if (address) {
@@ -310,6 +309,7 @@ export const Stamps = ({
             created_by_app: await getIdForApp(),
             stamptype: stampId,
             uniquevalue: user_metadata?.email,
+            user_id_and_uniqueval:`${dbUser?.id} ${stampId} ${user_metadata?.email}`,
             unique_hash: await encode_data(user_metadata?.email),
             stamp_json: user_metadata,
             type_and_uniquehash: `${stampId} ${await encode_data(
@@ -379,6 +379,7 @@ export const Stamps = ({
           created_by_app: await getIdForApp(),
           stamptype: stampId,
           uniquevalue: (wallet as any).accountId,
+          user_id_and_uniqueval:`${dbUser?.id} ${stampId} ${(wallet as any).accountId}`,
           unique_hash: await encode_data((wallet as any).accountId),
           stamp_json: { account: (wallet as any).accountId },
           type_and_uniquehash: `${stampId} ${await encode_data(
@@ -456,6 +457,7 @@ export const Stamps = ({
             stamptype: 17,
             created_by_app: appId,
             stamp_json: kyc_fractal,
+            user_id_and_uniqueval:`${((await getUser()) as any).id} 17 ${uid}`,
             uniquevalue: uid,
             unique_hash: await encode_data(uid),
             type_and_uniquehash: `17 ${await encode_data(uid)}`,
@@ -476,10 +478,9 @@ export const Stamps = ({
         fetchStampData()
       }
     })()
-  }, [getUser, appId])
+  }, [getUser, appId, fetchStampData])
 
-  // const { open } = useWeb3Modal()
-  const open = ()=>{}
+  const { open } = useWeb3Modal()
 
   function camelCaseToWords(s: string) {
     const result = s.replace(/([A-Z])/g, " $1")

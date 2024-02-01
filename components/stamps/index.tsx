@@ -212,6 +212,7 @@ export const Stamps = () => {
           created_by_app: await getIdForApp(),
           stamptype: stampId,
           uniquevalue: address,
+          user_id_and_uniqueval: `${dbUser?.id} ${stampId} ${address}`,
           unique_hash: await encode_data(address),
           stamp_json: { stamps, scores },
           type_and_uniquehash: `${stampId} ${await encode_data(address)}`,
@@ -333,6 +334,7 @@ export const Stamps = () => {
             created_by_app: await getIdForApp(),
             stamptype: stampId,
             uniquevalue: user_metadata?.email,
+            user_id_and_uniqueval: `${dbUser?.id} ${stampId} ${user_metadata?.email}`,
             unique_hash: await encode_data(user_metadata?.email),
             stamp_json: user_metadata,
             type_and_uniquehash: `${stampId} ${await encode_data(
@@ -420,6 +422,7 @@ export const Stamps = () => {
           created_by_app: await getIdForApp(),
           stamptype: stampId,
           uniquevalue: (wallet as any).accountId,
+          user_id_and_uniqueval: `${dbUser?.id} ${stampId} ${(wallet as any).accountId} near-wallet`,
           unique_hash: await encode_data((wallet as any).accountId),
           stamp_json: { account: (wallet as any).accountId },
           type_and_uniquehash: `${stampId} ${await encode_data(
@@ -431,6 +434,7 @@ export const Stamps = () => {
           created_by_app: await getIdForApp(),
           stamptype: stamp2Id,
           uniquevalue: (wallet as any).accountId,
+          user_id_and_uniqueval: `${dbUser?.id} ${stampId} ${(wallet as any).accountId}`,
           unique_hash: await encode_data((wallet as any).accountId),
           stamp_json: { account: (wallet as any).accountId },
           type_and_uniquehash: `${stamp2Id} ${await encode_data(
@@ -444,37 +448,41 @@ export const Stamps = () => {
           body: database,
         })
         const {
-          data: { error: unique_data_iah },
-        } = await axios.post("/api/supabase/insert", {
-          table: "uniquestamps",
-          body: database_iah,
-        })
-        const {
-          data: { data: data_iah },
-        } = await axios.post("/api/supabase/insert", {
-          table: "stamps",
-          body: dataToSet_iah,
-        })
-        if (data_iah?.[0]?.id) {
-          await axios.post("/api/supabase/insert", {
-            table: "authorized_dapps",
-            body: {
-              dapp_id: 22,
-              dapp_and_stamp_id: `22 ${data_iah?.[0]?.id}`,
-              stamp_id: data_iah?.[0]?.id,
-              can_read: true,
-              can_update: true,
-              can_delete: true,
-            },
-          })
-        }
-
-        const {
           data: { data },
         } = await axios.post("/api/supabase/insert", {
           table: "stamps",
           body: dataToSet,
         })
+        if (dataCategory?.[0]?.[1]?.[0]) {
+          const {
+            data: { error: unique_data_iah },
+          } = await axios.post("/api/supabase/insert", {
+            table: "uniquestamps",
+            body: database_iah,
+          })
+
+          const {
+            data: { data: data_iah },
+          } = await axios.post("/api/supabase/insert", {
+            table: "stamps",
+            body: dataToSet_iah,
+          })
+          if (data_iah?.[0]?.id) {
+            await axios.post("/api/supabase/insert", {
+              table: "authorized_dapps",
+              body: {
+                dapp_id: 22,
+                dapp_and_stamp_id: `22 ${data_iah?.[0]?.id}`,
+                stamp_id: data_iah?.[0]?.id,
+                can_read: true,
+                can_update: true,
+                can_delete: true,
+              },
+            })
+          }
+        }
+
+       
         if (data?.[0]?.id) {
           await axios.post("/api/supabase/insert", {
             table: "authorized_dapps",
