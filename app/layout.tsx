@@ -11,14 +11,12 @@ import "react-toastify/dist/ReactToastify.css"
 import { getAuth, getIdToken, signInWithCustomToken } from "firebase/auth"
 import { SessionProvider } from "next-auth/react"
 import { Provider } from "react-redux"
-import { cookieToInitialState } from "wagmi"
 
 import { cn } from "@/lib/utils"
 import { SiteHeader } from "@/components/site-header"
 import { TailwindIndicator } from "@/components/tailwind-indicator"
 import { ThemeProvider } from "@/components/theme-provider"
 
-import { Web3Modal, config } from "../components/web3Modal"
 import { Wallet } from "../lib/nearWallet"
 import { store } from "../redux/store"
 
@@ -30,7 +28,6 @@ wallet.startUp()
 
 export default function RootLayout(props: any) {
   const { pageProps } = props
-  const initialState = cookieToInitialState(config)
 
   if (process.env.NODE_ENV === "development") {
     return (
@@ -63,9 +60,7 @@ export default function RootLayout(props: any) {
                 <SiteHeader />
 
                 <Provider store={store}>
-                  <Web3Modal initialState={initialState}>
-                    <div>{props.children}</div>
-                  </Web3Modal>
+                  <div>{props.children}</div>
                   <ToastContainer />
                 </Provider>
               </div>
@@ -110,9 +105,7 @@ export default function RootLayout(props: any) {
                   <SiteHeader />
                 )}
                 <Provider store={store}>
-                  <Web3Modal initialState={initialState}>
-                    <div>{props.children}</div>
-                  </Web3Modal>
+                  <div>{props.children}</div>
                   <ToastContainer />
                 </Provider>
               </div>
