@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@celo/contractkit": "^5.0.4",
+    "@ethersproject/bignumber": "^5.7.0",
     "@firebase/app": "^0.9.19",
     "@gooddollar/bridge-contracts": "^1.0.17",
     "@gooddollar/goodcontracts": "^2.6.6",
