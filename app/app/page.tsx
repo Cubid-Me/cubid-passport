@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState ,useEffect} from "react"
 import { logout } from "@/redux/userSlice"
 import { createWeb3Modal, defaultWagmiConfig } from "@web3modal/wagmi/react"
 import { About } from "components/about"
