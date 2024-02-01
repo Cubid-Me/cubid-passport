@@ -87,10 +87,8 @@
     "util": "^0.12.5",
     "viem": "^1.15.4",
     "wagmi": "^1.4.3",
-    "web3": "^4.4.0",
-    "web3-eth-contract": "^1.9.0",
-    "web3modal": "^1.9.12",
-    "webpack": "^5.90.0"
+    "web3": "^4.1.2",
+    "web3-eth-contract": "^1.9.0"
   },
   "devDependencies": {
     "@ianvs/prettier-plugin-sort-imports": "^3.7.2",
