@@ -1,6 +1,6 @@
 "use client"
 
-import { useState ,useEffect} from "react"
+import { useEffect, useState } from "react"
 import { logout } from "@/redux/userSlice"
 import { createWeb3Modal, defaultWagmiConfig } from "@web3modal/wagmi/react"
 import { About } from "components/about"
@@ -16,6 +16,7 @@ import { buttonVariants } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function IndexPage() {
+  const [wagmiConfig, setWagmiConfig] = useState(undefined)
   useEffect(() => {
     // 1. Get projectId
     const projectId = "046f59ead3e8ec7acd1db6ba73cd23b7"
@@ -29,8 +30,9 @@ export default function IndexPage() {
     }
 
     const chains = [mainnet, arbitrum]
-    const wagmiConfig = defaultWagmiConfig({ chains, projectId, metadata })
-    createWeb3Modal({ wagmiConfig, projectId, chains })
+    const wConfig = defaultWagmiConfig({ chains, projectId, metadata })
+    setWagmiConfig(wConfig as any)
+    createWeb3Modal({ wagmiConfig: wConfig, projectId, chains })
   }, [])
 
   const dispatch = useDispatch()
@@ -51,8 +53,12 @@ export default function IndexPage() {
     </>
   )
 
+  if (!wagmiConfig) {
+    return <></>
+  }
+
   return (
-    <WagmiConfig config={wagmiConfig}>
+    <WagmiConfig config={wagmiConfig as any}>
       <Authenticated>
         <Tabs
           value={tab}
