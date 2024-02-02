@@ -6,7 +6,7 @@ export const MintHumanity = () => {
   const [sbtFlow, setSbtFlow] = useState(0)
   return (
     <>
-      <div className="border-b border-gray-200 text-center text-sm font-medium text-gray-500 dark:border-gray-700 dark:text-gray-400">
+      {/* <div className="border-b border-gray-200 text-center text-sm font-medium text-gray-500 dark:border-gray-700 dark:text-gray-400">
         <ul className="-mb-px flex flex-wrap">
           <li className="me-2">
             <button
@@ -37,7 +37,7 @@ export const MintHumanity = () => {
             </button>
           </li>
         </ul>
-      </div>
+      </div> */}
       {sbtFlow === 0 && (
         <div className="h-screen p-2">
           <p className="text-xl font-semibold text-white">
@@ -46,12 +46,12 @@ export const MintHumanity = () => {
           <NearFlow />
         </div>
       )}
-      {sbtFlow === 1 && (
+      {/* {sbtFlow === 1 && (
         <div className="h-screen p-2">
           <p className="text-xl font-semibold text-white">SBT LIST</p>
           <div></div>
         </div>
-      )}
+      )} */}
     </>
   )
 }
