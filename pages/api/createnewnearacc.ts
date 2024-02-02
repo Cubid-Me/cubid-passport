@@ -9,7 +9,7 @@ function generateRandomString() {
   // Define the characters that can be in the string
   const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
   // The length of the random string
-  const length = 4
+  const length = 8
   // Variable to hold the random string
   let result = ""
   // Generate the random string
@@ -74,6 +74,7 @@ export default async function handler(
 ) {
   const { userId } = req.body;
   const myKeyStore = new keyStores.InMemoryKeyStore()
+  const myKeyStore2 = new keyStores.InMemoryKeyStore()
   const PRIVATE_KEY = process.env.private_key_near ?? "";
   // creates a public / private key pair using the provided private key
   const keyPairString = KeyPair.fromString(PRIVATE_KEY)
@@ -97,8 +98,7 @@ export default async function handler(
   const accountToCreate = `${numberStringToAlphabets(
     `${userId}`
   )}${randomString}`.toLowerCase()
-  console.log(accountToCreate)
-  await myKeyStore.setKey(
+  await myKeyStore2.setKey(
     connectionConfig.networkId,
     `${accountToCreate}.near`,
     keyPair
@@ -114,6 +114,7 @@ export default async function handler(
       gas: "300000000000000" as any,
       attachedDeposit: utils.format.parseNearAmount("0.01") as any,
     })
+    console.log(data_near)
     await supabase.from("near-api-accounts").insert({
       account_address: `${accountToCreate}.near`,
       owner_id: userId,
@@ -132,7 +133,7 @@ export default async function handler(
       stamptype: 15,
       uniquevalue: `${accountToCreate}.near`,
       unique_hash: await encode_data(`${accountToCreate}.near`),
-      stamp_json: {},
+      stamp_json: data_near,
       type_and_uniquehash: `15 ${await encode_data(`${accountToCreate}.near`)}`,
     }
     await supabase.from("uniquestamps").insert(database)

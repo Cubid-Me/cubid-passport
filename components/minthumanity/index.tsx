@@ -1,9 +1,28 @@
-import { useState } from "react"
+import { useCallback, useState } from "react"
 
 import { NearFlow } from "./nearFlow"
+import useAuth from "@/hooks/useAuth"
+import axios from "axios"
 
 export const MintHumanity = () => {
   const [sbtFlow, setSbtFlow] = useState(0)
+  const [nearAcc, setNearAcc] = useState([])
+  const { supabaseUser } = useAuth({})
+  const fetchNearStamps = useCallback(async () => {
+    if (supabaseUser?.id) {
+      const {
+        data: { data },
+      } = await axios.post("/api/supabase/select", {
+        match: {
+          created_by_user_id: supabaseUser.id,
+          stamptype: 15,
+        },
+        table: "stamps",
+      })
+      const allNearAcc = data.map((item: any) => item.uniquevalue)
+      setNearAcc(allNearAcc)
+    }
+  }, [supabaseUser])
   return (
     <>
       {/* <div className="border-b border-gray-200 text-center text-sm font-medium text-gray-500 dark:border-gray-700 dark:text-gray-400">
@@ -46,12 +65,12 @@ export const MintHumanity = () => {
           <NearFlow />
         </div>
       )}
-      {/* {sbtFlow === 1 && (
+      {sbtFlow === 1 && (
         <div className="h-screen p-2">
           <p className="text-xl font-semibold text-white">SBT LIST</p>
           <div></div>
         </div>
-      )} */}
+      )}
     </>
   )
 }

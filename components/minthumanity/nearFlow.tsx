@@ -9,8 +9,7 @@ import useAuth from "@/hooks/useAuth"
 
 export const NearFlow = () => {
   const [stepFlow, setStepFlow] = useState(0)
-  const [nearAcc, setNearAcc] = useState([])
-  const { supabaseUser } = useAuth({})
+ 
   const [formState, setFormState] = useState({
     chain: "",
     passport: "",
@@ -19,7 +18,8 @@ export const NearFlow = () => {
   const [mintingSBT, setMintingSBT] = useState(false)
   const [loading, setLoading] = useState(false)
   const [sbtMintSuccess, setSbtMintSuccess] = useState(false)
-
+  const [nearAcc, setNearAcc] = useState([])
+  const { supabaseUser } = useAuth({})
   const fetchNearStamps = useCallback(async () => {
     if (supabaseUser?.id) {
       const {

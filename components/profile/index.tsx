@@ -2,6 +2,7 @@
 import React, { useCallback, useEffect, useState } from "react"
 import axios from "axios"
 import { useDispatch, useSelector } from "react-redux"
+import { toast } from "react-toastify"
 
 import useAuth from "@/hooks/useAuth"
 import { Button, buttonVariants } from "@/components/ui/button"
@@ -20,6 +21,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
 
 import { logout } from "../../redux/userSlice"
 
@@ -28,6 +35,7 @@ export const Profile = () => {
   const dispatch = useDispatch()
   const [userState, setUserState] = useState<any>({})
   const [walletState, setWalletState] = useState<any>({})
+  const [exportPrivateKey, setExportPrivateKey] = useState(undefined)
 
   const fetchStamps = useCallback(async () => {
     if (email) {
@@ -65,6 +73,7 @@ export const Profile = () => {
   }, [fetchStamps, fetchWalletDetails, email])
 
   const [nearAcc, setNearAcc] = useState([])
+  const [allNearData, setAllNearData] = useState([])
   const { supabaseUser } = useAuth({})
 
   const fetchNearStamps = useCallback(async () => {
@@ -80,8 +89,18 @@ export const Profile = () => {
       })
       const allNearAcc = data.map((item: any) => item.uniquevalue)
       setNearAcc(allNearAcc)
+      setAllNearData(data)
     }
   }, [supabaseUser])
+
+  const fetchPrivateKeyWithAddress = (nearKey: any) => {
+    console.log(nearKey,allNearData)
+    const stampData = (
+      allNearData.find((item: any) => item.uniquevalue === nearKey) as any
+    )?.stamp_json?.transaction?.signature;
+    console.log(stampData)
+    setExportPrivateKey(stampData)
+  }
 
   useEffect(() => {
     fetchNearStamps()
@@ -122,9 +141,19 @@ export const Profile = () => {
                 </Button>
               )}
               {nearAcc.map((item) => (
-                <Button className="block" key={item} variant="outline">
-                  {item}
-                </Button>
+                <div className="flex justify-between items-center">
+                  <Button className="block" key={item} variant="outline">
+                    {item}
+                  </Button>
+                  <button
+                    onClick={() => {
+                      fetchPrivateKeyWithAddress(item)
+                    }}
+                    className="text-white rounded-md bg-blue-600 text-xs p-2 py-1"
+                  >
+                    Export Private Key
+                  </button>
+                </div>
               ))}
             </div>
           </CardContent>
@@ -177,6 +206,35 @@ export const Profile = () => {
             </Button>
           </CardContent>
         </Card>
+        <Sheet
+          open={Boolean(exportPrivateKey)}
+          onOpenChange={(value) => {
+            if (value === false) {
+              setExportPrivateKey(undefined)
+            }
+          }}
+        >
+          <SheetContent>
+            <SheetHeader>
+              <SheetTitle>Export Private Key</SheetTitle>
+              <p className="break-all">Copy Private Key : {exportPrivateKey}</p>
+              <p>
+                Copy they key if you want to import it to any other
+                Near-wallet.
+              </p>
+              <Button
+                className="block"
+                onClick={() => {
+                  navigator.clipboard.writeText(exportPrivateKey as any)
+                  toast.success("Successfully copied private key")
+                }}
+                variant="outline"
+              >
+                Copy
+              </Button>
+            </SheetHeader>
+          </SheetContent>
+        </Sheet>
       </div>
     </div>
   )
