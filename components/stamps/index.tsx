@@ -422,7 +422,7 @@ export const Stamps = () => {
           created_by_app: await getIdForApp(),
           stamptype: stampId,
           uniquevalue: (wallet as any).accountId,
-          user_id_and_uniqueval: `${dbUser?.id} ${stampId} ${(wallet as any).accountId} near-wallet`,
+          user_id_and_uniqueval: `${dbUser?.id} ${stampId} ${(wallet as any).accountId}`,
           unique_hash: await encode_data((wallet as any).accountId),
           stamp_json: { account: (wallet as any).accountId },
           type_and_uniquehash: `${stampId} ${await encode_data(

@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react"
 import { logout } from "@/redux/userSlice"
-import { createWeb3Modal, defaultWagmiConfig } from "@web3modal/wagmi/react"
 import { About } from "components/about"
 import { Authenticated } from "components/auth/authenticated"
 import { MintHumanity } from "components/minthumanity"
@@ -11,6 +10,7 @@ import { Stamps } from "components/stamps"
 import { useDispatch } from "react-redux"
 import { WagmiConfig } from "wagmi"
 import { arbitrum, mainnet } from "wagmi/chains"
+import { createWeb3Modal, defaultWagmiConfig } from "@web3modal/wagmi/react"
 
 import { buttonVariants } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"

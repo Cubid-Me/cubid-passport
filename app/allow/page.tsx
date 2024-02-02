@@ -3,6 +3,9 @@
 import React, { useCallback, useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import axios from "axios"
+import { WagmiConfig } from "wagmi"
+import { arbitrum, mainnet } from "wagmi/chains"
+import { createWeb3Modal, defaultWagmiConfig } from "@web3modal/wagmi/react"
 
 import useAuth from "@/hooks/useAuth"
 import { Authenticated } from "@/components/auth/authenticated"
@@ -110,10 +113,32 @@ const AllowPage = () => {
       isStampOptional[item] = false
     }
   })
-  console.log({ isStampOptional })
+  const [wagmiConfig, setWagmiConfig] = useState(defaultWagmiConfig({ chains:[mainnet, arbitrum], projectId:"046f59ead3e8ec7acd1db6ba73cd23b7", metadata:{
+    name: "Web3Modal",
+    description: "Web3Modal Example",
+    url: "https://web3modal.com",
+    icons: ["https://avatars.githubusercontent.com/u/37784886"],
+  } }))
+  useEffect(() => {
+    // 1. Get projectId
+    const projectId = "046f59ead3e8ec7acd1db6ba73cd23b7"
+
+    // 2. Create wagmiConfig
+    const metadata = {
+      name: "Web3Modal",
+      description: "Web3Modal Example",
+      url: "https://web3modal.com",
+      icons: ["https://avatars.githubusercontent.com/u/37784886"],
+    }
+
+    const chains = [mainnet, arbitrum]
+    const wConfig = defaultWagmiConfig({ chains, projectId, metadata })
+    setWagmiConfig(wConfig as any)
+    createWeb3Modal({ wagmiConfig: wConfig, projectId, chains })
+  }, [])
 
   return (
-    <>
+    <WagmiConfig config={wagmiConfig as any}>
       {loading ? (
         <>
           <div className="flex h-[100vh] w-[100vw] items-center justify-center">
@@ -205,7 +230,7 @@ const AllowPage = () => {
           )}
         </>
       )}
-    </>
+    </WagmiConfig>
   )
 }
 
