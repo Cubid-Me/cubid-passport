@@ -62,9 +62,11 @@ export const NearFlow = () => {
           From now on we will also keep the Score up to date. Any changes to
           your Gitcoin Passport score will be reflected on Mear within 24h
         </p>
-        <a href="https://nearblocks.io/address/issuer.cubidme.near" rel="noreferrer" target="_blank">Inspect On Chain</a>
+        <a className="text-blue-500 text-md" href="https://nearblocks.io/address/issuer.cubidme.near" rel="noreferrer" target="_blank">Inspect On Chain</a>
         <pre>
           <code>
+            Data that we minted 
+            <br/>
             {JSON.stringify({
               receiver: formState.wallet,
               metadata: {
