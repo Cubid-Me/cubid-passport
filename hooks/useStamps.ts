@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import axios from "axios"
 import { useAccount } from "wagmi"
+
 import useAuth from "./useAuth"
 
 export const useStamps = () => {
   const [stamps, setStamps] = useState([])
+  const [gitcoinScore, setGitcoinScore] = useState(0)
   const { supabaseUser } = useAuth({})
   const fetchNearAndGitcoinStamps = useCallback(async () => {
     if (supabaseUser?.id) {
@@ -17,15 +19,17 @@ export const useStamps = () => {
         },
         table: "stamps",
       })
-      const gitcoinStamps = gitcoin_data?.[0]?.stamp_json?.stamps?.items??[]
+      const gitcoinStamps = gitcoin_data?.[0]?.stamp_json?.stamps?.items ?? []
       setStamps(gitcoinStamps)
+      setGitcoinScore(
+        Math.round(gitcoin_data?.[0]?.stamp_json?.scores?.score ?? 0)
+      )
     }
   }, [supabaseUser])
 
-  useEffect(()=>{
+  useEffect(() => {
     fetchNearAndGitcoinStamps()
-  },[fetchNearAndGitcoinStamps])
-
+  }, [fetchNearAndGitcoinStamps])
 
   const stampCollector = useMemo(() => {
     const stampDataArray = []
@@ -41,5 +45,5 @@ export const useStamps = () => {
     }
     return stampDataArray
   }, [stamps])
-  return { stamps, stampCollector }
+  return { stamps, stampCollector, fetchNearAndGitcoinStamps,gitcoinScore }
 }

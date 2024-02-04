@@ -74,9 +74,10 @@ export const Profile = () => {
 
   const [nearAcc, setNearAcc] = useState([])
   const [allNearData, setAllNearData] = useState([])
+  const [allEvmData, setAllEvmData] = useState([])
   const { supabaseUser } = useAuth({})
 
-  const fetchNearStamps = useCallback(async () => {
+  const fetchWallets = useCallback(async () => {
     if (supabaseUser?.id) {
       const {
         data: { data },
@@ -87,7 +88,17 @@ export const Profile = () => {
         },
         table: "stamps",
       })
+      const {
+        data: { data: evmData },
+      } = await axios.post("/api/supabase/select", {
+        match: {
+          created_by_user_id: supabaseUser.id,
+          stamptype: 14,
+        },
+        table: "stamps",
+      })
       const allNearAcc = data.map((item: any) => item.uniquevalue)
+      setAllEvmData((evmData ?? []).map((item: any) => item.uniquevalue))
       setNearAcc(allNearAcc)
       setAllNearData(data)
     }
@@ -102,8 +113,8 @@ export const Profile = () => {
   }
 
   useEffect(() => {
-    fetchNearStamps()
-  }, [fetchNearStamps])
+    fetchWallets()
+  }, [fetchWallets])
 
   return (
     <div className="p-3">
@@ -139,6 +150,11 @@ export const Profile = () => {
                   G$ : {walletState?.["wallet-address"]}
                 </Button>
               )}
+              {allEvmData.map((item) => (
+                <Button className="block" key={item} variant="outline">
+                  {item}
+                </Button>
+              ))}
               {nearAcc.map((item) => (
                 <div className="flex justify-between items-center">
                   <Button className="block" key={item} variant="outline">
