@@ -17,7 +17,7 @@ export const useStamps = () => {
         },
         table: "stamps",
       })
-      const gitcoinStamps = gitcoin_data[0]?.stamp_json?.stamps?.items??[]
+      const gitcoinStamps = gitcoin_data?.[0]?.stamp_json?.stamps?.items??[]
       setStamps(gitcoinStamps)
     }
   }, [supabaseUser])
