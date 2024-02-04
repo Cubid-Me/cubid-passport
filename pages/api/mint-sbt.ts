@@ -10,7 +10,7 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  const { nearAccount } = req.body
+  const { nearAccount,score } = req.body
   const myKeyStore = new keyStores.InMemoryKeyStore()
   const PRIVATE_KEY =
    process.env.private_key_near;
@@ -45,7 +45,7 @@ export default async function handler(
         receiver: nearAccount,
         metadata: {
           class: 1,
-          passportScore: "20",
+          passportScore: score,
         },
       },
       "300000000000000",

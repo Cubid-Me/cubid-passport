@@ -194,6 +194,7 @@ export const Stamps = () => {
 
   const connectToWeb3Node = useCallback(
     async (address: string) => {
+      console.log({address})
       if (address) {
         const {
           data: { stamps, scores },
@@ -301,9 +302,10 @@ export const Stamps = () => {
       fetchUserData()
       fetchStampData()
     },
-    [disconnect, email, fetchUserData, getIdForApp, getUser, userState]
+    [disconnect, email, fetchStampData, fetchUserData, getIdForApp, getUser, userState]
   )
   const { address } = useAccount()
+  console.log('here is address->',address)
 
   useEffect(() => {
     if (address) {
@@ -636,6 +638,7 @@ export const Stamps = () => {
                     signInWithSocial(item.supabase_key)
                   }}
                   variant="outline"
+                  className="bg-blue-500 text-white"
                 >
                   Connect Account
                 </Button>
@@ -754,6 +757,7 @@ export const Stamps = () => {
                       wallet.signIn()
                     }}
                     variant="secondary"
+                    className="bg-blue-500 text-white"
                     style={{ width: "200px" }}
                   >
                     Connect Wallet
@@ -807,6 +811,7 @@ export const Stamps = () => {
                   wallet.signIn()
                 }}
                 variant="secondary"
+                className="bg-blue-500 text-white"
                 style={{ width: "200px" }}
               >
                 Connect Wallet
@@ -892,6 +897,7 @@ export const Stamps = () => {
                   setBrightIdSheetOpen(true)
                 }}
                 variant="secondary"
+                className="bg-blue-500 text-white"
                 style={{ width: "200px" }}
               >
                 Connect App
@@ -949,6 +955,7 @@ export const Stamps = () => {
                   open()
                 }}
                 variant="secondary"
+                className="bg-blue-500 text-white"
                 style={{ width: "200px" }}
               >
                 Connect Wallet
@@ -1025,6 +1032,7 @@ export const Stamps = () => {
                   setInstagramShow(true)
                 }}
                 variant="secondary"
+                className="bg-blue-500 text-white"
                 style={{ width: "200px" }}
               >
                 Connect Instagram

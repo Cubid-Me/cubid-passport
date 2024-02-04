@@ -19,8 +19,10 @@ export const NearFlow = () => {
   const [loading, setLoading] = useState(false)
   const [sbtMintSuccess, setSbtMintSuccess] = useState(false)
   const [nearAcc, setNearAcc] = useState([])
-  const { supabaseUser } = useAuth({})
-  const fetchNearStamps = useCallback(async () => {
+  const { supabaseUser } = useAuth({});
+  const [gitcoinScore,setGitcoinScore] =useState(0)
+  console.log(gitcoinScore)
+  const fetchNearAndGitcoinStamps = useCallback(async () => {
     if (supabaseUser?.id) {
       const {
         data: { data },
@@ -31,14 +33,26 @@ export const NearFlow = () => {
         },
         table: "stamps",
       })
+      const {
+        data: { data:gitcoin_data },
+      } = await axios.post("/api/supabase/select", {
+        match: {
+          created_by_user_id: supabaseUser.id,
+          stamptype: 9,
+        },
+        table: "stamps",
+      })
+      const score = gitcoin_data[0]?.stamp_json?.scores?.score;
+      setGitcoinScore(score)
       const allNearAcc = data.map((item: any) => item.uniquevalue)
       setNearAcc(allNearAcc)
     }
   }, [supabaseUser])
 
+
   useEffect(() => {
-    fetchNearStamps()
-  }, [fetchNearStamps])
+    fetchNearAndGitcoinStamps()
+  }, [fetchNearAndGitcoinStamps])
 
   if (sbtMintSuccess) {
     return (
@@ -129,7 +143,7 @@ export const NearFlow = () => {
                     await axios.post("/api/createnewnearacc", {
                       userId: supabaseUser?.id,
                     })
-                    await fetchNearStamps()
+                    await fetchNearAndGitcoinStamps()
                   } finally {
                     setLoading(false)
                   }
@@ -228,6 +242,7 @@ export const NearFlow = () => {
                 setMintingSBT(true)
                 const { data } = await axios.post("/api/mint-sbt", {
                   nearAccount: formState.wallet,
+                  score:gitcoinScore
                 })
                 toast.success("SBT minted successfully ")
                 setSbtMintSuccess(data as any)

@@ -405,6 +405,7 @@ export const GooddollarConnect = ({
                 setGooddollarOpen(true)
               }}
               variant="secondary"
+              className="bg-blue-500 text-white"
               style={{ width: "250px" }}
             >
               Connect Gooddollar Wallet

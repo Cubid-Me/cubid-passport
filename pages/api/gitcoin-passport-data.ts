@@ -21,26 +21,28 @@ export default async function handler(
         "X-API-KEY": "8Txcnbid.OwEP6pT0ElSptVZZfrEaKhJg8UCroukb",
       },
     }
-  );
-  await axios.post(
+  )
+  const { data } = await axios.post(
     "https://api.scorer.gitcoin.co/registry/submit-passport",
     {
       address,
-      scorer_id: "5964",
+      scorer_id: "6559",
     },
     {
       headers: {
         "X-API-KEY": "8Txcnbid.OwEP6pT0ElSptVZZfrEaKhJg8UCroukb",
       },
     }
-  );
+  )
   const { data: scores } = await axios.get(
-    `https://api.scorer.gitcoin.co/registry/score/5964/${address}`,
+    `https://api.scorer.gitcoin.co/registry/score/6559/${address}`,
     {
       headers: {
         "X-API-KEY": "8Txcnbid.OwEP6pT0ElSptVZZfrEaKhJg8UCroukb",
       },
     }
-  );
+  )
+  console.log(data,scores)
+
   res.status(200).json({ stamps, scores })
 }
