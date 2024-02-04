@@ -9,7 +9,7 @@ import useAuth from "@/hooks/useAuth"
 
 export const NearFlow = () => {
   const [stepFlow, setStepFlow] = useState(0)
- 
+
   const [formState, setFormState] = useState({
     chain: "",
     passport: "",
@@ -19,8 +19,8 @@ export const NearFlow = () => {
   const [loading, setLoading] = useState(false)
   const [sbtMintSuccess, setSbtMintSuccess] = useState(false)
   const [nearAcc, setNearAcc] = useState([])
-  const { supabaseUser } = useAuth({});
-  const [gitcoinScore,setGitcoinScore] =useState(0)
+  const { supabaseUser } = useAuth({})
+  const [gitcoinScore, setGitcoinScore] = useState(0)
   console.log(gitcoinScore)
   const fetchNearAndGitcoinStamps = useCallback(async () => {
     if (supabaseUser?.id) {
@@ -34,7 +34,7 @@ export const NearFlow = () => {
         table: "stamps",
       })
       const {
-        data: { data:gitcoin_data },
+        data: { data: gitcoin_data },
       } = await axios.post("/api/supabase/select", {
         match: {
           created_by_user_id: supabaseUser.id,
@@ -42,13 +42,12 @@ export const NearFlow = () => {
         },
         table: "stamps",
       })
-      const score = gitcoin_data[0]?.stamp_json?.scores?.score;
+      const score = gitcoin_data[0]?.stamp_json?.scores?.score
       setGitcoinScore(score)
       const allNearAcc = data.map((item: any) => item.uniquevalue)
       setNearAcc(allNearAcc)
     }
   }, [supabaseUser])
-
 
   useEffect(() => {
     fetchNearAndGitcoinStamps()
@@ -63,6 +62,18 @@ export const NearFlow = () => {
           From now on we will also keep the Score up to date. Any changes to
           your Gitcoin Passport score will be reflected on Mear within 24h
         </p>
+        <a href="https://nearblocks.io/address/issuer.cubidme.near" rel="noreferrer" target="_blank">Inspect On Chain</a>
+        <pre>
+          <code>
+            {JSON.stringify({
+              receiver: formState.wallet,
+              metadata: {
+                class: 1,
+                passportScore: gitcoinScore,
+              },
+            })}
+          </code>
+        </pre>
       </div>
     )
   }
@@ -235,6 +246,21 @@ export const NearFlow = () => {
             <p>Gitcoin Passport With Stamps</p>
           </div>
         </div>
+        {Boolean(formState.passport) && (
+          <div className="pb-2">
+            <p className="text-sm font-semibold">
+              We will mint an SBT (soul bound token) for you indicating your
+              passport score
+            </p>
+            <pre>
+              <code>
+                Passport Score : {gitcoinScore}
+                <br/>
+                Near Wallet : {formState.wallet}
+              </code>
+            </pre>
+          </div>
+        )}
         <button
           onClick={async () => {
             if (!mintingSBT) {
@@ -242,7 +268,7 @@ export const NearFlow = () => {
                 setMintingSBT(true)
                 const { data } = await axios.post("/api/mint-sbt", {
                   nearAccount: formState.wallet,
-                  score:gitcoinScore
+                  score: gitcoinScore,
                 })
                 toast.success("SBT minted successfully ")
                 setSbtMintSuccess(data as any)
@@ -279,12 +305,7 @@ export const NearFlow = () => {
             "Mint SBT"
           )}
         </button>
-        {Boolean(formState.passport) && (
-          <p className="pb-[100px] text-sm font-semibold">
-            We will mint an SBT (soul bound token) for you indicating your
-            passport score
-          </p>
-        )}
+        <div className="h-[100px]"/>
       </div>
     )
   }

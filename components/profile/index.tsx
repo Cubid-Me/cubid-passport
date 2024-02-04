@@ -94,11 +94,10 @@ export const Profile = () => {
   }, [supabaseUser])
 
   const fetchPrivateKeyWithAddress = (nearKey: any) => {
-    console.log(nearKey,allNearData)
+    console.log(nearKey, allNearData)
     const stampData = (
       allNearData.find((item: any) => item.uniquevalue === nearKey) as any
-    )?.stamp_json?.transaction?.signature;
-    console.log(stampData)
+    )?.stamp_json?.transaction?.signature
     setExportPrivateKey(stampData)
   }
 
@@ -145,14 +144,22 @@ export const Profile = () => {
                   <Button className="block" key={item} variant="outline">
                     {item}
                   </Button>
-                  <button
-                    onClick={() => {
-                      fetchPrivateKeyWithAddress(item)
-                    }}
-                    className="text-white rounded-md bg-blue-600 text-xs p-2 py-1"
-                  >
-                    Export Private Key
-                  </button>
+                  {Boolean(
+                    (
+                      allNearData.find(
+                        (_: any) => _.uniquevalue === item
+                      ) as any
+                    )?.stamp_json?.transaction?.signature
+                  ) && (
+                    <button
+                      onClick={() => {
+                        fetchPrivateKeyWithAddress(item)
+                      }}
+                      className="text-white rounded-md bg-blue-600 text-xs p-2 py-1"
+                    >
+                      Export Private Key
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
@@ -219,8 +226,7 @@ export const Profile = () => {
               <SheetTitle>Export Private Key</SheetTitle>
               <p className="break-all">Copy Private Key : {exportPrivateKey}</p>
               <p>
-                Copy they key if you want to import it to any other
-                Near-wallet.
+                Copy they key if you want to import it to any other Near-wallet.
               </p>
               <Button
                 className="block"

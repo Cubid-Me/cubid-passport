@@ -135,6 +135,7 @@ export const Stamps = () => {
     user: { email },
   }: any = useSelector((state) => state)
   const { stampCollector } = useStamps()
+  
   const { supabaseUser, getUser } = useAuth({})
 
   const fetchStampData = useCallback(async () => {
@@ -540,8 +541,8 @@ export const Stamps = () => {
   const { open } = useWeb3Modal()
 
   function camelCaseToWords(s: string) {
-    const result = s.replace(/([A-Z])/g, " $1")
-    return result.charAt(0).toUpperCase() + result.slice(1)
+    const result = s?.replace(/([A-Z])/g, " $1")
+    return result?.charAt?.(0)?.toUpperCase() + result?.slice(1)
   }
 
   const doesStampExist = (stamp_id: number | string) =>
@@ -721,7 +722,7 @@ export const Stamps = () => {
               className="mb-1 h-10 w-10 rounded-md"
             />
             <CardTitle>I-Am-Human</CardTitle>
-            {doesStampExist(stampsWithId["near-wallet"]) ? (
+            {doesStampExist(stampsWithId["iah"]) ? (
               <CardDescription>
                 <div className="flex items-center space-x-1">
                   <p>Your NEAR account is verified</p>
@@ -797,6 +798,7 @@ export const Stamps = () => {
                     <DropdownMenuItem
                       onClick={() => {
                         deleteStamp(stampsWithId["near-wallet"])
+                        deleteStamp(stampsWithId["iah"])
                       }}
                       style={{ color: "red" }}
                     >
