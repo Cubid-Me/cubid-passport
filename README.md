@@ -1,22 +1,12 @@
-# next-template
+# Cubid Passport
 
-A Next.js 13 template for building apps with Radix UI and Tailwind CSS.
+Screencast for abstraction hackathon shows how to
+- log in passwordless
+- collect a stamp from Gitcoin Passport (GP)
+- create a Near Account (gassless, walletless)
+- mint the overall score from GP to Near as an SBT
+- view the minted SBT on chain
+- export your private keys to any other wallet
 
-## Usage
-
-```bash
-npx create-next-app -e https://github.com/shadcn/next-template
-```
-
-## Features
-
-- Next.js 13 App Directory
-- Radix UI Primitives
-- Tailwind CSS
-- Icons from [Lucide](https://lucide.dev)
-- Dark mode with `next-themes`
-- Tailwind CSS class sorting, merging and linting.
-
-## License
-
-Licensed under the [MIT license](https://github.com/shadcn/ui/blob/main/LICENSE.md).
+video here:
+www.youtube.com/watch?v=Um1-IB7lmNg
