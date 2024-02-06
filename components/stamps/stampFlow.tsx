@@ -707,7 +707,7 @@ export const Stamps = ({
               </div>
             </>
           ) : (
-            "Connect and get verified with KYC"
+            "Connect and get verified with Fractal"
           )}
         </CardDescription>
       </CardHeader>
