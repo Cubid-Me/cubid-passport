@@ -689,7 +689,7 @@ export const Stamps = ({
           {doesStampExist(17) ? (
             <>
               <div className="flex items-center space-x-1">
-                <p>Your have connected with KYC</p>
+                <p>Your have connected with Fractal</p>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
@@ -707,7 +707,7 @@ export const Stamps = ({
               </div>
             </>
           ) : (
-            "Connect and get verified with Fractal"
+            "Connect and get verified with Fractal, our ID service provider"
           )}
         </CardDescription>
       </CardHeader>
@@ -732,7 +732,7 @@ export const Stamps = ({
             variant="outline"
             style={{ width: "200px", backgroundColor: "#3b82f6" }}
           >
-            Connect KYC
+            Connect to Fractal
           </Button>
         )}
       </CardContent>
