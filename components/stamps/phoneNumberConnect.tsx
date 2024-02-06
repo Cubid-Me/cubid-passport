@@ -118,7 +118,7 @@ export const PhoneNumberConnect = ({
               {otpSent ? (
                 <>
                   <Input
-                    placeholder="OTP"
+                    placeholder="One-time Passcode"
                     value={otpCode}
                     type="number"
                     onChange={(e) => {
@@ -131,7 +131,7 @@ export const PhoneNumberConnect = ({
                     }}
                     className="mt-3"
                   >
-                    Verify OTP
+                    Verify Passcode
                   </Button>
                 </>
               ) : (
