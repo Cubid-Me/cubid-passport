@@ -741,10 +741,10 @@ export const Stamps = ({
 
   return (
     <div className="p-3 pb-16">
-      <h1 className="mb-1 text-3xl font-semibold">Identity Verification</h1>
+      <h1 className="mb-1 text-3xl">Identity Verification</h1>
       <>
         <h1 className="mb-5 text-xl">
-          You need to connect these accounts in order to authorise passport data{" "}
+          Connect as many of these accounts as you want to verify yourself. Please note that Government issued ID is required to unlock all features within 3oC. We use Fractal, a secure service, to handle sensitive personal data from your ID. You personal data stays with Fractal and is not imported to Cubid nor to 3oC. You and you alone own your data. We will never sell your data and will do our utmost to protect it. {" "}
         </h1>
       </>
 
