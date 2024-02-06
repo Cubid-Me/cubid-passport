@@ -153,7 +153,7 @@ export const PhoneNumberConnect = ({
                     }}
                     className="mt-3"
                   >
-                    Send OTP
+                    Send Passcode
                   </Button>
                 </>
               )}
