@@ -55,7 +55,7 @@ export const NearFlow = () => {
 
   if (sbtMintSuccess) {
     return (
-      <div className="py-1">
+      <div className="p-2">
         <p className="text-md font-semibold">Your SBT was successfuly minted</p>
         <p className="text-md">New SBT ID : {JSON.stringify(sbtMintSuccess)}</p>
         <p className="text-sm">
@@ -63,8 +63,8 @@ export const NearFlow = () => {
           your Gitcoin Passport score will be reflected on Mear within 24h
         </p>
         <a className="text-blue-500 text-md" href="https://nearblocks.io/address/issuer.cubidme.near" rel="noreferrer" target="_blank">Inspect On Chain</a>
-        <pre>
-          <code>
+        <pre className="break-all">
+          <code className="break-all">
             Data that we minted 
             <br/>
             {JSON.stringify({
@@ -85,7 +85,7 @@ export const NearFlow = () => {
       <div className="space-y-4">
         <div>
           <p className="p-2 text-xl font-semibold">Choose Chain</p>
-          <div className="flex flex-wrap space-x-2">
+          <div className="flex flex-wrap md:space-x-2 space-y-2 md:space-y-0">
             <button
               onClick={() => {
                 setStepFlow(1)

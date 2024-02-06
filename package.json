@@ -53,6 +53,7 @@
         "buffer": "^6.0.3",
         "class-variance-authority": "^0.4.0",
         "clsx": "^1.2.1",
+        "crypto": "^1.0.1",
         "dayjs": "^1.11.10",
         "encoding": "^0.1.13",
         "ethers": "^5.7.2",
