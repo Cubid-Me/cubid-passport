@@ -139,8 +139,8 @@ export const PhoneNumberConnect = ({
                   <PhoneInput
                     placeholder="Phone Number"
                     value={phoneInput}
-                    inputClass="!bg-black"
-                    dropdownClass="!text-black"
+                    inputClass=""
+                    dropdownClass=""
                     country="us"
                     onChange={(e) => {
                       console.log(e)
