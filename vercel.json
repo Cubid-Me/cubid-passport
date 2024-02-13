@@ -1,0 +1,8 @@
+{
+    "crons": [
+      {
+        "path": "/api/gitcoin-near-cron-job",
+        "schedule": "0 5 * * *"
+      }
+    ]
+  }
