@@ -118,12 +118,11 @@ export const InstagramConnect = ({
               },
             })
           }
-          router.push("/")
           fetchStamps()
         }
       }
     },
-    [authData, fetchStamps, router, getIdForApp]
+    [authData, fetchStamps, getIdForApp]
   )
   useEffect(() => {
     ;(async () => {
