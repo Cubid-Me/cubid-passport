@@ -176,10 +176,16 @@ export const Stamps = ({
   const [instagramShow, setInstagramShow] = useState(false)
   const [stampCategories, setStampCategories] = useState([])
   const [allStamps, setAllStamps] = useState([])
-  const authData = useSelector((state) => state ?? {}) ?? {}
-  const { email = "" }: any = (authData as any)?.user ?? {}
+  const [email,setEmail] = useState(false)
   const { stampCollector } = useStamps()
   const { supabaseUser, getUser } = useAuth({ appId })
+
+  useEffect(()=>{
+    (async()=>{
+      const {email:userEmail} = await getUser();
+      setEmail(userEmail)
+    })()
+  },[getUser])
 
   const fetchStampData = useCallback(async () => {
     const {
