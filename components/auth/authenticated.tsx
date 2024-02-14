@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "hooks/useAuth"
 import PropTypes from "prop-types"
 
@@ -28,13 +28,19 @@ export const Authenticated = (props: any) => {
       setVerified(true)
     }
   }, [loading, router, user])
-
+  const searchParams = useSearchParams()
   useEffect(() => {
     if (localStorage.getItem("allow_url")) {
-      router.push(`/allow?${localStorage.getItem("allow_url")}`);
-      localStorage.removeItem("allow_url");
+      const code = searchParams?.get("code") ?? ""
+      if (code) {
+        router.push(`/allow?code=${code}?${localStorage.getItem("allow_url")}`)
+      } else {
+        router.push(`/allow?${localStorage.getItem("allow_url")}`)
+      }
+
+      localStorage.removeItem("allow_url")
     }
-  }, [router]);
+  }, [router, searchParams])
 
   if (!verified) {
     return null
