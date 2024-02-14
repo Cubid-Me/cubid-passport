@@ -21,10 +21,12 @@ const redirectUri = "https://passport.cubid.me/app/"
 const InstagramAuth = ({ allowPage }: any) => {
   const handleLogin = () => {
     const clientId = "328555189879651"
-    localStorage.setItem(
-      "allow_url",
-      window.location.href.replace(`${window.location.origin}/allow?`, "")
-    )
+    if (allowPage) {
+      localStorage.setItem(
+        "allow_url",
+        window.location.href.replace(`${window.location.origin}/allow?`, "")
+      )
+    }
     window.location.href = `https://api.instagram.com/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=user_profile&response_type=code`
   }
 
@@ -50,6 +52,7 @@ export const InstagramConnect = ({
   onOpen: () => void
   fetchStamps: () => void
   appId?: any
+  allowPage?: boolean
 }) => {
   const searchParams = useSearchParams()
   const authData = useAuth({ appId })

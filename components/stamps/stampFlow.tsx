@@ -894,6 +894,7 @@ export const Stamps = ({
             fetchUserData()
             fetchStampData()
           }}
+          allowPage
           appId={appId}
           onClose={() => {
             setInstagramShow(false)
