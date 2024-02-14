@@ -9,7 +9,7 @@ export default async function handler(
   let code = req.body.code
   let redirectUri = req.body.redirectUri
   // send form based request to Instagram API
-  const formData = new FormData()
+  const formData = new URLSearchParams()
 
   // Append your data
   formData.append("client_id", "328555189879651")
@@ -18,11 +18,9 @@ export default async function handler(
   formData.append("redirect_uri", redirectUri) // replace with your value
   formData.append("code", code) // replace with your value
 
-  // Make the request
+  // Make the request api.instagram.com/oauth/access_token
   axios
-    .post("https://api.instagram.com/oauth/access_token", formData, {
-      headers: formData.getHeaders(),
-    })
+    .post("https://api.instagram.com/oauth/access_token", formData)
     .then(async (response) => {
       const { access_token, user_id } = response.data;
       res.send({
