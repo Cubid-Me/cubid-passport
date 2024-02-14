@@ -193,7 +193,7 @@ export const Stamps = () => {
       return data?.[0]
     }
   }, [email])
-  console.log({email})
+
   const [isPohVerified, setIsPohVerified] = useState<any>(null)
   const { disconnect } = useDisconnect()
   const { getIdForApp } = useCreatedByAppId()

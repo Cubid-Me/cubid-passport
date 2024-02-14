@@ -296,8 +296,8 @@ export const Stamps = ({
   const { getIdForApp } = useCreatedByAppId()
 
   useEffect(() => {
-    if (email) {
       supabase.auth.onAuthStateChange(async (event, session) => {
+        console.log({session})
         if (session?.user) {
           const { user_metadata }: any = session?.user
           const providerKey = localStorage.getItem("socialName") ?? ""
@@ -351,7 +351,7 @@ export const Stamps = ({
           supabase.auth.signOut()
         }
       })
-    }
+    
   }, [email, fetchStampData, getIdForApp, getUser, supabaseUser, userState])
 
   useEffect(() => {
