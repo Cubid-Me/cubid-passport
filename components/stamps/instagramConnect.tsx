@@ -16,7 +16,7 @@ import { wallet } from "@/app/layout"
 import { stampsWithId } from "."
 import { Button } from "../ui/button"
 
-const redirectUri = "https://passport.cubid.me/app/"
+const redirectUri = "http://localhost:3000/app/"
 
 const InstagramAuth = ({ allowPage }: any) => {
   const handleLogin = () => {
@@ -61,13 +61,14 @@ export const InstagramConnect = ({
 
   const fetchData = useCallback(
     async (code_fixes: string) => {
-      if (typeof authData?.user?.email === "string") {
+      const email = await authData.getUser()
+      if (typeof email === "string") {
         const {
           data: { user_id, data },
         } = await axios.post("/api/insta-data-fetch", {
           code: code_fixes,
           redirectUri: redirectUri,
-          email: authData?.user?.email,
+          email: email,
         })
         const allData: any = data
         if (user_id) {
@@ -123,7 +124,7 @@ export const InstagramConnect = ({
     },
     [authData, fetchStamps, router, getIdForApp]
   )
-
+  console.log({ code: searchParams?.get("code"),authData })
   useEffect(() => {
     ;(async () => {
       const code = searchParams?.get("code")
