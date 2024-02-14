@@ -176,7 +176,7 @@ export const Stamps = ({
   const [instagramShow, setInstagramShow] = useState(false)
   const [stampCategories, setStampCategories] = useState([])
   const [allStamps, setAllStamps] = useState([])
-  const [email,setEmail] = useState(false)
+  const [email,setEmail] = useState("")
   const { stampCollector } = useStamps()
   const { supabaseUser, getUser } = useAuth({ appId })
 
