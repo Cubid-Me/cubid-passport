@@ -25,14 +25,7 @@ export const Authenticated = (props: any) => {
       }
 
       localStorage.removeItem("allow_url")
-    }
-    if (!user) {
-      if (window.location.href.includes("allow")) {
-        localStorage.setItem(
-          "allow_url",
-          window.location.href.replace(`${window.location.origin}/allow?`, "")
-        )
-      }
+    } else if (!user) {
       router.push("/login")
     } else {
       setVerified(true)
