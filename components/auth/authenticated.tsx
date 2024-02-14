@@ -10,12 +10,22 @@ export const Authenticated = (props: any) => {
   const router = useRouter()
   const { user, loading } = useAuth({})
   const [verified, setVerified] = useState(false)
+  const searchParams = useSearchParams()
 
   useEffect(() => {
     if (loading === true) {
       return
     }
+    if (localStorage.getItem("allow_url")) {
+      const code = searchParams?.get("code") ?? ""
+      if (code) {
+        router.push(`/allow?code=${code}?${localStorage.getItem("allow_url")}`)
+      } else {
+        router.push(`/allow?${localStorage.getItem("allow_url")}`)
+      }
 
+      localStorage.removeItem("allow_url")
+    }
     if (!user) {
       if (window.location.href.includes("allow")) {
         localStorage.setItem(
@@ -27,20 +37,7 @@ export const Authenticated = (props: any) => {
     } else {
       setVerified(true)
     }
-  }, [loading, router, user])
-  const searchParams = useSearchParams()
-  useEffect(() => {
-    if (localStorage.getItem("allow_url")) {
-      const code = searchParams?.get("code") ?? ""
-      if (code) {
-        router.push(`/allow?code=${code}?${localStorage.getItem("allow_url")}`)
-      } else {
-        router.push(`/allow?${localStorage.getItem("allow_url")}`)
-      }
-
-      localStorage.removeItem("allow_url")
-    }
-  }, [router, searchParams])
+  }, [loading, router, searchParams, user])
 
   if (!verified) {
     return null

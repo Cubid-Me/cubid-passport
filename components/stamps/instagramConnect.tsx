@@ -16,7 +16,7 @@ import { wallet } from "@/app/layout"
 import { stampsWithId } from "."
 import { Button } from "../ui/button"
 
-const redirectUri = "http://localhost:3000/app/"
+const redirectUri = "https://passport.cubid.me/app/"
 
 const InstagramAuth = ({ allowPage }: any) => {
   const handleLogin = () => {
