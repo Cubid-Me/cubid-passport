@@ -166,7 +166,6 @@ export const Stamps = ({
   useEffect(() => {
     localStorage.removeItem("allow_url")
   }, [])
-  console.log( dataToTransform(stampsToAdd, userState as any))
 
   const [brightIdData, setBrightIdData] = useState(null)
   const [brightIdSheetOpen, setBrightIdSheetOpen] = useState(false)
@@ -227,7 +226,7 @@ export const Stamps = ({
       return data?.[0]
     }
   }, [email])
-
+  console.log({email})
   const [isPohVerified, setIsPohVerified] = useState<any>(null)
 
   const connectToWeb3Node = useCallback(

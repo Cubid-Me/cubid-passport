@@ -125,7 +125,6 @@ export const InstagramConnect = ({
     },
     [authData, fetchStamps, router, getIdForApp]
   )
-  console.log({ code: searchParams?.get("code"),authData })
   useEffect(() => {
     ;(async () => {
       const code = searchParams?.get("code")
