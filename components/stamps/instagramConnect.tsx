@@ -16,7 +16,7 @@ import { wallet } from "@/app/layout"
 import { stampsWithId } from "."
 import { Button } from "../ui/button"
 
-const redirectUri = "https://cubid-passport.vercel.app/app/"
+const redirectUri = "https://passport.cubid.me/app/"
 
 const InstagramAuth = () => {
   const handleLogin = () => {
