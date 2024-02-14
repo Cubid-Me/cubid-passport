@@ -61,7 +61,8 @@ export const InstagramConnect = ({
 
   const fetchData = useCallback(
     async (code_fixes: string) => {
-      const email = await authData.getUser()
+      const {email} = await authData.getUser();
+      console.log(email)
       if (typeof email === "string") {
         const {
           data: { user_id, data },
