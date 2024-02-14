@@ -19,7 +19,7 @@ export const Authenticated = (props: any) => {
     if (localStorage.getItem("allow_url")) {
       const code = searchParams?.get("code") ?? ""
       if (code) {
-        router.push(`/allow?code=${code}?${localStorage.getItem("allow_url")}`)
+        router.push(`/allow?code=${code}&${localStorage.getItem("allow_url")}`)
       } else {
         router.push(`/allow?${localStorage.getItem("allow_url")}`)
       }
