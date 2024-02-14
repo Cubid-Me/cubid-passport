@@ -31,7 +31,7 @@ export const Authenticated = (props: any) => {
 
   useEffect(() => {
     if (localStorage.getItem("allow_url")) {
-      router.push(`/allow?=${localStorage.getItem("allow_url")}`);
+      router.push(`/allow?${localStorage.getItem("allow_url")}`);
       localStorage.removeItem("allow_url");
     }
   }, [router]);
