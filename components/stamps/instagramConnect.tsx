@@ -18,9 +18,13 @@ import { Button } from "../ui/button"
 
 const redirectUri = "https://passport.cubid.me/app/"
 
-const InstagramAuth = () => {
+const InstagramAuth = ({ allowPage }: any) => {
   const handleLogin = () => {
     const clientId = "328555189879651"
+    localStorage.setItem(
+      "allow_url",
+      window.location.href.replace(`${window.location.origin}/allow?`, "")
+    )
     window.location.href = `https://api.instagram.com/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=user_profile&response_type=code`
   }
 
@@ -39,6 +43,7 @@ export const InstagramConnect = ({
   onOpen,
   fetchStamps,
   appId,
+  allowPage,
 }: {
   open: boolean
   onClose: () => void
@@ -78,7 +83,7 @@ export const InstagramConnect = ({
             created_by_app: await getIdForApp(),
             stamptype: stampId,
             uniquevalue: allData.username,
-            user_id_and_uniqueval:`${dbUser?.id} ${stampId} ${allData.username}`,
+            user_id_and_uniqueval: `${dbUser?.id} ${stampId} ${allData.username}`,
             unique_hash: await encode_data(allData.username),
             stamp_json: allData as any,
             type_and_uniquehash: `${stampId} ${await encode_data(
@@ -139,7 +144,7 @@ export const InstagramConnect = ({
           <SheetHeader>
             <SheetTitle>Connect Instagram</SheetTitle>
             <div>
-              <InstagramAuth />
+              <InstagramAuth allowPage={allowPage as any} />
             </div>
           </SheetHeader>
         </SheetContent>
