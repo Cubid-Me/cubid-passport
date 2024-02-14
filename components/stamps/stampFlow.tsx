@@ -159,11 +159,14 @@ export const Stamps = ({
     const { data: d, error: e } = await supabase.auth.signInWithOAuth({
       provider: socialName,
       options: {
-        redirectTo: `${window.location.origin}/app`,
+        redirectTo: `${window.location.href}`,
       },
     })
   }
-  console.log(stampsToAdd)
+  useEffect(() => {
+    localStorage.removeItem("allow_url")
+  }, [])
+  console.log( dataToTransform(stampsToAdd, userState as any))
 
   const [brightIdData, setBrightIdData] = useState(null)
   const [brightIdSheetOpen, setBrightIdSheetOpen] = useState(false)
@@ -509,8 +512,7 @@ export const Stamps = ({
       <CardContent>
         <div className="flex items-center space-x-2">
           <Button
-            onClick={() => {
-            }}
+            onClick={() => {}}
             variant="secondary"
             style={{ width: "200px", backgroundColor: "#3b82f6" }}
           >
@@ -627,17 +629,32 @@ export const Stamps = ({
           </CardHeader>
           <CardContent>
             <div className="flex items-center space-x-2">
-              <Button
-                onClick={() => {}}
-                variant="secondary"
-                style={{
-                  width: "200px",
-                  backgroundColor: "#3b82f6",
-                  color: "white",
-                }}
-              >
-                Connect
-              </Button>
+              {doesStampExist(
+                (stampsWithId as any)[supabaseData.supabase_key]
+              ) ? (
+                <Button >Verified Stamp</Button>
+              ) : (
+                <Button
+                  onClick={() => {
+                    signInWithSocial(_)
+                    localStorage.setItem(
+                      "allow_url",
+                      window.location.href.replace(
+                        `${window.location.origin}/allow?`,
+                        ""
+                      )
+                    )
+                  }}
+                  style={{
+                    width: "200px",
+                    backgroundColor: "#3b82f6",
+                    color: "white",
+                  }}
+                >
+                  Connect
+                </Button>
+              )}
+
               <p className="text-md font-bold ">(Coming Soon)</p>
             </div>
           </CardContent>
@@ -883,27 +900,27 @@ export const Stamps = ({
           }}
         />
       </div>
-      {!email && (
-        <div className="ml-auto mt-4 w-[fit-content]">
-          <button
-            onClick={() => {
-              const jsonString = JSON.stringify(
-                dataToTransform(stampsToAdd, userState as any)
-              )
-              const base64Encoded = btoa(jsonString)
-              window.location.href = `${urltoreturn}?data=${base64Encoded}`
-              localStorage.clear()
-              sessionStorage.clear()
-            }}
-            disabled={!requiredDataAvailable}
-            className={`w-[180px] rounded ${
-              !requiredDataAvailable ? "opacity-60" : ""
-            } bg-blue-500 p-2 text-xs text-white`}
-          >
-            Import to 3oC
-          </button>
-        </div>
-      )}
+
+      <div className="ml-auto mt-4 w-[fit-content]">
+        <button
+          onClick={() => {
+            const jsonString = JSON.stringify(
+              dataToTransform(stampsToAdd, userState as any)
+            )
+
+            const base64Encoded = btoa(jsonString)
+            window.location.href = `${urltoreturn}?data=${base64Encoded}`
+            localStorage.clear()
+            sessionStorage.clear()
+          }}
+          disabled={!requiredDataAvailable}
+          className={`w-[180px] rounded ${
+            !requiredDataAvailable ? "opacity-60" : ""
+          } bg-blue-500 p-2 text-xs text-white`}
+        >
+          Import to 3oC
+        </button>
+      </div>
     </div>
   )
 }
