@@ -1,5 +1,6 @@
 "use client"
 
+import { setTimeout } from "timers/promises"
 import React, { useCallback, useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { createWeb3Modal, defaultWagmiConfig } from "@web3modal/wagmi/react"
@@ -76,15 +77,17 @@ const AllowPage = () => {
   }, [fetchValidId, fetchStamps])
 
   useEffect(() => {
-    if (localStorage.getItem("allow_url")) {
-      if (
-        window.location.href === `${window.location.origin}/allow` ||
-        window.location.href === `${window.location.origin}/allow#`
-      ) {
-        push(`/allow?${localStorage.getItem("allow_url")}`)
-        localStorage.removeItem("allow_url")
+    setTimeout(() => {
+      if (localStorage.getItem("allow_url")) {
+        if (
+          window.location.href === `${window.location.origin}/allow` ||
+          window.location.href === `${window.location.origin}/allow#`
+        ) {
+          push(`/allow?${localStorage.getItem("allow_url")}`)
+          localStorage.removeItem("allow_url")
+        }
       }
-    }
+    }, 2000)
   }, [push])
 
   function capitalizeFirstLetter(string: string) {
