@@ -79,7 +79,7 @@ const AllowPage = () => {
     if (localStorage.getItem("allow_url")) {
       if (
         window.location.href === `${window.location.origin}/allow` ||
-        window.location.href === `${window.location.origin}/allow/`
+        window.location.href === `${window.location.origin}/allow#`
       ) {
         push(`/allow?${localStorage.getItem("allow_url")}`)
         localStorage.removeItem("allow_url")
