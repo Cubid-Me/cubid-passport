@@ -1,6 +1,5 @@
 "use client"
 
-import { setTimeout } from "timers/promises"
 import React, { useCallback, useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { createWeb3Modal, defaultWagmiConfig } from "@web3modal/wagmi/react"
