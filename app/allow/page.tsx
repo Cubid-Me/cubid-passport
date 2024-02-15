@@ -1,11 +1,11 @@
 "use client"
 
 import React, { useCallback, useEffect, useState } from "react"
-import { useSearchParams } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
+import { createWeb3Modal, defaultWagmiConfig } from "@web3modal/wagmi/react"
 import axios from "axios"
 import { WagmiConfig } from "wagmi"
 import { arbitrum, mainnet } from "wagmi/chains"
-import { createWeb3Modal, defaultWagmiConfig } from "@web3modal/wagmi/react"
 
 import useAuth from "@/hooks/useAuth"
 import { Authenticated } from "@/components/auth/authenticated"
@@ -37,8 +37,8 @@ const AllowPage = () => {
   })
   const email = user?.email
   const adminuid = searchParams.get("adminuid")
-  const stamps = searchParams.get("stamps")
-  const allStamps = stamps?.split(",")
+  const stamps = searchParams.get("stamps") ?? ""
+  const allStamps = stamps?.split(",") ?? []
   const urltoreturn = searchParams.get("href")
 
   const fetchStamps = useCallback(async () => {
@@ -53,6 +53,8 @@ const AllowPage = () => {
       setUserState(userData ?? [])
     }
   }, [getUser])
+
+  const { push } = useRouter()
 
   const fetchValidId = useCallback(async () => {
     setLoading(true)
@@ -72,6 +74,18 @@ const AllowPage = () => {
     fetchValidId()
     fetchStamps()
   }, [fetchValidId, fetchStamps])
+
+  useEffect(() => {
+    if (localStorage.getItem("allow_url")) {
+      if (
+        window.location.href === `${window.location.origin}/allow` ||
+        window.location.href === `${window.location.origin}/allow/`
+      ) {
+        push(`/allow?${localStorage.getItem("allow_url")}`)
+        localStorage.removeItem("allow_url")
+      }
+    }
+  }, [push])
 
   function capitalizeFirstLetter(string: string) {
     return string.charAt(0).toUpperCase() + string.slice(1)
@@ -113,12 +127,18 @@ const AllowPage = () => {
       isStampOptional[item] = false
     }
   })
-  const [wagmiConfig, setWagmiConfig] = useState(defaultWagmiConfig({ chains:[mainnet, arbitrum], projectId:"046f59ead3e8ec7acd1db6ba73cd23b7", metadata:{
-    name: "Web3Modal",
-    description: "Web3Modal Example",
-    url: "https://web3modal.com",
-    icons: ["https://avatars.githubusercontent.com/u/37784886"],
-  } }))
+  const [wagmiConfig, setWagmiConfig] = useState(
+    defaultWagmiConfig({
+      chains: [mainnet, arbitrum],
+      projectId: "046f59ead3e8ec7acd1db6ba73cd23b7",
+      metadata: {
+        name: "Web3Modal",
+        description: "Web3Modal Example",
+        url: "https://web3modal.com",
+        icons: ["https://avatars.githubusercontent.com/u/37784886"],
+      },
+    })
+  )
   useEffect(() => {
     // 1. Get projectId
     const projectId = "046f59ead3e8ec7acd1db6ba73cd23b7"

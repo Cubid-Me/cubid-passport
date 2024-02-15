@@ -13,6 +13,8 @@ import Web3 from "web3"
 
 import { useStamps } from "./../../hooks/useStamps"
 import "@near-wallet-selector/modal-ui/styles.css"
+import { useRouter } from "next/navigation"
+
 import useAuth from "@/hooks/useAuth"
 import { useCreatedByAppId } from "@/hooks/useCreatedByApp"
 import { Button } from "@/components/ui/button"
@@ -144,7 +146,7 @@ export const stampsWithId = {
 }
 
 export const Stamps = ({
-  stampsToAdd,
+  stampsToAdd=[],
   fetchAllStamps,
   appId,
   requiredDataAvailable,
@@ -154,18 +156,22 @@ export const Stamps = ({
   isStampOptional,
 }: any) => {
   const signInWithSocial = async (socialName: any) => {
-    await supabase.auth.signOut()
-    localStorage.setItem("socialName", socialName)
-    const { data: d, error: e } = await supabase.auth.signInWithOAuth({
-      provider: socialName,
-      options: {
-        redirectTo: `${window.location.href}`,
-      },
-    })
+    localStorage.setItem(
+      "allow_url",
+      window.location.href.replace(`${window.location.origin}/allow?`, "")
+    )
+    setTimeout(async () => {
+      await supabase.auth.signOut()
+      localStorage.setItem("socialName", socialName)
+      const { data: d, error: e } = await supabase.auth.signInWithOAuth({
+        provider: socialName,
+        options: {
+          redirectTo: `${window.location.origin}/allow`,
+        },
+      })
+    }, 2000)
   }
-  useEffect(() => {
-    localStorage.removeItem("allow_url")
-  }, [])
+  const { push } = useRouter()
 
   const [brightIdData, setBrightIdData] = useState(null)
   const [brightIdSheetOpen, setBrightIdSheetOpen] = useState(false)
@@ -175,16 +181,16 @@ export const Stamps = ({
   const [instagramShow, setInstagramShow] = useState(false)
   const [stampCategories, setStampCategories] = useState([])
   const [allStamps, setAllStamps] = useState([])
-  const [email,setEmail] = useState("")
+  const [email, setEmail] = useState("")
   const { stampCollector } = useStamps()
   const { supabaseUser, getUser } = useAuth({ appId })
 
-  useEffect(()=>{
-    (async()=>{
-      const {email:userEmail} = await getUser();
+  useEffect(() => {
+    ;(async () => {
+      const { email: userEmail } = await getUser()
       setEmail(userEmail)
     })()
-  },[getUser])
+  }, [getUser])
 
   const fetchStampData = useCallback(async () => {
     const {
@@ -226,7 +232,7 @@ export const Stamps = ({
       return data?.[0]
     }
   }, [email])
-  console.log({email})
+  console.log({ email })
   const [isPohVerified, setIsPohVerified] = useState<any>(null)
 
   const connectToWeb3Node = useCallback(
@@ -296,62 +302,61 @@ export const Stamps = ({
   const { getIdForApp } = useCreatedByAppId()
 
   useEffect(() => {
-      supabase.auth.onAuthStateChange(async (event, session) => {
-        console.log({session})
-        if (session?.user) {
-          const { user_metadata }: any = session?.user
-          const providerKey = localStorage.getItem("socialName") ?? ""
-          const stampId = (stampsWithId as any)[providerKey]
-          const dbUser = await getUser()
-          const database = {
-            uniquehash: await encode_data(user_metadata?.email),
-            stamptype: stampId,
-            created_by_user_id: dbUser?.id,
-            unencrypted_unique_data: JSON.stringify(user_metadata),
-            type_and_hash: `${stampId} ${await encode_data(
-              user_metadata?.email
-            )}`,
-          }
-          const dataToSet = {
-            created_by_user_id: dbUser?.id,
-            created_by_app: await getIdForApp(),
-            stamptype: stampId,
-            uniquevalue: user_metadata?.email,
-            user_id_and_uniqueval: `${dbUser?.id} ${stampId} ${user_metadata?.email}`,
-            unique_hash: await encode_data(user_metadata?.email),
-            stamp_json: user_metadata,
-            type_and_uniquehash: `${stampId} ${await encode_data(
-              user_metadata?.email
-            )}`,
-          }
-          await axios.post("/api/supabase/insert", {
-            table: "uniquestamps",
-            body: database,
-          })
-          const {
-            data: { error, data },
-          } = await axios.post("/api/supabase/insert", {
-            table: "stamps",
-            body: dataToSet,
-          })
-          if (data?.[0]?.id) {
-            await axios.post("/api/supabase/insert", {
-              table: "authorized_dapps",
-              body: {
-                dapp_id: 22,
-                dapp_and_stamp_id: `22 ${data?.[0]?.id}`,
-                stamp_id: data?.[0]?.id,
-                can_read: true,
-                can_update: true,
-                can_delete: true,
-              },
-            })
-          }
-          fetchStampData()
-          supabase.auth.signOut()
+    supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log({ session })
+      if (session?.user) {
+        const { user_metadata }: any = session?.user
+        const providerKey = localStorage.getItem("socialName") ?? ""
+        const stampId = (stampsWithId as any)[providerKey]
+        const dbUser = await getUser()
+        const database = {
+          uniquehash: await encode_data(user_metadata?.email),
+          stamptype: stampId,
+          created_by_user_id: dbUser?.id,
+          unencrypted_unique_data: JSON.stringify(user_metadata),
+          type_and_hash: `${stampId} ${await encode_data(
+            user_metadata?.email
+          )}`,
         }
-      })
-    
+        const dataToSet = {
+          created_by_user_id: dbUser?.id,
+          created_by_app: await getIdForApp(),
+          stamptype: stampId,
+          uniquevalue: user_metadata?.email,
+          user_id_and_uniqueval: `${dbUser?.id} ${stampId} ${user_metadata?.email}`,
+          unique_hash: await encode_data(user_metadata?.email),
+          stamp_json: user_metadata,
+          type_and_uniquehash: `${stampId} ${await encode_data(
+            user_metadata?.email
+          )}`,
+        }
+        await axios.post("/api/supabase/insert", {
+          table: "uniquestamps",
+          body: database,
+        })
+        const {
+          data: { error, data },
+        } = await axios.post("/api/supabase/insert", {
+          table: "stamps",
+          body: dataToSet,
+        })
+        if (data?.[0]?.id) {
+          await axios.post("/api/supabase/insert", {
+            table: "authorized_dapps",
+            body: {
+              dapp_id: 22,
+              dapp_and_stamp_id: `22 ${data?.[0]?.id}`,
+              stamp_id: data?.[0]?.id,
+              can_read: true,
+              can_update: true,
+              can_delete: true,
+            },
+          })
+        }
+        fetchStampData()
+        supabase.auth.signOut()
+      }
+    })
   }, [email, fetchStampData, getIdForApp, getUser, supabaseUser, userState])
 
   useEffect(() => {
@@ -637,7 +642,7 @@ export const Stamps = ({
               {doesStampExist(
                 (stampsWithId as any)[supabaseData.supabase_key]
               ) ? (
-                <Button >Verified Stamp</Button>
+                <Button>Verified Stamp</Button>
               ) : (
                 <Button
                   onClick={() => {
