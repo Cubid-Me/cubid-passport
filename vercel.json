@@ -3,6 +3,10 @@
       {
         "path": "/api/gitcoin-near-cron-job",
         "schedule": "0 5 * * *"
+      },
+      {
+        "path": "/api/five_min_3oc_cron",
+        "schedule": "*/5 * * * *"
       }
     ]
   }
