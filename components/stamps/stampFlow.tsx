@@ -59,7 +59,7 @@ const dataToTransform = (stampToShare: string[], userState: []) => {
     }
   })
   if(dataToShare.instagram){
-    dataToShare.instagram = userState.find((item: any) => item.stamptype == 10).stamp_json.username
+    dataToShare.instagram = (userState.find((item: any) => item.stamptype == 10) as any).stamp_json.username
   }
   if (dataToShare.fractal) {
     delete dataToShare.fractal
