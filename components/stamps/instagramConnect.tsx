@@ -77,19 +77,19 @@ export const InstagramConnect = ({
           const dbUser = await authData.getUser()
 
           const database = {
-            uniquehash: await encode_data(allData.username),
+            uniquehash: await encode_data(allData.id),
             stamptype: stampId,
             created_by_user_id: dbUser?.id,
-            unencrypted_unique_data: allData.username,
-            type_and_hash: `${stampId} ${await encode_data(allData.username)}`,
+            unencrypted_unique_data: allData.id,
+            type_and_hash: `${stampId} ${await encode_data(allData.id)}`,
           }
           const dataToSet: any = {
             created_by_user_id: dbUser?.id,
             created_by_app: await getIdForApp(),
             stamptype: stampId,
-            uniquevalue: allData.username,
-            user_id_and_uniqueval: `${dbUser?.id} ${stampId} ${allData.username}`,
-            unique_hash: await encode_data(allData.username),
+            uniquevalue: allData.id,
+            user_id_and_uniqueval: `${dbUser?.id} ${stampId} ${allData.id}`,
+            unique_hash: await encode_data(allData.id),
             stamp_json: allData as any,
             type_and_uniquehash: `${stampId} ${await encode_data(
               allData.username

@@ -58,6 +58,9 @@ const dataToTransform = (stampToShare: string[], userState: []) => {
       dataToShare[item] = stamp_object?.uniquevalue
     }
   })
+  if(dataToShare.instagram){
+    dataToShare.instagram = userState.find((item: any) => item.stamptype == 10).stamp_json.username
+  }
   if (dataToShare.fractal) {
     delete dataToShare.fractal
     const kycData: any = userState.find((item: any) => item.stamptype == 17)
