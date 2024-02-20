@@ -932,7 +932,7 @@ export const Stamps = ({
             !requiredDataAvailable ? "opacity-60" : ""
           } bg-blue-500 p-2 text-xs text-white`}
         >
-          Import to 3oC
+          Save to my 3oc Identity
         </button>
       </div>
     </div>
