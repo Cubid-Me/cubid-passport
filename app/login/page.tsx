@@ -27,11 +27,26 @@ export default function AuthenticationPage() {
   const emailField = useRef(null)
   const [emailVal, setEmailVal] = useState("")
   const passwordField = useRef(null)
-  const [isEnabled, setIsEnabled] = useState(false)
+  const [isEnabled, setIsEnabled] = useState(true)
   const [loading, setLoading] = useState(false)
   const submit = async (values: any) => {
     try {
+      localStorage.setItem("email", emailField.current.value)
+
+      const {
+        data: { data },
+      } = await axios.post("/api/supabase/select", {
+        match: { email: emailField.current.value },
+        table: "users",
+      })
       await firebase.auth().signInWithCustomToken(values.idToken)
+
+      if (!data?.[0]) {
+        await axios.post(`/api/supabase/insert`, {
+          table: "users",
+          body: { email: localStorage.getItem("email") },
+        })
+      }
       // axios.post('/api/login-create-user',{
       //   email
       // })
@@ -41,24 +56,6 @@ export default function AuthenticationPage() {
       toast.error("An error while authenticating user")
     }
   }
-
-  const checkIfEmailExists = useCallback(
-    debounce(async (userEmail: string) => {
-      const { data } = await axios.post("/api/supabase/select", {
-        match: {
-          email: userEmail,
-        },
-        table: "users",
-      })
-      if (Boolean(data?.data?.[0])) {
-        setIsEnabled(true)
-      } else {
-        setIsEnabled(false)
-      }
-      setLoading(false)
-    }, 1000),
-    []
-  )
 
   return (
     <Guest>
@@ -95,7 +92,9 @@ export default function AuthenticationPage() {
         <div className="lg:p-8">
           <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
             <div className="flex flex-col space-y-2 text-center">
-              <h1 className="text-2xl font-semibold tracking-tight">Login</h1>
+              <h1 className="text-2xl font-semibold tracking-tight">
+                Authenticate
+              </h1>
               <p className="text-sm text-muted-foreground">
                 Enter your email below to authenticate
               </p>
@@ -103,9 +102,7 @@ export default function AuthenticationPage() {
             <Input
               type="email"
               onChange={(e) => {
-                setLoading(true)
                 setEmailVal(e.target.value)
-                checkIfEmailExists(e.target.value)
               }}
               ref={emailField}
               placeholder="Email"
@@ -146,7 +143,7 @@ export default function AuthenticationPage() {
                   padding: 10,
                   paddingTop: 5,
                   height: 40,
-                  fontSize:14,
+                  fontSize: 14,
                   paddingBottom: 5,
                   opacity: 0.4,
                   borderRadius: 5,
