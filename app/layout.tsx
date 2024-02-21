@@ -8,6 +8,7 @@ import { ToastContainer } from "react-toastify"
 
 import "react-phone-input-2/lib/style.css"
 import "react-toastify/dist/ReactToastify.css"
+import { usePathname } from "next/navigation"
 import { getAuth, getIdToken, signInWithCustomToken } from "firebase/auth"
 import { SessionProvider } from "next-auth/react"
 import { Provider } from "react-redux"
@@ -28,7 +29,7 @@ wallet.startUp()
 
 export default function RootLayout(props: any) {
   const { pageProps } = props
-
+  const pathName = usePathname()
   if (process.env.NODE_ENV === "development") {
     return (
       <SessionProvider session={pageProps?.session}>
@@ -52,7 +53,11 @@ export default function RootLayout(props: any) {
             />
           </head>
           <body
-            className={cn("min-h-screen bg-background !antialiased")}
+            className={cn(
+              `min-h-screen ${
+                pathName?.includes("allow") ? "bg-[#F2F2F2] text-black" : "bg-background"
+              }  !antialiased`
+            )}
             style={{ fontFamily: "'Open Sans', sans-serif" }}
           >
             <ThemeProvider attribute="class" defaultTheme="system" enableSystem>

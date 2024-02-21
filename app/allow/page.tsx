@@ -6,6 +6,7 @@ import { createWeb3Modal, defaultWagmiConfig } from "@web3modal/wagmi/react"
 import axios from "axios"
 import { WagmiConfig } from "wagmi"
 import { arbitrum, mainnet } from "wagmi/chains"
+import { useTheme } from "next-themes"
 
 import useAuth from "@/hooks/useAuth"
 import { Authenticated } from "@/components/auth/authenticated"
@@ -158,6 +159,12 @@ const AllowPage = () => {
     setWagmiConfig(wConfig as any)
     createWeb3Modal({ wagmiConfig: wConfig, projectId, chains })
   }, [])
+
+  const { setTheme } = useTheme()
+
+  useEffect(()=>{
+    setTheme('light')
+  },[])
 
   return (
     <WagmiConfig config={wagmiConfig as any}>
