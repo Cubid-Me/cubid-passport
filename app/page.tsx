@@ -54,14 +54,6 @@ export default function IndexPage() {
               {/* <Link href={"/register"} className={buttonVariants()}>
                 Register
               </Link> */}
-              <Link
-                target="_blank"
-                rel="noreferrer"
-                href={"https://app.cubid.me"}
-                className={buttonVariants({ variant: "outline" })}
-              >
-                Cubid App
-              </Link>
             </div>
           </div>
         </section>
