@@ -4,7 +4,7 @@ import { useAccount } from "wagmi"
 
 import useAuth from "./useAuth"
 
-export const useStamps = () => {
+export const useStamps = ({ user }: { user?: any }) => {
   const [stamps, setStamps] = useState([])
   const [gitcoinScore, setGitcoinScore] = useState(0)
   const { supabaseUser } = useAuth({})
@@ -14,7 +14,7 @@ export const useStamps = () => {
         data: { data: gitcoin_data },
       } = await axios.post("/api/supabase/select", {
         match: {
-          created_by_user_id: supabaseUser.id,
+          created_by_user_id: user ? user?.id : supabaseUser.id,
           stamptype: 9,
         },
         table: "stamps",
@@ -25,7 +25,7 @@ export const useStamps = () => {
         Math.round(gitcoin_data?.[0]?.stamp_json?.scores?.score ?? 0)
       )
     }
-  }, [supabaseUser])
+  }, [supabaseUser, user])
 
   useEffect(() => {
     fetchNearAndGitcoinStamps()
@@ -45,5 +45,5 @@ export const useStamps = () => {
     }
     return stampDataArray
   }, [stamps])
-  return { stamps, stampCollector, fetchNearAndGitcoinStamps,gitcoinScore }
+  return { stamps, stampCollector, fetchNearAndGitcoinStamps, gitcoinScore }
 }

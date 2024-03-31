@@ -5,15 +5,13 @@ import axios from "axios"
 export const useCreatedByAppId = () => {
   const cubidAppId = 22
   const searchParams: any = useSearchParams()
-  const adminuid = searchParams.get("adminuid")
+  const adminuid = searchParams.get("uid")
   const fetchValidId = useCallback(async () => {
     if (adminuid) {
-      const {
-        data: { adminValid, app_id },
-      } = await axios.post("/api/verify-admin-key", {
-        adminuid,
+      const { data } = await axios.post("/api/allow/fetch_allow_uid", {
+        uid: adminuid,
       })
-      return app_id
+      return data?.dapp_users?.[0]?.dapps?.id;
     }
   }, [adminuid])
   const getIdForApp = useCallback(async () => {
