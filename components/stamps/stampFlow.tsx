@@ -186,7 +186,7 @@ export const Stamps = ({
   const [stampCategories, setStampCategories] = useState([])
   const [allStamps, setAllStamps] = useState([])
   const [email, setEmail] = useState("")
-  const { stampCollector } = useStamps()
+  const { stampCollector } = useStamps({})
   const { supabaseUser, getUser } = useAuth({ appId })
 
   useEffect(() => {

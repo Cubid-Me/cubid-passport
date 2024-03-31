@@ -137,7 +137,7 @@ export const Stamps = () => {
     user: { email },
   }: any = useSelector((state) => state)
   const { stampCollector, fetchNearAndGitcoinStamps, gitcoinScore } =
-    useStamps()
+    useStamps({})
 
   const { supabaseUser, getUser } = useAuth({})
 
