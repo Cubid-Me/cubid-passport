@@ -98,7 +98,7 @@ export const Score = ({ stamps, setStampToAdd, stampsList, setSteps }: any) => {
             onClick={() => {
               setSteps(1)
             }}
-            className="w-[80px] rounded-lg border bg-blue-500 py-2 text-white "
+                      className="w-[100px] text-sm rounded-lg border bg-gray-100 px-5 py-2 text-black "
           >
             Next
           </button>
