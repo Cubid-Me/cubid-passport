@@ -39,6 +39,13 @@ export const RequiredInfo = ({ stamps, stampsList, setStampToAdd }: any) => {
                   </th>
                   <td className="px-6 py-4">
                     {!allStampIds?.includes(item?.stamptypes?.id) ? (
+                      <p className="text-red-500 text-sm">Missing</p>
+                    ) : (
+                      <p>{relevant_stamp.uniquevalue}</p>
+                    )}
+                  </td>
+                  <td className="px-6 py-4">
+                    {!allStampIds?.includes(item?.stamptypes?.id) ? (
                       <button
                         onClick={() => {
                           setStampToAdd(item?.stamptypes?.stamptype)
@@ -48,7 +55,7 @@ export const RequiredInfo = ({ stamps, stampsList, setStampToAdd }: any) => {
                         Add
                       </button>
                     ) : (
-                      <p>{relevant_stamp.uniquevalue}</p>
+                      <></>
                     )}
                   </td>
                 </tr>
