@@ -44,6 +44,12 @@ const AllowPage = () => {
 
   const uuid = searchParams.get("uid")
 
+  useEffect(() => {
+    if (uuid) {
+      localStorage.setItem("allow-uuid", uuid)
+    }
+  }, [uuid])
+
   const fetchAllStamps = useCallback(async (userId: any) => {
     const {
       data: { data },
@@ -162,6 +168,7 @@ const AllowPage = () => {
                 {userUidData?.dapp_users?.[0]?.dapps?.appname}
               </p>
               {steps === 0 && (
+                
                 <Score
                   stampToAdd={stampToAdd}
                   stampsList={stampsList}
@@ -280,6 +287,17 @@ const AllowPage = () => {
                   </div>
                 </Dialog>
               </Transition.Root>
+              <div className="hidden">
+                <Stamps
+                  supabaseUser={userUidData?.dapp_users?.[0].users}
+                  getUser={fetchUserUidData}
+                  onMainPanelClose={() => {
+                    setStampToAdd("")
+                    fetchUserUidData()
+                  }}
+                  stampToRender={stampToAdd}
+                />
+              </div>
             </div>
           ) : (
             <>

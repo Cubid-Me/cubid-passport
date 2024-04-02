@@ -142,7 +142,7 @@ export const Stamps = ({
   const [stampCategories, setStampCategories] = useState([])
   const [allStamps, setAllStamps] = useState([])
   const [stampLoading, setStampLoading] = useState(true)
-  const email = supabaseUser?.users?.email
+  const email = supabaseUser?.email
   const { stampCollector, fetchNearAndGitcoinStamps, gitcoinScore } = useStamps(
     {}
   )
@@ -359,6 +359,7 @@ export const Stamps = ({
       fetchUserData()
       fetchStampData()
       fetchNearAndGitcoinStamps()
+      window.location.reload()
     },
     [userState, disconnect, fetchUserData, fetchStampData, fetchNearAndGitcoinStamps, getUser, getIdForApp, uuid, email]
   )
@@ -426,7 +427,9 @@ export const Stamps = ({
             })
           }
           fetchStampData()
-          supabase.auth.signOut()
+          supabase.auth.signOut().finally(()=>{
+            window.location.reload()
+          })
         }
       })
     }
@@ -1291,6 +1294,8 @@ export const Stamps = ({
             fetchUserData()
             fetchStampData()
           }}
+          email={email}
+          dbUser={supabaseUser}
           onClose={() => {
             onMainPanelClose()
             setInstagramShow(false)

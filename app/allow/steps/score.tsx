@@ -9,6 +9,16 @@ export const Score = ({ stamps, setStampToAdd, stampsList, setSteps }: any) => {
 
   const allStampIds = stampsList.map((item: any) => item.stamptype)
 
+  function sortArrayByCondition(arr:any) {
+    return arr.sort((a:any, b:any) => {
+      const aMeetsCondition = allStampIds?.includes(a?.stamptypes?.id) ? -1 : 1;
+      const bMeetsCondition = allStampIds?.includes(b?.stamptypes?.id) ? -1 : 1;
+      return aMeetsCondition - bMeetsCondition;
+    });
+  }
+  
+  
+
   return (
     <>
       <div className="mx-auto mt-2 w-[700px] rounded-md border p-2">
@@ -26,7 +36,7 @@ export const Score = ({ stamps, setStampToAdd, stampsList, setSteps }: any) => {
             </tr>
           </thead>
           <tbody>
-            {stamps.map((item: any) => (
+            {sortArrayByCondition(stamps).map((item: any) => (
               <tr
                 key={item.id}
                 className="border-b bg-white dark:border-gray-700 dark:bg-gray-800"
@@ -62,14 +72,14 @@ export const Score = ({ stamps, setStampToAdd, stampsList, setSteps }: any) => {
                 </td>
               </tr>
             ))}
-            <tr className="border-b text-left bg-white p-2 dark:border-gray-700 dark:bg-gray-800">
+            <tr className="border-b bg-gray-200 p-2 text-left dark:border-gray-700 dark:bg-gray-800">
               <th
                 scope="row"
-                className="whitespace-nowrap px-6 py-4 font-medium capitalize text-gray-900 dark:text-white"
+                className="whitespace-nowrap px-6 py-4 font-bold capitalize text-gray-900 dark:text-white"
               >
                 Total Score
               </th>
-              <td className="px-6 py-4">
+              <td className="px-6 py-4 font-bold">
                 {[
                   ...stamps.filter((item) =>
                     allStampIds?.includes(item?.stamptypes?.id)
@@ -79,7 +89,7 @@ export const Score = ({ stamps, setStampToAdd, stampsList, setSteps }: any) => {
                   0
                 )}
               </td>
-              <td className="px-6 py-4">
+              <td className="px-6 py-4 font-bold">
                 {[
                   ...stamps.filter(
                     (item) => !allStampIds?.includes(item?.stamptypes?.id)
@@ -98,7 +108,7 @@ export const Score = ({ stamps, setStampToAdd, stampsList, setSteps }: any) => {
             onClick={() => {
               setSteps(1)
             }}
-                      className="w-[100px] text-sm rounded-lg border bg-gray-100 px-5 py-2 text-black "
+                      className="w-[100px] rounded-lg border bg-gray-100 px-5 py-2 text-sm text-black "
           >
             Next
           </button>

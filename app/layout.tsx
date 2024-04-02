@@ -3,12 +3,13 @@
 "use client"
 
 import "@/styles/globals.css"
+import { useLayoutEffect, useState } from "react"
 import { OwnIDInit } from "@ownid/react"
 import { ToastContainer } from "react-toastify"
 
 import "react-phone-input-2/lib/style.css"
 import "react-toastify/dist/ReactToastify.css"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { getAuth, getIdToken, signInWithCustomToken } from "firebase/auth"
 import { SessionProvider } from "next-auth/react"
 import { Provider } from "react-redux"
@@ -27,9 +28,45 @@ export const wallet = new Wallet({
 
 wallet.startUp()
 
+function removeQueryParam(url, paramToRemove) {
+  // Parse the URL
+  const urlObj = new URL(url)
+
+  // Get the search parameters
+  const searchParams = new URLSearchParams(urlObj.search)
+
+  // Remove the specified parameter
+  searchParams.delete(paramToRemove)
+
+  // Return the remaining query string without the leading "?"
+  return searchParams.toString()
+}
 export default function RootLayout(props: any) {
   const { pageProps } = props
   const pathName = usePathname()
+  const { push } = useRouter()
+
+  useLayoutEffect(() => {
+    if (typeof window !== "undefined") {
+      console.log(
+        localStorage.getItem("allow-uuid"),
+        !window?.location?.href?.contains?.("/allow")
+      )
+      if (
+        localStorage.getItem("allow-uuid") &&
+        !window?.location?.href?.contains?.("/allow")
+      ) {
+        const queryStringURL = removeQueryParam(window.location.href, "uid")
+        push(
+          `${window.location.origin}/allow?uid=${localStorage.getItem(
+            "allow-uuid"
+          )}&${queryStringURL}`
+        )
+        localStorage.removeItem("allow-uuid")
+      }
+    }
+  }, [push])
+
   if (process.env.NODE_ENV === "development") {
     return (
       <SessionProvider session={pageProps?.session}>
@@ -55,7 +92,9 @@ export default function RootLayout(props: any) {
           <body
             className={cn(
               `min-h-screen ${
-                pathName?.includes("allow") ? "bg-[#F2F2F2] text-black" : "bg-background"
+                pathName?.includes("allow")
+                  ? "bg-[#F2F2F2] text-black"
+                  : "bg-background"
               }  !antialiased`
             )}
             style={{ fontFamily: "'Open Sans', sans-serif" }}

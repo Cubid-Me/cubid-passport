@@ -3,8 +3,10 @@ import { useRouter, useSearchParams } from "next/navigation"
 import axios from "axios"
 
 import { encode_data } from "@/lib/encode_data"
+import { insertStampPerm } from "@/lib/insert_stamp_perm"
 import useAuth from "@/hooks/useAuth"
 import { useCreatedByAppId } from "@/hooks/useCreatedByApp"
+import { Button } from "@/components/ui/button"
 import {
   Sheet,
   SheetContent,
@@ -14,8 +16,6 @@ import {
 import { wallet } from "@/app/layout"
 
 import { stampsWithId } from "."
-import { Button } from "@/components/ui/button"
-import { insertStampPerm } from "@/lib/insert_stamp_perm"
 
 const redirectUri = "https://passport.cubid.me/app/"
 
@@ -47,7 +47,9 @@ export const InstagramConnect = ({
   fetchStamps,
   appId,
   allowPage,
-  uid
+  uid,
+  email,
+  dbUser,
 }: {
   open: boolean
   onClose: () => void
@@ -55,7 +57,9 @@ export const InstagramConnect = ({
   fetchStamps: () => void
   appId?: any
   allowPage?: boolean
-  uid:any
+  uid: any
+  email: string
+  dbUser: any
 }) => {
   const searchParams = useSearchParams()
   const authData = useAuth({ appId })
@@ -64,8 +68,6 @@ export const InstagramConnect = ({
 
   const fetchData = useCallback(
     async (code_fixes: string) => {
-      const {email} = await authData.getUser();
-      console.log(email)
       if (typeof email === "string") {
         const {
           data: { user_id, data },
@@ -77,7 +79,6 @@ export const InstagramConnect = ({
         const allData: any = data
         if (user_id) {
           const stampId = (stampsWithId as any)["instagram"]
-          const dbUser = await authData.getUser()
 
           const database = {
             uniquehash: await encode_data(allData.id),
@@ -108,7 +109,7 @@ export const InstagramConnect = ({
             table: "stamps",
             body: dataToSet,
           })
-          insertStampPerm(data?.[0]?.id,uid)
+          insertStampPerm(data?.[0]?.id, uid)
           if (data?.[0]?.id) {
             await axios.post("/api/supabase/insert", {
               table: "authorized_dapps",
@@ -122,20 +123,32 @@ export const InstagramConnect = ({
               },
             })
           }
-          fetchStamps()
+
+          router.push(
+            `${window.location.origin}/allow?uid=${localStorage.getItem(
+              "allow-uuid"
+            )}`
+          )
+          window.location.reload()
+        } else {
+          router.push(
+            `${window.location.origin}/allow?uid=${localStorage.getItem(
+              "allow-uuid"
+            )}`
+          )
+          window.location.reload()
         }
       }
     },
-    [authData, fetchStamps, getIdForApp]
+    [dbUser, email, fetchStamps, getIdForApp, uid]
   )
   useEffect(() => {
-    ;(async () => {
-      const code = searchParams?.get("code")
+    console.log({ code: searchParams?.get("code") })
+    const code = searchParams?.get("code")
 
-      if (code) {
-        await fetchData(code)
-      }
-    })()
+    if (code) {
+      fetchData(code)
+    }
   }, [onOpen, searchParams, fetchData])
   return (
     <>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
+import axios from "axios"
 import { useAuth } from "hooks/useAuth"
 import PropTypes from "prop-types"
 
@@ -16,20 +17,29 @@ export const Authenticated = (props: any) => {
     if (loading === true) {
       return
     }
-    if (localStorage.getItem("allow_url")) {
-      const code = searchParams?.get("code") ?? ""
-      if (code) {
-        router.push(`/allow?code=${code}&${localStorage.getItem("allow_url")}`)
-      } else {
-        router.push(`/allow?${localStorage.getItem("allow_url")}`)
-      }
+    ;(async () => {
+      const {
+        data: { isAllow },
+      } = await axios.post("/api/isallowtoken")
+      if (!isAllow) {
+        if (localStorage.getItem("allow_url")) {
+          const code = searchParams?.get("code") ?? ""
+          if (code) {
+            router.push(
+              `/allow?code=${code}&${localStorage.getItem("allow_url")}`
+            )
+          } else {
+            router.push(`/allow?${localStorage.getItem("allow_url")}`)
+          }
 
-      localStorage.removeItem("allow_url")
-    } else if (!user) {
-      router.push("/login")
-    } else {
-      setVerified(true)
-    }
+          localStorage.removeItem("allow_url")
+        } else if (!user) {
+          router.push("/login")
+        } else {
+          setVerified(true)
+        }
+      }
+    })()
   }, [loading, router, searchParams, user])
 
   if (!verified) {
