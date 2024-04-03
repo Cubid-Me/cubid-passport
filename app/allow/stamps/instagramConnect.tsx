@@ -109,7 +109,7 @@ export const InstagramConnect = ({
             table: "stamps",
             body: dataToSet,
           })
-          insertStampPerm(data?.[0]?.id, uid)
+          await insertStampPerm(data?.[0]?.id, uid)
           if (data?.[0]?.id) {
             await axios.post("/api/supabase/insert", {
               table: "authorized_dapps",
@@ -122,21 +122,19 @@ export const InstagramConnect = ({
                 can_delete: true,
               },
             })
+            router.push(
+              `${window.location.origin}/allow?uid=${localStorage.getItem(
+                "allow-uuid"
+              )}`
+            )
+            window.location.reload()
           }
-
-          router.push(
-            `${window.location.origin}/allow?uid=${localStorage.getItem(
-              "allow-uuid"
-            )}`
-          )
-          window.location.reload()
         } else {
           router.push(
             `${window.location.origin}/allow?uid=${localStorage.getItem(
               "allow-uuid"
             )}`
           )
-          window.location.reload()
         }
       }
     },
