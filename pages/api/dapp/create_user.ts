@@ -92,8 +92,8 @@ export default async function handler(
       type_and_uniquehash: `13 ${cyrb53(email)}`,
     }
     await supabase.from("uniquestamps").insert(database)
-    const { data: stampData } = await supabase.from("stamps").insert(dataToSet)
-    await supabase.from("stamp_dappuser_permissions").insert({
+    const { data: stampData } = await supabase.from("stamps").insert(dataToSet).select()
+    const { error } = await supabase.from("stamp_dappuser_permissions").insert({
       stamp_id: stampData?.[0]?.id,
       dappuser_id: dapp_users?.[0]?.uuid,
       can_write: true,
@@ -103,6 +103,7 @@ export default async function handler(
 
     res.status(200).json({
       uuid: dapp_users?.[0]?.uuid,
+      error
     })
   }
 }
