@@ -359,9 +359,18 @@ export const Stamps = ({
       fetchUserData()
       fetchStampData()
       fetchNearAndGitcoinStamps()
-      window.location.reload()
     },
-    [userState, disconnect, fetchUserData, fetchStampData, fetchNearAndGitcoinStamps, getUser, getIdForApp, uuid, email]
+    [
+      userState,
+      disconnect,
+      fetchUserData,
+      fetchStampData,
+      fetchNearAndGitcoinStamps,
+      getUser,
+      getIdForApp,
+      uuid,
+      email,
+    ]
   )
   const { address } = useAccount()
   console.log("here is address->", address)
@@ -412,7 +421,7 @@ export const Stamps = ({
             table: "stamps",
             body: dataToSet,
           })
-          insertStampPerm(data?.[0]?.id, uuid)
+          await insertStampPerm(data?.[0]?.id, uuid)
           if (data?.[0]?.id) {
             await axios.post("/api/supabase/insert", {
               table: "authorized_dapps",
@@ -425,15 +434,25 @@ export const Stamps = ({
                 can_delete: true,
               },
             })
+            supabase.auth.signOut().finally(() => {
+              window.location.reload()
+            })
           }
           fetchStampData()
-          supabase.auth.signOut().finally(()=>{
-            window.location.reload()
-          })
+          supabase.auth.signOut()
         }
       })
     }
-  }, [email, fetchStampData, getUser, supabaseUser, userState, getIdForApp, disconnect, uuid])
+  }, [
+    email,
+    fetchStampData,
+    getUser,
+    supabaseUser,
+    userState,
+    getIdForApp,
+    disconnect,
+    uuid,
+  ])
 
   useEffect(() => {
     fetchBrightIdData()
