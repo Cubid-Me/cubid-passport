@@ -389,7 +389,7 @@ export const Stamps = ({
           const providerKey = localStorage.getItem("socialName") ?? ""
           console.log(providerKey)
           const stampId = (stampsWithId as any)[providerKey]
-          const dbUser = await getUser()
+          const dbUser = supabaseUser
           const database = {
             uniquehash: await encode_data(user_metadata?.email),
             stamptype: stampId,
@@ -468,7 +468,7 @@ export const Stamps = ({
           issuer: "fractal.i-am-human.near",
         },
       })
-      const dbUser = await getUser()
+      const dbUser = supabaseUser
       if (dbUser?.id) {
         const stampId = (stampsWithId as any)["near-wallet"]
         const stamp2Id = (stampsWithId as any)["iah"]
@@ -584,14 +584,21 @@ export const Stamps = ({
         wallet.signOut()
       }
     }
-  }, [email, getUser, getIdForApp, uuid, fetchUserData, fetchStampData])
+  }, [
+    email,
+    getUser,
+    getIdForApp,
+    supabaseUser,
+    uuid,
+    fetchUserData,
+    fetchStampData,
+  ])
 
   useEffect(() => {
     fetchNearWallet()
   }, [fetchNearWallet])
 
   const deleteStamp = async (stamp_type: number) => {
-    const supabaseUser = await getUser()
     const { unique_hash, id } = allStamps.filter(
       (item: any) => item.stamptype === stamp_type
     )[0]
