@@ -64,6 +64,7 @@ export default async function handler(
       .from("users")
       .insert({
         email,
+        created_by_app:dapp_id
       })
       .select()
 

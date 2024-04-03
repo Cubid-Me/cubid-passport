@@ -1221,6 +1221,7 @@ export const Stamps = ({
         <BrightIdConnectSheet
           modalOpen={brightIdSheetOpen}
           email={email}
+          supabaseUser={supabaseUser}
           closeModal={() => {
             onMainPanelClose()
             setBrightIdSheetOpen(false)

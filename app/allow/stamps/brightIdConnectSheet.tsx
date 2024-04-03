@@ -13,17 +13,19 @@ export const BrightIdConnectSheet = ({
   modalOpen,
   closeModal,
   email,
+  supabaseUser: any,
 }: {
   modalOpen: boolean
   closeModal: () => void
   email: string
+  supabaseUser: any
 }) => {
   const [brightIdData, setBrightIdData] = useState()
   const { getUser } = useAuth({})
 
   const fetchUserData = useCallback(async () => {
     if (email) {
-      const user = await getUser()
+      const user = supabaseUser
       if (user?.id) {
         const {
           data: { data },
@@ -37,7 +39,7 @@ export const BrightIdConnectSheet = ({
         return data?.[0]
       }
     }
-  }, [email, getUser])
+  }, [email, getUser, supabaseUser])
 
   useEffect(() => {
     fetchUserData()
