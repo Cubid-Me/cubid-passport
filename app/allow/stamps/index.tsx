@@ -1217,16 +1217,18 @@ export const Stamps = ({
             isExistingStamp={doesStampExist(stampsWithId.gooddollar)}
           />
         )}
+        {Boolean(supabaseUser?.id) && (
+          <BrightIdConnectSheet
+            modalOpen={brightIdSheetOpen}
+            email={email}
+            supabaseUser={supabaseUser}
+            closeModal={() => {
+              onMainPanelClose()
+              setBrightIdSheetOpen(false)
+            }}
+          />
+        )}
 
-        <BrightIdConnectSheet
-          modalOpen={brightIdSheetOpen}
-          email={email}
-          supabaseUser={supabaseUser}
-          closeModal={() => {
-            onMainPanelClose()
-            setBrightIdSheetOpen(false)
-          }}
-        />
         <Sheet
           open={gitcoinStamps}
           onOpenChange={(value) => {

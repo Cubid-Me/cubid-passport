@@ -13,7 +13,7 @@ export const BrightIdConnectSheet = ({
   modalOpen,
   closeModal,
   email,
-  supabaseUser: any,
+  supabaseUser,
 }: {
   modalOpen: boolean
   closeModal: () => void

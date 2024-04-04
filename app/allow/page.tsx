@@ -200,9 +200,10 @@ const AllowPage = () => {
                     >
                       Previous
                     </button>
+                    {console.log(userUidData?.dapp_users?.[0]?.dapps)}
                     <button
                       onClick={() => {
-                        console.log("submitted")
+                       window.location.href = `${userUidData?.dapp_users?.[0]?.dapps?.redirect_url}?status=success`
                       }}
                       className="w-[100px] text-sm rounded-lg border bg-blue-500 px-5 py-2 text-white "
                     >
