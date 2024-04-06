@@ -14,12 +14,22 @@ const fetchAllowUid = async (req: any, res: any) => {
     .match({
       dapp_id: dapp_users?.[0]?.dapp_id,
     })
+  const { data: scoreData } = await supabase
+    .from("stampscore_dapps")
+    .select("*,stampscore_schemas:schema_id(*)")
+    .match({
+      dapp_id: dapp_users?.[0]?.dapp_id,
+    })
+  const { data: stampScores } = await supabase
+  .from("stampscores_available")
+  .select("*")
+  .match({
+    schema_id: scoreData?.[0]?.schema_id,
+  })
 
-  const stampsToSend = stampData?.filter(
-    (item) => item.info_sharing_type_id !== 1
-  )
+  const stampsToSend = stampData
 
-  res.send({ error, dapp_users, stampsToSend })
+  res.send({ error, dapp_users, stampsToSend, scoreData,stampScores })
 }
 
 export default fetchAllowUid

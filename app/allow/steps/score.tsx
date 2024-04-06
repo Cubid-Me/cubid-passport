@@ -1,6 +1,12 @@
 import React, { useState } from "react"
 
-export const Score = ({ stamps, setStampToAdd, stampsList, setSteps }: any) => {
+export const Score = ({
+  stamps,
+  setStampToAdd,
+  stampsList,
+  setSteps,
+  stampScores,
+}: any) => {
   const isStampsValid = Array.isArray(stamps) && stamps.length !== 0
 
   if (!isStampsValid) {
@@ -9,15 +15,13 @@ export const Score = ({ stamps, setStampToAdd, stampsList, setSteps }: any) => {
 
   const allStampIds = stampsList.map((item: any) => item.stamptype)
 
-  function sortArrayByCondition(arr:any) {
-    return arr.sort((a:any, b:any) => {
-      const aMeetsCondition = allStampIds?.includes(a?.stamptypes?.id) ? -1 : 1;
-      const bMeetsCondition = allStampIds?.includes(b?.stamptypes?.id) ? -1 : 1;
-      return aMeetsCondition - bMeetsCondition;
-    });
+  function sortArrayByCondition(arr: any) {
+    return arr.sort((a: any, b: any) => {
+      const aMeetsCondition = allStampIds?.includes(a?.stamptypes?.id) ? -1 : 1
+      const bMeetsCondition = allStampIds?.includes(b?.stamptypes?.id) ? -1 : 1
+      return aMeetsCondition - bMeetsCondition
+    })
   }
-  
-  
 
   return (
     <>
@@ -36,42 +40,48 @@ export const Score = ({ stamps, setStampToAdd, stampsList, setSteps }: any) => {
             </tr>
           </thead>
           <tbody>
-            {sortArrayByCondition(stamps).map((item: any) => (
-              <tr
-                key={item.id}
-                className="border-b bg-white dark:border-gray-700 dark:bg-gray-800"
-              >
-                <th
-                  scope="row"
-                  className="whitespace-nowrap px-6 py-4 font-medium capitalize text-gray-900 dark:text-white"
+            {sortArrayByCondition(stamps).map((item: any) => {
+              const scoreData = stampScores.find(
+                (_) => _.stamptype_id === item.stamptype_id
+              )
+
+              return (
+                <tr
+                  key={item.id}
+                  className="border-b bg-white dark:border-gray-700 dark:bg-gray-800"
                 >
-                  {item?.stamptypes?.stamptype}
-                </th>
-                <td className="px-6 py-4">
-                  {" "}
-                  {!allStampIds?.includes(item?.stamptypes?.id)
-                    ? ""
-                    : item?.stamptypes?.stamp_score}
-                </td>
-                <td className="px-6 py-4">
-                  {allStampIds?.includes(item?.stamptypes?.id)
-                    ? ""
-                    : item?.stamptypes?.stamp_score}
-                </td>
-                <td className="px-6 py-4">
-                  {!allStampIds?.includes(item?.stamptypes?.id) && (
-                    <button
-                      onClick={() => {
-                        setStampToAdd(item?.stamptypes?.stamptype)
-                      }}
-                      className="h-[24px] w-[60px] rounded-md bg-blue-500 text-white"
-                    >
-                      Add
-                    </button>
-                  )}
-                </td>
-              </tr>
-            ))}
+                  <th
+                    scope="row"
+                    className="whitespace-nowrap px-6 py-4 font-medium capitalize text-gray-900 dark:text-white"
+                  >
+                    {item?.stamptypes?.stamptype}
+                  </th>
+                  <td className="px-6 py-4">
+                    {" "}
+                    {!allStampIds?.includes(item?.stamptypes?.id)
+                      ? ""
+                      : scoreData.score}
+                  </td>
+                  <td className="px-6 py-4">
+                    {allStampIds?.includes(item?.stamptypes?.id)
+                      ? ""
+                      : scoreData.score}
+                  </td>
+                  <td className="px-6 py-4">
+                    {!allStampIds?.includes(item?.stamptypes?.id) && (
+                      <button
+                        onClick={() => {
+                          setStampToAdd(item?.stamptypes?.stamptype)
+                        }}
+                        className="h-[24px] w-[60px] rounded-md bg-blue-500 text-white"
+                      >
+                        Add
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              )
+            })}
             <tr className="border-b bg-gray-200 p-2 text-left dark:border-gray-700 dark:bg-gray-800">
               <th
                 scope="row"
@@ -84,20 +94,24 @@ export const Score = ({ stamps, setStampToAdd, stampsList, setSteps }: any) => {
                   ...stamps.filter((item) =>
                     allStampIds?.includes(item?.stamptypes?.id)
                   ),
-                ].reduce(
-                  (curr, item) => item?.stamptypes?.stamp_score + curr,
-                  0
-                )}
+                ].reduce((curr, item) => {
+                  const scoreData = stampScores.find(
+                    (_) => _.stamptype_id === item.stamptype_id
+                  )
+                  return scoreData.score + curr
+                }, 0)}
               </td>
               <td className="px-6 py-4 font-bold">
                 {[
                   ...stamps.filter(
                     (item) => !allStampIds?.includes(item?.stamptypes?.id)
                   ),
-                ].reduce(
-                  (curr, item) => item?.stamptypes?.stamp_score + curr,
-                  0
-                )}
+                ].reduce((curr, item) => {
+                  const scoreData = stampScores.find(
+                    (_) => _.stamptype_id === item.stamptype_id
+                  )
+                  return scoreData.score + curr
+                }, 0)}
               </td>
               <td></td>
             </tr>
@@ -108,7 +122,7 @@ export const Score = ({ stamps, setStampToAdd, stampsList, setSteps }: any) => {
             onClick={() => {
               setSteps(1)
             }}
-                      className="w-[100px] rounded-lg border bg-gray-100 px-5 py-2 text-sm text-black "
+            className="w-[100px] rounded-lg border bg-gray-100 px-5 py-2 text-sm text-black "
           >
             Next
           </button>

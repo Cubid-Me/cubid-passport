@@ -2,7 +2,8 @@ import React from "react"
 
 export const OptionalInfo = ({ stamps, setStampToAdd, stampsList }: any) => {
   const optionalStamps = stamps.filter(
-    (item: any) => !item.is_infosharing_required
+    (item: any) =>
+      !item.is_infosharing_required && item.info_sharing_type_id !== 1
   )
   const isStampsValid = Array.isArray(stamps) && stamps.length !== 0
   if (!isStampsValid) {

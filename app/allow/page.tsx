@@ -141,6 +141,17 @@ const AllowPage = () => {
 
   const [steps, setSteps] = useState(0)
 
+  const requiredStamps = userUidData?.stampsToSend?.filter(
+    (item: any) => item.is_infosharing_required
+  )
+  const allStampIds = stampsList?.map((item: any) => item.stamptype)
+
+  const isAllIncluded = requiredStamps?.filter((item: any) =>
+    allStampIds?.includes(item?.stamptypes?.id)
+  )
+
+  const buttonDisabled = requiredStamps?.length !== isAllIncluded?.length
+
   return (
     <WagmiConfig config={wagmiConfig as any}>
       {loading ? (
@@ -168,12 +179,12 @@ const AllowPage = () => {
                 {userUidData?.dapp_users?.[0]?.dapps?.appname}
               </p>
               {steps === 0 && (
-                
                 <Score
                   stampToAdd={stampToAdd}
                   stampsList={stampsList}
                   setStampToAdd={setStampToAdd}
                   setSteps={setSteps}
+                  stampScores={userUidData?.stampScores}
                   stamps={userUidData?.stampsToSend}
                 />
               )}
@@ -200,12 +211,14 @@ const AllowPage = () => {
                     >
                       Previous
                     </button>
-                    {console.log(userUidData?.dapp_users?.[0]?.dapps)}
                     <button
                       onClick={() => {
-                       window.location.href = `${userUidData?.dapp_users?.[0]?.dapps?.redirect_url}?status=success`
+                        window.location.href = `${userUidData?.dapp_users?.[0]?.dapps?.redirect_url}?status=success`
                       }}
-                      className="w-[100px] text-sm rounded-lg border bg-blue-500 px-5 py-2 text-white "
+                      disabled={buttonDisabled}
+                      className={`w-[100px] text-sm rounded-lg border bg-blue-500 px-5 py-2 text-white ${
+                        buttonDisabled ? "opacity-70" : ""
+                      }`}
                     >
                       Submit
                     </button>
