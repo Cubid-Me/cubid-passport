@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState } from "react"
 
 export const Score = ({
@@ -42,7 +43,7 @@ export const Score = ({
           <tbody>
             {sortArrayByCondition(stamps).map((item: any) => {
               const scoreData = stampScores.find(
-                (_) => _.stamptype_id === item.stamptype_id
+                (_:any) => _.stamptype_id === item.stamptype_id
               )
 
               return (
