@@ -207,21 +207,33 @@ const AllowPage = () => {
                       onClick={() => {
                         setSteps(0)
                       }}
-                      className="w-[100px] text-sm rounded-lg border bg-gray-100 px-5 py-2 text-black "
+                      className="w-[100px] rounded-lg border bg-gray-100 px-5 py-2 text-sm text-black "
                     >
                       Previous
                     </button>
-                    <button
-                      onClick={() => {
-                        window.location.href = `${userUidData?.dapp_users?.[0]?.dapps?.redirect_url}?status=success`
-                      }}
-                      disabled={buttonDisabled}
-                      className={`w-[100px] text-sm rounded-lg border bg-blue-500 px-5 py-2 text-white ${
-                        buttonDisabled ? "opacity-70" : ""
-                      }`}
-                    >
-                      Submit
-                    </button>
+                    {buttonDisabled ? (
+                      <>
+                        <button
+                          className={`w-[100px] rounded-lg border bg-blue-500 px-5 py-2 text-sm text-white ${
+                            buttonDisabled ? "opacity-70" : ""
+                          }`}
+                          disabled={buttonDisabled}
+                        >
+                          Submit
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <a
+                          href={`${userUidData?.dapp_users?.[0]?.dapps?.redirect_url}?status=success`}
+                          className={`w-[100px] rounded-lg border bg-blue-500 px-5 py-2 text-sm text-white ${
+                            buttonDisabled ? "opacity-70" : ""
+                          }`}
+                        >
+                          Submit
+                        </a>
+                      </>
+                    )}
                   </div>
                 </>
               )}
@@ -259,21 +271,21 @@ const AllowPage = () => {
                           leaveTo="translate-x-full"
                         >
                           <Dialog.Panel className="pointer-events-auto w-screen max-w-md">
-                            <div className="flex h-full flex-col overflow-y-scroll bg-white py-6 shadow-xl rounded-l-2xl">
+                            <div className="flex h-full flex-col overflow-y-scroll rounded-l-2xl bg-white py-6 shadow-xl">
                               <div className="px-4 sm:px-6">
                                 <div className="flex items-start justify-between">
                                   <div className="flex h-7 items-center">
                                     <button
                                       type="button"
-                                      className="flex gap-2 items-center relative rounded-md bg-white text-gray-400 hover:text-gray-500"
+                                      className="relative flex items-center gap-2 rounded-md bg-white text-gray-400 hover:text-gray-500"
                                       onClick={() => setStampToAdd("")}
                                     >
                                       <span className="sr-only">Close</span>
                                       <XMarkIcon
-                                        className="h-5 w-5 text-secondary-90"
+                                        className="text-secondary-90 size-5"
                                         aria-hidden="true"
                                       />
-                                      <span className="text-gray-900 font-bold">
+                                      <span className="font-bold text-gray-900">
                                         Close
                                       </span>
                                     </button>
