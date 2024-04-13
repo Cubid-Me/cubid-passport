@@ -43,12 +43,17 @@ const AllowPage = () => {
   const [stampsList, setStampsList] = useState([])
 
   const uuid = searchParams.get("uid")
+  const colormode = searchParams.get("colormode")
+  const { setTheme } = useTheme()
 
   useEffect(() => {
     if (uuid) {
       localStorage.setItem("allow-uuid", uuid)
     }
-  }, [uuid])
+    if (colormode) {
+      setTheme(colormode)
+    }
+  }, [uuid, setTheme, colormode])
 
   const fetchAllStamps = useCallback(async (userId: any) => {
     const {
@@ -133,12 +138,6 @@ const AllowPage = () => {
     createWeb3Modal({ wagmiConfig: wConfig, projectId, chains })
   }, [])
 
-  const { setTheme } = useTheme()
-
-  useEffect(() => {
-    setTheme("light")
-  }, [setTheme])
-
   const [steps, setSteps] = useState(0)
 
   const requiredStamps = userUidData?.stampsToSend?.filter(
@@ -156,7 +155,7 @@ const AllowPage = () => {
     <WagmiConfig config={wagmiConfig as any}>
       {loading ? (
         <>
-          <div className="flex h-[100vh] w-[100vw] items-center justify-center">
+          <div className="flex h-[100vh] w-[100vw] dark:bg-gray-900 items-center justify-center">
             <div className="w-[650px] rounded border border-gray-200 p-6 text-center dark:border-gray-800">
               <div role="status" className="w-full animate-pulse space-y-3">
                 <div className="mb-4 h-10 w-full rounded bg-gray-200 dark:bg-gray-700"></div>
@@ -171,10 +170,10 @@ const AllowPage = () => {
           </div>
         </>
       ) : (
-        <>
+        <div className="dark:bg-gray-700 min-h-[100vh] dark:text-white">
           {isValid ? (
-            <div className="px-4">
-              <p>
+            <div className="px-4 pt-4">
+              <p className="dark:text-white">
                 Cubid Identity for{" "}
                 {userUidData?.dapp_users?.[0]?.dapps?.appname}
               </p>
@@ -330,7 +329,7 @@ const AllowPage = () => {
               <p>Invalid Admin UID</p>
             </>
           )}
-        </>
+        </div>
       )}
     </WagmiConfig>
   )

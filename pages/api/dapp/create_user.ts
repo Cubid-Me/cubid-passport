@@ -49,22 +49,24 @@ export default async function handler(
           await supabase
             .from("dapp_users")
             .insert({
-              user_id: data[0].id,
+              user_id: selectUser[0].id,
               dapp_id,
             })
             .select()
         )?.data?.[0]?.uuid,
+        newuser: true,
       })
     }
     res.status(200).json({
       uuid: dappUsers1?.[0]?.uuid,
+      newuser: false,
     })
   } else {
     const { data } = await supabase
       .from("users")
       .insert({
         email,
-        created_by_app:dapp_id
+        created_by_app: dapp_id,
       })
       .select()
 
@@ -93,7 +95,10 @@ export default async function handler(
       type_and_uniquehash: `13 ${cyrb53(email)}`,
     }
     await supabase.from("uniquestamps").insert(database)
-    const { data: stampData } = await supabase.from("stamps").insert(dataToSet).select()
+    const { data: stampData } = await supabase
+      .from("stamps")
+      .insert(dataToSet)
+      .select()
     const { error } = await supabase.from("stamp_dappuser_permissions").insert({
       stamp_id: stampData?.[0]?.id,
       dappuser_id: dapp_users?.[0]?.uuid,
@@ -104,7 +109,8 @@ export default async function handler(
 
     res.status(200).json({
       uuid: dapp_users?.[0]?.uuid,
-      error
+      newuser: true,
+      error,
     })
   }
 }

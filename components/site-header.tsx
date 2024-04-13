@@ -12,7 +12,7 @@ export function SiteHeader() {
   return (
     <header
       className={`${
-        pathName?.includes("allow") ? `bg-[#F2F2F2]` : `bg-background`
+        `bg-background`
       } sticky top-0 z-40 w-full border-b`}
     >
       <div className="container flex h-16 items-center space-x-4 sm:justify-between sm:space-x-0">

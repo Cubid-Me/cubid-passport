@@ -16,7 +16,7 @@ export function MainNav() {
   return (
     <div className="flex gap-6 md:gap-10">
       <Link href="/" className="flex items-center space-x-2">
-        <span className={`${pathName.includes("allow") && "text-black"} inline-block font-bold`}>Cubid Passport</span>
+        <span className={`dark:text-white inline-block font-bold`}>Cubid Passport</span>
       </Link>
     </div>
   )
