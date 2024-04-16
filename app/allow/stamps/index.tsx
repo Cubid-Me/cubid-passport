@@ -1,3 +1,4 @@
+// @ts-nocheck
 /* eslint-disable jsx-a11y/alt-text */
 /* eslint-disable @next/next/no-img-element */
 "use client"
@@ -148,6 +149,7 @@ export const Stamps = ({
   )
 
   const fetchStampData = useCallback(async () => {
+    console.log('fetch stampdata executed')
     const {
       data: { data },
     } = await axios.post("/api/supabase/select", {

@@ -133,15 +133,16 @@ export const Stamps = () => {
   const [stampCategories, setStampCategories] = useState([])
   const [allStamps, setAllStamps] = useState([])
   const [stampLoading, setStampLoading] = useState(true)
-  const {
-    user: { email },
-  }: any = useSelector((state) => state)
-  const { stampCollector, fetchNearAndGitcoinStamps, gitcoinScore } =
-    useStamps({})
+  const email: any = useSelector((state) => state?.user?.email ?? "")
+  const { stampCollector, fetchNearAndGitcoinStamps, gitcoinScore } = useStamps(
+    {}
+  )
 
   const { supabaseUser, getUser } = useAuth({})
+  console.log({supabaseUser},'supabaseUser')
 
   const fetchStampData = useCallback(async () => {
+    console.log('fetch Stampdata executed')
     const {
       data: { data },
     } = await axios.post("/api/supabase/select", {
@@ -158,6 +159,7 @@ export const Stamps = () => {
           created_by_user_id: supabaseUser?.id,
         },
       })
+      console.log("all stamps executed",dbData)
       setAllStamps(dbData)
       setStampLoading(false)
     }
@@ -640,7 +642,11 @@ export const Stamps = () => {
           </button>
         )}
       </div>
-      <div className={`grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3 ${stampLoading && "pointer-events-none opacity-40"}`}>
+      <div
+        className={`grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3 ${
+          stampLoading && "pointer-events-none opacity-40"
+        }`}
+      >
         {socialDataToMap.map((item) => (
           <Card style={{ height: "auto" }}>
             <CardHeader>

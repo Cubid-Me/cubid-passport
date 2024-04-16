@@ -1,3 +1,4 @@
+// @ts-nocheck
 /* eslint-disable @next/next/no-img-element */
 import React, { useCallback, useEffect, useState } from "react"
 import axios from "axios"
@@ -223,6 +224,7 @@ export const Profile = () => {
             <Button
               onClick={() => {
                 dispatch(logout())
+                window.location.reload()
               }}
             >
               Logout

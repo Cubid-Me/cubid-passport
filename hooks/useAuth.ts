@@ -29,6 +29,7 @@ export const useAuth = (appHookProps: hookProps) => {
           email: user.email,
           name: user.displayName || user.email,
         }
+        console.log({ user }, "new user")
         localStorage.setItem("email", user.email ?? "")
         localStorage.removeItem("unauthenticated_user")
         setUser(setUserData)

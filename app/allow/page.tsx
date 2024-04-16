@@ -111,7 +111,7 @@ const AllowPage = () => {
   const [wagmiConfig, setWagmiConfig] = useState(
     defaultWagmiConfig({
       chains: [mainnet, arbitrum],
-      projectId: "046f59ead3e8ec7acd1db6ba73cd23b7",
+      projectId: "6833ed2c1539b9d27e8840c51f53bd0c",
       metadata: {
         name: "Web3Modal",
         description: "Web3Modal Example",
@@ -122,7 +122,7 @@ const AllowPage = () => {
   )
   useEffect(() => {
     // 1. Get projectId
-    const projectId = "046f59ead3e8ec7acd1db6ba73cd23b7"
+    const projectId = "6833ed2c1539b9d27e8840c51f53bd0c"
 
     // 2. Create wagmiConfig
     const metadata = {
@@ -135,7 +135,10 @@ const AllowPage = () => {
     const chains = [mainnet, arbitrum]
     const wConfig = defaultWagmiConfig({ chains, projectId, metadata })
     setWagmiConfig(wConfig as any)
-    createWeb3Modal({ wagmiConfig: wConfig, projectId, chains })
+    createWeb3Modal({  wagmiConfig: wConfig,
+      projectId,
+      enableAnalytics: true, // Optional - defaults to your Cloud configuration
+      enableOnramp: true // Optional - false as default })
   }, [])
 
   const [steps, setSteps] = useState(0)
