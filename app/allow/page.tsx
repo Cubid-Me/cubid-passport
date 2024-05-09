@@ -135,10 +135,12 @@ const AllowPage = () => {
     const chains = [mainnet, arbitrum]
     const wConfig = defaultWagmiConfig({ chains, projectId, metadata })
     setWagmiConfig(wConfig as any)
-    createWeb3Modal({  wagmiConfig: wConfig,
+    createWeb3Modal({
+      wagmiConfig: wConfig,
       projectId,
       enableAnalytics: true, // Optional - defaults to your Cloud configuration
-      enableOnramp: true // Optional - false as default })
+      enableOnramp: true, // Optional - false as default })
+    })
   }, [])
 
   const [steps, setSteps] = useState(0)
