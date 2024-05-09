@@ -1,5 +1,6 @@
 "use client"
 
+// @types-nocheck
 import React, { useCallback, useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Dialog, Transition } from "@headlessui/react"
@@ -133,8 +134,12 @@ const AllowPage = () => {
       icons: ["https://avatars.githubusercontent.com/u/37784886"],
     }
 
-    const chains = [mainnet, arbitrum]
-    const wConfig = defaultWagmiConfig({ chains, projectId, metadata })
+    const chains = [mainnet]
+    const wConfig = defaultWagmiConfig({
+      chains: chains as any,
+      projectId,
+      metadata,
+    })
     setWagmiConfig(wConfig as any)
     createWeb3Modal({
       wagmiConfig: wConfig,
