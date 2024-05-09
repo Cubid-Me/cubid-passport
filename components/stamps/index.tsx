@@ -133,16 +133,16 @@ export const Stamps = () => {
   const [stampCategories, setStampCategories] = useState([])
   const [allStamps, setAllStamps] = useState([])
   const [stampLoading, setStampLoading] = useState(true)
-  const email: any = useSelector((state) => state?.user?.email ?? "")
+  const email: any = useSelector((state: any) => state?.user?.email ?? "")
   const { stampCollector, fetchNearAndGitcoinStamps, gitcoinScore } = useStamps(
     {}
   )
 
   const { supabaseUser, getUser } = useAuth({})
-  console.log({supabaseUser},'supabaseUser')
+  console.log({ supabaseUser }, "supabaseUser")
 
   const fetchStampData = useCallback(async () => {
-    console.log('fetch Stampdata executed')
+    console.log("fetch Stampdata executed")
     const {
       data: { data },
     } = await axios.post("/api/supabase/select", {
@@ -159,7 +159,7 @@ export const Stamps = () => {
           created_by_user_id: supabaseUser?.id,
         },
       })
-      console.log("all stamps executed",dbData)
+      console.log("all stamps executed", dbData)
       setAllStamps(dbData)
       setStampLoading(false)
     }
