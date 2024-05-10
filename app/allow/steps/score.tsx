@@ -8,6 +8,7 @@ export const Score = ({
   setSteps,
   stampScores,
 }: any) => {
+  console.log(stampScores,stampsList,setStampToAdd)
   const isStampsValid = Array.isArray(stamps) && stamps.length !== 0
 
   if (!isStampsValid) {
@@ -61,12 +62,12 @@ export const Score = ({
                     {" "}
                     {!allStampIds?.includes(item?.stamptypes?.id)
                       ? ""
-                      : scoreData.score}
+                      : scoreDitemata?.score}
                   </td>
                   <td className="px-6 py-4">
                     {allStampIds?.includes(item?.stamptypes?.id)
                       ? ""
-                      : scoreData.score}
+                      : scoreData?.score}
                   </td>
                   <td className="px-6 py-4">
                     {!allStampIds?.includes(item?.stamptypes?.id) && (
@@ -99,7 +100,7 @@ export const Score = ({
                   const scoreData = stampScores.find(
                     (_) => _.stamptype_id === item.stamptype_id
                   )
-                  return scoreData.score + curr
+                  return scoreData?.score + curr
                 }, 0)}
               </td>
               <td className="px-6 py-4 font-bold">
@@ -111,7 +112,7 @@ export const Score = ({
                   const scoreData = stampScores.find(
                     (_) => _.stamptype_id === item.stamptype_id
                   )
-                  return scoreData.score + curr
+                  return scoreData?.score + curr
                 }, 0)}
               </td>
               <td></td>

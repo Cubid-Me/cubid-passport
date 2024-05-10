@@ -57,7 +57,7 @@ const fetch_score = async (req: any, res: any) => {
       const scoreData = (stampScores ?? []).find(
         (_) => _.stamptype_id === item.stamptype_id
       )
-      return scoreData.score + curr
+      return scoreData?.score + curr
     }, 0)
     const ava = [
       ...stampsToSend.filter((item) =>
