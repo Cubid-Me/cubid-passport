@@ -21,15 +21,15 @@ const fetchAllowUid = async (req: any, res: any) => {
       dapp_id: dapp_users?.[0]?.dapp_id,
     })
   const { data: stampScores } = await supabase
-  .from("stampscores_available")
-  .select("*")
-  .match({
-    schema_id: scoreData?.[0]?.schema_id,
-  })
+    .from("stampscores_available")
+    .select("*")
+    .match({
+      schema_id: 2
+    })
 
   const stampsToSend = stampData
 
-  res.send({ error, dapp_users, stampsToSend, scoreData,stampScores })
+  res.send({ error, dapp_users, stampsToSend, scoreData, stampScores })
 }
 
 export default fetchAllowUid
