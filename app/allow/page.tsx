@@ -234,6 +234,7 @@ const AllowPage = () => {
                       </>
                     ) : (
                       <>
+                      {console.log({userUidData})}
                         <a
                           href={`${userUidData?.dapp_users?.[0]?.dapps?.redirect_url}?status=success`}
                           className={`w-[100px] rounded-lg border bg-blue-500 px-5 py-2 text-sm text-white ${
