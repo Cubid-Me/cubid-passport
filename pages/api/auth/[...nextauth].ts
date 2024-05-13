@@ -1,6 +1,6 @@
-import NextAuth, { NextAuthOptions } from "next-auth"
+import NextAuth from "next-auth"
 
-export const authOptions: NextAuthOptions = {
+export const authOptions = {
   providers: [
     {
       id: "worldcoin",
@@ -19,7 +19,7 @@ export const authOptions: NextAuthOptions = {
     },
   ],
   callbacks: {
-    async jwt({ token }) {
+    async jwt({ token }: any) {
       token.userRole = "admin"
       return token
     },
@@ -27,4 +27,4 @@ export const authOptions: NextAuthOptions = {
   debug: true,
 }
 
-export default NextAuth(authOptions)
+export default NextAuth(authOptions as any)
