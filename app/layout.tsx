@@ -105,9 +105,9 @@ export default function RootLayout(props: any) {
 
   if (process.env.NODE_ENV === "development") {
     return (
-      <WagmiConfig config={wagmiConfig as any}>
-        <QueryClientProvider client={queryClient}>
-          <SessionProvider session={pageProps?.session}>
+      <SessionProvider session={props?.pageProps?.session}>
+        <WagmiConfig config={wagmiConfig as any}>
+          <QueryClientProvider client={queryClient}>
             <OwnIDInit
               config={{
                 appId: "p0zfroqndmvm30",
@@ -153,9 +153,9 @@ export default function RootLayout(props: any) {
                 </ThemeProvider>
               </body>
             </html>
-          </SessionProvider>
-        </QueryClientProvider>
-      </WagmiConfig>
+          </QueryClientProvider>
+        </WagmiConfig>
+      </SessionProvider>
     )
   }
 
@@ -163,9 +163,9 @@ export default function RootLayout(props: any) {
     // Client-side-only code
 
     return (
-      <WagmiConfig config={wagmiConfig as any}>
-        <QueryClientProvider client={queryClient}>
-          <SessionProvider session={pageProps?.session}>
+      <SessionProvider session={props?.pageProps?.session}>
+        <WagmiConfig config={wagmiConfig as any}>
+          <QueryClientProvider client={queryClient}>
             <OwnIDInit
               config={{
                 appId: "p0zfroqndmvm30",
@@ -206,9 +206,9 @@ export default function RootLayout(props: any) {
                 </ThemeProvider>
               </body>
             </html>
-          </SessionProvider>
-        </QueryClientProvider>
-      </WagmiConfig>
+          </QueryClientProvider>
+        </WagmiConfig>
+      </SessionProvider>
     )
   } else {
     return <></>

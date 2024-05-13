@@ -59,8 +59,10 @@ const dataToTransform = (stampToShare: string[], userState: []) => {
       dataToShare[item] = stamp_object?.uniquevalue
     }
   })
-  if(dataToShare.instagram){
-    dataToShare.instagram = (userState.find((item: any) => item.stamptype == 10) as any).stamp_json.username
+  if (dataToShare.instagram) {
+    dataToShare.instagram = (
+      userState.find((item: any) => item.stamptype == 10) as any
+    ).stamp_json.username
   }
   if (dataToShare.fractal) {
     delete dataToShare.fractal
@@ -147,10 +149,11 @@ export const stampsWithId = {
   gooddollar: 12,
   fractal: 17,
   linkedin: 22,
+  worldcoin: 26,
 }
 
 export const Stamps = ({
-  stampsToAdd=[],
+  stampsToAdd = [],
   fetchAllStamps,
   appId,
   requiredDataAvailable,
@@ -566,7 +569,11 @@ export const Stamps = ({
               )
             }}
             variant="outline"
-            style={{ width: "200px", backgroundColor: "#3b82f6",color:"white" }}
+            style={{
+              width: "200px",
+              backgroundColor: "#3b82f6",
+              color: "white",
+            }}
           >
             Connect KYC
           </Button>
@@ -574,7 +581,7 @@ export const Stamps = ({
       </CardContent>
     </Card>
   )
- 
+
   stampsToAdd.map((_: string) => {
     if (_ === "instagram") {
       stampsToRender.push(
@@ -764,7 +771,11 @@ export const Stamps = ({
                   setPhonenumber(true)
                 }}
                 variant="secondary"
-                style={{ width: "200px", backgroundColor: "#3b82f6",color:"white" }}
+                style={{
+                  width: "200px",
+                  backgroundColor: "#3b82f6",
+                  color: "white",
+                }}
               >
                 Connect Phone Number
               </Button>
@@ -790,7 +801,11 @@ export const Stamps = ({
               <Button
                 onClick={() => {}}
                 variant="secondary"
-                style={{ width: "200px", backgroundColor: "#3b82f6",color:"white" }}
+                style={{
+                  width: "200px",
+                  backgroundColor: "#3b82f6",
+                  color: "white",
+                }}
               >
                 Connect
               </Button>
@@ -801,8 +816,6 @@ export const Stamps = ({
       )
     }
   })
-
- 
 
   return (
     <div className="p-3 pb-16">
