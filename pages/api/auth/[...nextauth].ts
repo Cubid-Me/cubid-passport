@@ -27,4 +27,4 @@ export const authOptions = {
   debug: true,
 }
 
-export default NextAuth(authOptions as any)
+export default (NextAuth as any)(authOptions as any)
