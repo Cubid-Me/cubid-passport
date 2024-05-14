@@ -1326,7 +1326,7 @@ export const Stamps = () => {
             )}
           </CardContent>
         </Card>
-        <Card>
+        {/* <Card>
           <CardHeader>
             <img
               src={
@@ -1378,7 +1378,7 @@ export const Stamps = () => {
               </>
             )}
           </CardContent>
-        </Card>
+        </Card> */}
         {/* <script async src="https://telegram.org/js/telegram-widget.js?22" data-telegram-login="cubid_bot" data-size="medium" data-auth-url="https://passport.cubid.me/telegram" data-request-access="write"></script> */}
         <GooddollarConnect
           fetchStamps={() => {
