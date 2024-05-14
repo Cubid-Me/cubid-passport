@@ -28,3 +28,5 @@ export const authOptions = {
 }
 
 export default (NextAuth as any)(authOptions as any)
+
+const auth = "7136237295:AAGtcINhyf2S00aVoPWoj-5yh81QV62Ggok"

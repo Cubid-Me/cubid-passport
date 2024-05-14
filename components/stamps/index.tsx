@@ -45,6 +45,7 @@ import { BrightIdConnectSheet } from "./brightIdConnectSheet"
 import { GooddollarConnect } from "./gooddollarConnect"
 import { InstagramConnect } from "./instagramConnect"
 import { PhoneNumberConnect } from "./phoneNumberConnect"
+import Script from "next/script"
 
 const socialDataToMap = [
   {
@@ -1325,6 +1326,60 @@ export const Stamps = () => {
             )}
           </CardContent>
         </Card>
+        <Card>
+          <CardHeader>
+            <img
+              src={
+                "https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Telegram_2019_Logo.svg/2048px-Telegram_2019_Logo.svg.png"
+              }
+              alt="Image"
+              className="mb-1 size-10 rounded-md object-cover"
+            />
+            <CardTitle>Telegram</CardTitle>
+            {false ? (
+              <CardDescription>
+                <div className="flex items-center space-x-1">
+                  <p>Your telegram is verified</p>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="#00e64d"
+                    className="size-6"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </div>
+              </CardDescription>
+            ) : (
+              <CardDescription>Verify your telegram</CardDescription>
+            )}
+          </CardHeader>
+          <CardContent>
+            {false ? (
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <Button>Verified Stamp</Button>
+              </div>
+            ) : (
+              <>
+                <Script
+                  async
+                  src="https://telegram.org/js/telegram-widget.js?22"
+                  data-telegram-login="cubid_bot"
+                  data-size="medium"
+                  data-auth-url="https://passport.cubid.me/telegram"
+                  data-request-access="write"
+                ></Script>
+              </>
+            )}
+          </CardContent>
+        </Card>
+        {/* <script async src="https://telegram.org/js/telegram-widget.js?22" data-telegram-login="cubid_bot" data-size="medium" data-auth-url="https://passport.cubid.me/telegram" data-request-access="write"></script> */}
         <GooddollarConnect
           fetchStamps={() => {
             fetchStampData()
