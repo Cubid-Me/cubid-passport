@@ -14,6 +14,9 @@ import Web3 from "web3"
 
 import { useStamps } from "./../../hooks/useStamps"
 import "@near-wallet-selector/modal-ui/styles.css"
+import { useRouter } from "next/navigation"
+import Script from "next/script"
+
 import useAuth from "@/hooks/useAuth"
 import { useCreatedByAppId } from "@/hooks/useCreatedByApp"
 import { Button } from "@/components/ui/button"
@@ -45,7 +48,6 @@ import { BrightIdConnectSheet } from "./brightIdConnectSheet"
 import { GooddollarConnect } from "./gooddollarConnect"
 import { InstagramConnect } from "./instagramConnect"
 import { PhoneNumberConnect } from "./phoneNumberConnect"
-import Script from "next/script"
 
 const socialDataToMap = [
   {
@@ -112,6 +114,7 @@ export const stampsWithId = {
   fractal: 17,
   evm: 14,
   worldcoin: 26,
+  telegram:27
 }
 
 export const Stamps = () => {
@@ -140,6 +143,7 @@ export const Stamps = () => {
   const { stampCollector, fetchNearAndGitcoinStamps, gitcoinScore } = useStamps(
     {}
   )
+  const { push } = useRouter()
 
   const { supabaseUser, getUser } = useAuth({})
   console.log({ supabaseUser }, "supabaseUser")
@@ -1326,7 +1330,7 @@ export const Stamps = () => {
             )}
           </CardContent>
         </Card>
-        {/* <Card>
+        <Card>
           <CardHeader>
             <img
               src={
@@ -1336,7 +1340,7 @@ export const Stamps = () => {
               className="mb-1 size-10 rounded-md object-cover"
             />
             <CardTitle>Telegram</CardTitle>
-            {false ? (
+            {doesStampExist(stampsWithId.telegram) ? (
               <CardDescription>
                 <div className="flex items-center space-x-1">
                   <p>Your telegram is verified</p>
@@ -1361,25 +1365,24 @@ export const Stamps = () => {
             )}
           </CardHeader>
           <CardContent>
-            {false ? (
+            {doesStampExist(stampsWithId.telegram) ? (
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <Button>Verified Stamp</Button>
               </div>
             ) : (
               <>
-                <Script
-                  async
-                  src="https://telegram.org/js/telegram-widget.js?22"
-                  data-telegram-login="cubid_bot"
-                  data-size="medium"
-                  data-auth-url="https://passport.cubid.me/telegram"
-                  data-request-access="write"
-                ></Script>
+                <Button
+                  onClick={() => {
+                    push("/telegram-connect")
+                  }}
+                  className="bg-blue-500 text-white"
+                >
+                  Connect Telegram
+                </Button>
               </>
             )}
           </CardContent>
-        </Card> */}
-        {/* <script async src="https://telegram.org/js/telegram-widget.js?22" data-telegram-login="cubid_bot" data-size="medium" data-auth-url="https://passport.cubid.me/telegram" data-request-access="write"></script> */}
+        </Card>
         <GooddollarConnect
           fetchStamps={() => {
             fetchStampData()

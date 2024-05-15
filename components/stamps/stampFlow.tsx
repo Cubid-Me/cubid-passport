@@ -150,6 +150,7 @@ export const stampsWithId = {
   fractal: 17,
   linkedin: 22,
   worldcoin: 26,
+  telegram: 27,
 }
 
 export const Stamps = ({
