@@ -114,7 +114,7 @@ export const stampsWithId = {
   fractal: 17,
   evm: 14,
   worldcoin: 26,
-  telegram:27
+  telegram: 27,
 }
 
 export const Stamps = () => {
@@ -1013,7 +1013,8 @@ export const Stamps = () => {
             ) : (
               <Button
                 onClick={() => {
-                  signIn("worldcoin")
+                  window.location.href =
+                    "https://id.worldcoin.org/login?response_type=code&response_mode=query&client_id=app_541763ec208991dcb4232108de2f9553&redirect_uri=https%3A%2F%2Fpassport.cubid.me%2Fworldcoin&nonce=1715811606727&ready=true&scope=openid"
                 }}
                 variant="secondary"
                 className="bg-blue-500 text-white"
