@@ -9,7 +9,7 @@ export default async function handler(req: any, res: any) {
   const { id, username, photo_url, first_name, last_name, userid } = req.body
   console.log(req.body)
   try {
-    const stampId = 26
+    const stampId = 27
     const dbUser = userid
     const database = {
       uniquehash: await encode_data(id),
