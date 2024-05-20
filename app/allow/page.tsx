@@ -149,7 +149,7 @@ const AllowPage = () => {
     })
   }, [])
 
-  const [steps, setSteps] = useState(0)
+  const [steps, setSteps] = useState(1)
 
   const requiredStamps = userUidData?.stampsToSend?.filter(
     (item: any) => item.is_infosharing_required
@@ -213,14 +213,14 @@ const AllowPage = () => {
                     stamps={userUidData?.stampsToSend}
                   />
                   <div className="mt-2 flex items-center justify-center space-x-2">
-                    <button
+                    {/* <button
                       onClick={() => {
                         setSteps(0)
                       }}
                       className="w-[100px] rounded-lg border bg-gray-100 px-5 py-2 text-sm text-black "
                     >
                       Previous
-                    </button>
+                    </button> */}
                     {buttonDisabled ? (
                       <>
                         <button
