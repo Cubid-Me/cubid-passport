@@ -11,8 +11,8 @@ export const RequiredInfo = ({ stamps, stampsList, setStampToAdd }: any) => {
   const allStampIds = stampsList.map((item: any) => item.stamptype)
   return (
     <>
-      <div className="mx-auto mt-2 w-[700px] rounded-md border p-2">
-        <p className="mb-2 text-xl">Required Stamps</p>
+      <div className="mx-auto mt-2 md:w-[700px] w-full overflow-x-scroll rounded-md border p-2">
+        <p className="mb-2 text-xl">Required Information</p>
         <table className="w-full text-left text-sm text-gray-500 dark:text-gray-400 rtl:text-right">
           <thead className="bg-gray-50 text-xs uppercase text-gray-700 dark:bg-gray-700 dark:text-gray-400">
             <tr>

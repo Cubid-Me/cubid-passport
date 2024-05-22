@@ -116,7 +116,15 @@ export const PhoneNumberConnect = ({
         <SheetContent>
           <SheetHeader>
             <SheetTitle>Phone Number Connect</SheetTitle>
-            <div>
+            <form
+              onSubmit={() => {
+                if (otpSent) {
+                  verifyOtp()
+                } else {
+                  sendOtp()
+                }
+              }}
+            >
               {otpSent ? (
                 <>
                   <Input
@@ -127,12 +135,7 @@ export const PhoneNumberConnect = ({
                       setOtpCode(e.target.value)
                     }}
                   />
-                  <Button
-                    onClick={() => {
-                      verifyOtp()
-                    }}
-                    className="mt-3"
-                  >
+                  <Button type="submit" className="mt-3">
                     Verify OTP
                   </Button>
                 </>
@@ -149,17 +152,12 @@ export const PhoneNumberConnect = ({
                       setPhoneInput(e)
                     }}
                   />
-                  <Button
-                    onClick={() => {
-                      sendOtp()
-                    }}
-                    className="mt-3"
-                  >
+                  <Button type="submit" className="mt-3">
                     Send Passcode
                   </Button>
                 </>
               )}
-            </div>
+            </form>
           </SheetHeader>
         </SheetContent>
       </Sheet>
