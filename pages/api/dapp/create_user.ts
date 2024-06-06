@@ -123,7 +123,14 @@ export default async function handler(
     })
 
     res.status(200).json({
-      uuid: newDappUser?.[0]?.uuid,
+      uuid:
+        newDappUser?.[0]?.uuid ??
+        (
+          await supabase.from("dapp_users").select("*").match({
+            user_id,
+            dapp_id,
+          })
+        )?.data?.[0]?.uuid,
       newuser: true,
       error,
     })
