@@ -1,11 +1,11 @@
-// @ts-nocheck
-
 import { NextApiRequest, NextApiResponse } from "next"
 import NextCors from "nextjs-cors"
 
 import { supabase } from "@/lib/supabase"
 
-const cyrb53 = (str, seed = 0) => {
+import { stampsWithId } from "./../utils/stampKey"
+
+const cyrb53 = (str: string, seed = 0) => {
   let h1 = 0xdeadbeef ^ seed,
     h2 = 0x41c6ce57 ^ seed
   for (let i = 0, ch; i < str.length; i++) {
@@ -20,6 +20,7 @@ const cyrb53 = (str, seed = 0) => {
 
   return 4294967296 * (2097151 & h2) + (h1 >>> 0)
 }
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
@@ -30,85 +31,99 @@ export default async function handler(
     origin: "*", // Allow all origins
     optionsSuccessStatus: 200, // Some legacy browsers choke on 204
   })
-  const { email, dapp_id } = req.body
-  const { data: selectUser } = await supabase
-    .from("users")
+
+  const { sub, email, phone, dapp_id, stamptype } = req.body
+
+  let uniqueValue = sub || phone || email
+  if (!uniqueValue) {
+    return res.status(400).json({ error: "No valid identifier provided" })
+  }
+
+  // Search for the unique value in the stamps table
+  const { data: stampData } = await supabase
+    .from("stamps")
     .select("*")
-    .match({ email })
-  if (selectUser?.[0]) {
-    const { data: dappUsers1 } = await supabase
+    .eq("uniquevalue", uniqueValue)
+
+  if (stampData && stampData.length > 0) {
+    const user_id = stampData[0].created_by_user_id
+
+    let { data: dappUsers } = await supabase
       .from("dapp_users")
       .select("*")
-      .match({
-        user_id: selectUser?.[0]?.id,
-        dapp_id,
-      })
-    if (!dappUsers1?.[0]?.uuid) {
+      .match({ user_id, dapp_id })
+
+    if (!dappUsers || dappUsers.length === 0) {
+      // Create a new dapp_user entry if it doesn't exist
+      const { data: newDappUser } = await supabase
+        .from("dapp_users")
+        .insert({ user_id, dapp_id })
+        .select()
+
       res.status(200).json({
-        uuid: (
-          await supabase
-            .from("dapp_users")
-            .insert({
-              user_id: selectUser[0].id,
-              dapp_id,
-            })
-            .select()
-        )?.data?.[0]?.uuid,
-        newuser: true,
+        uuid: newDappUser?.[0]?.uuid,
+        newuser: false,
+      })
+    } else {
+      res.status(200).json({
+        uuid: dappUsers[0]?.uuid,
+        newuser: false,
       })
     }
-    res.status(200).json({
-      uuid: dappUsers1?.[0]?.uuid,
-      newuser: false,
-    })
   } else {
-    const { data } = await supabase
+    const { data: existingUser } = await supabase
       .from("users")
+      .select("*")
+      .match({ email })
+
+    let user_id
+    if (existingUser && existingUser.length > 0) {
+      user_id = existingUser[0].id
+    } else {
+      const { data: newUser } = await supabase
+        .from("users")
+        .insert({
+          email,
+          created_by_app: dapp_id,
+          is_3rd_party: true,
+        })
+        .select()
+
+      user_id = newUser?.[0].id
+    }
+    const stampIdToAssign = stampsWithId?.[stamptype]
+    const { data: newStamp } = await supabase
+      .from("stamps")
       .insert({
-        email,
+        created_by_user_id: user_id,
         created_by_app: dapp_id,
+        stamptype: stampIdToAssign,
+        uniquevalue: uniqueValue,
+        user_id_and_uniqueval: `${user_id} ${stampIdToAssign} ${uniqueValue}`,
+        unique_hash: cyrb53(uniqueValue),
+        stamp_json: { [sub ? "sub" : phone ? "phone" : "email"]: uniqueValue },
+        type_and_uniquehash: `${stampIdToAssign} ${cyrb53(uniqueValue)}`,
       })
       .select()
 
-    const { data: dapp_users } = await supabase
+    const { data: newDappUser } = await supabase
       .from("dapp_users")
       .insert({
-        user_id: data[0].id,
+        user_id,
         dapp_id,
       })
       .select()
-    const database = {
-      uniquehash: cyrb53(email),
-      stamptype: 13,
-      created_by_user_id: data?.[0]?.id,
-      unencrypted_unique_data: email,
-      type_and_hash: `13 ${cyrb53(email)}`,
-    }
-    const dataToSet = {
-      created_by_user_id: data?.[0]?.id,
-      created_by_app: dapp_id,
-      stamptype: 13,
-      uniquevalue: email,
-      user_id_and_uniqueval: `${data?.[0]?.id} 13 ${email}`,
-      unique_hash: cyrb53(email),
-      stamp_json: { email },
-      type_and_uniquehash: `13 ${cyrb53(email)}`,
-    }
-    await supabase.from("uniquestamps").insert(database)
-    const { data: stampData } = await supabase
-      .from("stamps")
-      .insert(dataToSet)
-      .select()
+
     const { error } = await supabase.from("stamp_dappuser_permissions").insert({
-      stamp_id: stampData?.[0]?.id,
-      dappuser_id: dapp_users?.[0]?.uuid,
+      stamp_id: newStamp?.[0]?.id,
+      dappuser_id: newDappUser?.[0]?.uuid,
       can_write: true,
       can_delete: true,
       can_read: true,
     })
 
     res.status(200).json({
-      uuid: dapp_users?.[0]?.uuid,
+      uuid: newDappUser?.[0]?.uuid,
       newuser: true,
       error,
     })
