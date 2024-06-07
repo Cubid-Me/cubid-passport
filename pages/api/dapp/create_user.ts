@@ -58,7 +58,7 @@ export default async function handler(
       const { data: newDappUser } = await supabase
         .from("dapp_users")
         .insert({ user_id, dapp_id })
-        .select()
+        .select('*')
 
       res.status(200).json({
         uuid: newDappUser?.[0]?.uuid,
@@ -87,7 +87,7 @@ export default async function handler(
           created_by_app: dapp_id,
           is_3rd_party: true,
         })
-        .select()
+        .select('*')
 
       user_id = newUser?.[0].id
     }
@@ -112,7 +112,7 @@ export default async function handler(
         user_id,
         dapp_id,
       })
-      .select()
+      .select('*')
 
     const { error } = await supabase.from("stamp_dappuser_permissions").insert({
       stamp_id: newStamp?.[0]?.id,
