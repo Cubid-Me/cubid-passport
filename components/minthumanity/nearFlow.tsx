@@ -116,7 +116,7 @@ export const NearFlow = () => {
               <div className={`rounded-lg border-2 border-gray-700 p-2 `}>
                 <img
                   className="object-fit h-[100px] w-[250px] rounded-md bg-white"
-                  src="https://www.simtrade.fr/blog_simtrade/wp-content/uploads/2023/12/img_logo_Ethereum.png"
+                  src="https://cggycnbvljcdptzyjpju.supabase.co/storage/v1/object/public/images/koii.jpeg?t=2024-06-26T07%3A22%3A36.146Z"
                 />
               </div>
               <p className="mt-1 text-xs font-bold">Coming Soon</p>
@@ -125,7 +125,7 @@ export const NearFlow = () => {
               <div className={`rounded-lg border-2 border-gray-700 p-2 `}>
                 <img
                   className="object-fit h-[100px] w-[250px] rounded-md"
-                  src="https://forkast.news/wp-content/uploads/2021/08/Solana-1260x787.png"
+                  src="https://cggycnbvljcdptzyjpju.supabase.co/storage/v1/object/public/images/sui.jpeg"
                 />
               </div>
               <p className="mt-1 text-xs font-bold">Coming Soon</p>
