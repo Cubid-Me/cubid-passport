@@ -45,6 +45,7 @@ const AllowPage = () => {
   const [stampsList, setStampsList] = useState([])
 
   const uuid = searchParams.get("uid")
+  const page_id = searchParams.get("page_id")
   const colormode = searchParams.get("colormode")
   const { setTheme } = useTheme()
 
@@ -73,12 +74,13 @@ const AllowPage = () => {
     setLoading(true)
     const { data } = await axios.post("/api/allow/fetch_allow_uid", {
       uid: uuid,
+      page_id,
     })
     setUserUidData(data)
     await fetchAllStamps(data?.dapp_users?.[0]?.users?.id)
     setIsValid(true)
     setLoading(false)
-  }, [uuid, fetchAllStamps])
+  }, [uuid, page_id, fetchAllStamps])
 
   useEffect(() => {
     fetchUserUidData()

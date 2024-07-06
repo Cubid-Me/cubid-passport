@@ -1,7 +1,7 @@
 import { supabase } from "../utils/supabase"
 
 const fetchAllowUid = async (req: any, res: any) => {
-  const { uid } = req.body
+  const { uid, page_id } = req.body
   const { data: dapp_users } = await supabase
     .from("dapp_users")
     .select("*,users:user_id(*),dapps:dapp_id(*)")
@@ -13,6 +13,7 @@ const fetchAllowUid = async (req: any, res: any) => {
     .select("*,stamptypes:stamptype_id(*)")
     .match({
       dapp_id: dapp_users?.[0]?.dapp_id,
+      page_id: parseInt(page_id),
     })
   const { data: scoreData } = await supabase
     .from("stampscore_dapps")
@@ -24,7 +25,7 @@ const fetchAllowUid = async (req: any, res: any) => {
     .from("stampscores_available")
     .select("*")
     .match({
-      schema_id: 2
+      schema_id: 2,
     })
 
   const stampsToSend = stampData

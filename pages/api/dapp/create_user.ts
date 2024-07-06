@@ -44,13 +44,12 @@ export default async function handler(
     .from("stamps")
     .select("*")
     .eq("uniquevalue", uniqueValue)
-
   if (stampData && stampData.length > 0) {
     const user_id = stampData[0].created_by_user_id
 
     let { data: dappUsers } = await supabase
       .from("dapp_users")
-      .select("*")
+      .select("*,users:user_id(*)")
       .match({ user_id, dapp_id })
 
     if (!dappUsers || dappUsers.length === 0) {
@@ -67,6 +66,7 @@ export default async function handler(
     } else {
       res.status(200).json({
         uuid: dappUsers[0]?.uuid,
+        user:dappUsers[0],
         newuser: false,
       })
     }
