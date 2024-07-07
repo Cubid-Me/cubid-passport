@@ -210,6 +210,7 @@ export const Stamps = ({
   const mintEVM = useCallback(async (address: string) => {
     console.log({ address })
     if (address) {
+      const dbUser = await getUser()
       const evm_stamp = {
         uniquehash: await encode_data(address),
         stamptype: stampsWithId.evm,
