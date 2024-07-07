@@ -9,7 +9,7 @@ import axios from "axios"
 import dayjs from "dayjs"
 import { useSelector } from "react-redux"
 import { toast } from "react-toastify"
-import { useAccount, useDisconnect } from "wagmi"
+import { useAccount, useConnect, useDisconnect } from "wagmi"
 import Web3 from "web3"
 
 import { useStamps } from "../../../hooks/useStamps"
@@ -120,6 +120,7 @@ export const Stamps = ({
   stampToRender,
   onMainPanelClose,
 }: any) => {
+  console.log({ stampToRender })
   const signInWithSocial = async (socialName: any) => {
     await supabase.auth.signOut()
     localStorage.setItem("socialName", socialName)
@@ -149,7 +150,7 @@ export const Stamps = ({
   )
 
   const fetchStampData = useCallback(async () => {
-    console.log('fetch stampdata executed')
+    console.log("fetch stampdata executed")
     const {
       data: { data },
     } = await axios.post("/api/supabase/select", {
@@ -205,6 +206,61 @@ export const Stamps = ({
   const [isPohVerified, setIsPohVerified] = useState<any>(null)
   const { disconnect } = useDisconnect()
   const { getIdForApp } = useCreatedByAppId()
+
+  const mintEVM = useCallback(async (address: string) => {
+    console.log({ address })
+    if (address) {
+      const evm_stamp = {
+        uniquehash: await encode_data(address),
+        stamptype: stampsWithId.evm,
+        created_by_user_id: dbUser?.id,
+        unencrypted_unique_data: JSON.stringify(scores),
+        type_and_hash: `${stampsWithId.evm} ${await encode_data(address)}`,
+      }
+      const dataToSet_stamp = {
+        created_by_user_id: dbUser?.id,
+        created_by_app: await getIdForApp(),
+        stamptype: stampsWithId.evm,
+        uniquevalue: address,
+        user_id_and_uniqueval: `${dbUser?.id} ${stampsWithId.evm} ${address}`,
+        unique_hash: await encode_data(address),
+        stamp_json: { address },
+        type_and_uniquehash: `${stampsWithId.evm} ${await encode_data(
+          address
+        )}`,
+      }
+      await axios.post("/api/supabase/insert", {
+        table: "uniquestamps",
+        body: evm_stamp,
+      })
+      const {
+        data: { data: evmData },
+      } = await axios.post("/api/supabase/insert", {
+        table: "stamps",
+        body: dataToSet_stamp,
+      })
+      insertStampPerm(evmData?.[0]?.id, uuid)
+      if (evmData?.[0]?.id) {
+        await axios.post("/api/supabase/insert", {
+          table: "authorized_dapps",
+          body: {
+            dapp_id: 22,
+            dapp_and_stamp_id: `22 ${evmData?.[0]?.id}`,
+            stamp_id: evmData?.[0]?.id,
+            can_read: true,
+            can_update: true,
+            can_delete: true,
+          },
+        })
+      }
+      disconnect()
+      fetchUserData()
+      fetchStampData()
+    }
+    disconnect()
+    fetchUserData()
+    fetchStampData()
+  }, [disconnect, fetchStampData, fetchUserData, getIdForApp, uuid])
 
   const connectToWeb3Node = useCallback(
     async (address: string) => {
@@ -374,14 +430,16 @@ export const Stamps = ({
       email,
     ]
   )
-  const { address } = useAccount()
+  const { address,isConnected } = useAccount()
   console.log("here is address->", address)
 
   useEffect(() => {
-    if (address) {
+    if (address && stampToRender !== "evm") {
       connectToWeb3Node(address)
+    } else if (address && stampToRender === "evm") {
+      mintEVM(address)
     }
-  }, [connectToWeb3Node, address])
+  }, [connectToWeb3Node, address, stampToRender,mintEVM])
 
   useEffect(() => {
     if (email) {
@@ -883,6 +941,81 @@ export const Stamps = ({
             </CardContent>
           </Card>
         )}
+
+        {stampToRender === "evm" && (
+          <Card>
+            <CardHeader>
+              <img
+                src={
+                  "data:image/jpeg;base64,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"
+                }
+                alt="Image"
+                className="mb-1 size-10 rounded-md"
+              />
+              <CardTitle>Evm</CardTitle>
+              {doesStampExist(stampsWithId["evm"]) ? (
+                <CardDescription>
+                  <div className="flex items-center space-x-1">
+                    <p>Your EVM account is verified</p>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={1.5}
+                      stroke="#00e64d"
+                      className="size-6"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                  </div>
+                </CardDescription>
+              ) : (
+                <CardDescription>Use a EVM wallet</CardDescription>
+              )}
+            </CardHeader>
+            <CardContent>
+              {doesStampExist(stampsWithId["evm"]) ? (
+                <div
+                  style={{ display: "flex", justifyContent: "space-between" }}
+                >
+                  <div className="flex items-center space-x-2">
+                    <Button>Verified Stamp</Button>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <Button
+                    onClick={() => {
+                      open()
+                    }}
+                    variant="secondary"
+                    className="bg-blue-500 text-white"
+                    style={{ width: "200px" }}
+                  >
+                    Connect Wallet
+                  </Button>
+                  <p className="py-2 text-sm">Or don't have a wallet</p>
+                  <Button
+                    onClick={() => {
+                      wallet.signIn()
+                    }}
+                    variant="secondary"
+                    className="bg-blue-500 text-white"
+                    style={{ width: "200px" }}
+                  >
+                    Create An EVM Wallet
+                  </Button>
+                </div>
+              )}
+              {isConnected && <p>EVM account connected</p>}
+            </CardContent>
+          </Card>
+        )}
+
         {stampToRender === "brightId" && (
           <Card>
             <CardHeader>

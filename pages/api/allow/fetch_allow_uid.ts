@@ -15,6 +15,10 @@ const fetchAllowUid = async (req: any, res: any) => {
       dapp_id: dapp_users?.[0]?.dapp_id,
       page_id: parseInt(page_id),
     })
+  console.log(
+    { stampData },
+    { dapp_id: dapp_users?.[0]?.dapp_id, page_id: parseInt(page_id) }
+  )
   const { data: scoreData } = await supabase
     .from("stampscore_dapps")
     .select("*,stampscore_schemas:schema_id(*)")

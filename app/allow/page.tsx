@@ -309,17 +309,19 @@ const AllowPage = () => {
                                 </div>
                               </div>
                               <div className="relative mt-6 flex-1 px-4 sm:px-6">
-                                <Stamps
-                                  supabaseUser={
-                                    userUidData?.dapp_users?.[0].users
-                                  }
-                                  getUser={fetchUserUidData}
-                                  onMainPanelClose={() => {
-                                    setStampToAdd("")
-                                    fetchUserUidData()
-                                  }}
-                                  stampToRender={stampToAdd}
-                                />
+                                {Boolean(stampToAdd) && (
+                                  <Stamps
+                                    supabaseUser={
+                                      userUidData?.dapp_users?.[0].users
+                                    }
+                                    getUser={fetchUserUidData}
+                                    onMainPanelClose={() => {
+                                      setStampToAdd("")
+                                      fetchUserUidData()
+                                    }}
+                                    stampToRender={stampToAdd}
+                                  />
+                                )}
                               </div>
                             </div>
                           </Dialog.Panel>

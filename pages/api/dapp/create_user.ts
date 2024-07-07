@@ -57,16 +57,16 @@ export default async function handler(
       const { data: newDappUser } = await supabase
         .from("dapp_users")
         .insert({ user_id, dapp_id })
-        .select('*')
+        .select("*")
 
       res.status(200).json({
         uuid: newDappUser?.[0]?.uuid,
-        newuser: false,
+        newuser: true,
       })
     } else {
       res.status(200).json({
         uuid: dappUsers[0]?.uuid,
-        user:dappUsers[0],
+        user: dappUsers[0],
         newuser: false,
       })
     }
@@ -87,12 +87,12 @@ export default async function handler(
           created_by_app: dapp_id,
           is_3rd_party: true,
         })
-        .select('*')
+        .select("*")
 
       user_id = newUser?.[0].id
     }
     const stampIdToAssign = stampsWithId?.[stamptype]
-    const { data: newStamp } = await supabase
+    const { data: newStamp, error: newStampError } = await supabase
       .from("stamps")
       .insert({
         created_by_user_id: user_id,
@@ -104,15 +104,15 @@ export default async function handler(
         stamp_json: { [sub ? "sub" : phone ? "phone" : "email"]: uniqueValue },
         type_and_uniquehash: `${stampIdToAssign} ${cyrb53(uniqueValue)}`,
       })
-      .select()
+      .select("*")
 
-    const { data: newDappUser } = await supabase
+    const { data: newDappUser,error:dappUserError } = await supabase
       .from("dapp_users")
       .insert({
         user_id,
         dapp_id,
       })
-      .select('*')
+      .select("*")
 
     const { error } = await supabase.from("stamp_dappuser_permissions").insert({
       stamp_id: newStamp?.[0]?.id,
@@ -121,6 +121,7 @@ export default async function handler(
       can_delete: true,
       can_read: true,
     })
+    
 
     res.status(200).json({
       uuid:
@@ -132,6 +133,8 @@ export default async function handler(
           })
         )?.data?.[0]?.uuid,
       newuser: true,
+      dappUserError,
+      newStampError,
       error,
     })
   }
