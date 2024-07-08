@@ -71,7 +71,6 @@ const AllowPage = () => {
   }, [])
 
   const fetchUserUidData = useCallback(async () => {
-    setLoading(true)
     const { data } = await axios.post("/api/allow/fetch_allow_uid", {
       uid: uuid,
       page_id,
@@ -314,7 +313,8 @@ const AllowPage = () => {
                                     supabaseUser={
                                       userUidData?.dapp_users?.[0].users
                                     }
-                                    getUser={fetchUserUidData}
+                                    isOpen={Boolean(stampToAdd)}
+                                    refreshUser={fetchUserUidData}
                                     onMainPanelClose={() => {
                                       setStampToAdd("")
                                       fetchUserUidData()
@@ -334,11 +334,12 @@ const AllowPage = () => {
               <div className="hidden">
                 <Stamps
                   supabaseUser={userUidData?.dapp_users?.[0].users}
-                  getUser={fetchUserUidData}
+                  refreshUser={fetchUserUidData}
                   onMainPanelClose={() => {
                     setStampToAdd("")
                     fetchUserUidData()
                   }}
+                  isOpen={Boolean(stampToAdd)}
                   stampToRender={stampToAdd}
                 />
               </div>

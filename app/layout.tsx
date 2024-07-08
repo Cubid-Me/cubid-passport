@@ -16,7 +16,7 @@ import { defaultWagmiConfig } from "@web3modal/wagmi/react/config"
 import { getAuth, getIdToken, signInWithCustomToken } from "firebase/auth"
 import { SessionProvider } from "next-auth/react"
 import { Provider } from "react-redux"
-import { WagmiConfig, createConfig, http } from "wagmi"
+import { WagmiProvider, createConfig, http } from "wagmi"
 import { mainnet, sepolia } from "wagmi/chains"
 
 import { cn } from "@/lib/utils"
@@ -26,6 +26,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 
 import { Wallet } from "../lib/nearWallet"
 import { store } from "../redux/store"
+import { config } from '../config/web3Config'
 
 export const wallet = new Wallet({
   createAccessKeyFor: "registry.i-am-human.near",
@@ -46,6 +47,9 @@ function removeQueryParam(url, paramToRemove) {
   // Return the remaining query string without the leading "?"
   return searchParams.toString()
 }
+
+const queryClient = new QueryClient()
+
 export default function RootLayout(props: any) {
   const { pageProps } = props
   const pathName = usePathname()
@@ -73,40 +77,11 @@ export default function RootLayout(props: any) {
   }, [push])
   const [configSet, setConfigSet] = useState(false)
 
-  useEffect(() => {
-    // 1. Get projectId
-    const projectId = "6833ed2c1539b9d27e8840c51f53bd0c"
-
-    const metadata = {
-      name: "Web3Modal",
-      description: "Web3Modal Example",
-      url: "https://web3modal.com",
-      icons: ["https://avatars.githubusercontent.com/u/37784886"],
-    }
-    const chains = [mainnet]
-
-    const wagmiConfig = defaultWagmiConfig({ chains, projectId, metadata })
-    createWeb3Modal({ wagmiConfig, projectId, chains })
-  }, [])
-
-  const [wagmiConfig, setWagmiConfig] = useState(
-    defaultWagmiConfig({
-      chains: [mainnet],
-      projectId: "6833ed2c1539b9d27e8840c51f53bd0c",
-      metadata: {
-        name: "Web3Modal",
-        description: "Web3Modal Example",
-        url: "https://web3modal.com",
-        icons: ["https://avatars.githubusercontent.com/u/37784886"],
-      },
-    })
-  )
-  const queryClient = new QueryClient()
 
   if (process.env.NODE_ENV === "development") {
     return (
       <SessionProvider session={props?.pageProps?.session}>
-        <WagmiConfig config={wagmiConfig as any}>
+        <WagmiProvider config={config as any}>
           <QueryClientProvider client={queryClient}>
             <OwnIDInit
               config={{
@@ -154,7 +129,7 @@ export default function RootLayout(props: any) {
               </body>
             </html>
           </QueryClientProvider>
-        </WagmiConfig>
+        </WagmiProvider>
       </SessionProvider>
     )
   }
@@ -164,7 +139,7 @@ export default function RootLayout(props: any) {
 
     return (
       <SessionProvider session={props?.pageProps?.session}>
-        <WagmiConfig config={wagmiConfig as any}>
+        <WagmiProvider config={wagmiConfig as any}>
           <QueryClientProvider client={queryClient}>
             <OwnIDInit
               config={{
@@ -207,7 +182,7 @@ export default function RootLayout(props: any) {
               </body>
             </html>
           </QueryClientProvider>
-        </WagmiConfig>
+        </WagmiProvider>
       </SessionProvider>
     )
   } else {

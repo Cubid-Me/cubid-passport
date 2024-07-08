@@ -8,8 +8,8 @@ import { login, logout } from "../redux/userSlice"
 
 type hookProps =
   | {
-      appId?: number
-    }
+    appId?: number
+  }
   | undefined
 
 export const useAuth = (appHookProps: hookProps) => {
@@ -47,7 +47,7 @@ export const useAuth = (appHookProps: hookProps) => {
   }, [dispatch])
 
   useEffect(() => {
-    ;(async () => {
+    ; (async () => {
       if (user?.email) {
         const {
           data: { data: dbData },
@@ -63,6 +63,7 @@ export const useAuth = (appHookProps: hookProps) => {
   }, [user])
 
   const getUser = useCallback(async () => {
+    console.log(localStorage.getItem("unauthenticated_user"), 'unauthenticated_user')
     if (!localStorage.getItem("unauthenticated_user")) {
       const {
         data: { data: dbData },
@@ -74,51 +75,17 @@ export const useAuth = (appHookProps: hookProps) => {
       })
       return dbData?.[0]
     } else {
-      if (appId) {
-        if (
-          typeof localStorage.getItem("unauthenticated_user_db") === "string" &&
-          localStorage.getItem("unauthenticated_user_db") !== "undefined"
-        ) {
-          return JSON.parse(
-            localStorage.getItem("unauthenticated_user_db") as any
-          )
-        } else {
-          const {
-            data: { data, error },
-          } = await axios.post(`api/supabase/insert`, {
-            table: "users",
-            body: {
-              is_3rd_party: true,
-              created_by_app: appId,
-              email: searchParams.get("email"),
-            },
-          })
-          if (error) {
-            const {
-              data: { data: data2, error },
-            } = await axios.post(`api/supabase/select`, {
-              table: "users",
-              match: {
-                email: searchParams.get("email"),
-              },
-            })
-            localStorage.setItem(
-              "unauthenticated_user_db",
-              JSON.stringify(data2?.[0])
-            )
-            return data2?.[0]
-          } else if (data?.[0]) {
-            localStorage.setItem(
-              "unauthenticated_user_db",
-              JSON.stringify(data?.[0])
-            )
-          }
-
-          return data?.[0] ?? localStorage.getItem("unauthenticated_user_db")
-            ? JSON.parse(localStorage.getItem("unauthenticated_user_db") as any)
-            : {}
-        }
+      if (
+        typeof localStorage.getItem("unauthenticated_user") === "string" &&
+        localStorage.getItem("unauthenticated_user") !== "undefined"
+      ) {
+        const { data } = await axios.post("/api/allow/fetch_allow_uid", {
+          uid: searchParams.get("uid"),
+          page_id: searchParams.get("page_id")
+        })
+        return data?.dapp_users[0].users
       }
+
     }
   }, [appId, searchParams])
 

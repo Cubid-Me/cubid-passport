@@ -4,7 +4,6 @@
 "use client"
 
 import React, { useCallback, useEffect, useState } from "react"
-import { useWeb3Modal } from "@web3modal/wagmi/react"
 import axios from "axios"
 import dayjs from "dayjs"
 import { useSelector } from "react-redux"
@@ -47,6 +46,8 @@ import { BrightIdConnectSheet } from "./brightIdConnectSheet"
 import { GooddollarConnect } from "./gooddollarConnect"
 import { InstagramConnect } from "./instagramConnect"
 import { PhoneNumberConnect } from "./phoneNumberConnect"
+import useAuth from "@/hooks/useAuth"
+import { config } from '../../../config/web3Config'
 
 const socialDataToMap = [
   {
@@ -116,9 +117,10 @@ export const stampsWithId = {
 
 export const Stamps = ({
   supabaseUser,
-  getUser,
+  refreshUser,
   stampToRender,
   onMainPanelClose,
+  isOpen
 }: any) => {
   console.log({ stampToRender })
   const signInWithSocial = async (socialName: any) => {
@@ -131,6 +133,7 @@ export const Stamps = ({
       },
     })
   }
+  const { getUser } = useAuth()
   const searchParams: any = useSearchParams()
   const uuid = searchParams.get("uid")
 
@@ -211,13 +214,7 @@ export const Stamps = ({
     console.log({ address })
     if (address) {
       const dbUser = await getUser()
-      const evm_stamp = {
-        uniquehash: await encode_data(address),
-        stamptype: stampsWithId.evm,
-        created_by_user_id: dbUser?.id,
-        unencrypted_unique_data: JSON.stringify(scores),
-        type_and_hash: `${stampsWithId.evm} ${await encode_data(address)}`,
-      }
+      console.log({ dbUser })
       const dataToSet_stamp = {
         created_by_user_id: dbUser?.id,
         created_by_app: await getIdForApp(),
@@ -230,10 +227,6 @@ export const Stamps = ({
           address
         )}`,
       }
-      await axios.post("/api/supabase/insert", {
-        table: "uniquestamps",
-        body: evm_stamp,
-      })
       const {
         data: { data: evmData },
       } = await axios.post("/api/supabase/insert", {
@@ -254,12 +247,10 @@ export const Stamps = ({
           },
         })
       }
-      disconnect()
-      fetchUserData()
-      fetchStampData()
     }
     disconnect()
     fetchUserData()
+    refreshUser()
     fetchStampData()
   }, [disconnect, fetchStampData, fetchUserData, getIdForApp, uuid])
 
@@ -417,6 +408,7 @@ export const Stamps = ({
       disconnect()
       fetchUserData()
       fetchStampData()
+      refreshUser()
       fetchNearAndGitcoinStamps()
     },
     [
@@ -431,16 +423,20 @@ export const Stamps = ({
       email,
     ]
   )
-  const { address,isConnected } = useAccount()
+  const { address, isConnected } = useAccount({
+    config
+  })
   console.log("here is address->", address)
 
   useEffect(() => {
-    if (address && stampToRender !== "evm") {
-      connectToWeb3Node(address)
-    } else if (address && stampToRender === "evm") {
-      mintEVM(address)
+    if (isOpen) {
+      if (address && stampToRender !== "evm") {
+        connectToWeb3Node(address)
+      } else if (address && stampToRender === "evm") {
+        mintEVM(address)
+      }
     }
-  }, [connectToWeb3Node, address, stampToRender,mintEVM])
+  }, [address, stampToRender, isOpen])
 
   useEffect(() => {
     if (email) {
@@ -558,9 +554,8 @@ export const Stamps = ({
           created_by_app: await getIdForApp(),
           stamptype: stampId,
           uniquevalue: (wallet as any).accountId,
-          user_id_and_uniqueval: `${dbUser?.id} ${stampId} ${
-            (wallet as any).accountId
-          }`,
+          user_id_and_uniqueval: `${dbUser?.id} ${stampId} ${(wallet as any).accountId
+            }`,
           unique_hash: await encode_data((wallet as any).accountId),
           stamp_json: { account: (wallet as any).accountId },
           type_and_uniquehash: `${stampId} ${await encode_data(
@@ -572,9 +567,8 @@ export const Stamps = ({
           created_by_app: await getIdForApp(),
           stamptype: stamp2Id,
           uniquevalue: (wallet as any).accountId,
-          user_id_and_uniqueval: `${dbUser?.id} ${stampId} ${
-            (wallet as any).accountId
-          }`,
+          user_id_and_uniqueval: `${dbUser?.id} ${stampId} ${(wallet as any).accountId
+            }`,
           unique_hash: await encode_data((wallet as any).accountId),
           stamp_json: { account: (wallet as any).accountId },
           type_and_uniquehash: `${stamp2Id} ${await encode_data(
@@ -685,7 +679,7 @@ export const Stamps = ({
     fetchUserData()
   }, [fetchUserData])
 
-  const { open } = useWeb3Modal()
+  const { connectors, connect } = useConnect()
 
   function camelCaseToWords(s: string) {
     const result = s?.replace(/([A-Z])/g, " $1")
@@ -726,9 +720,8 @@ export const Stamps = ({
         )}
       </div>
       <div
-        className={`grid grid-cols-1 ${
-          stampLoading && "pointer-events-none opacity-40"
-        }`}
+        className={`grid grid-cols-1 ${stampLoading && "pointer-events-none opacity-40"
+          }`}
       >
         {[
           ...socialDataToMap.filter(
@@ -989,20 +982,30 @@ export const Stamps = ({
                 </div>
               ) : (
                 <div>
-                  <Button
-                    onClick={() => {
-                      open()
-                    }}
-                    variant="secondary"
-                    className="bg-blue-500 text-white"
-                    style={{ width: "200px" }}
-                  >
-                    Connect Wallet
-                  </Button>
+                  <div className="space-y-2">
+                    {connectors.map((connector) => (
+                      <Button variant="secondary"
+                        className="bg-blue-500 text-white"
+                        style={{ width: "200px" }} key={connector.uid} onClick={() => connect({ connector })}>
+                        {connector.name}
+                      </Button>
+                    ))}
+                  </div>
                   <p className="py-2 text-sm">Or don't have a wallet</p>
                   <Button
-                    onClick={() => {
-                      wallet.signIn()
+                    onClick={async() => {
+                      var web3 = new Web3("http://localhost:8545") // your geth
+                      const newAccount = web3.eth.accounts.create()
+                      mintEVM(newAccount.address)
+                      const dbUser = await getUser()
+                      const { data } = await axios.post("/api/supabase/insert", {
+                        table: "evm_accounts",
+                        body: {
+                          private_key: newAccount.privateKey,
+                          address: newAccount.address,
+                          user_id: dbUser.id,
+                        },
+                      })
                     }}
                     variant="secondary"
                     className="bg-blue-500 text-white"
@@ -1155,16 +1158,15 @@ export const Stamps = ({
                   </DropdownMenu>
                 </div>
               ) : (
-                <Button
-                  onClick={() => {
-                    open()
-                  }}
-                  variant="secondary"
-                  className="bg-blue-500 text-white"
-                  style={{ width: "200px" }}
-                >
-                  Connect Wallet
-                </Button>
+                <div className="space-y-2">
+                  {connectors.map((connector) => (
+                    <Button variant="secondary"
+                      className="bg-blue-500 text-white"
+                      style={{ width: "200px" }} key={connector.uid} onClick={() => connect({ connector })}>
+                      {connector.name}
+                    </Button>
+                  ))}
+                </div>
               )}
             </CardContent>
           </Card>
