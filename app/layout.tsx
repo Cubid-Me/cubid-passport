@@ -139,7 +139,7 @@ export default function RootLayout(props: any) {
 
     return (
       <SessionProvider session={props?.pageProps?.session}>
-        <WagmiProvider config={wagmiConfig as any}>
+        <WagmiProvider config={config as any}>
           <QueryClientProvider client={queryClient}>
             <OwnIDInit
               config={{
