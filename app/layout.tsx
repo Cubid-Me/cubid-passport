@@ -48,9 +48,10 @@ function removeQueryParam(url, paramToRemove) {
   return searchParams.toString()
 }
 
-const queryClient = new QueryClient()
 
 export default function RootLayout(props: any) {
+  const queryClient = new QueryClient()
+
   const { pageProps } = props
   const pathName = usePathname()
   const { push } = useRouter()

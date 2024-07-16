@@ -16,6 +16,7 @@ import "@near-wallet-selector/modal-ui/styles.css"
 import { useSearchParams } from "next/navigation"
 
 import { insertStampPerm } from "@/lib/insert_stamp_perm"
+import useAuth from "@/hooks/useAuth"
 import { useCreatedByAppId } from "@/hooks/useCreatedByApp"
 import { Button } from "@/components/ui/button"
 import {
@@ -40,14 +41,14 @@ import {
 } from "@/components/ui/sheet"
 import { wallet } from "@/app/layout"
 
+import { config } from "../../../config/web3Config"
 import { encode_data } from "../../../lib/encode_data"
 import { supabase } from "../../../lib/supabase"
 import { BrightIdConnectSheet } from "./brightIdConnectSheet"
+import { EmailConnect } from "./emailConnect"
 import { GooddollarConnect } from "./gooddollarConnect"
 import { InstagramConnect } from "./instagramConnect"
 import { PhoneNumberConnect } from "./phoneNumberConnect"
-import useAuth from "@/hooks/useAuth"
-import { config } from '../../../config/web3Config'
 
 const socialDataToMap = [
   {
@@ -113,6 +114,7 @@ export const stampsWithId = {
   "near-wallet": 15,
   fractal: 17,
   evm: 14,
+  email: 13,
 }
 
 export const Stamps = ({
@@ -120,7 +122,7 @@ export const Stamps = ({
   refreshUser,
   stampToRender,
   onMainPanelClose,
-  isOpen
+  isOpen,
 }: any) => {
   console.log({ stampToRender })
   const signInWithSocial = async (socialName: any) => {
@@ -151,6 +153,7 @@ export const Stamps = ({
   const { stampCollector, fetchNearAndGitcoinStamps, gitcoinScore } = useStamps(
     {}
   )
+  const [emailPanel, setEmailPanel] = useState(false)
 
   const fetchStampData = useCallback(async () => {
     console.log("fetch stampdata executed")
@@ -210,49 +213,52 @@ export const Stamps = ({
   const { disconnect } = useDisconnect()
   const { getIdForApp } = useCreatedByAppId()
 
-  const mintEVM = useCallback(async (address: string) => {
-    console.log({ address })
-    if (address) {
-      const dbUser = await getUser()
-      console.log({ dbUser })
-      const dataToSet_stamp = {
-        created_by_user_id: dbUser?.id,
-        created_by_app: await getIdForApp(),
-        stamptype: stampsWithId.evm,
-        uniquevalue: address,
-        user_id_and_uniqueval: `${dbUser?.id} ${stampsWithId.evm} ${address}`,
-        unique_hash: await encode_data(address),
-        stamp_json: { address },
-        type_and_uniquehash: `${stampsWithId.evm} ${await encode_data(
-          address
-        )}`,
-      }
-      const {
-        data: { data: evmData },
-      } = await axios.post("/api/supabase/insert", {
-        table: "stamps",
-        body: dataToSet_stamp,
-      })
-      insertStampPerm(evmData?.[0]?.id, uuid)
-      if (evmData?.[0]?.id) {
-        await axios.post("/api/supabase/insert", {
-          table: "authorized_dapps",
-          body: {
-            dapp_id: 22,
-            dapp_and_stamp_id: `22 ${evmData?.[0]?.id}`,
-            stamp_id: evmData?.[0]?.id,
-            can_read: true,
-            can_update: true,
-            can_delete: true,
-          },
+  const mintEVM = useCallback(
+    async (address: string) => {
+      console.log({ address })
+      if (address) {
+        const dbUser = await getUser()
+        console.log({ dbUser })
+        const dataToSet_stamp = {
+          created_by_user_id: dbUser?.id,
+          created_by_app: await getIdForApp(),
+          stamptype: stampsWithId.evm,
+          uniquevalue: address,
+          user_id_and_uniqueval: `${dbUser?.id} ${stampsWithId.evm} ${address}`,
+          unique_hash: await encode_data(address),
+          stamp_json: { address },
+          type_and_uniquehash: `${stampsWithId.evm} ${await encode_data(
+            address
+          )}`,
+        }
+        const {
+          data: { data: evmData },
+        } = await axios.post("/api/supabase/insert", {
+          table: "stamps",
+          body: dataToSet_stamp,
         })
+        insertStampPerm(evmData?.[0]?.id, uuid)
+        if (evmData?.[0]?.id) {
+          await axios.post("/api/supabase/insert", {
+            table: "authorized_dapps",
+            body: {
+              dapp_id: 22,
+              dapp_and_stamp_id: `22 ${evmData?.[0]?.id}`,
+              stamp_id: evmData?.[0]?.id,
+              can_read: true,
+              can_update: true,
+              can_delete: true,
+            },
+          })
+        }
       }
-    }
-    disconnect()
-    fetchUserData()
-    refreshUser()
-    fetchStampData()
-  }, [disconnect, fetchStampData, fetchUserData, getIdForApp, uuid])
+      disconnect()
+      fetchUserData()
+      refreshUser()
+      fetchStampData()
+    },
+    [disconnect, fetchStampData, fetchUserData, getIdForApp, uuid]
+  )
 
   const connectToWeb3Node = useCallback(
     async (address: string) => {
@@ -424,7 +430,7 @@ export const Stamps = ({
     ]
   )
   const { address, isConnected } = useAccount({
-    config
+    config,
   })
   console.log("here is address->", address)
 
@@ -554,8 +560,9 @@ export const Stamps = ({
           created_by_app: await getIdForApp(),
           stamptype: stampId,
           uniquevalue: (wallet as any).accountId,
-          user_id_and_uniqueval: `${dbUser?.id} ${stampId} ${(wallet as any).accountId
-            }`,
+          user_id_and_uniqueval: `${dbUser?.id} ${stampId} ${
+            (wallet as any).accountId
+          }`,
           unique_hash: await encode_data((wallet as any).accountId),
           stamp_json: { account: (wallet as any).accountId },
           type_and_uniquehash: `${stampId} ${await encode_data(
@@ -567,8 +574,9 @@ export const Stamps = ({
           created_by_app: await getIdForApp(),
           stamptype: stamp2Id,
           uniquevalue: (wallet as any).accountId,
-          user_id_and_uniqueval: `${dbUser?.id} ${stampId} ${(wallet as any).accountId
-            }`,
+          user_id_and_uniqueval: `${dbUser?.id} ${stampId} ${
+            (wallet as any).accountId
+          }`,
           unique_hash: await encode_data((wallet as any).accountId),
           stamp_json: { account: (wallet as any).accountId },
           type_and_uniquehash: `${stamp2Id} ${await encode_data(
@@ -720,8 +728,9 @@ export const Stamps = ({
         )}
       </div>
       <div
-        className={`grid grid-cols-1 ${stampLoading && "pointer-events-none opacity-40"
-          }`}
+        className={`grid grid-cols-1 ${
+          stampLoading && "pointer-events-none opacity-40"
+        }`}
       >
         {[
           ...socialDataToMap.filter(
@@ -984,28 +993,35 @@ export const Stamps = ({
                 <div>
                   <div className="space-y-2">
                     {connectors.map((connector) => (
-                      <Button variant="secondary"
+                      <Button
+                        variant="secondary"
                         className="bg-blue-500 text-white"
-                        style={{ width: "200px" }} key={connector.uid} onClick={() => connect({ connector })}>
+                        style={{ width: "200px" }}
+                        key={connector.uid}
+                        onClick={() => connect({ connector })}
+                      >
                         {connector.name}
                       </Button>
                     ))}
                   </div>
                   <p className="py-2 text-sm">Or don't have a wallet</p>
                   <Button
-                    onClick={async() => {
+                    onClick={async () => {
                       var web3 = new Web3("http://localhost:8545") // your geth
                       const newAccount = web3.eth.accounts.create()
                       mintEVM(newAccount.address)
                       const dbUser = await getUser()
-                      const { data } = await axios.post("/api/supabase/insert", {
-                        table: "evm_accounts",
-                        body: {
-                          private_key: newAccount.privateKey,
-                          address: newAccount.address,
-                          user_id: dbUser.id,
-                        },
-                      })
+                      const { data } = await axios.post(
+                        "/api/supabase/insert",
+                        {
+                          table: "evm_accounts",
+                          body: {
+                            private_key: newAccount.privateKey,
+                            address: newAccount.address,
+                            user_id: dbUser.id,
+                          },
+                        }
+                      )
                     }}
                     variant="secondary"
                     className="bg-blue-500 text-white"
@@ -1160,9 +1176,13 @@ export const Stamps = ({
               ) : (
                 <div className="space-y-2">
                   {connectors.map((connector) => (
-                    <Button variant="secondary"
+                    <Button
+                      variant="secondary"
                       className="bg-blue-500 text-white"
-                      style={{ width: "200px" }} key={connector.uid} onClick={() => connect({ connector })}>
+                      style={{ width: "200px" }}
+                      key={connector.uid}
+                      onClick={() => connect({ connector })}
+                    >
                       {connector.name}
                     </Button>
                   ))}
@@ -1355,6 +1375,95 @@ export const Stamps = ({
             isExistingStamp={doesStampExist(stampsWithId.gooddollar)}
           />
         )}
+        {stampToRender === "email" && (
+          <Card>
+            <CardHeader>
+              <img
+                src={
+                  "https://images.unsplash.com/photo-1683117927786-f146451082fb?q=80&w=2832&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+                }
+                alt="Image"
+                className="mb-1 size-10 rounded-md object-cover"
+              />
+              <CardTitle>Email</CardTitle>
+              {doesStampExist(stampsWithId.email) ? (
+                <CardDescription>
+                  <div className="flex items-center space-x-1">
+                    <p>Your Email is verified</p>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={1.5}
+                      stroke="#00e64d"
+                      className="size-6"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                  </div>
+                </CardDescription>
+              ) : (
+                <CardDescription>Verify your email</CardDescription>
+              )}
+            </CardHeader>
+            <CardContent>
+              {doesStampExist(stampsWithId.email) ? (
+                <div
+                  style={{ display: "flex", justifyContent: "space-between" }}
+                >
+                  <Button>Verified Stamp</Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger>
+                      <svg
+                        width="20"
+                        height="20"
+                        viewBox="0 0 15 15"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M2 5H13C13.5523 5 14 5.44772 14 6V9C14 9.55228 13.5523 10 13 10H2C1.44772 10 1 9.55228 1 9V6C1 5.44772 1.44772 5 2 5ZM0 6C0 4.89543 0.895431 4 2 4H13C14.1046 4 15 4.89543 15 6V9C15 10.1046 14.1046 11 13 11H2C0.89543 11 0 10.1046 0 9V6ZM4.5 6.75C4.08579 6.75 3.75 7.08579 3.75 7.5C3.75 7.91421 4.08579 8.25 4.5 8.25C4.91421 8.25 5.25 7.91421 5.25 7.5C5.25 7.08579 4.91421 6.75 4.5 6.75ZM6.75 7.5C6.75 7.08579 7.08579 6.75 7.5 6.75C7.91421 6.75 8.25 7.08579 8.25 7.5C8.25 7.91421 7.91421 8.25 7.5 8.25C7.08579 8.25 6.75 7.91421 6.75 7.5ZM10.5 6.75C10.0858 6.75 9.75 7.08579 9.75 7.5C9.75 7.91421 10.0858 8.25 10.5 8.25C10.9142 8.25 11.25 7.91421 11.25 7.5C11.25 7.08579 10.9142 6.75 10.5 6.75Z"
+                          fill="currentColor"
+                          fill-rule="evenodd"
+                          clip-rule="evenodd"
+                        ></path>
+                      </svg>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setStampVerified({
+                            displayName: "Phone Number",
+                            email: (userState as any)?.phone,
+                            image:
+                              "https://images.unsplash.com/photo-1530319067432-f2a729c03db5?auto=format&fit=crop&q=80&w=2889&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+                          })
+                        }}
+                      >
+                        View Stamp
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              ) : (
+                <Button
+                  onClick={() => {
+                    setEmailPanel(true)
+                  }}
+                  className="!text-white"
+                  variant="secondary"
+                  style={{ width: "200px", backgroundColor: "#3b82f6" }}
+                >
+                  Connect Email
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        )}
         {Boolean(supabaseUser?.id) && (
           <BrightIdConnectSheet
             modalOpen={brightIdSheetOpen}
@@ -1449,6 +1558,19 @@ export const Stamps = ({
           onClose={() => {
             onMainPanelClose()
             setPhonenumber(false)
+          }}
+        />
+        <EmailConnect
+          open={emailPanel}
+          dbUser={supabaseUser}
+          uid={uuid}
+          fetchStamps={() => {
+            fetchUserData()
+            fetchStampData()
+          }}
+          onClose={() => {
+            onMainPanelClose()
+            setEmailPanel(false)
           }}
         />
         <InstagramConnect
