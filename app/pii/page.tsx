@@ -316,7 +316,7 @@ export default function IndexPage() {
                   Enter location manually
                 </button>
                 {allLocations.map((item) => (
-                  <div>{item.description}</div>
+                  <div>{item.name}</div>
                 ))}
               </>
             ) : (
