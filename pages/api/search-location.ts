@@ -9,7 +9,7 @@ export default async function handler(
 ) {
   const { input } = req.body
   const response = await axios.get(
-    `https://maps.googleapis.com/maps/api/place/textsearch/json?input=${input}&key=AIzaSyCW7A2LY_XIQtmNym9t0hs17nPYO7O7A0A`
+    `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${input}&key=AIzaSyCW7A2LY_XIQtmNym9t0hs17nPYO7O7A0A`
   )
   res.status(200).json(response.data.predictions)
 }
