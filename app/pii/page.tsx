@@ -265,6 +265,10 @@ export default function IndexPage() {
         locationDetails: selectedLocation,
         coordinates,
       },
+      table: "users",
+      match: {
+        id: userData?.dapp_users?.[0].users?.id,
+      },
     })
     window.location.href = searchParams.get("redirect_ui")
   }
