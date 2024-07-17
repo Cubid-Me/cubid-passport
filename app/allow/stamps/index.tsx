@@ -1317,7 +1317,11 @@ export const Stamps = ({
                 }}
                 className="!text-white"
                 variant="secondary"
-                style={{ width: "200px", backgroundColor: "#3b82f6" }}
+                style={{
+                  width: "200px",
+                  backgroundColor: "#3b82f6",
+                  marginBottom: "5px",
+                }}
               >
                 Connect Phone Number
               </Button>

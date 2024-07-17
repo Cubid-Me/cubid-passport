@@ -237,7 +237,17 @@ export default function IndexPage() {
     watch,
     control,
     getValues,
+    unregister,
   } = useForm()
+  const [userData, setUserData] = useState({})
+
+  const { coordinates, error } = useGeolocation()
+  const [stampToAdd, setStampToAdd] = useState("")
+
+  const [manualLocation, setManualLocation] = useState(false)
+  const [selectedLocation, setSelectedLocation] = useState()
+  const [allLocations, setAllLocations] = useState([])
+
   const { fields: emailFields, append: appendEmail } = useFieldArray({
     control,
     name: "emails",
@@ -246,17 +256,27 @@ export default function IndexPage() {
     control,
     name: "phones",
   })
+  console.log({ userData })
 
-  const onSubmit = (data) => {
-    console.log(data)
+  const onSubmit = async (data) => {
+    await axios.post("/api/supabase/update", {
+      address: {
+        address: data.address,
+        locationDetails: selectedLocation,
+        coordinates,
+      },
+    })
+    window.location.href = searchParams.get("redirect_ui")
   }
 
-  const { coordinates, error } = useGeolocation()
-  const [stampToAdd, setStampToAdd] = useState("")
-  const [userData, setUserData] = useState({})
-  const [manualLocation, setManualLocation] = useState(false)
-  const [selectedLocation, setSelectedLocation] = useState()
-  const [allLocations, setAllLocations] = useState([])
+  useEffect(() => {
+    if (manualLocation) {
+      unregister("location")
+    } else {
+      unregister("country")
+      unregister("postcode")
+    }
+  }, [manualLocation, unregister])
 
   const fetchUserUidData = useCallback(async () => {
     const { data } = await axios.post("/api/allow/fetch_allow_uid", {
@@ -337,7 +357,6 @@ export default function IndexPage() {
                     handleLocationSearch(e.target.value)
                   }}
                 />
-               
                 {allLocations.map((item) => (
                   <div
                     key={item.name}
@@ -352,9 +371,8 @@ export default function IndexPage() {
                   >
                     {item.formatted_address}
                   </div>
-                  
                 ))}
-                 <button
+                <button
                   type="button"
                   className="mt-2 text-xs text-blue-500"
                   onClick={() => setManualLocation(true)}
@@ -367,7 +385,7 @@ export default function IndexPage() {
                 <select
                   className="focus:shadow-outline w-full dark:text-white appearance-none rounded-lg px-3 py-2 leading-tight text-gray-700 shadow focus:outline-none"
                   id="country"
-                  {...register("country", { required: true })}
+                  {...register("country", { required: manualLocation })}
                 >
                   <option value="">Select Country</option>
                   {countries.map((country, index) => (
@@ -381,7 +399,7 @@ export default function IndexPage() {
                   id="postcode"
                   type="text"
                   placeholder="Postcode"
-                  {...register("postcode", { required: true })}
+                  {...register("postcode", { required: manualLocation })}
                 />
                 <button
                   type="button"
@@ -416,23 +434,23 @@ export default function IndexPage() {
               Phone
             </label>
             <label
-              for="countries"
-              class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+              htmlFor="phone"
+              className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
             >
               Select an option
             </label>
             <select
-              id="countries"
-              class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+              id="phone"
+              className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+              {...register("phone", { required: true })}
             >
-              <option selected>Choose a Phone</option>
+              <option value="">Choose a Phone</option>
               {phoneFields.map((field, index) => (
                 <option value={field.phone} key={field.phone}>
                   {field.phone}
                 </option>
               ))}
             </select>
-
             <button
               type="button"
               className="text-white mt-2 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
@@ -455,8 +473,18 @@ export default function IndexPage() {
             >
               Email
             </label>
-            <select className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
-              <option selected>Choose a Email</option>
+            <label
+              htmlFor="email"
+              className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+            >
+              Select an option
+            </label>
+            <select
+              id="email"
+              className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+              {...register("email", { required: true })}
+            >
+              <option value="">Choose an Email</option>
               {emailFields.map((field, index) => (
                 <option value={field.email} key={field.email}>
                   {field.email}
@@ -465,7 +493,7 @@ export default function IndexPage() {
             </select>
             <button
               type="button"
-              className="text-white  mt-2 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
+              className="text-white mt-2 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
               onClick={() => {
                 setStampToAdd("email")
               }}
@@ -474,44 +502,42 @@ export default function IndexPage() {
             </button>
             {errors.email && (
               <span className="text-xs italic text-red-500">
-                Valid email is required.
+                Valid email address is required.
               </span>
             )}
           </div>
-          <div className="flex items-center justify-between">
-            <button
-              className="focus:shadow-outline rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700 focus:outline-none"
-              type="submit"
-            >
-              Submit
-            </button>
-          </div>
+          <button
+            className="focus:shadow-outline w-full rounded bg-blue-500 py-2 px-4 font-bold text-white hover:bg-blue-700 focus:outline-none"
+            type="submit"
+          >
+            Submit
+          </button>
         </form>
-      </div>
-      {Boolean(stampToAdd) && (
-        <Sheet
-          open={Boolean(stampToAdd)}
-          onOpenChange={(value) => {
-            if (value === false) {
-              setStampToAdd("")
-            }
-          }}
-        >
-          <SheetContent>
-            <Stamps
-              supabaseUser={userData?.dapp_users?.[0].users}
-              isOpen={Boolean(stampToAdd)}
-              refreshUser={fetchUserUidData}
-              onMainPanelClose={() => {
-                fetchCurrentAppIdStamps()
+        {Boolean(stampToAdd) && (
+          <Sheet
+            open={Boolean(stampToAdd)}
+            onOpenChange={(value) => {
+              if (value === false) {
                 setStampToAdd("")
-                fetchUserUidData()
-              }}
-              stampToRender={stampToAdd}
-            />
-          </SheetContent>
-        </Sheet>
-      )}
+              }
+            }}
+          >
+            <SheetContent>
+              <Stamps
+                supabaseUser={userData?.dapp_users?.[0].users}
+                isOpen={Boolean(stampToAdd)}
+                refreshUser={fetchUserUidData}
+                onMainPanelClose={() => {
+                  fetchCurrentAppIdStamps()
+                  setStampToAdd("")
+                  fetchUserUidData()
+                }}
+                stampToRender={stampToAdd}
+              />
+            </SheetContent>
+          </Sheet>
+        )}
+      </div>
     </>
   )
 }
