@@ -337,13 +337,7 @@ export default function IndexPage() {
                     handleLocationSearch(e.target.value)
                   }}
                 />
-                <button
-                  type="button"
-                  className="mt-2 text-xs text-blue-500"
-                  onClick={() => setManualLocation(true)}
-                >
-                  Enter location manually
-                </button>
+               
                 {allLocations.map((item) => (
                   <div
                     key={item.name}
@@ -356,9 +350,17 @@ export default function IndexPage() {
                         : "cursor-pointer"
                     }
                   >
-                    {item.name}
+                    {item.formatted_address}
                   </div>
+                  
                 ))}
+                 <button
+                  type="button"
+                  className="mt-2 text-xs text-blue-500"
+                  onClick={() => setManualLocation(true)}
+                >
+                  Enter location manually
+                </button>
               </>
             ) : (
               <>
