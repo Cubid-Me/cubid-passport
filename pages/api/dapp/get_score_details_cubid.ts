@@ -52,8 +52,8 @@ const fetch_score = async (req: any, res: any) => {
       allStampIds?.includes(item?.stamptypes?.id)
     ),
   ].map((item) => {
-    const allData = stampsList?.find((_) => _.stamptype === item.stamptype_id)
-    return { [item.stamptypes.stamptype]: allData.uniquevalue }
+    const allData = stampsList?.filter((_) => _.stamptype === item.stamptype_id)
+    return { [item.stamptypes.stamptype]: allData?.map((item)=>item?.uniquevalue) }
   })
 
   res.send({ score_details })

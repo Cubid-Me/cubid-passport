@@ -7,7 +7,7 @@ import { useLoadScript } from "@react-google-maps/api"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import axios from "axios"
 import debounce from "lodash.debounce"
-import { useForm } from "react-hook-form"
+import { useFieldArray, useForm } from "react-hook-form"
 import { useDispatch } from "react-redux"
 import { createConfig, http } from "wagmi"
 import { mainnet, sepolia } from "wagmi/chains"
@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/sheet"
 
 import { Stamps } from "../allow/stamps"
+import useGeolocation from "./useGeolocation"
 
 const libraries = ["places"]
 
@@ -223,6 +224,9 @@ const countries = [
   "Zimbabwe",
 ]
 
+const emailTypes = ["Personal", "Work"]
+const phoneTypes = ["Home", "Work", "Mobile"]
+
 export default function IndexPage() {
   const searchParams = useSearchParams()
   const {
@@ -231,13 +235,27 @@ export default function IndexPage() {
     formState: { errors },
     setValue,
     watch,
+    control,
+    getValues,
   } = useForm()
+  const { fields: emailFields, append: appendEmail } = useFieldArray({
+    control,
+    name: "emails",
+  })
+  const { fields: phoneFields, append: appendPhone } = useFieldArray({
+    control,
+    name: "phones",
+  })
+
   const onSubmit = (data) => {
     console.log(data)
   }
+
+  const { coordinates, error } = useGeolocation()
   const [stampToAdd, setStampToAdd] = useState("")
   const [userData, setUserData] = useState({})
   const [manualLocation, setManualLocation] = useState(false)
+  const [selectedLocation, setSelectedLocation] = useState()
   const [allLocations, setAllLocations] = useState([])
 
   const fetchUserUidData = useCallback(async () => {
@@ -261,21 +279,32 @@ export default function IndexPage() {
     if (score_details) {
       score_details?.map((item) => {
         if (item?.email) {
-          setValue("email", item?.email)
+          setValue(
+            "emails",
+            item?.email
+              .map((_) => (_ ? { email: _, type: "personal" } : null))
+              .filter((item) => item.email)
+          )
         }
         if (item?.phone) {
-          setValue("phone", item?.phone)
+          setValue(
+            "phones",
+            item?.phone
+              .map((_) => (_ ? { phone: _, type: "personal" } : null))
+              .filter((item) => item.phone)
+          )
         }
       })
     }
-  }, [fetchUserUidData, searchParams, setValue])
+  }, [])
 
   useEffect(() => {
     fetchCurrentAppIdStamps()
   }, [fetchCurrentAppIdStamps])
 
   const handleLocationSearch = debounce(async (input) => {
-    if (input) {
+    setSelectedLocation(null)
+    if (input.length >= 2) {
       const response = await axios.post(`/api/search-location`, {
         input,
       })
@@ -304,7 +333,7 @@ export default function IndexPage() {
                   placeholder="Search and select home or work address"
                   {...register("location", { required: true })}
                   onChange={(e) => {
-                    setValue("location",e.target.value)
+                    setValue("location", e.target.value)
                     handleLocationSearch(e.target.value)
                   }}
                 />
@@ -316,7 +345,19 @@ export default function IndexPage() {
                   Enter location manually
                 </button>
                 {allLocations.map((item) => (
-                  <div>{item.name}</div>
+                  <div
+                    key={item.name}
+                    onClick={() => {
+                      setSelectedLocation(item)
+                    }}
+                    className={
+                      selectedLocation?.name === item.name
+                        ? "font-bold"
+                        : "cursor-pointer"
+                    }
+                  >
+                    {item.name}
+                  </div>
                 ))}
               </>
             ) : (
@@ -372,43 +413,33 @@ export default function IndexPage() {
             >
               Phone
             </label>
-            <div className="flex items-center justify-between">
-              <p className="text-lg">{watch("phone") ?? "Phone Number"}</p>
-              <button
-                type="button"
-                onClick={() => {
-                  setStampToAdd("phone")
-                }}
-                className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
-              >
-                Add
-              </button>
-            </div>
+            <label
+              for="countries"
+              class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+            >
+              Select an option
+            </label>
+            <select
+              id="countries"
+              class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            >
+              <option selected>Choose a Phone</option>
+              {phoneFields.map((field, index) => (
+                <option value={field.phone} key={field.phone}>
+                  {field.phone}
+                </option>
+              ))}
+            </select>
 
-            {Boolean(stampToAdd) && (
-              <Sheet
-                open={Boolean(stampToAdd)}
-                onOpenChange={(value) => {
-                  if (value === false) {
-                    setStampToAdd("")
-                  }
-                }}
-              >
-                <SheetContent>
-                  <Stamps
-                    supabaseUser={userData?.dapp_users?.[0].users}
-                    isOpen={Boolean(stampToAdd)}
-                    refreshUser={fetchUserUidData}
-                    onMainPanelClose={() => {
-                      fetchCurrentAppIdStamps()
-                      setStampToAdd("")
-                      fetchUserUidData()
-                    }}
-                    stampToRender={stampToAdd}
-                  />
-                </SheetContent>
-              </Sheet>
-            )}
+            <button
+              type="button"
+              className="text-white mt-2 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
+              onClick={() => {
+                setStampToAdd("phone")
+              }}
+            >
+              Add Phone
+            </button>
             {errors.phone && (
               <span className="text-xs italic text-red-500">
                 Valid phone number is required.
@@ -422,22 +453,32 @@ export default function IndexPage() {
             >
               Email
             </label>
-            <div className="flex items-center justify-between">
-              <p className="text-lg">{watch("email") ?? "Email"}</p>
-              <button
-                type="button"
-                onClick={() => {
-                  setStampToAdd("email")
-                }}
-                className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
-              >
-                Add
-              </button>
-            </div>
+            <select className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+              <option selected>Choose a Email</option>
+              {emailFields.map((field, index) => (
+                <option value={field.email} key={field.email}>
+                  {field.email}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              className="text-white  mt-2 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
+              onClick={() => {
+                setStampToAdd("email")
+              }}
+            >
+              Add Email
+            </button>
+            {errors.email && (
+              <span className="text-xs italic text-red-500">
+                Valid email is required.
+              </span>
+            )}
           </div>
           <div className="flex items-center justify-between">
             <button
-              className="focus:shadow-outline w-full rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700 focus:outline-none"
+              className="focus:shadow-outline rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700 focus:outline-none"
               type="submit"
             >
               Submit
@@ -445,6 +486,30 @@ export default function IndexPage() {
           </div>
         </form>
       </div>
+      {Boolean(stampToAdd) && (
+        <Sheet
+          open={Boolean(stampToAdd)}
+          onOpenChange={(value) => {
+            if (value === false) {
+              setStampToAdd("")
+            }
+          }}
+        >
+          <SheetContent>
+            <Stamps
+              supabaseUser={userData?.dapp_users?.[0].users}
+              isOpen={Boolean(stampToAdd)}
+              refreshUser={fetchUserUidData}
+              onMainPanelClose={() => {
+                fetchCurrentAppIdStamps()
+                setStampToAdd("")
+                fetchUserUidData()
+              }}
+              stampToRender={stampToAdd}
+            />
+          </SheetContent>
+        </Sheet>
+      )}
     </>
   )
 }

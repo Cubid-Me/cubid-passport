@@ -1311,6 +1311,16 @@ export const Stamps = ({
               )}
             </CardHeader>
             <CardContent>
+              <Button
+                onClick={() => {
+                  setPhonenumber(true)
+                }}
+                className="!text-white"
+                variant="secondary"
+                style={{ width: "200px", backgroundColor: "#3b82f6" }}
+              >
+                Connect Phone Number
+              </Button>
               {doesStampExist(stampsWithId.phone) ? (
                 <div
                   style={{ display: "flex", justifyContent: "space-between" }}
@@ -1350,16 +1360,7 @@ export const Stamps = ({
                   </DropdownMenu>
                 </div>
               ) : (
-                <Button
-                  onClick={() => {
-                    setPhonenumber(true)
-                  }}
-                  className="!text-white"
-                  variant="secondary"
-                  style={{ width: "200px", backgroundColor: "#3b82f6" }}
-                >
-                  Connect Phone Number
-                </Button>
+                <></>
               )}
             </CardContent>
           </Card>
@@ -1411,6 +1412,16 @@ export const Stamps = ({
               )}
             </CardHeader>
             <CardContent>
+              <Button
+                onClick={() => {
+                  setEmailPanel(true)
+                }}
+                className="!text-white mb-2"
+                variant="secondary"
+                style={{ width: "200px", backgroundColor: "#3b82f6" }}
+              >
+                Connect Email
+              </Button>
               {doesStampExist(stampsWithId.email) ? (
                 <div
                   style={{ display: "flex", justifyContent: "space-between" }}
@@ -1450,16 +1461,7 @@ export const Stamps = ({
                   </DropdownMenu>
                 </div>
               ) : (
-                <Button
-                  onClick={() => {
-                    setEmailPanel(true)
-                  }}
-                  className="!text-white"
-                  variant="secondary"
-                  style={{ width: "200px", backgroundColor: "#3b82f6" }}
-                >
-                  Connect Email
-                </Button>
+                <></>
               )}
             </CardContent>
           </Card>

@@ -107,7 +107,8 @@ export const EmailConnect = ({
           <SheetHeader>
             <SheetTitle>Email Connect</SheetTitle>
             <form
-              onSubmit={() => {
+              onSubmit={(e) => {
+                e.preventDefault()
                 if (otpSent) {
                   verifyOtp()
                 } else {

@@ -117,7 +117,8 @@ export const PhoneNumberConnect = ({
           <SheetHeader>
             <SheetTitle>Phone Number Connect</SheetTitle>
             <form
-              onSubmit={() => {
+              onSubmit={(e) => {
+                e.preventDefault()
                 if (otpSent) {
                   verifyOtp()
                 } else {
