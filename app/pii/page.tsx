@@ -261,7 +261,9 @@ export default function IndexPage() {
   const onSubmit = async (data) => {
     await axios.post("/api/supabase/update", {
       address: {
-        address: data.address,
+        address: data.location,
+        country: data.country,
+        postcode: data.postcode,
         locationDetails: selectedLocation,
         coordinates,
       },
