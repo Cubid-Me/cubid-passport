@@ -302,16 +302,16 @@ export default function IndexPage() {
           setValue(
             "emails",
             item?.email
-              .map((_) => (_ ? { email: _, type: "personal" } : null))
-              .filter((item) => item.email)
+              ?.map((_) => (_ ? { email: _, type: "personal" } : null))
+              ?.filter((item) => item?.email)
           )
         }
         if (item?.phone) {
           setValue(
             "phones",
             item?.phone
-              .map((_) => (_ ? { phone: _, type: "personal" } : null))
-              .filter((item) => item.phone)
+              ?.map((_) => (_ ? { phone: _, type: "personal" } : null))
+              ?.filter((item) => item?.phone)
           )
         }
       })
