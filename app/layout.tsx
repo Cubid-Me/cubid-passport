@@ -24,9 +24,9 @@ import { SiteHeader } from "@/components/site-header"
 import { TailwindIndicator } from "@/components/tailwind-indicator"
 import { ThemeProvider } from "@/components/theme-provider"
 
+import { config } from "../config/web3Config"
 import { Wallet } from "../lib/nearWallet"
 import { store } from "../redux/store"
-import { config } from '../config/web3Config'
 
 export const wallet = new Wallet({
   createAccessKeyFor: "registry.i-am-human.near",
@@ -48,7 +48,6 @@ function removeQueryParam(url, paramToRemove) {
   return searchParams.toString()
 }
 
-
 export default function RootLayout(props: any) {
   const queryClient = new QueryClient()
 
@@ -64,7 +63,8 @@ export default function RootLayout(props: any) {
       )
       if (
         localStorage.getItem("allow-uuid") &&
-        !window?.location?.href?.contains?.("/allow")
+        !window?.location?.href?.contains?.("/allow") &&
+        !window?.location?.href?.contains?.("/pii")
       ) {
         const queryStringURL = removeQueryParam(window.location.href, "uid")
         push(
@@ -77,7 +77,6 @@ export default function RootLayout(props: any) {
     }
   }, [push])
   const [configSet, setConfigSet] = useState(false)
-
 
   if (process.env.NODE_ENV === "development") {
     return (
