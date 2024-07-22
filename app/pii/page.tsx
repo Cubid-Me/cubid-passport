@@ -363,21 +363,25 @@ export default function IndexPage() {
                     handleLocationSearch(e.target.value)
                   }}
                 />
-                {allLocations.map((item) => (
-                  <div
-                    key={item.name}
-                    onClick={() => {
-                      setSelectedLocation(item)
-                    }}
-                    className={
-                      selectedLocation?.name === item.name
-                        ? "font-bold"
-                        : "cursor-pointer"
-                    }
-                  >
-                    {item.formatted_address}
-                  </div>
-                ))}
+                {!Boolean(selectedLocation?.name) &&
+                  allLocations.map((item) => (
+                    <>
+                      <div
+                        key={item.name}
+                        onClick={() => {
+                          setValue("location", item.formatted_address)
+                          setSelectedLocation(item)
+                        }}
+                        className={
+                          selectedLocation?.name === item.name
+                            ? "font-bold pb-2"
+                            : "cursor-pointer pb-2"
+                        }
+                      >
+                        {item.formatted_address}
+                      </div>
+                    </>
+                  ))}
                 <button
                   type="button"
                   className="mt-2 text-xs text-blue-500"
@@ -417,17 +421,17 @@ export default function IndexPage() {
               </>
             )}
             {errors.location && (
-              <span className="text-xs italic text-red-500">
+              <span className="pl-3 text-xs text-red-500">
                 Location is required.
               </span>
             )}
             {errors.country && manualLocation && (
-              <span className="text-xs italic text-red-500">
+              <span className="pl-3 text-xs text-red-500">
                 Country is required.
               </span>
             )}
             {errors.postcode && manualLocation && (
-              <span className="text-xs italic text-red-500">
+              <span className="pl-3 text-xs text-red-500">
                 Postcode is required.
               </span>
             )}
@@ -467,7 +471,7 @@ export default function IndexPage() {
               Add Phone
             </button>
             {errors.phone && (
-              <span className="text-xs italic text-red-500">
+              <span className="pl-3 text-xs text-red-500">
                 Valid phone number is required.
               </span>
             )}
@@ -507,7 +511,7 @@ export default function IndexPage() {
               Add Email
             </button>
             {errors.email && (
-              <span className="text-xs italic text-red-500">
+              <span className="pl-3 text-xs text-red-500">
                 Valid email address is required.
               </span>
             )}
