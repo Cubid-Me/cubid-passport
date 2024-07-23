@@ -295,6 +295,8 @@ export default function IndexPage() {
     const { data } = await axios.post("/api/allow/fetch_uid_data", {
       uid: searchParams.get("uid"),
     })
+
+    setValue("location", data?.dapp_users[0].users.address ?? "")
     fetchUserUidData()
     setUserData(data)
     const {
