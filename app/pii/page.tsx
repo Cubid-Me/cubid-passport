@@ -260,12 +260,14 @@ export default function IndexPage() {
 
   const onSubmit = async (data) => {
     await axios.post("/api/supabase/update", {
-      address: {
-        address: data.location,
-        country: data.country,
-        postcode: data.postcode,
-        locationDetails: selectedLocation,
-        coordinates,
+      body: {
+        address: {
+          address: data.location,
+          country: data.country,
+          postcode: data.postcode,
+          locationDetails: selectedLocation,
+          coordinates,
+        },
       },
       table: "users",
       match: {
@@ -296,7 +298,7 @@ export default function IndexPage() {
       uid: searchParams.get("uid"),
     })
 
-    setValue("location", data?.dapp_users[0].users.address ?? "")
+    setValue("location", data?.dapp_users[0].users.address?.locationDetails?.formatted_address ?? "")
     fetchUserUidData()
     setUserData(data)
     const {
