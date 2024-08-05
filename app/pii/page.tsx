@@ -268,13 +268,17 @@ export default function IndexPage() {
           locationDetails: selectedLocation,
           coordinates,
         },
+        phone: data.phone,
+        // email: data.email,
+        cubid_postalcode:data.postcode,
+        cubid_country: data.country,
       },
       table: "users",
       match: {
         id: userData?.dapp_users?.[0].users?.id,
       },
     })
-    window.location.href = searchParams.get("redirect_ui")
+    // window.location.href = searchParams.get("redirect_ui")
   }
 
   useEffect(() => {
@@ -298,7 +302,11 @@ export default function IndexPage() {
       uid: searchParams.get("uid"),
     })
 
-    setValue("location", data?.dapp_users[0].users.address?.locationDetails?.formatted_address ?? "")
+    setValue(
+      "location",
+      data?.dapp_users[0].users.address?.locationDetails?.formatted_address ??
+        ""
+    )
     fetchUserUidData()
     setUserData(data)
     const {

@@ -5,6 +5,11 @@ import { supabase } from "@/lib/supabase"
 
 import { stampsWithId } from "./../utils/stampKey"
 
+// Simple logging function to include line numbers
+const log = (message, lineNumber) => {
+  console.log(`Line ${lineNumber}: ${message}`)
+}
+
 const cyrb53 = (str: string, seed = 0) => {
   let h1 = 0xdeadbeef ^ seed,
     h2 = 0x41c6ce57 ^ seed
@@ -25,45 +30,60 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  log("Received API request", 27)
+
   await NextCors(req, res, {
     // Options
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
     origin: "*", // Allow all origins
     optionsSuccessStatus: 200, // Some legacy browsers choke on 204
   })
+  log("CORS setup completed", 34)
 
   const { sub, email, phone, dapp_id, stamptype } = req.body
+  log(`Request body: ${JSON.stringify(req.body)}`, 37)
 
   let uniqueValue = sub || phone || email
   if (!uniqueValue) {
+    log("No valid identifier provided", 40)
     return res.status(400).json({ error: "No valid identifier provided" })
   }
+
+  log(`Unique value: ${uniqueValue}`, 45)
 
   // Search for the unique value in the stamps table
   const { data: stampData } = await supabase
     .from("stamps")
     .select("*")
     .eq("uniquevalue", uniqueValue)
+  log(`Stamp data: ${JSON.stringify(stampData)}`, 51)
+
   if (stampData && stampData.length > 0) {
     const user_id = stampData[0].created_by_user_id
+    log(`Existing stamp found for user_id: ${user_id}`, 55)
 
     let { data: dappUsers } = await supabase
       .from("dapp_users")
       .select("*,users:user_id(*)")
       .match({ user_id, dapp_id })
+    log(`Dapp users data: ${JSON.stringify(dappUsers)}`, 60)
 
     if (!dappUsers || dappUsers.length === 0) {
       // Create a new dapp_user entry if it doesn't exist
-      const { data: newDappUser } = await supabase
+      const { data: newDappUser, error } = await supabase
         .from("dapp_users")
         .insert({ user_id, dapp_id })
         .select("*")
+      log(`New dapp user created: ${JSON.stringify(newDappUser)} ${JSON.stringify({ user_id, dapp_id })}`, 66)
 
       res.status(200).json({
         uuid: newDappUser?.[0]?.uuid,
         newuser: true,
+        error,
       })
     } else {
+      log(`Dapp user already exists: ${JSON.stringify(dappUsers[0])}`, 72)
+
       res.status(200).json({
         uuid: dappUsers[0]?.uuid,
         user: dappUsers[0],
@@ -71,14 +91,18 @@ export default async function handler(
       })
     }
   } else {
+    log("No existing stamp found, checking for existing user", 80)
+
     const { data: existingUser } = await supabase
       .from("users")
       .select("*")
       .match({ email })
+    log(`Existing user data: ${JSON.stringify(existingUser)}`, 85)
 
     let user_id
     if (existingUser && existingUser.length > 0) {
       user_id = existingUser[0].id
+      log(`Existing user found with user_id: ${user_id}`, 90)
     } else {
       const { data: newUser } = await supabase
         .from("users")
@@ -88,10 +112,14 @@ export default async function handler(
           is_3rd_party: true,
         })
         .select("*")
+      log(`New user created: ${JSON.stringify(newUser)}`, 97)
 
       user_id = newUser?.[0].id
     }
+
     const stampIdToAssign = stampsWithId?.[stamptype]
+    log(`Stamp type to assign: ${stampIdToAssign}`, 102)
+
     const { data: newStamp, error: newStampError } = await supabase
       .from("stamps")
       .insert({
@@ -105,14 +133,24 @@ export default async function handler(
         type_and_uniquehash: `${stampIdToAssign} ${cyrb53(uniqueValue)}`,
       })
       .select("*")
+    log(
+      `New stamp created: ${JSON.stringify(newStamp)}, Error: ${newStampError}`,
+      111
+    )
 
-    const { data: newDappUser,error:dappUserError } = await supabase
+    const { data: newDappUser, error: dappUserError } = await supabase
       .from("dapp_users")
       .insert({
         user_id,
         dapp_id,
       })
       .select("*")
+    log(
+      `New dapp user created: ${JSON.stringify(
+        newDappUser
+      )}, Error: ${dappUserError}`,
+      118
+    )
 
     const { error } = await supabase.from("stamp_dappuser_permissions").insert({
       stamp_id: newStamp?.[0]?.id,
@@ -121,7 +159,7 @@ export default async function handler(
       can_delete: true,
       can_read: true,
     })
-    
+    log(`Stamp dapp user permissions set: Error: ${error}`, 126)
 
     res.status(200).json({
       uuid:
