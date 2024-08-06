@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase"
 import { stampsWithId } from "./../utils/stampKey"
 
 // Simple logging function to include line numbers
-const log = (message, lineNumber) => {
+const log = (message:any, lineNumber:any) => {
   console.log(`Line ${lineNumber}: ${message}`)
 }
 
@@ -40,7 +40,12 @@ export default async function handler(
   })
   log("CORS setup completed", 34)
 
-  const { sub, email, phone, dapp_id, stamptype } = req.body
+  const { sub, email, phone, dapp_id: id_to_read_from, stamptype } = req.body
+
+  const { data: dataForApp } = await supabase.from("dapps").select("*").match({
+    api_key: id_to_read_from,
+  })
+  const dapp_id = dataForApp?.[0]?.id;
   log(`Request body: ${JSON.stringify(req.body)}`, 37)
 
   let uniqueValue = sub || phone || email
@@ -74,7 +79,12 @@ export default async function handler(
         .from("dapp_users")
         .insert({ user_id, dapp_id })
         .select("*")
-      log(`New dapp user created: ${JSON.stringify(newDappUser)} ${JSON.stringify({ user_id, dapp_id })}`, 66)
+      log(
+        `New dapp user created: ${JSON.stringify(newDappUser)} ${JSON.stringify(
+          { user_id, dapp_id }
+        )}`,
+        66
+      )
 
       res.status(200).json({
         uuid: newDappUser?.[0]?.uuid,
