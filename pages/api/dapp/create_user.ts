@@ -43,7 +43,7 @@ export default async function handler(
   const { sub, email, phone, dapp_id: id_to_read_from, stamptype } = req.body
 
   const { data: dataForApp } = await supabase.from("dapps").select("*").match({
-    api_key: id_to_read_from,
+    apikey: id_to_read_from,
   })
   const dapp_id = dataForApp?.[0]?.id;
   log(`Request body: ${JSON.stringify(req.body)}`, 37)
