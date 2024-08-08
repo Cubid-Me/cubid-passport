@@ -57,7 +57,7 @@ const fetch_score = async (req: any, res: any) => {
       const stampScoresToAppend = stampScores?.find(
         (_) => _.stamptype_id === item.stamptype_id
       )
-      return { [item.stamptypes.stamptype]: stampScoresToAppend.score }
+      return { [item.stamptypes.stamptype]: stampScoresToAppend?.score }
     })
 
     res.send({ score: stampScore })
