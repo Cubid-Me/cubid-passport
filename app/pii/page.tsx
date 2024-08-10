@@ -12,6 +12,7 @@ import { useDispatch } from "react-redux"
 import { createConfig, http } from "wagmi"
 import { mainnet, sepolia } from "wagmi/chains"
 
+import { insertStampPerm } from "@/lib/insert_stamp_perm"
 import {
   Sheet,
   SheetContent,
@@ -268,9 +269,7 @@ export default function IndexPage() {
           locationDetails: selectedLocation,
           coordinates,
         },
-        phone: data.phone,
-        // email: data.email,
-        cubid_postalcode:data.postcode,
+        cubid_postalcode: data.postcode,
         cubid_country: data.country,
       },
       table: "users",
@@ -278,7 +277,26 @@ export default function IndexPage() {
         id: userData?.dapp_users?.[0].users?.id,
       },
     })
-    // window.location.href = searchParams.get("redirect_ui")
+    const { data: uid_data } = await axios.post("/api/allow/fetch_uid_data", {
+      uid: searchParams.get("uid"),
+    })
+    const { data: stamps } = await axios.post("/api/supabase/select", {
+      table: "stamps",
+      match: {
+        created_by_user_id: uid_data?.dapp_users[0].users.id,
+      },
+    })
+    console.log({ stamps, uid_data })
+    const dapp_id = uid_data?.dapp_users[0]?.dapp_id
+    const filteredStamps = stamps.data.filter(
+      (item) =>
+        item.uniquevalue === data.phone || item.uniquevalue === data.email
+    )
+    const allPromises = filteredStamps.map((item) =>
+      insertStampPerm(item.id, dapp_id)
+    )
+    await Promise.all(allPromises)
+    window.location.href = searchParams.get("redirect_ui")
   }
 
   useEffect(() => {
