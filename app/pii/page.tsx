@@ -374,6 +374,10 @@ export default function IndexPage() {
       <div className="flex min-h-screen flex-col items-center justify-center py-2">
         <form className="w-full max-w-sm" onSubmit={handleSubmit(onSubmit)}>
           <div className="mb-4">
+            <p className="text-xl">Welcome to Toronto DAO</p>
+            <p className="text-md">
+              Step 1 of 2: Create a Cubid profile for TDAO
+            </p>
             <label
               className="mb-2 block text-sm font-bold text-gray-700"
               htmlFor="location"
