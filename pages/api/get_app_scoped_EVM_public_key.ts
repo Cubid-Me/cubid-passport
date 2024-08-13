@@ -1,12 +1,13 @@
 import { NextApiRequest, NextApiResponse } from "next"
+import axios from "axios"
 import { ethers } from "ethers"
 import NextCors from "nextjs-cors"
 
-import { supabase } from "./utils/supabase"
-import { insertStampPerm } from "@/lib/insert_stamp_perm"
-import axios from "axios"
-import { stampsWithId } from "./utils/stampKey"
 import { encode_data } from "@/lib/encode_data"
+import { insertStampPerm } from "@/lib/insert_stamp_perm"
+
+import { stampsWithId } from "./utils/stampKey"
+import { supabase } from "./utils/supabase"
 
 export default async function handler(
   req: NextApiRequest,
@@ -39,23 +40,18 @@ export default async function handler(
     stamp_json: { address },
     type_and_uniquehash: `${stampsWithId.evm} ${await encode_data(address)}`,
   }
-  const {
-    data: { data: evmData },
-  } = await axios.post("/api/supabase/insert", {
-    table: "stamps",
-    body: dataToSet_stamp,
-  })
+
+  const { data: evmData }: any = await supabase
+    .from("stamps")
+    .insert(dataToSet_stamp)
   if (evmData?.[0]?.id) {
-    await axios.post("/api/supabase/insert", {
-      table: "authorized_dapps",
-      body: {
-        dapp_id: 22,
-        dapp_and_stamp_id: `22 ${evmData?.[0]?.id}`,
-        stamp_id: evmData?.[0]?.id,
-        can_read: true,
-        can_update: true,
-        can_delete: true,
-      },
+    await supabase.from("authorized_dapps").insert({
+      dapp_id: 22,
+      dapp_and_stamp_id: `22 ${evmData?.[0]?.id}`,
+      stamp_id: evmData?.[0]?.id,
+      can_read: true,
+      can_update: true,
+      can_delete: true,
     })
   }
   if (error) {
