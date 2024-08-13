@@ -41,9 +41,10 @@ export default async function handler(
     type_and_uniquehash: `${stampsWithId.evm} ${await encode_data(address)}`,
   }
 
-  const { data: evmData }: any = await supabase
+  const { data: evmData, error: evmError }: any = await supabase
     .from("stamps")
     .insert(dataToSet_stamp)
+  console.log({ evmData, evmError })
   if (evmData?.[0]?.id) {
     await supabase.from("authorized_dapps").insert({
       dapp_id: 22,

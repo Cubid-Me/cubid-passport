@@ -17,5 +17,6 @@ export const stampsWithId:any = {
     linkedin: 22,
     worldcoin: 26,
     telegram: 27,
+    evm:14
   }
   

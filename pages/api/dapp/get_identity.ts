@@ -37,7 +37,7 @@ const fetch_score = async (req: any, res: any) => {
       .match({
         schema_id: scoreData?.[0]?.schema_id,
       })
-
+      console.log( dapp_users?.[0])
     const { data: stampsList } = await supabase
       .from("stamps")
       .select("*,stamptypes:stamptype(*)")
