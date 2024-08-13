@@ -304,7 +304,6 @@ export default function IndexPage() {
       unregister("location")
     } else {
       unregister("country")
-      unregister("postcode")
     }
   }, [manualLocation, unregister])
 
