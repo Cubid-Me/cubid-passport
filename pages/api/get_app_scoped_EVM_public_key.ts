@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from "next"
 import { ethers } from "ethers"
+import NextCors from "nextjs-cors"
 
 import { supabase } from "./utils/supabase"
 
@@ -8,6 +9,12 @@ export default async function handler(
   res: NextApiResponse
 ) {
   // Generate a new Ethereum wallet
+  await NextCors(req, res, {
+    // Options
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+    origin: "*", // Allow all origins
+    optionsSuccessStatus: 200, // Some legacy browsers choke on 204
+  })
   const wallet = ethers.Wallet.createRandom()
   const privateKey = wallet.privateKey
   const address = wallet.address
