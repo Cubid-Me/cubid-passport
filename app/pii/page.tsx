@@ -341,6 +341,21 @@ export default function IndexPage() {
               ?.map((_) => (_ ? { email: _, type: "personal" } : null))
               ?.filter((item) => item?.email)
           )
+          setValue(
+            "email",
+            [
+              ...item?.email
+                ?.map((_) => (_ ? { email: _, type: "personal" } : null))
+                ?.filter((item) => item?.email),
+            ][0]?.email
+          )
+          console.log({
+            email: [
+              ...item?.email
+                ?.map((_) => (_ ? { email: _, type: "personal" } : null))
+                ?.filter((item) => item?.email),
+            ][0]?.email,
+          })
         }
         if (item?.phone) {
           setValue(
@@ -348,6 +363,21 @@ export default function IndexPage() {
             item?.phone
               ?.map((_) => (_ ? { phone: _, type: "personal" } : null))
               ?.filter((item) => item?.phone)
+          )
+          console.log({
+            phone: [
+              ...item?.phone
+                ?.map((_) => (_ ? { phone: _, type: "personal" } : null))
+                ?.filter((item) => item?.phone),
+            ][0]?.phone,
+          })
+          setValue(
+            "phone",
+            [
+              ...item?.phone
+                ?.map((_) => (_ ? { phone: _, type: "personal" } : null))
+                ?.filter((item) => item?.phone),
+            ][0]?.phone
           )
         }
       })
