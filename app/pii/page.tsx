@@ -303,6 +303,7 @@ export default function IndexPage() {
     if (manualLocation) {
       unregister("location")
     } else {
+      unregister("postcode")
       unregister("country")
     }
   }, [manualLocation, unregister])
@@ -446,13 +447,6 @@ export default function IndexPage() {
                       </div>
                     </>
                   ))}
-                <input
-                  className="focus:shadow-outline w-full dark:text-white appearance-none rounded-lg px-3 py-2 leading-tight text-gray-700 shadow focus:outline-none mt-2"
-                  id="postcode"
-                  type="text"
-                  placeholder="Postcode"
-                  {...register("postcode", { required: true })}
-                />
                 <button
                   type="button"
                   className="mt-2 text-xs text-blue-500"
