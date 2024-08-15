@@ -259,6 +259,11 @@ export default function IndexPage() {
   })
   console.log({ userData })
 
+  useEffect(() => {
+    setValue("email", emailFields.email)
+    setValue("phone", phoneFields.email)
+  }, [phoneFields, emailFields, setValue])
+
   const onSubmit = async (data) => {
     await axios.post("/api/supabase/update", {
       body: {
@@ -342,14 +347,6 @@ export default function IndexPage() {
               ?.map((_) => (_ ? { email: _, type: "personal" } : null))
               ?.filter((item) => item?.email)
           )
-          setValue(
-            "email",
-            [
-              ...item?.email
-                ?.map((_) => (_ ? { email: _, type: "personal" } : null))
-                ?.filter((item) => item?.email),
-            ][0]?.email
-          )
           console.log({
             email: [
               ...item?.email
@@ -372,14 +369,6 @@ export default function IndexPage() {
                 ?.filter((item) => item?.phone),
             ][0]?.phone,
           })
-          setValue(
-            "phone",
-            [
-              ...item?.phone
-                ?.map((_) => (_ ? { phone: _, type: "personal" } : null))
-                ?.filter((item) => item?.phone),
-            ][0]?.phone
-          )
         }
       })
     }
