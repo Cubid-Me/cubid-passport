@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase"
 import { stampsWithId } from "./../utils/stampKey"
 
 // Simple logging function to include line numbers
-const log = (message:any, lineNumber:any) => {
+const log = (message: any, lineNumber: any) => {
   console.log(`Line ${lineNumber}: ${message}`)
 }
 
@@ -40,15 +40,20 @@ export default async function handler(
   })
   log("CORS setup completed", 34)
 
-  const { sub, email, phone, dapp_id: id_to_read_from, stamptype } = req.body
+  const {
+    email,
+    phone,
+    dapp_id: id_to_read_from,
+    stamptype,
+  } = req.body
 
   const { data: dataForApp } = await supabase.from("dapps").select("*").match({
     apikey: id_to_read_from,
   })
-  const dapp_id = dataForApp?.[0]?.id;
+  const dapp_id = dataForApp?.[0]?.id
   log(`Request body: ${JSON.stringify(req.body)}`, 37)
 
-  let uniqueValue = sub || phone || email
+  let uniqueValue =  phone || email
   if (!uniqueValue) {
     log("No valid identifier provided", 40)
     return res.status(400).json({ error: "No valid identifier provided" })
@@ -127,7 +132,7 @@ export default async function handler(
       user_id = newUser?.[0].id
     }
 
-    const stampIdToAssign = stampsWithId?.[stamptype]
+    const stampIdToAssign = stampsWithId?.[phone ? "phone" : "email"]
     log(`Stamp type to assign: ${stampIdToAssign}`, 102)
 
     const { data: newStamp, error: newStampError } = await supabase
@@ -139,7 +144,7 @@ export default async function handler(
         uniquevalue: uniqueValue,
         user_id_and_uniqueval: `${user_id} ${stampIdToAssign} ${uniqueValue}`,
         unique_hash: cyrb53(uniqueValue),
-        stamp_json: { [sub ? "sub" : phone ? "phone" : "email"]: uniqueValue },
+        stamp_json: { [phone ? "phone" : "email"]: uniqueValue },
         type_and_uniquehash: `${stampIdToAssign} ${cyrb53(uniqueValue)}`,
       })
       .select("*")
