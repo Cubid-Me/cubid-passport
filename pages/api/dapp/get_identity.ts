@@ -10,8 +10,8 @@ const fetch_score = async (req: any, res: any) => {
     optionsSuccessStatus: 200, // Some legacy browsers choke on 204
   })
   const { uid, apikey } = req.body
-  const { data } =await supabase.from("dapps").select("*").match({ apikey })
-  if (data?.[0]  && apikey) {
+  const { data } = await supabase.from("dapps").select("*").match({ apikey })
+  if (data?.[0] && apikey) {
     console.log(req.body)
     const { data: dapp_users } = await supabase
       .from("dapp_users")
@@ -37,7 +37,7 @@ const fetch_score = async (req: any, res: any) => {
       .match({
         schema_id: scoreData?.[0]?.schema_id,
       })
-      console.log( dapp_users?.[0])
+    console.log(dapp_users?.[0])
     const { data: stampsList } = await supabase
       .from("stamps")
       .select("*,stamptypes:stamptype(*)")
@@ -58,7 +58,7 @@ const fetch_score = async (req: any, res: any) => {
       return { [item.stamptypes.stamptype]: allData.uniquevalue }
     })
 
-    res.send({ score_details })
+    res.send({ score_details, user: dapp_users?.[0].users })
   } else {
     res.send({ error: "Please provide a valid APIKEY" })
   }
