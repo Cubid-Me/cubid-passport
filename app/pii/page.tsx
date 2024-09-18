@@ -260,7 +260,7 @@ export default function IndexPage() {
   console.log({ userData })
 
   useEffect(() => {
-    setValue("email", emailFields.email)
+    // setValue("email", emailFields.email)
     setValue("phone", phoneFields.email)
   }, [phoneFields, emailFields, setValue])
 
@@ -340,21 +340,21 @@ export default function IndexPage() {
     })
     if (score_details) {
       score_details?.map((item) => {
-        if (item?.email) {
-          setValue(
-            "emails",
-            item?.email
-              ?.map((_) => (_ ? { email: _, type: "personal" } : null))
-              ?.filter((item) => item?.email)
-          )
-          console.log({
-            email: [
-              ...item?.email
-                ?.map((_) => (_ ? { email: _, type: "personal" } : null))
-                ?.filter((item) => item?.email),
-            ][0]?.email,
-          })
-        }
+        // if (item?.email) {
+        //   setValue(
+        //     "emails",
+        //     item?.email
+        //       ?.map((_) => (_ ? { email: _, type: "personal" } : null))
+        //       ?.filter((item) => item?.email)
+        //   )
+        //   console.log({
+        //     email: [
+        //       ...item?.email
+        //         ?.map((_) => (_ ? { email: _, type: "personal" } : null))
+        //         ?.filter((item) => item?.email),
+        //     ][0]?.email,
+        //   })
+        // }
         if (item?.phone) {
           setValue(
             "phones",
@@ -531,7 +531,7 @@ export default function IndexPage() {
               </span>
             )}
           </div>
-          <div className="mb-6">
+          {/* <div className="mb-6">
             <label
               className="mb-2 block text-sm font-bold text-gray-700"
               htmlFor="email"
@@ -571,7 +571,7 @@ export default function IndexPage() {
                 Valid email address is required.
               </span>
             )}
-          </div>
+          </div> */}
           <button
             className="focus:shadow-outline w-full rounded bg-blue-500 py-2 px-4 font-bold text-white hover:bg-blue-700 focus:outline-none"
             type="submit"
