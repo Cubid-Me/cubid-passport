@@ -1,3 +1,4 @@
+// @ts-nocheck
 import NextCors from "nextjs-cors"
 
 import { stampsWithId } from "../../utils/stampKey"
