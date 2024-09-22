@@ -2,6 +2,27 @@ import NextCors from "nextjs-cors"
 
 import { supabase } from "../utils/supabase"
 
+const keysToUse: any = {
+  1: "facebook",
+  2: "github",
+  3: "google",
+  4: "twitter",
+  5: "discord",
+  6: "poh",
+  13: "email",
+  7: "near-wallet",
+  8: "brightid",
+  9: "gitcoin",
+  10: "instagram",
+  11: "phone",
+  12: "gooddollar",
+  17: "fractal",
+  22: "linkedin",
+  26: "worldcoin",
+  27: "telegram",
+  14: "evm",
+}
+
 const fetch_score = async (req: any, res: any) => {
   await NextCors(req, res, {
     // Options
@@ -45,20 +66,14 @@ const fetch_score = async (req: any, res: any) => {
         created_by_user_id: dapp_users?.[0]?.user_id,
       })
 
-    const stampsToSend = stampData ?? []
+    const dataToSend: any = []
 
-    const allStampIds = (stampsList ?? []).map((item: any) => item.stamptype)
-
-    const score_details = [
-      ...stampsToSend.filter((item) =>
-        allStampIds?.includes(item?.stamptypes?.id)
-      ),
-    ].map((item) => {
-      const allData = stampsList?.find((_) => _.stamptype === item.stamptype_id)
-      return { [item.stamptypes.stamptype]: allData.uniquevalue }
+    stampsList?.map((item) => {
+      const stampType = keysToUse?.[item.stamptype]
+      dataToSend.push({ [stampType]: item.uniquevalue })
     })
 
-    res.send({ score_details, user: dapp_users?.[0].users })
+    res.send({ score_details: dataToSend, user: dapp_users?.[0].users })
   } else {
     res.send({ error: "Please provide a valid APIKEY" })
   }
