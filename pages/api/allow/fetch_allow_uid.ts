@@ -17,14 +17,13 @@ const fetchAllowUid = async (req: any, res: any) => {
     })
   const { error, data: stampData } = await supabase
     .from("dapp_stamptypes")
-    .select("*,stamptypes:stamptype_id(*)")
+    .select("*,stamptypes:stamptype_id(*),dapps:dapp_id(*)")
     .match({
-      dapp_id: dapp_users?.[0]?.dapp_id,
       page_id: parseInt(page_id),
     })
   console.log(
     { stampData },
-    { dapp_id: dapp_users?.[0]?.dapp_id, page_id: parseInt(page_id) }
+    { dapp_id: stampData?.[0]?.dapps, page_id: parseInt(page_id) }
   )
   const { data: scoreData } = await supabase
     .from("stampscore_dapps")
