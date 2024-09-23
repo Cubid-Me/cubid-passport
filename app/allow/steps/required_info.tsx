@@ -1,7 +1,7 @@
 import React from "react"
 
 export const RequiredInfo = ({ stamps, stampsList, setStampToAdd }: any) => {
-  const requiredStamps = stamps.filter(
+  const requiredStamps = stamps?.filter(
     (item: any) => item.is_infosharing_required
   )
   const isStampsValid = Array.isArray(stamps) && stamps.length !== 0

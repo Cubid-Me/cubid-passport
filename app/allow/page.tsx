@@ -187,7 +187,7 @@ const AllowPage = () => {
             <div className="px-4 pt-4">
               <p className="dark:text-white">
                 Cubid Identity for{" "}
-                {userUidData?.dapp_users?.[0]?.dapps?.appname}
+                {userUidData?.stampsToSend?.[0]?.dapps?.appname}
               </p>
               {steps === 0 && (
                 <Score
@@ -237,7 +237,7 @@ const AllowPage = () => {
                       <>
                         {console.log({ userUidData })}
                         <a
-                          href={`${userUidData?.dapp_users?.[0]?.dapps?.redirect_url}?status=success`}
+                          href={`${userUidData?.stampsToSend?.[0]?.dapps?.redirect_url}?status=success`}
                           onClick={() => {
                             localStorage.clear()
                           }}
