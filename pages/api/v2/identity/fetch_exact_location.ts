@@ -52,7 +52,7 @@ const rough_location = async (req: any, res: any) => {
     )
   )
   res.send({
-    postalcode: address,
+    place: address,
     country: country,
     coordinates: {
       lat:
