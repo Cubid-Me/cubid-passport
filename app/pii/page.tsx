@@ -276,6 +276,7 @@ export default function IndexPage() {
         },
         cubid_postalcode: data.postcode,
         cubid_country: data.country,
+        phone:data.phone,
       },
       table: "users",
       match: {
@@ -301,7 +302,7 @@ export default function IndexPage() {
       insertStampPerm(item.id, dapp_id)
     )
     await Promise.all(allPromises)
-    window.location.href = searchParams.get("redirect_ui")
+    // window.location.href = searchParams.get("redirect_ui")
   }
 
   useEffect(() => {
