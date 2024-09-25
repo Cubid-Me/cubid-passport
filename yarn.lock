@@ -14352,6 +14352,11 @@ onetime@^6.0.0:
   dependencies:
     mimic-fn "^4.0.0"
 
+open-location-code@^1.0.3:
+  version "1.0.3"
+  resolved "https://registry.npmjs.org/open-location-code/-/open-location-code-1.0.3.tgz"
+  integrity sha512-DBm14BSn40Ee241n80zIFXIT6+y8Tb0I+jTdosLJ8Sidvr2qONvymwqymVbHV2nS+1gkDZ5eTNpnOIVV0Kn2fw==
+
 open@^7.4.2:
   version "7.4.2"
   resolved "https://registry.npmjs.org/open/-/open-7.4.2.tgz"
