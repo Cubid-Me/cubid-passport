@@ -266,7 +266,6 @@ export default function IndexPage() {
 
   const onSubmit = async (data) => {
     console.log({ selectedLocation })
-    return ;
     await axios.post("/api/supabase/update", {
       body: {
         address: {
@@ -304,7 +303,7 @@ export default function IndexPage() {
       insertStampPerm(item.id, dapp_id)
     )
     await Promise.all(allPromises)
-    // window.location.href = searchParams.get("redirect_ui")
+    window.location.href = searchParams.get("redirect_ui")
   }
 
   useEffect(() => {
