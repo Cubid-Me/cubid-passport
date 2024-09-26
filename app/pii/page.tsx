@@ -265,6 +265,7 @@ export default function IndexPage() {
   }, [phoneFields, emailFields, setValue])
 
   const onSubmit = async (data) => {
+    console.log({ selectedLocation })
     await axios.post("/api/supabase/update", {
       body: {
         address: {
@@ -276,6 +277,7 @@ export default function IndexPage() {
         },
         cubid_postalcode: data.postcode,
         cubid_country: data.country,
+        phone: data.phone,
       },
       table: "users",
       match: {
