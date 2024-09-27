@@ -423,7 +423,7 @@ export default function IndexPage() {
           <div className="mb-4">
             <p className="text-xl">Welcome to Toronto DAO</p>
             <p className="text-md">
-              Step 1 of 2: Create a Cubid profile for TDAO
+              Step 2 of 2: Create a Cubid profile for TDAO
             </p>
             <label
               className="mb-2 block text-sm font-bold text-gray-700"
