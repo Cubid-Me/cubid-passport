@@ -27,7 +27,7 @@ const fetchAllowUid = async (req: any, res: any) => {
     })
   const user = dapp_users?.[0]?.users
   res.send({
-    address: user.address,
+    address: user?.address,
     cubid_country: user.cubid_country,
     cubid_postalcode: user.cubid_postalcode,
   })

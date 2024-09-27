@@ -47,30 +47,43 @@ const rough_location = async (req: any, res: any) => {
     await getLocationDetailsFromPlusCode(
       openLocationCode.encode(
         address?.locationDetails?.geometry?.location?.lat ??
-          all_location?.address?.coordinates?.lat,
+          address?.coordinates?.lat,
         address?.locationDetails?.geometry?.location?.lng ??
-          all_location?.address?.coordinates?.lon
+          address?.coordinates?.lon
       )
     )
+
+  function removePlusCode(input) {
+    // Regex pattern for Plus Code (e.g., MPFF+JX)
+    const plusCodePattern = /^[A-Z0-9]{4}\+[A-Z0-9]{2}\s?/
+
+    // Check if the string starts with a Plus Code and remove it
+    if (plusCodePattern.test(input)) {
+      return input.replace(plusCodePattern, "").trim()
+    }
+
+    // If no Plus Code is found, return the original string
+    return input
+  }
   res.send({
     postalcode: postalCode,
-    placename: formattedAddress,
+    placename: removePlusCode(formattedAddress),
     country: country,
     pluscode: openLocationCode.encode(
       address?.locationDetails?.geometry?.location?.lat ??
-        all_location?.address?.coordinates?.lat,
+        address?.coordinates?.lat,
       address?.locationDetails?.geometry?.location?.lng ??
-        all_location?.address?.coordinates?.lon,
+        address?.coordinates?.lon,
       6
     ),
     coordinates: {
       lat: roundToTwoDecimals(
         address?.locationDetails?.geometry?.location?.lat ??
-          all_location?.address?.coordinates?.lat
+          address?.coordinates?.lat
       ),
       lng: roundToTwoDecimals(
         address?.locationDetails?.geometry?.location?.lng ??
-          all_location?.address?.coordinates?.lon
+          address?.coordinates?.lon
       ),
     },
     error,
