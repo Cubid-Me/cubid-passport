@@ -4,22 +4,26 @@ export const useGeolocation = () => {
   const [coordinates, setCoordinates] = useState<any>({ lat: null, lon: null });
   const [error, setError] = useState<any>(null);
 
+  console.log({ coordinates }, 'this siss')
+
   useEffect(() => {
     const getGeolocation = async () => {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (position) => {
+            console.log({ position }, 'position')
             setCoordinates({
               lat: position.coords.latitude,
               lon: position.coords.longitude,
             });
           },
           async (error) => {
+            console.log({ error }, 'error')
             setError(error.message);
             try {
               const response = await fetch('http://ip-api.com/json');
               const data = await response.json();
-              if (data.status === 'success') {
+              if (data.status === 'success' && data.lat) {
                 setCoordinates({
                   lat: data.lat,
                   lon: data.lon,
@@ -39,6 +43,26 @@ export const useGeolocation = () => {
 
     getGeolocation();
   }, []);
+
+  useEffect(() => {
+    if (!navigator.geolocation)
+      (async () => {
+        try {
+          const response = await fetch('http://ip-api.com/json');
+          const data = await response.json();
+          if (data.status === 'success' && data.lat) {
+            setCoordinates({
+              lat: data.lat,
+              lon: data.lon,
+            });
+          } else {
+            setError('Unable to retrieve location from IP');
+          }
+        } catch (err) {
+          setError('Failed to fetch IP-based location');
+        }
+      })()
+  }, [])
 
   return { coordinates, error };
 };
