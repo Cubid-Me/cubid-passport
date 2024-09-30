@@ -28,6 +28,7 @@ import { config } from "../config/web3Config"
 import { Wallet } from "../lib/nearWallet"
 import { store } from "../redux/store"
 
+
 export const wallet = new Wallet({
   createAccessKeyFor: "registry.i-am-human.near",
 })
