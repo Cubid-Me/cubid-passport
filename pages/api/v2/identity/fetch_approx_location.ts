@@ -43,15 +43,16 @@ const rough_location = async (req: any, res: any) => {
   }
 
   const openLocationCode = new OpenLocationCode()
-  const { country, postalCode, formattedAddress } =
+  const allLocationData =
     await getLocationDetailsFromPlusCode(
       openLocationCode.encode(
         address?.locationDetails?.geometry?.location?.lat ??
-          address?.coordinates?.lat,
+        address?.coordinates?.lat,
         address?.locationDetails?.geometry?.location?.lng ??
-          address?.coordinates?.lon
+        address?.coordinates?.lon
       )
     )
+  const { country, postalCode, formattedAddress } = allLocationData ?? {}
 
   function removePlusCode(input) {
     // Regex pattern for Plus Code (e.g., MPFF+JX)
@@ -71,19 +72,19 @@ const rough_location = async (req: any, res: any) => {
     country: country,
     pluscode: openLocationCode.encode(
       address?.locationDetails?.geometry?.location?.lat ??
-        address?.coordinates?.lat,
+      address?.coordinates?.lat,
       address?.locationDetails?.geometry?.location?.lng ??
-        address?.coordinates?.lon,
+      address?.coordinates?.lon,
       6
     ),
     coordinates: {
       lat: roundToTwoDecimals(
         address?.locationDetails?.geometry?.location?.lat ??
-          address?.coordinates?.lat
+        address?.coordinates?.lat
       ),
       lng: roundToTwoDecimals(
         address?.locationDetails?.geometry?.location?.lng ??
-          address?.coordinates?.lon
+        address?.coordinates?.lon
       ),
     },
     error,
