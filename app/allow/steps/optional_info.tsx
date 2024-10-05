@@ -36,7 +36,7 @@ export const OptionalInfo = ({ stamps, setStampToAdd, stampsList }: any) => {
                     scope="row"
                     className="whitespace-nowrap px-6 py-4 font-medium capitalize text-gray-900 dark:text-white"
                   >
-                    {item?.stamptypes?.stamptype}
+                    {item?.stamptypes?.stamptype.toLowerCase() === "evm" ? "Farcaster" : item?.stamptypes?.stamptype}
                   </th>
                   <td className="px-6 py-4">
                     {!allStampIds?.includes(item?.stamptypes?.id) ? (
