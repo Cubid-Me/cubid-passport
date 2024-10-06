@@ -10,6 +10,9 @@ import { useSelector } from "react-redux"
 import { toast } from "react-toastify"
 import { useAccount, useDisconnect } from "wagmi"
 import Web3 from "web3"
+import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import { useWallet as useSolanaWallet, useConnection as useSolanaConnection } from "@solana/wallet-adapter-react";
+
 
 import { useStamps } from "./../../hooks/useStamps"
 import "@near-wallet-selector/modal-ui/styles.css"
@@ -114,6 +117,7 @@ export const stampsWithId = {
   evm: 14,
   worldcoin: 26,
   telegram: 27,
+  solana: 53
 }
 
 export const Stamps = () => {
@@ -205,6 +209,61 @@ export const Stamps = () => {
   const [isPohVerified, setIsPohVerified] = useState<any>(null)
   const { disconnect } = useDisconnect()
   const { getIdForApp } = useCreatedByAppId()
+
+  const { publicKey, } = useSolanaWallet()
+  console.log({ publicKey: publicKey?.toString() }, 'sol pub key')
+
+  useEffect(() => {
+    (async () => {
+      if (!doesStampExist(stampsWithId["solana"]) && publicKey?.toString()) {
+        const dbUser = await getUser()
+        const string_publicKey = publicKey?.toString()
+        const database = {
+          uniquehash: await encode_data(publicKey?.toString()),
+          stamptype: stampsWithId.solana,
+          created_by_user_id: dbUser?.id,
+          unencrypted_unique_data: publicKey.toJSON(),
+          type_and_hash: `${stampsWithId.solana} ${await encode_data(publicKey?.toString())}`,
+        }
+        const dataToSet = {
+          created_by_user_id: dbUser?.id,
+          created_by_app: await getIdForApp(),
+          stamptype: stampsWithId.solana,
+          uniquevalue: publicKey.toString(),
+          user_id_and_uniqueval: `${dbUser?.id} ${stampsWithId.solana} ${publicKey?.toString()}`,
+          unique_hash: await encode_data(publicKey?.toString()),
+          stamp_json: publicKey.toJSON(),
+          type_and_uniquehash: `${stampsWithId.solana} ${await encode_data(publicKey?.toString())}`,
+        }
+        await axios.post("/api/supabase/insert", {
+          table: "uniquestamps",
+          body: database,
+        })
+        const {
+          data: { error, data },
+        } = await axios.post("/api/supabase/insert", {
+          table: "stamps",
+          body: dataToSet,
+        })
+        if (data?.[0]?.id) {
+          await axios.post("/api/supabase/insert", {
+            table: "authorized_dapps",
+            body: {
+              dapp_id: 22,
+              dapp_and_stamp_id: `22 ${data?.[0]?.id}`,
+              stamp_id: data?.[0]?.id,
+              can_read: true,
+              can_update: true,
+              can_delete: true,
+            },
+          })
+        }
+        fetchUserData()
+        fetchStampData()
+      }
+    })()
+
+  }, [publicKey])
 
   const connectToWeb3Node = useCallback(
     async (address: string) => {
@@ -491,9 +550,8 @@ export const Stamps = () => {
           created_by_app: await getIdForApp(),
           stamptype: stampId,
           uniquevalue: (wallet as any).accountId,
-          user_id_and_uniqueval: `${dbUser?.id} ${stampId} ${
-            (wallet as any).accountId
-          }`,
+          user_id_and_uniqueval: `${dbUser?.id} ${stampId} ${(wallet as any).accountId
+            }`,
           unique_hash: await encode_data((wallet as any).accountId),
           stamp_json: { account: (wallet as any).accountId },
           type_and_uniquehash: `${stampId} ${await encode_data(
@@ -505,9 +563,8 @@ export const Stamps = () => {
           created_by_app: await getIdForApp(),
           stamptype: stamp2Id,
           uniquevalue: (wallet as any).accountId,
-          user_id_and_uniqueval: `${dbUser?.id} ${stampId} ${
-            (wallet as any).accountId
-          }`,
+          user_id_and_uniqueval: `${dbUser?.id} ${stampId} ${(wallet as any).accountId
+            }`,
           unique_hash: await encode_data((wallet as any).accountId),
           stamp_json: { account: (wallet as any).accountId },
           type_and_uniquehash: `${stamp2Id} ${await encode_data(
@@ -649,9 +706,8 @@ export const Stamps = () => {
         )}
       </div>
       <div
-        className={`grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3 ${
-          stampLoading && "pointer-events-none opacity-40"
-        }`}
+        className={`grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3 ${stampLoading && "pointer-events-none opacity-40"
+          }`}
       >
         {socialDataToMap.map((item) => (
           <Card style={{ height: "auto" }}>
@@ -1107,6 +1163,62 @@ export const Stamps = () => {
               >
                 Connect App
               </Button>
+            )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <img
+              src={
+                "https://logos-world.net/wp-content/uploads/2024/01/Solana-Logo.png"
+              }
+              alt="Image"
+              className="mb-1 size-10 object-fit rounded-md"
+            />
+            <CardTitle>Solana</CardTitle>
+            {doesStampExist(stampsWithId["solana"]) ? (
+              <CardDescription>
+                <div className="flex items-center space-x-1">
+                  <p>Your Solana address is verified</p>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="#00e64d"
+                    className="size-6"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </div>
+              </CardDescription>
+            ) : (
+              <CardDescription>Connect to Solana</CardDescription>
+            )}
+          </CardHeader>
+          <CardContent>
+            {doesStampExist(stampsWithId["solana"]) ? (
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <div className="flex items-center space-x-2">
+                  <Button
+                    onClick={() => {
+                      // connect worldoin wallet
+                    }}
+                    variant="secondary"
+                    className="bg-white text-black"
+                    style={{ width: "200px" }}
+                  >
+                    Solana Connected
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <WalletMultiButton />
+
             )}
           </CardContent>
         </Card>
