@@ -14,12 +14,15 @@ const fetchAllowUid = async (req: any, res: any) => {
     origin: "*", // Allow all origins
     optionsSuccessStatus: 200, // Some legacy browsers choke on 204
   })
-  const { apikey, user_id } = req.body
+  // const { apikey, user_id } = typeof req.body === "string" ? JSON.parse(req.body) : req.body
+  const apikey = 'bb345ead-ee52-4a83-ab4d-6958ae6fe622'
+  const user_id = 'b1b65cb4-a462-40ad-a6d1-f188fc381209'
   const { data: dataForApp } = await supabase
     .from("dapps")
     .select("*")
-    .match({ apikey })
-  const dappId = dataForApp?.[0]?.id
+    .match({ apikey: apikey });
+
+  const dappId = dataForApp?.find((item) => item.apikey === apikey)?.id
   if (!dappId) {
     log("Invalid API key or dapp_id", 50)
     return res.status(400).json({ error: "Invalid API key" })
@@ -31,7 +34,6 @@ const fetchAllowUid = async (req: any, res: any) => {
       uuid: user_id,
       dapp_id: dappId,
     })
-  console.log(dapp_users)
   const { error, data: stampData } = await supabase
     .from("stamps")
     .select("*")
@@ -48,10 +50,10 @@ const fetchAllowUid = async (req: any, res: any) => {
     return switchedObj
   }
 
-  const { data: stamp_perms } = await supabase.from("dapp_stamptypes").select("*").match({ dappId })
-  const allStampIds = stamp_perms?.map((item) => item.stamptype_id)
+  const { data: stamp_perms } = await supabase.from("dapp_stamptypes").select("*").match({ dapp_id: 46 })
+  const allStampIds = [...stamp_perms?.map((item) => item.stamptype_id),13]
 
-  const stampsToSend = stampData?.filter((_) => stamp_perms?.includes(_.stamptype))
+  const stampsToSend = stampData?.filter((_) => allStampIds?.includes(_.stamptype))
 
   res.send({
     error,

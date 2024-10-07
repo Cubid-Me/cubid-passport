@@ -85,7 +85,7 @@ const AllowPage = () => {
     fetchUserUidData()
   }, [fetchUserUidData])
 
-  const fetchStamps = useCallback(async () => {}, [])
+  const fetchStamps = useCallback(async () => { }, [])
 
   const { push } = useRouter()
 
@@ -163,8 +163,16 @@ const AllowPage = () => {
 
   const buttonDisabled = requiredStamps?.length !== isAllIncluded?.length
 
+  if (!loading && !Boolean(userUidData?.dapp_users?.[0]?.users?.id)) {
+    return (
+      <div className="p-5 flex h-[100vh] w-[100vw] dark:bg-gray-900 items-center justify-center dark:text-white">
+        <p>Invalid UID provided in URL</p>
+      </div>)
+  }
+
   return (
     <WagmiConfig config={wagmiConfig as any}>
+
       {loading ? (
         <>
           <div className="flex h-[100vh] w-[100vw] dark:bg-gray-900 items-center justify-center">
@@ -225,9 +233,8 @@ const AllowPage = () => {
                     {buttonDisabled ? (
                       <>
                         <button
-                          className={`w-[100px] rounded-lg border bg-blue-500 px-5 py-2 text-sm text-white ${
-                            buttonDisabled ? "opacity-70" : ""
-                          }`}
+                          className={`w-[100px] rounded-lg border bg-blue-500 px-5 py-2 text-sm text-white ${buttonDisabled ? "opacity-70" : ""
+                            }`}
                           disabled={buttonDisabled}
                         >
                           Submit
@@ -241,9 +248,8 @@ const AllowPage = () => {
                           onClick={() => {
                             localStorage.clear()
                           }}
-                          className={`w-[100px] rounded-lg border bg-blue-500 px-5 py-2 text-sm text-white ${
-                            buttonDisabled ? "opacity-70" : ""
-                          }`}
+                          className={`w-[100px] rounded-lg border bg-blue-500 px-5 py-2 text-sm text-white ${buttonDisabled ? "opacity-70" : ""
+                            }`}
                         >
                           Submit
                         </a>
