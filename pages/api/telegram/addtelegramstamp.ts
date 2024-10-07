@@ -14,7 +14,7 @@ export default async function handler(req: any, res: any) {
     const database = {
       uniquehash: await encode_data(id),
       stamptype: stampId,
-      created_by_user_id: dbUser?.id,
+      created_by_user_id: userid,
       unencrypted_unique_data: JSON.stringify({ id }),
       type_and_hash: `${stampId} ${await encode_data(id)}`,
     }
@@ -23,12 +23,12 @@ export default async function handler(req: any, res: any) {
       created_by_app: 33,
       stamptype: stampId,
       uniquevalue: id,
-      user_id_and_uniqueval: `${dbUser?.id} ${stampId} ${id}`,
+      user_id_and_uniqueval: `${userid} ${stampId} ${id}`,
       unique_hash: await encode_data(id),
       stamp_json: { id, username, photo_url, first_name, last_name },
       type_and_uniquehash: `${stampId} ${await encode_data(id)}`,
     }
-    await supabase.from("uniquestamps").insert({
+    const { error: error1 } = await supabase.from("uniquestamps").insert({
       ...database,
     })
 
@@ -38,10 +38,12 @@ export default async function handler(req: any, res: any) {
         ...dataToSet,
       })
       .select("*")
+
+    console.log({ error, error1 })
     if (stampData?.[0]?.id) {
       await supabase.from("authorized_dapps").insert({
-        dapp_id: 33,
-        dapp_and_stamp_id: `33 ${stampData?.[0]?.id}`,
+        dapp_id: process.env.NEXT_PUBLIC_DAPP_ID,
+        dapp_and_stamp_id: `${process.env.NEXT_PUBLIC_DAPP_ID} ${stampData?.[0]?.id}`,
         stamp_id: stampData?.[0]?.id,
         can_read: true,
         can_update: true,

@@ -244,8 +244,8 @@ export const Stamps = ({
           await axios.post("/api/supabase/insert", {
             table: "authorized_dapps",
             body: {
-              dapp_id: 22,
-              dapp_and_stamp_id: `22 ${evmData?.[0]?.id}`,
+              dapp_id: process.env.NEXT_PUBLIC_DAPP_ID,
+              dapp_and_stamp_id: `${process.env.NEXT_PUBLIC_DAPP_ID} ${evmData?.[0]?.id}`,
               stamp_id: evmData?.[0]?.id,
               can_read: true,
               can_update: true,
@@ -301,8 +301,8 @@ export const Stamps = ({
           await axios.post("/api/supabase/insert", {
             table: "authorized_dapps",
             body: {
-              dapp_id: 22,
-              dapp_and_stamp_id: `22 ${data?.[0]?.id}`,
+              dapp_id: process.env.NEXT_PUBLIC_DAPP_ID,
+              dapp_and_stamp_id: `${process.env.NEXT_PUBLIC_DAPP_ID} ${data?.[0]?.id}`,
               stamp_id: data?.[0]?.id,
               can_read: true,
               can_update: true,
@@ -358,8 +358,8 @@ export const Stamps = ({
           await axios.post("/api/supabase/insert", {
             table: "authorized_dapps",
             body: {
-              dapp_id: 22,
-              dapp_and_stamp_id: `22 ${data?.[0]?.id}`,
+              dapp_id: process.env.NEXT_PUBLIC_DAPP_ID,
+              dapp_and_stamp_id: `${process.env.NEXT_PUBLIC_DAPP_ID} ${data?.[0]?.id}`,
               stamp_id: data?.[0]?.id,
               can_read: true,
               can_update: true,
@@ -401,8 +401,8 @@ export const Stamps = ({
           await axios.post("/api/supabase/insert", {
             table: "authorized_dapps",
             body: {
-              dapp_id: 22,
-              dapp_and_stamp_id: `22 ${evmData?.[0]?.id}`,
+              dapp_id: process.env.NEXT_PUBLIC_DAPP_ID,
+              dapp_and_stamp_id: `${process.env.NEXT_PUBLIC_DAPP_ID} ${evmData?.[0]?.id}`,
               stamp_id: evmData?.[0]?.id,
               can_read: true,
               can_update: true,
@@ -546,8 +546,8 @@ export const Stamps = ({
             await axios.post("/api/supabase/insert", {
               table: "authorized_dapps",
               body: {
-                dapp_id: 22,
-                dapp_and_stamp_id: `22 ${data?.[0]?.id}`,
+                dapp_id: process.env.NEXT_PUBLIC_DAPP_ID,
+                dapp_and_stamp_id: `${process.env.NEXT_PUBLIC_DAPP_ID} ${data?.[0]?.id}`,
                 stamp_id: data?.[0]?.id,
                 can_read: true,
                 can_update: true,
@@ -672,8 +672,8 @@ export const Stamps = ({
             await axios.post("/api/supabase/insert", {
               table: "authorized_dapps",
               body: {
-                dapp_id: 22,
-                dapp_and_stamp_id: `22 ${data_iah?.[0]?.id}`,
+                dapp_id: process.env.NEXT_PUBLIC_DAPP_ID,
+                dapp_and_stamp_id: `${process.env.NEXT_PUBLIC_DAPP_ID} ${data_iah?.[0]?.id}`,
                 stamp_id: data_iah?.[0]?.id,
                 can_read: true,
                 can_update: true,
@@ -687,8 +687,8 @@ export const Stamps = ({
           await axios.post("/api/supabase/insert", {
             table: "authorized_dapps",
             body: {
-              dapp_id: 22,
-              dapp_and_stamp_id: `22 ${data?.[0]?.id}`,
+              dapp_id: process.env.NEXT_PUBLIC_DAPP_ID,
+              dapp_and_stamp_id: `${process.env.NEXT_PUBLIC_DAPP_ID} ${data?.[0]?.id}`,
               stamp_id: data?.[0]?.id,
               can_read: true,
               can_update: true,
@@ -721,7 +721,7 @@ export const Stamps = ({
       (item: any) => item.stamptype === stamp_type
     )[0]
     await axios.post("/api/supabase/delete", {
-      match: { dapp_id: 22, stamp_id: id },
+      match: { dapp_id: process.env.NEXT_PUBLIC_DAPP_ID, stamp_id: id },
       table: "authorized_dapps",
     })
     await axios.post("/api/supabase/delete", {
@@ -932,7 +932,7 @@ export const Stamps = ({
                       className="bg-white text-black"
                       style={{ width: "200px" }}
                     >
-                      Solana Connected
+                      Verified Stamp
                     </Button>
                   </div>
                 </div>

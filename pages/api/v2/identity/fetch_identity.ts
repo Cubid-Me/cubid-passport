@@ -48,7 +48,10 @@ const fetchAllowUid = async (req: any, res: any) => {
     return switchedObj
   }
 
-  const stampsToSend = stampData
+  const { data: stamp_perms } = await supabase.from("dapp_stamptypes").select("*").match({ dappId })
+  const allStampIds = stamp_perms?.map((item) => item.stamptype_id)
+
+  const stampsToSend = stampData?.filter((_) => stamp_perms?.includes(_.stamptype))
 
   res.send({
     error,

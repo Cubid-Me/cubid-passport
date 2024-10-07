@@ -47,8 +47,8 @@ export default async function handler(
   console.log({ evmData, evmError })
   if (evmData?.[0]?.id) {
     await supabase.from("authorized_dapps").insert({
-      dapp_id: 22,
-      dapp_and_stamp_id: `22 ${evmData?.[0]?.id}`,
+      dapp_id: process.env.NEXT_PUBLIC_DAPP_ID,
+      dapp_and_stamp_id: `${process.env.NEXT_PUBLIC_DAPP_ID} ${evmData?.[0]?.id}`,
       stamp_id: evmData?.[0]?.id,
       can_read: true,
       can_update: true,

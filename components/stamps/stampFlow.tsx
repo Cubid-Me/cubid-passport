@@ -352,8 +352,8 @@ export const Stamps = ({
           await axios.post("/api/supabase/insert", {
             table: "authorized_dapps",
             body: {
-              dapp_id: 22,
-              dapp_and_stamp_id: `22 ${data?.[0]?.id}`,
+              dapp_id: process.env.NEXT_PUBLIC_DAPP_ID,
+              dapp_and_stamp_id: `${process.env.NEXT_PUBLIC_DAPP_ID} ${data?.[0]?.id}`,
               stamp_id: data?.[0]?.id,
               can_read: true,
               can_update: true,
@@ -423,8 +423,8 @@ export const Stamps = ({
           await axios.post("/api/supabase/insert", {
             table: "authorized_dapps",
             body: {
-              dapp_id: 22,
-              dapp_and_stamp_id: `22 ${data?.[0]?.id}`,
+              dapp_id: process.env.NEXT_PUBLIC_DAPP_ID,
+              dapp_and_stamp_id: `${process.env.NEXT_PUBLIC_DAPP_ID} ${data?.[0]?.id}`,
               stamp_id: data?.[0]?.id,
               can_read: true,
               can_update: true,
@@ -489,8 +489,8 @@ export const Stamps = ({
         await axios.post("/api/supabase/insert", {
           table: "authorized_dapps",
           body: {
-            dapp_id: 22,
-            dapp_and_stamp_id: `22 ${data?.[0]?.id}`,
+            dapp_id: process.env.NEXT_PUBLIC_DAPP_ID,
+            dapp_and_stamp_id: `${process.env.NEXT_PUBLIC_DAPP_ID} ${data?.[0]?.id}`,
             stamp_id: data?.[0]?.id,
             can_read: true,
             can_update: true,
