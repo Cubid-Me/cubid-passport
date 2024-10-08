@@ -10,7 +10,7 @@ import { useSelector } from "react-redux"
 import { toast } from "react-toastify"
 import { useAccount, useConnect, useDisconnect } from "wagmi"
 import Web3 from "web3"
-import { useWallet as useSolanaWallet, useConnection as useSolanaConnection } from "@solana/wallet-adapter-react";
+import { useWallet as useSolanaWallet, useConnection as useSolanaConnection, useConnection } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 
 import { useStamps } from "../../../hooks/useStamps"
@@ -117,6 +117,7 @@ export const stampsWithId = {
   fractal: 17,
   evm: 14,
   email: 13,
+  solana: 53
 }
 
 export const Stamps = ({
@@ -262,12 +263,12 @@ export const Stamps = ({
     [disconnect, fetchStampData, fetchUserData, getIdForApp, uuid]
   )
 
-  const { publicKey, } = useSolanaWallet()
-  console.log({ publicKey: publicKey?.toString() }, 'sol pub key')
+  const { publicKey, connected: solConnected } = useSolanaWallet()
+  console.log({ publicKey: publicKey?.toString(), solConnected }, 'sol pub key')
 
   useEffect(() => {
     (async () => {
-      if (!doesStampExist(stampsWithId["solana"]) && publicKey?.toString()) {
+      if (!doesStampExist(stampsWithId["solana"]) && solConnected) {
         const dbUser = await getUser()
         const string_publicKey = publicKey?.toString()
         const database = {
@@ -311,11 +312,12 @@ export const Stamps = ({
           })
         }
         fetchUserData()
+        refreshUser()
         fetchStampData()
       }
     })()
 
-  }, [publicKey])
+  }, [publicKey, solConnected])
 
   const connectToWeb3Node = useCallback(
     async (address: string) => {

@@ -49,8 +49,8 @@ export default async function handler(
     optionsSuccessStatus: 200,
   })
   log("CORS setup completed", 34)
-
-  const { dapp_id, apikey, ...userIdentifiers } = req.body
+  console.log(req.body, typeof req.body)
+  const { dapp_id, apikey, ...userIdentifiers } = typeof req.body === "string" ? JSON.parse(req.body) : req.body
 
   if (!apikey || !dapp_id) {
     log("Missing required parameters", 37)
@@ -81,7 +81,7 @@ export default async function handler(
     .from("dapps")
     .select("*")
     .match({ apikey })
-  const dappId = dataForApp?.[0]?.id
+  const dappId = dataForApp?.find((item) => item.apikey === apikey)?.id
   if (!dappId) {
     log("Invalid API key or dapp_id", 50)
     return res.status(400).json({ error: "Invalid API key or dapp_id" })
