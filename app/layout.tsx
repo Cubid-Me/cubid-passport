@@ -62,16 +62,18 @@ export default function RootLayout(props: any) {
       if (
         localStorage.getItem("allow-uuid") &&
         !window?.location?.href?.contains?.("/allow") &&
-        !window?.location?.href?.contains?.("/pii") && 
+        !window?.location?.href?.contains?.("/pii") &&
         !window?.location?.href?.contains?.("/uid=")
       ) {
         const queryStringURL = removeQueryParam(window.location.href, "uid")
         push(
           `${window.location.origin}/allow?uid=${localStorage.getItem(
             "allow-uuid"
-          )}&page_id=${localStorage.getItem(
+          )}&${Boolean(localStorage.getItem(
             "page_id"
-          )}&${queryStringURL}`
+          )) ? `page_id=${localStorage.getItem(
+            "page_id"
+          )}&` : ''}${queryStringURL}`
         )
         localStorage.removeItem("allow-uuid")
         localStorage.removeItem("page_id")
