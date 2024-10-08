@@ -31,7 +31,6 @@ const rough_location = async (req: any, res: any) => {
     .select("*,users:user_id(*),dapps:dapp_id(*)")
     .match({
       uuid: user_id,
-      dapp_id: dappId,
     })
 
   const {

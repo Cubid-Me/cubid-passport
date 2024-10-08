@@ -14,7 +14,7 @@ export default async function handler(req: any, res: any) {
         methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
         origin: "*", // Allow all origins
         optionsSuccessStatus: 200,
-      })
+    })
     const { apikey, user_id } = typeof req.body === "string" ? JSON.parse(req.body) : req.body
     const { data: dataForApp } = await supabase
         .from("dapps")
@@ -30,11 +30,10 @@ export default async function handler(req: any, res: any) {
         .select("*,users:user_id(*),dapps:dapp_id(*)")
         .match({
             uuid: user_id,
-            dapp_id: dappId,
         })
 
     const {
-        users: { address, cubid_country, cubid_postalcode, nickname },
+        users: { address = "", cubid_country = "", cubid_postalcode = "", nickname = "" },
     } = dapp_users?.[0]
 
     const roundToTwoDecimals = (number: number) => {
