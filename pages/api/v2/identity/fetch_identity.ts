@@ -14,9 +14,8 @@ const fetchAllowUid = async (req: any, res: any) => {
     origin: "*", // Allow all origins
     optionsSuccessStatus: 200, // Some legacy browsers choke on 204
   })
-  // const { apikey, user_id } = typeof req.body === "string" ? JSON.parse(req.body) : req.body
-  const apikey = 'bb345ead-ee52-4a83-ab4d-6958ae6fe622'
-  const user_id = 'b1b65cb4-a462-40ad-a6d1-f188fc381209'
+  const { apikey, user_id } = typeof req.body === "string" ? JSON.parse(req.body) : req.body
+
   const { data: dataForApp } = await supabase
     .from("dapps")
     .select("*")
