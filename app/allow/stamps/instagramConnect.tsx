@@ -133,6 +133,8 @@ export const InstagramConnect = ({
           router.push(
             `${window.location.origin}/allow?uid=${localStorage.getItem(
               "allow-uuid"
+            )}&page_id=${localStorage.getItem(
+              "page_id"
             )}`
           )
         }

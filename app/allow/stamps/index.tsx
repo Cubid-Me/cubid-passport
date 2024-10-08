@@ -246,7 +246,7 @@ export const Stamps = ({
             table: "authorized_dapps",
             body: {
               dapp_id: process.env.NEXT_PUBLIC_DAPP_ID,
-              dapp_and_stamp_id: `${process.env.NEXT_PUBLIC_DAPP_ID} ${evmData?.[0]?.id}`,
+              dapp_and_stamp_id: `${evmData?.[0]?.id}`,
               stamp_id: evmData?.[0]?.id,
               can_read: true,
               can_update: true,

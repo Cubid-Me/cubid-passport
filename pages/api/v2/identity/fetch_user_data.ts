@@ -9,13 +9,12 @@ import { supabase } from "../../utils/supabase"
 const log = (message: any, lineNumber: any) => {
     console.log(`Line ${lineNumber}: ${message}`)
 }
-const rough_location = async (req: any, res: any) => {
+export default async function handler(req: any, res: any) {
     await NextCors(req, res, {
-        // Options
         methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
         origin: "*", // Allow all origins
-        optionsSuccessStatus: 200, // Some legacy browsers choke on 204
-    })
+        optionsSuccessStatus: 200,
+      })
     const { apikey, user_id } = typeof req.body === "string" ? JSON.parse(req.body) : req.body
     const { data: dataForApp } = await supabase
         .from("dapps")
@@ -82,5 +81,3 @@ const rough_location = async (req: any, res: any) => {
         error,
     })
 }
-
-export default rough_location

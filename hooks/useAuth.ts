@@ -83,7 +83,7 @@ export const useAuth = (appHookProps: hookProps) => {
           uid: searchParams.get("uid"),
           page_id: searchParams.get("page_id")
         })
-        return data?.dapp_users[0].users
+        return { ...data?.dapp_users[0].users, ...data }
       }
 
     }
