@@ -56,7 +56,10 @@ const AllowPage = () => {
     if (colormode) {
       setTheme(colormode)
     }
-  }, [uuid, setTheme, colormode])
+    if (page_id) {
+      localStorage.setItem("page_id", page_id)
+    }
+  }, [uuid, setTheme, colormode, page_id])
 
   const fetchAllStamps = useCallback(async (userId: any) => {
     const {
