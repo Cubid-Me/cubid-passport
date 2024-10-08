@@ -244,7 +244,7 @@ const AllowPage = () => {
                       <>
                         {console.log({ userUidData })}
                         <a
-                          href={`${userUidData?.stampsToSend?.[0]?.dapps?.redirect_url}?status=success`}
+                          href={`${userUidData?.page_data?.redirect_url}?status=success`}
                           onClick={() => {
                             localStorage.clear()
                           }}
