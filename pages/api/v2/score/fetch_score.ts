@@ -1,13 +1,13 @@
 import NextCors from "nextjs-cors"
 import { supabase } from "../../utils/supabase"
 
-const log = (message:any, lineNumber:any) => {
+const log = (message: any, lineNumber: any) => {
   console.log(`Line ${lineNumber}: ${message}`);
 }
 
-const fetchAllowUid = async (req, res) => {
+const fetchAllowUid = async (req: any, res: any) => {
   log("Handler invoked", 7);
-  
+
   await NextCors(req, res, {
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
     origin: "*", // Allow all origins
@@ -27,7 +27,7 @@ const fetchAllowUid = async (req, res) => {
     log(`Error fetching dapps data: ${appError.message}`, 21);
     return res.status(500).json({ error: "Error fetching dapps data" });
   }
-  
+
   log(`Data fetched for dapps: ${JSON.stringify(dataForApp)}`, 23);
 
   const dappId = dataForApp?.[0]?.id;
