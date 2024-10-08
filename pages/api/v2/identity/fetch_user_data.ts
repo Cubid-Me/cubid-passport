@@ -16,7 +16,7 @@ const rough_location = async (req: any, res: any) => {
         origin: "*", // Allow all origins
         optionsSuccessStatus: 200, // Some legacy browsers choke on 204
     })
-    const { apikey, user_id } = req.body
+    const { apikey, user_id } = typeof req.body === "string" ? JSON.parse(req.body) : req.body
     const { data: dataForApp } = await supabase
         .from("dapps")
         .select("*")
