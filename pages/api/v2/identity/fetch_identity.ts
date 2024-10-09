@@ -7,7 +7,7 @@ import { supabase } from "../../utils/supabase"
 const log = (message: any, lineNumber: any) => {
   console.log(`Line ${lineNumber}: ${message}`)
 }
-export default async function handler (req: any, res: any)  {
+export default async function handler(req: any, res: any) {
   await NextCors(req, res, {
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
     origin: "*", // Allow all origins
@@ -28,7 +28,7 @@ export default async function handler (req: any, res: any)  {
     .from("dapp_users")
     .select("*,users:user_id(*),dapps:dapp_id(*)")
     .match({
-      dapp_id: dappId,
+      uuid: user_id,
     })
   const { error, data: stampData } = await supabase
     .from("stamps")
@@ -47,14 +47,14 @@ export default async function handler (req: any, res: any)  {
   }
 
   const { data: stamp_perms } = await supabase.from("dapp_stamptypes").select("*").match({ dapp_id: 46 })
-  const allStampIds = [...stamp_perms?.map((item) => item.stamptype_id),13]
+  const allStampIds = [...stamp_perms?.map((item) => item.stamptype_id), 13]
 
   const stampsToSend = stampData?.filter((_) => allStampIds?.includes(_.stamptype))
 
   res.send({
     error,
     stamp_details: stampsToSend?.map((item) => ({
-      value: item.uniquevalue,
+      value: item?.identity ?? item.uniquevalue,
       stamp_type: switchKeyValue(stampsWithId)[item.stamptype],
       status: item.is_valid ? "Verified" : "Unverified",
     })),
