@@ -28,7 +28,6 @@ export default async function handler (req: any, res: any)  {
     .from("dapp_users")
     .select("*,users:user_id(*),dapps:dapp_id(*)")
     .match({
-      uuid: user_id,
       dapp_id: dappId,
     })
   const { error, data: stampData } = await supabase

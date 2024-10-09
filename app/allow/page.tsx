@@ -13,28 +13,12 @@ import { Sheet } from "lucide-react"
 import { useTheme } from "next-themes"
 import { WagmiConfig } from "wagmi"
 import { arbitrum, mainnet } from "wagmi/chains"
-
-import { SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
-import { stampsWithId } from "@/components/stamps"
+import { useSelectStampPerm } from '../../lib/insert_stamp_perm'
 
 import { Stamps } from "./stamps"
 import { OptionalInfo } from "./steps/optional_info"
 import { RequiredInfo } from "./steps/required_info"
 import { Score } from "./steps/score"
-
-const dataToTransform = (stampToShare: string[], userState: []) => {
-  const dataToShare: any = {}
-  stampToShare.map((item: any) => {
-    const stamp_id = (stampsWithId as any)[item]
-    const stamp_object: any = userState?.filter(
-      (item: any) => item.stamptype == stamp_id
-    )?.[0]
-    if (stamp_object) {
-      dataToShare[item] = stamp_object?.uniquevalue
-    }
-  })
-  return dataToShare
-}
 
 const AllowPage = () => {
   const searchParams: any = useSearchParams()
@@ -47,6 +31,9 @@ const AllowPage = () => {
   const uuid = searchParams.get("uid")
   const page_id = searchParams.get("page_id")
   const colormode = searchParams.get("colormode")
+
+  const { allDappStampPerms, loading: selectStampLoading, insertStampDappPerm,stampInsertLoading } = useSelectStampPerm(uuid)
+
   const { setTheme } = useTheme()
 
   useEffect(() => {
@@ -176,7 +163,7 @@ const AllowPage = () => {
   return (
     <WagmiConfig config={wagmiConfig as any}>
 
-      {loading ? (
+      {loading || selectStampLoading ? (
         <>
           <div className="flex h-[100vh] w-[100vw] dark:bg-gray-900 items-center justify-center">
             <div className="w-[650px] rounded border border-gray-200 p-6 text-center dark:border-gray-800">
@@ -215,12 +202,18 @@ const AllowPage = () => {
                   <RequiredInfo
                     stampToAdd={stampToAdd}
                     stampsList={stampsList}
+                    allDappStampPerms={allDappStampPerms}
+                    insertStampDappPerm={insertStampDappPerm}
+                    selectStampLoading={stampInsertLoading}
                     setStampToAdd={setStampToAdd}
                     stamps={userUidData?.stampsToSend}
                   />
                   <OptionalInfo
                     stampToAdd={stampToAdd}
                     stampsList={stampsList}
+                    allDappStampPerms={allDappStampPerms}
+                    insertStampDappPerm={insertStampDappPerm}
+                    selectStampLoading={stampInsertLoading}
                     setStampToAdd={setStampToAdd}
                     stamps={userUidData?.stampsToSend}
                   />

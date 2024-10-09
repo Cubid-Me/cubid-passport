@@ -298,6 +298,7 @@ export const Stamps = ({
           table: "stamps",
           body: dataToSet,
         })
+        insertStampPerm(data?.[0]?.id, uuid)
         if (data?.[0]?.id) {
           await axios.post("/api/supabase/insert", {
             table: "authorized_dapps",
