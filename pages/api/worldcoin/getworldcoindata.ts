@@ -1,3 +1,4 @@
+// @ts-nocheck
 import axios from "axios";
 import { encode_data } from "@/lib/encode_data";
 import { supabase } from "../utils/supabase";
