@@ -13,6 +13,7 @@ export default async function handler(req: any, res: any) {
     data.append("code", code)
     data.append("grant_type", "authorization_code")
     data.append("redirect_uri", "https://passport.cubid.me/worldcoin")
+    data.append("client_id", process.env.WLD_CLIENT_ID ?? "")
 
     const { data: dta } = await axios.post(
       "https://id.worldcoin.org/token",

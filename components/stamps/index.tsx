@@ -1069,7 +1069,7 @@ export const Stamps = () => {
               <Button
                 onClick={() => {
                   window.location.href =
-                    "https://id.worldcoin.org/login?response_type=code&response_mode=query&client_id=app_541763ec208991dcb4232108de2f9553&redirect_uri=https%3A%2F%2Fpassport.cubid.me%2Fworldcoin&nonce=1715811606727&ready=true&scope=openid"
+                    "https://id.worldcoin.org/authorize?response_type=code&response_mode=query&client_id=app_541763ec208991dcb4232108de2f9553&redirect_uri=https://passport.cubid.me/worldcoin&ready=true&scope=openid"
                 }}
                 variant="secondary"
                 className="bg-blue-500 text-white"
