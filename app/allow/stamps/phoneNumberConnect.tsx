@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/sheet"
 
 import { stampsWithId } from "."
+import { insertStamp } from "@/lib/stampInsertion"
 
 export const PhoneNumberConnect = ({
   open,
@@ -54,50 +55,20 @@ export const PhoneNumberConnect = ({
     if (verify_data.status === "approved") {
       toast.success("Otp Verified")
       setOtpSent(true)
-
-      const stampId = stampsWithId.phone
-      const database = {
-        uniquehash: await encode_data(phoneInput),
-        stamptype: stampId,
-        created_by_user_id: dbUser?.id,
-        unencrypted_unique_data: phoneInput,
-        type_and_hash: `${stampId} ${await encode_data(phoneInput)}`,
-      }
-      const dataToSet = {
-        created_by_user_id: dbUser?.id,
-        created_by_app: await getIdForApp(),
-        stamptype: stampId,
-        uniquevalue: phoneInput,
-        user_id_and_uniqueval: `${dbUser?.id} ${stampId} ${phoneInput}`,
-        unique_hash: await encode_data(phoneInput),
-        stamp_json: { phonenumber: phoneInput },
-        type_and_uniquehash: `${stampId} ${await encode_data(phoneInput)}`,
-      }
-      await axios.post("/api/supabase/insert", {
-        table: "uniquestamps",
-        body: database,
-      })
-      const {
-        data: { error, data },
-      } = await axios.post("/api/supabase/insert", {
-        table: "stamps",
-        body: dataToSet,
-      })
-      insertStampPerm(data?.[0]?.id, uid)
-      if (data?.[0]?.id) {
-        await axios.post("/api/supabase/insert", {
-          table: "authorized_dapps",
-          body: {
-            dapp_id: process.env.NEXT_PUBLIC_DAPP_ID,
-            dapp_and_stamp_id: `${process.env.NEXT_PUBLIC_DAPP_ID} ${data?.[0]?.id}`,
-            stamp_id: data?.[0]?.id,
-            can_read: true,
-            can_update: true,
-            can_delete: true,
-          },
-        })
-      }
       onClose()
+      const stampId = stampsWithId.phone
+      console.log(dbUser)
+
+      await insertStamp({
+        stamp_type: 'phone',
+        user_data: { user_id: dbUser?.id, uuid: uid },
+        stampData: {
+          identity: phoneInput,
+          uniquevalue: phoneInput
+        },
+        app_id: await getIdForApp()
+      })
+
       fetchStamps()
       // fetchSocial()
     }

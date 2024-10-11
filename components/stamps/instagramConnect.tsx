@@ -15,6 +15,7 @@ import { wallet } from "@/app/layout"
 
 import { stampsWithId } from "."
 import { Button } from "../ui/button"
+import { insertStamp } from "@/lib/stampInsertion"
 
 const redirectUri = "https://passport.cubid.me/app/"
 
@@ -61,7 +62,7 @@ export const InstagramConnect = ({
 
   const fetchData = useCallback(
     async (code_fixes: string) => {
-      const {email} = await authData.getUser();
+      const { email } = await authData.getUser();
       console.log(email)
       if (typeof email === "string") {
         const {
@@ -73,51 +74,17 @@ export const InstagramConnect = ({
         })
         const allData: any = data
         if (user_id) {
-          const stampId = (stampsWithId as any)["instagram"]
           const dbUser = await authData.getUser()
+          await insertStamp({
+            stamp_type: 'instagram',
+            user_data: { user_id: dbUser?.id, uuid: "" },
+            stampData: {
+              identity: allData.username,
+              uniquevalue: allData.id,
+            },
+            app_id: await getIdForApp()
+          })
 
-          const database = {
-            uniquehash: await encode_data(allData.id),
-            stamptype: stampId,
-            created_by_user_id: dbUser?.id,
-            unencrypted_unique_data: allData.id,
-            type_and_hash: `${stampId} ${await encode_data(allData.id)}`,
-          }
-          const dataToSet: any = {
-            created_by_user_id: dbUser?.id,
-            created_by_app: await getIdForApp(),
-            stamptype: stampId,
-            uniquevalue: allData.id,
-            user_id_and_uniqueval: `${dbUser?.id} ${stampId} ${allData.id}`,
-            unique_hash: await encode_data(allData.id),
-            stamp_json: allData as any,
-            type_and_uniquehash: `${stampId} ${await encode_data(
-              allData.username
-            )}`,
-          }
-          await axios.post("/api/supabase/insert", {
-            table: "uniquestamps",
-            body: database,
-          })
-          const {
-            data: { error, data },
-          } = await axios.post("/api/supabase/insert", {
-            table: "stamps",
-            body: dataToSet,
-          })
-          if (data?.[0]?.id) {
-            await axios.post("/api/supabase/insert", {
-              table: "authorized_dapps",
-              body: {
-                dapp_id: process.env.NEXT_PUBLIC_DAPP_ID,
-                dapp_and_stamp_id: `${process.env.NEXT_PUBLIC_DAPP_ID} ${data?.[0]?.id}`,
-                stamp_id: data?.[0]?.id,
-                can_read: true,
-                can_update: true,
-                can_delete: true,
-              },
-            })
-          }
           fetchStamps()
         }
       }
@@ -125,7 +92,7 @@ export const InstagramConnect = ({
     [authData, fetchStamps, getIdForApp]
   )
   useEffect(() => {
-    ;(async () => {
+    ; (async () => {
       const code = searchParams?.get("code")
 
       if (code) {

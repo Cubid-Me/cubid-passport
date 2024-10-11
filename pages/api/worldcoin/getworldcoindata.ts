@@ -2,6 +2,7 @@
 import axios from "axios";
 import { encode_data } from "@/lib/encode_data";
 import { supabase } from "../utils/supabase";
+import { insertStamp } from "@/lib/stampInsertion";
 
 export default async function handler(req, res) {
   const { code, userid } = req.body;
@@ -27,7 +28,7 @@ export default async function handler(req, res) {
         },
       }
     );
-    
+
     const { access_token, ...all_data } = dta;
     console.log("Token received from Worldcoin:", { access_token, ...all_data });
 
@@ -43,54 +44,15 @@ export default async function handler(req, res) {
 
     const stampId = 26;
     const dbUser = userid;
-    const database = {
-      uniquehash: await encode_data(user_data.sub),
-      stamptype: stampId,
-      created_by_user_id: userid,
-      unencrypted_unique_data: JSON.stringify(user_data),
-      type_and_hash: `${stampId} ${await encode_data(user_data.sub)}`,
-    };
-    const dataToSet = {
-      created_by_user_id: userid,
-      created_by_app: process.env.NEXT_PUBLIC_DAPP_ID,
-      stamptype: stampId,
-      uniquevalue: user_data.sub,
-      user_id_and_uniqueval: `${userid} ${stampId} ${user_data.sub}`,
-      unique_hash: await encode_data(user_data?.sub),
-      stamp_json: { user_data },
-      type_and_uniquehash: `${stampId} ${await encode_data(user_data.sub)}`,
-    };
-    
-    console.log("Inserting data into uniquestamps table.");
-    await supabase.from("uniquestamps").insert({
-      ...database,
-    });
-
-    console.log("Inserting data into stamps table.");
-    const { error, data: stampData } = await supabase
-      .from("stamps")
-      .insert({
-        ...dataToSet,
-      })
-      .select("*");
-
-    if (error) {
-      console.error("Error inserting data into stamps table:", error);
-      throw error;
-    }
-
-    if (stampData?.[0]?.id) {
-      console.log("Stamp inserted with ID:", stampData[0].id);
-      await supabase.from("authorized_dapps").insert({
-        dapp_id: process.env.NEXT_PUBLIC_DAPP_ID,
-        dapp_and_stamp_id: `${process.env.NEXT_PUBLIC_DAPP_ID} ${stampData?.[0]?.id}`,
-        stamp_id: stampData?.[0]?.id,
-        can_read: true,
-        can_update: true,
-        can_delete: true,
-      });
-      console.log("Data inserted into authorized_dapps table.");
-    }
+    await insertStamp({
+      stamp_type: 'worldcoin',
+      user_data: { user_id: userid, uuid: '' },
+      stampData: {
+        identity: user_data.sub,
+        uniquevalue: user_data.sub,
+      },
+      app_id: process.env.NEXT_PUBLIC_DAPP_ID,
+    })
 
     res.send({ user_data });
     console.log("Response sent successfully.");

@@ -53,7 +53,7 @@ export default async function handler(
   const dapp_id = dataForApp?.[0]?.id
   log(`Request body: ${JSON.stringify(req.body)}`, 37)
 
-  let uniqueValue =  phone || email
+  let uniqueValue = phone || email
   if (!uniqueValue) {
     log("No valid identifier provided", 40)
     return res.status(400).json({ error: "No valid identifier provided" })
@@ -146,8 +146,10 @@ export default async function handler(
         unique_hash: cyrb53(uniqueValue),
         stamp_json: { [phone ? "phone" : "email"]: uniqueValue },
         type_and_uniquehash: `${stampIdToAssign} ${cyrb53(uniqueValue)}`,
+        identity: email
       })
       .select("*")
+
     log(
       `New stamp created: ${JSON.stringify(newStamp)}, Error: ${newStampError}`,
       111

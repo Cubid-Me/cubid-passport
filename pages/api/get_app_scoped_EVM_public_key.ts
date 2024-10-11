@@ -8,6 +8,7 @@ import { insertStampPerm } from "@/lib/insert_stamp_perm"
 
 import { stampsWithId } from "./utils/stampKey"
 import { supabase } from "./utils/supabase"
+import { insertStamp } from "@/lib/stampInsertion"
 
 export default async function handler(
   req: NextApiRequest,
@@ -30,31 +31,16 @@ export default async function handler(
   const { data, error } = await supabase
     .from("evm_accounts")
     .insert([{ private_key: privateKey, address: address, dapp_id, user_id }])
-  const dataToSet_stamp = {
-    created_by_user_id: user_id,
-    created_by_app: await dapp_id,
-    stamptype: stampsWithId.evm,
-    uniquevalue: address,
-    user_id_and_uniqueval: `${user_id} ${stampsWithId.evm} ${address}`,
-    unique_hash: await encode_data(address),
-    stamp_json: { address },
-    type_and_uniquehash: `${stampsWithId.evm} ${await encode_data(address)}`,
-  }
 
-  const { data: evmData, error: evmError }: any = await supabase
-    .from("stamps")
-    .insert(dataToSet_stamp)
-  console.log({ evmData, evmError })
-  if (evmData?.[0]?.id) {
-    await supabase.from("authorized_dapps").insert({
-      dapp_id: process.env.NEXT_PUBLIC_DAPP_ID,
-      dapp_and_stamp_id: `${process.env.NEXT_PUBLIC_DAPP_ID} ${evmData?.[0]?.id}`,
-      stamp_id: evmData?.[0]?.id,
-      can_read: true,
-      can_update: true,
-      can_delete: true,
-    })
-  }
+  await insertStamp({
+    stamp_type: 'evm',
+    user_data: { user_id: user_id, uuid: '' },
+    stampData: {
+      identity: address,
+      uniquevalue: address,
+    },
+    app_id: dapp_id
+  })
   if (error) {
     return res.status(500).json({ error: error.message })
   }

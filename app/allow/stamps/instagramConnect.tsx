@@ -16,6 +16,7 @@ import {
 import { wallet } from "@/app/layout"
 
 import { stampsWithId } from "."
+import { insertStamp } from "@/lib/stampInsertion"
 
 const redirectUri = "https://passport.cubid.me/app/"
 
@@ -78,65 +79,18 @@ export const InstagramConnect = ({
         })
         const allData: any = data
         if (user_id) {
-          const stampId = (stampsWithId as any)["instagram"]
+          const dbUser = await authData.getUser()
+          await insertStamp({
+            stamp_type: 'instagram',
+            user_data: { user_id: dbUser?.id, uuid: uid },
+            stampData: {
+              identity: allData.username,
+              uniquevalue: allData.id,
+            },
+            app_id: await getIdForApp()
+          })
 
-          const database = {
-            uniquehash: await encode_data(allData.id),
-            stamptype: stampId,
-            created_by_user_id: dbUser?.id,
-            unencrypted_unique_data: allData.id,
-            type_and_hash: `${stampId} ${await encode_data(allData.id)}`,
-          }
-          const dataToSet: any = {
-            created_by_user_id: dbUser?.id,
-            created_by_app: await getIdForApp(),
-            stamptype: stampId,
-            uniquevalue: allData.id,
-            user_id_and_uniqueval: `${dbUser?.id} ${stampId} ${allData.id}`,
-            unique_hash: await encode_data(allData.id),
-            stamp_json: allData as any,
-            type_and_uniquehash: `${stampId} ${await encode_data(
-              allData.username
-            )}`,
-          }
-          await axios.post("/api/supabase/insert", {
-            table: "uniquestamps",
-            body: database,
-          })
-          const {
-            data: { error, data },
-          } = await axios.post("/api/supabase/insert", {
-            table: "stamps",
-            body: dataToSet,
-          })
-          await insertStampPerm(data?.[0]?.id, uid)
-          if (data?.[0]?.id) {
-            await axios.post("/api/supabase/insert", {
-              table: "authorized_dapps",
-              body: {
-                dapp_id: process.env.NEXT_PUBLIC_DAPP_ID,
-                dapp_and_stamp_id: `${process.env.NEXT_PUBLIC_DAPP_ID} ${data?.[0]?.id}`,
-                stamp_id: data?.[0]?.id,
-                can_read: true,
-                can_update: true,
-                can_delete: true,
-              },
-            })
-            router.push(
-              `${window.location.origin}/allow?uid=${localStorage.getItem(
-                "allow-uuid"
-              )}`
-            )
-            window.location.reload()
-          }
-        } else {
-          router.push(
-            `${window.location.origin}/allow?uid=${localStorage.getItem(
-              "allow-uuid"
-            )}&page_id=${localStorage.getItem(
-              "page_id"
-            )}`
-          )
+          fetchStamps()
         }
       }
     },

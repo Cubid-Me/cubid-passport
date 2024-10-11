@@ -4,6 +4,7 @@ import axios from "axios"
 import { Contract, KeyPair, connect, keyStores, utils } from "near-api-js"
 
 import { supabase } from "./utils/supabase"
+import { insertStamp } from "@/lib/stampInsertion"
 
 function generateRandomString() {
   // Define the characters that can be in the string
@@ -120,34 +121,17 @@ export default async function handler(
       owner_id: userId,
       query_data: data_near,
     })
-    const database = {
-      uniquehash: await encode_data(`${accountToCreate}.near`),
-      stamptype: 15,
-      created_by_user_id: userId,
-      unencrypted_unique_data: `${accountToCreate}.near`,
-      type_and_hash: `15 ${await encode_data(`${accountToCreate}.near`)}`,
-    }
-    const dataToSet = {
-      created_by_user_id: userId,
-      created_by_app: 22,
-      stamptype: 15,
-      uniquevalue: `${accountToCreate}.near`,
-      unique_hash: await encode_data(`${accountToCreate}.near`),
-      stamp_json: data_near,
-      type_and_uniquehash: `15 ${await encode_data(`${accountToCreate}.near`)}`,
-    }
-    await supabase.from("uniquestamps").insert(database)
-    const { data }: any = await supabase.from("stamps").insert(dataToSet)
-    if (data?.[0]?.id) {
-      await supabase.from("authorized_dapps").insert({
-        dapp_id: process.env.NEXT_PUBLIC_DAPP_ID,
-        dapp_and_stamp_id: `${process.env.NEXT_PUBLIC_DAPP_ID} ${data?.[0]?.id}`,
-        stamp_id: data?.[0]?.id,
-        can_read: true,
-        can_update: true,
-        can_delete: true,
-      })
-    }
+
+    await insertStamp({
+      stamp_type: 'near',
+      user_data: { user_id: userId, uuid: '' },
+      stampData: {
+        identity: `${accountToCreate}.near`,
+        uniquevalue: `${accountToCreate}.near`,
+      },
+      app_id: parseInt(process.env.NEXT_PUBLIC_DAPP_ID ?? ""),
+    })
+
     res.status(200).json(data_near)
   } catch (err) {
     console.log(err)

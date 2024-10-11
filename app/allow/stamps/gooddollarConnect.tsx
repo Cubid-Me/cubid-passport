@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/sheet"
 import { useCreatedByAppId } from "@/hooks/useCreatedByApp"
 import { insertStampPerm } from "@/lib/insert_stamp_perm"
+import { insertStamp } from "@/lib/stampInsertion"
 
 const nodeUrl = "https://forno.celo.org"
 const goodDollarAddress = "0xC361A6E67822a0EDc17D899227dd9FC50BD62F42" // replace with GoodDollar contract address
@@ -123,7 +124,7 @@ export const GooddollarConnect = ({
 
   useEffect(() => {
     if (!localStorage.getItem("gooddollar_connect_flow")) {
-      ;(async () => {
+      ; (async () => {
         const params = window.location.href?.split("?")
         const userData = await getUser()
         if (params[1]?.includes("gooddollardata") && userData?.email) {
@@ -136,60 +137,25 @@ export const GooddollarConnect = ({
             wallet_data: data,
           }
           const dbUser = await getUser()
-          const database = {
-            uniquehash: await encode_data(gooddollar_data["wallet-address"]),
-            stamptype: 12,
-            created_by_user_id: dbUser?.id,
-            unencrypted_unique_data: gooddollar_data["wallet-address"],
-            type_and_hash: `12 ${await encode_data(
-              gooddollar_data["wallet-address"]
-            )}`,
-          }
-          const dataToSet = {
-            created_by_user_id: dbUser?.id,
-            created_by_app:await getIdForApp(),
-            stamptype: 12,
-            uniquevalue: gooddollar_data["wallet-address"],
-            unique_hash: await encode_data(gooddollar_data["wallet-address"]),
-            stamp_json: gooddollar_data,
-            type_and_uniquehash: `12 ${await encode_data(
-              gooddollar_data["wallet-address"]
-            )}`,
-          }
-          const {
-            data: { error: uniquestampsError },
-          } = await axios.post("/api/supabase/insert", {
-            table: "uniquestamps",
-            body: database,
+
+          await insertStamp({
+            stamp_type: 'gooddollar',
+            user_data: { user_id: dbUser?.id, uuid: uid },
+            stampData: {
+              identity: gooddollar_data["wallet-address"],
+              uniquevalue: gooddollar_data["wallet-address"],
+              ...gooddollar_data
+            },
+            app_id: await getIdForApp()
           })
-          if (!uniquestampsError) {
-            const {
-              data: { error, data: stampData },
-            } = await axios.post("/api/supabase/insert", {
-              table: "stamps",
-              body: dataToSet,
-            })
-            insertStampPerm(stampData?.[0]?.id,uid)
-            if (stampData?.[0]?.id) {
-              await axios.post("/api/supabase/insert", {
-                table: "authorized_dapps",
-                body: {
-                  dapp_id: process.env.NEXT_PUBLIC_DAPP_ID,
-                  dapp_and_stamp_id: `${process.env.NEXT_PUBLIC_DAPP_ID} ${stampData?.[0]?.id}`,
-                  stamp_id: stampData?.[0]?.id,
-                  can_read: true,
-                  can_update: true,
-                  can_delete: true,
-                },
-              })
-            }
+      
             toast.success("Successfully authenticated with gooddollar data")
             fetchStamps()
             setTimeout(() => {
               window.history.replaceState(null, "", "/app")
             }, 1500)
           }
-        }
+        
       })()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

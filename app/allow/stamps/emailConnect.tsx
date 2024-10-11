@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/sheet"
 
 import { stampsWithId } from "."
+import { insertStamp } from "@/lib/stampInsertion"
 
 export const EmailConnect = ({
   open,
@@ -56,37 +57,15 @@ export const EmailConnect = ({
       toast.success("Otp Verified")
       setOtpSent(true)
 
-      const stampId = stampsWithId.email
-      const dataToSet = {
-        created_by_user_id: dbUser?.id,
-        created_by_app: await getIdForApp(),
-        stamptype: stampId,
-        uniquevalue: emailInput,
-        user_id_and_uniqueval: `${dbUser?.id} ${stampId} ${emailInput}`,
-        unique_hash: await encode_data(emailInput),
-        stamp_json: { email: emailInput },
-        type_and_uniquehash: `${stampId} ${await encode_data(emailInput)}`,
-      }
-      const {
-        data: { error, data },
-      } = await axios.post("/api/supabase/insert", {
-        table: "stamps",
-        body: dataToSet,
+      await insertStamp({
+        stamp_type: 'email',
+        user_data: { user_id: dbUser?.id, uuid: uid },
+        stampData: {
+          identity: emailInput,
+          uniquevalue: emailInput
+        },
+        app_id: await getIdForApp()
       })
-      insertStampPerm(data?.[0]?.id, uid)
-      if (data?.[0]?.id) {
-        await axios.post("/api/supabase/insert", {
-          table: "authorized_dapps",
-          body: {
-            dapp_id: process.env.NEXT_PUBLIC_DAPP_ID,
-            dapp_and_stamp_id: `${process.env.NEXT_PUBLIC_DAPP_ID} ${data?.[0]?.id}`,
-            stamp_id: data?.[0]?.id,
-            can_read: true,
-            can_update: true,
-            can_delete: true,
-          },
-        })
-      }
       onClose()
       fetchStamps()
       // fetchSocial()

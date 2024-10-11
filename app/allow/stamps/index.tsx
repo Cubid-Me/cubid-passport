@@ -51,6 +51,7 @@ import { EmailConnect } from "./emailConnect"
 import { GooddollarConnect } from "./gooddollarConnect"
 import { InstagramConnect } from "./instagramConnect"
 import { PhoneNumberConnect } from "./phoneNumberConnect"
+import { insertStamp } from "@/lib/stampInsertion"
 
 const socialDataToMap = [
   {
@@ -222,38 +223,15 @@ export const Stamps = ({
       if (address) {
         const dbUser = await getUser()
         console.log({ dbUser })
-        const dataToSet_stamp = {
-          created_by_user_id: dbUser?.id,
-          created_by_app: await getIdForApp(),
-          stamptype: stampsWithId.evm,
-          uniquevalue: address,
-          user_id_and_uniqueval: `${dbUser?.id} ${stampsWithId.evm} ${address}`,
-          unique_hash: await encode_data(address),
-          stamp_json: { address },
-          type_and_uniquehash: `${stampsWithId.evm} ${await encode_data(
-            address
-          )}`,
-        }
-        const {
-          data: { data: evmData },
-        } = await axios.post("/api/supabase/insert", {
-          table: "stamps",
-          body: dataToSet_stamp,
+        insertStamp({
+          stamp_type: 'evm',
+          user_data: { user_id: dbUser?.id, uuid: uuid },
+          stampData: {
+            identity: address,
+            uniquevalue: address
+          },
+          app_id: await getIdForApp()
         })
-        insertStampPerm(evmData?.[0]?.id, uuid)
-        if (evmData?.[0]?.id) {
-          await axios.post("/api/supabase/insert", {
-            table: "authorized_dapps",
-            body: {
-              dapp_id: process.env.NEXT_PUBLIC_DAPP_ID,
-              dapp_and_stamp_id: `${evmData?.[0]?.id}`,
-              stamp_id: evmData?.[0]?.id,
-              can_read: true,
-              can_update: true,
-              can_delete: true,
-            },
-          })
-        }
       }
       disconnect()
       fetchUserData()
@@ -264,56 +242,23 @@ export const Stamps = ({
   )
 
   const { publicKey, connected: solConnected } = useSolanaWallet()
-  console.log({ publicKey: publicKey?.toString(), solConnected }, 'sol pub key')
+  console.log({ publicKey: publicKey?.toString() }, 'sol pub key')
 
   useEffect(() => {
     (async () => {
       if (!doesStampExist(stampsWithId["solana"]) && solConnected) {
         const dbUser = await getUser()
         const string_publicKey = publicKey?.toString()
-        const database = {
-          uniquehash: await encode_data(publicKey?.toString()),
-          stamptype: stampsWithId.solana,
-          created_by_user_id: dbUser?.id,
-          unencrypted_unique_data: publicKey.toJSON(),
-          type_and_hash: `${stampsWithId.solana} ${await encode_data(publicKey?.toString())}`,
-        }
-        const dataToSet = {
-          created_by_user_id: dbUser?.id,
-          created_by_app: await getIdForApp(),
-          stamptype: stampsWithId.solana,
-          uniquevalue: publicKey.toString(),
-          user_id_and_uniqueval: `${dbUser?.id} ${stampsWithId.solana} ${publicKey?.toString()}`,
-          unique_hash: await encode_data(publicKey?.toString()),
-          stamp_json: publicKey.toJSON(),
-          type_and_uniquehash: `${stampsWithId.solana} ${await encode_data(publicKey?.toString())}`,
-        }
-        await axios.post("/api/supabase/insert", {
-          table: "uniquestamps",
-          body: database,
+        await insertStamp({
+          stamp_type: 'solana',
+          user_data: { user_id: dbUser?.id, uuid: uuid },
+          stampData: {
+            identity: publicKey?.toString(),
+            uniquevalue: publicKey?.toString(),
+          },
+          app_id: await getIdForApp()
         })
-        const {
-          data: { error, data },
-        } = await axios.post("/api/supabase/insert", {
-          table: "stamps",
-          body: dataToSet,
-        })
-        insertStampPerm(data?.[0]?.id, uuid)
-        if (data?.[0]?.id) {
-          await axios.post("/api/supabase/insert", {
-            table: "authorized_dapps",
-            body: {
-              dapp_id: process.env.NEXT_PUBLIC_DAPP_ID,
-              dapp_and_stamp_id: `${process.env.NEXT_PUBLIC_DAPP_ID} ${data?.[0]?.id}`,
-              stamp_id: data?.[0]?.id,
-              can_read: true,
-              can_update: true,
-              can_delete: true,
-            },
-          })
-        }
         fetchUserData()
-        refreshUser()
         fetchStampData()
       }
     })()
@@ -328,91 +273,30 @@ export const Stamps = ({
           data: { stamps, scores },
         } = await axios.post("/api/gitcoin-passport-data", { address })
         const stampId = stampsWithId.gitcoin
+
         const dbUser = await getUser()
-        const database = {
-          uniquehash: await encode_data(address),
-          stamptype: stampId,
-          created_by_user_id: dbUser?.id,
-          unencrypted_unique_data: JSON.stringify(scores),
-          type_and_hash: `${stampId} ${await encode_data(address)}`,
-        }
-        const dataToSet = {
-          created_by_user_id: dbUser?.id,
-          created_by_app: await getIdForApp(),
-          stamptype: stampId,
-          uniquevalue: address,
-          user_id_and_uniqueval: `${dbUser?.id} ${stampId} ${address}`,
-          unique_hash: await encode_data(address),
-          stamp_json: { stamps, scores },
-          type_and_uniquehash: `${stampId} ${await encode_data(address)}`,
-        }
-        await axios.post("/api/supabase/insert", {
-          table: "uniquestamps",
-          body: database,
+
+        await insertStamp({
+          stamp_type: 'gitcoin',
+          user_data: { user_id: dbUser?.id, uuid: uuid },
+          stampData: {
+            identity: address,
+            uniquevalue: address,
+            stamps,
+            scores
+          },
+          app_id: await getIdForApp()
         })
-        const {
-          data: { error, data },
-        } = await axios.post("/api/supabase/insert", {
-          table: "stamps",
-          body: dataToSet,
+        await insertStamp({
+          stamp_type: 'evm',
+          user_data: { user_id: dbUser?.id, uuid: uuid },
+          stampData: {
+            identity: address,
+            uniquevalue: address,
+          },
+          app_id: await getIdForApp()
         })
-        insertStampPerm(data?.[0]?.id, uuid)
-        if (data?.[0]?.id) {
-          await axios.post("/api/supabase/insert", {
-            table: "authorized_dapps",
-            body: {
-              dapp_id: process.env.NEXT_PUBLIC_DAPP_ID,
-              dapp_and_stamp_id: `${process.env.NEXT_PUBLIC_DAPP_ID} ${data?.[0]?.id}`,
-              stamp_id: data?.[0]?.id,
-              can_read: true,
-              can_update: true,
-              can_delete: true,
-            },
-          })
-        }
-        const evm_stamp = {
-          uniquehash: await encode_data(address),
-          stamptype: stampsWithId.evm,
-          created_by_user_id: dbUser?.id,
-          unencrypted_unique_data: JSON.stringify(scores),
-          type_and_hash: `${stampsWithId.evm} ${await encode_data(address)}`,
-        }
-        const dataToSet_stamp = {
-          created_by_user_id: dbUser?.id,
-          created_by_app: await getIdForApp(),
-          stamptype: stampsWithId.evm,
-          uniquevalue: address,
-          user_id_and_uniqueval: `${dbUser?.id} ${stampsWithId.evm} ${address}`,
-          unique_hash: await encode_data(address),
-          stamp_json: { address },
-          type_and_uniquehash: `${stampsWithId.evm} ${await encode_data(
-            address
-          )}`,
-        }
-        await axios.post("/api/supabase/insert", {
-          table: "uniquestamps",
-          body: evm_stamp,
-        })
-        const {
-          data: { data: evmData },
-        } = await axios.post("/api/supabase/insert", {
-          table: "stamps",
-          body: dataToSet_stamp,
-        })
-        insertStampPerm(evmData?.[0]?.id, uuid)
-        if (evmData?.[0]?.id) {
-          await axios.post("/api/supabase/insert", {
-            table: "authorized_dapps",
-            body: {
-              dapp_id: process.env.NEXT_PUBLIC_DAPP_ID,
-              dapp_and_stamp_id: `${process.env.NEXT_PUBLIC_DAPP_ID} ${evmData?.[0]?.id}`,
-              stamp_id: evmData?.[0]?.id,
-              can_read: true,
-              can_update: true,
-              can_delete: true,
-            },
-          })
-        }
+
         disconnect()
         fetchUserData()
         fetchStampData()
@@ -474,21 +358,20 @@ export const Stamps = ({
       disconnect()
       fetchUserData()
       fetchStampData()
-      refreshUser()
       fetchNearAndGitcoinStamps()
     },
     [
-      userState,
       disconnect,
-      fetchUserData,
-      fetchStampData,
-      fetchNearAndGitcoinStamps,
-      getUser,
-      getIdForApp,
-      uuid,
       email,
+      fetchStampData,
+      fetchUserData,
+      getIdForApp,
+      getUser,
+      userState,
+      fetchNearAndGitcoinStamps,
     ]
   )
+
   const { address, isConnected } = useAccount({
     config,
   })
@@ -508,59 +391,66 @@ export const Stamps = ({
     if (email) {
       supabase.auth.onAuthStateChange(async (event, session) => {
         if (session?.user) {
-          const { user_metadata }: any = session?.user
-          const providerKey = localStorage.getItem("socialName") ?? ""
-          console.log(providerKey)
+          const { user_metadata } = session?.user
+          const providerKey: any = localStorage.getItem("socialName") ?? ""
+          console.log(providerKey, session?.user, 'stamp defense')
           const stampId = (stampsWithId as any)[providerKey]
-          const dbUser = supabaseUser
-          const database = {
-            uniquehash: await encode_data(user_metadata?.email),
-            stamptype: stampId,
-            created_by_user_id: dbUser?.id,
-            unencrypted_unique_data: JSON.stringify(user_metadata),
-            type_and_hash: `${stampId} ${await encode_data(
-              user_metadata?.email
-            )}`,
-          }
-          const dataToSet = {
-            created_by_user_id: dbUser?.id,
-            created_by_app: await getIdForApp(),
-            stamptype: stampId,
-            uniquevalue: user_metadata?.email,
-            user_id_and_uniqueval: `${dbUser?.id} ${stampId} ${user_metadata?.email}`,
-            unique_hash: await encode_data(user_metadata?.email),
-            stamp_json: user_metadata,
-            type_and_uniquehash: `${stampId} ${await encode_data(
-              user_metadata?.email
-            )}`,
-          }
-          await axios.post("/api/supabase/insert", {
-            table: "uniquestamps",
-            body: database,
+          const dbUser = await getUser()
+          await insertStamp({
+            stamp_type: providerKey,
+            user_data: { user_id: dbUser?.id, uuid: uuid },
+            stampData: {
+              identity: providerKey === "discord" ? user_metadata?.name : providerKey === "twitter" ? user_metadata?.user_name : user_metadata?.sub,
+              uniquevalue: user_metadata?.sub,
+              email: user_metadata?.email,
+              phone: user_metadata?.phone,
+            },
+            app_id: await getIdForApp()
           })
-          const {
-            data: { error, data },
-          } = await axios.post("/api/supabase/insert", {
-            table: "stamps",
-            body: dataToSet,
-          })
-          await insertStampPerm(data?.[0]?.id, uuid)
-          if (data?.[0]?.id) {
-            await axios.post("/api/supabase/insert", {
-              table: "authorized_dapps",
-              body: {
-                dapp_id: process.env.NEXT_PUBLIC_DAPP_ID,
-                dapp_and_stamp_id: `${process.env.NEXT_PUBLIC_DAPP_ID} ${data?.[0]?.id}`,
-                stamp_id: data?.[0]?.id,
-                can_read: true,
-                can_update: true,
-                can_delete: true,
-              },
-            })
-            supabase.auth.signOut().finally(() => {
-              window.location.reload()
-            })
-          }
+          // const database = {
+          //   uniquehash: await encode_data(user_metadata?.email),
+          //   stamptype: stampId,
+          //   created_by_user_id: dbUser?.id,
+          //   unencrypted_unique_data: JSON.stringify(user_metadata),
+          //   type_and_hash: `${stampId} ${await encode_data(
+          //     user_metadata?.email
+          //   )}`,
+          // }
+          // const dataToSet = {
+          //   created_by_user_id: dbUser?.id,
+          //   created_by_app: await getIdForApp(),
+          //   stamptype: stampId,
+          //   uniquevalue: user_metadata?.email,
+          //   user_id_and_uniqueval: `${dbUser?.id} ${stampId} ${user_metadata?.email}`,
+          //   unique_hash: await encode_data(user_metadata?.email),
+          //   stamp_json: user_metadata,
+          //   type_and_uniquehash: `${stampId} ${await encode_data(
+          //     user_metadata?.email
+          //   )}`,
+          // }
+          // await axios.post("/api/supabase/insert", {
+          //   table: "uniquestamps",
+          //   body: database,
+          // })
+          // const {
+          //   data: { error, data },
+          // } = await axios.post("/api/supabase/insert", {
+          //   table: "stamps",
+          //   body: dataToSet,
+          // })
+          // if (data?.[0]?.id) {
+          //   await axios.post("/api/supabase/insert", {
+          //     table: "authorized_dapps",
+          //     body: {
+          //       dapp_id: process.env.NEXT_PUBLIC_DAPP_ID,
+          //       dapp_and_stamp_id: `${process.env.NEXT_PUBLIC_DAPP_ID} ${data?.[0]?.id}`,
+          //       stamp_id: data?.[0]?.id,
+          //       can_read: true,
+          //       can_update: true,
+          //       can_delete: true,
+          //     },
+          //   })
+          // }
           fetchStampData()
           supabase.auth.signOut()
         }
@@ -591,114 +481,30 @@ export const Stamps = ({
           issuer: "fractal.i-am-human.near",
         },
       })
-      const dbUser = supabaseUser
+      const dbUser = await getUser()
       if (dbUser?.id) {
-        const stampId = (stampsWithId as any)["near-wallet"]
-        const stamp2Id = (stampsWithId as any)["iah"]
 
-        const dbUser = await getUser()
-        const database = {
-          uniquehash: await encode_data((wallet as any).accountId),
-          stamptype: stampId,
-          created_by_user_id: dbUser?.id,
-          unencrypted_unique_data: (wallet as any).accountId,
-          type_and_hash: `${stampId} ${await encode_data(
-            (wallet as any).accountId
-          )}`,
-        }
-        const database_iah = {
-          uniquehash: await encode_data((wallet as any).accountId),
-          stamptype: stamp2Id,
-          created_by_user_id: dbUser?.id,
-          unencrypted_unique_data: (wallet as any).accountId,
-          type_and_hash: `${stamp2Id} ${await encode_data(
-            (wallet as any).accountId
-          )}`,
-        }
-        const dataToSet = {
-          created_by_user_id: dbUser?.id,
-          created_by_app: await getIdForApp(),
-          stamptype: stampId,
-          uniquevalue: (wallet as any).accountId,
-          user_id_and_uniqueval: `${dbUser?.id} ${stampId} ${(wallet as any).accountId
-            }`,
-          unique_hash: await encode_data((wallet as any).accountId),
-          stamp_json: { account: (wallet as any).accountId },
-          type_and_uniquehash: `${stampId} ${await encode_data(
-            (wallet as any).accountId
-          )}`,
-        }
-        const dataToSet_iah = {
-          created_by_user_id: dbUser?.id,
-          created_by_app: await getIdForApp(),
-          stamptype: stamp2Id,
-          uniquevalue: (wallet as any).accountId,
-          user_id_and_uniqueval: `${dbUser?.id} ${stampId} ${(wallet as any).accountId
-            }`,
-          unique_hash: await encode_data((wallet as any).accountId),
-          stamp_json: { account: (wallet as any).accountId },
-          type_and_uniquehash: `${stamp2Id} ${await encode_data(
-            (wallet as any).accountId
-          )}`,
-        }
-        const {
-          data: { error: unique_data },
-        } = await axios.post("/api/supabase/insert", {
-          table: "uniquestamps",
-          body: database,
+        await insertStamp({
+          stamp_type: 'iah',
+          user_data: { user_id: dbUser?.id, uuid: "" },
+          stampData: {
+            identity: (wallet as any).accountId,
+            uniquevalue: (wallet as any).accountId,
+          },
+          app_id: await getIdForApp()
         })
-        const {
-          data: { data },
-        } = await axios.post("/api/supabase/insert", {
-          table: "stamps",
-          body: dataToSet,
+
+        await insertStamp({
+          stamp_type: 'near-wallet',
+          user_data: { user_id: dbUser?.id, uuid: "" },
+          stampData: {
+            identity: (wallet as any).accountId,
+            uniquevalue: (wallet as any).accountId,
+          },
+          app_id: await getIdForApp()
         })
-        insertStampPerm(data?.[0]?.id, uuid)
 
-        if (dataCategory?.[0]?.[1]?.[0]) {
-          const {
-            data: { error: unique_data_iah },
-          } = await axios.post("/api/supabase/insert", {
-            table: "uniquestamps",
-            body: database_iah,
-          })
 
-          const {
-            data: { data: data_iah },
-          } = await axios.post("/api/supabase/insert", {
-            table: "stamps",
-            body: dataToSet_iah,
-          })
-          insertStampPerm(data_iah?.[0]?.id, uuid)
-
-          if (data_iah?.[0]?.id) {
-            await axios.post("/api/supabase/insert", {
-              table: "authorized_dapps",
-              body: {
-                dapp_id: process.env.NEXT_PUBLIC_DAPP_ID,
-                dapp_and_stamp_id: `${process.env.NEXT_PUBLIC_DAPP_ID} ${data_iah?.[0]?.id}`,
-                stamp_id: data_iah?.[0]?.id,
-                can_read: true,
-                can_update: true,
-                can_delete: true,
-              },
-            })
-          }
-        }
-
-        if (data?.[0]?.id) {
-          await axios.post("/api/supabase/insert", {
-            table: "authorized_dapps",
-            body: {
-              dapp_id: process.env.NEXT_PUBLIC_DAPP_ID,
-              dapp_and_stamp_id: `${process.env.NEXT_PUBLIC_DAPP_ID} ${data?.[0]?.id}`,
-              stamp_id: data?.[0]?.id,
-              can_read: true,
-              can_update: true,
-              can_delete: true,
-            },
-          })
-        }
 
         fetchUserData()
         fetchStampData()
