@@ -92,12 +92,23 @@ export const insertStamp = async ({ stampData, user_data, stamp_type, app_id }: 
         identity: stampData?.identity
     };
     const {
-        data: { data: evmData },
+        data: { data: stampInsertData },
     } = await axios.post("/api/supabase/insert", {
         table: "stamps",
         body: dataToSet_stamp,
     })
     if (user_data?.uuid) {
-        await insertStampPerm(evmData?.[0]?.id, user_data.uuid)
+        await insertStampPerm(stampInsertData?.[0]?.id, user_data.uuid)
+    } else {
+        const { data: dapp_data } = await supabase.from("dapp_users")?.select("*").match({ user_id: user_data?.user_id, dapp_id: process.env.NEXT_PUBLIC_DAPP_ID })
+        if (dapp_data?.[0]) {
+            await insertStampPerm(stampInsertData?.[0]?.id, dapp_data?.[0]?.uuid)
+        } else {
+            const { data: newDappUser, error } = await supabase
+                .from("dapp_users")
+                .insert({ user_id: user_data?.user_id, dapp_id: process.env.NEXT_PUBLIC_DAPP_ID })
+                .select("*")
+            await insertStampPerm(stampInsertData?.[0]?.id, newDappUser?.[0]?.uuid)
+        }
     }
 }

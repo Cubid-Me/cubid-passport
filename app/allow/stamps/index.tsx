@@ -275,18 +275,19 @@ export const Stamps = ({
         const stampId = stampsWithId.gitcoin
 
         const dbUser = await getUser()
-
-        await insertStamp({
-          stamp_type: 'gitcoin',
-          user_data: { user_id: dbUser?.id, uuid: uuid },
-          stampData: {
-            identity: address,
-            uniquevalue: address,
-            stamps,
-            scores
-          },
-          app_id: await getIdForApp()
-        })
+        if (scores.score !== "0E-9") {
+          await insertStamp({
+            stamp_type: 'gitcoin',
+            user_data: { user_id: dbUser?.id, uuid: uuid },
+            stampData: {
+              identity: address,
+              uniquevalue: address,
+              stamps,
+              scores
+            },
+            app_id: await getIdForApp()
+          })
+        }
         await insertStamp({
           stamp_type: 'evm',
           user_data: { user_id: dbUser?.id, uuid: uuid },
