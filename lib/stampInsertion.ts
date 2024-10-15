@@ -23,7 +23,9 @@ export const stampsWithId = {
     solana: 53,
     telegram: 27,
     worldcoin: 26,
-    near: 15
+    near: 15,
+    "lens-protocol":66,
+    'farcaster': 68
 }
 
 

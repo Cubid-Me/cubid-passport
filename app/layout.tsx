@@ -6,6 +6,8 @@ import "@/styles/globals.css"
 import { useEffect, useLayoutEffect, useState } from "react"
 import { OwnIDInit } from "@ownid/react"
 import { ToastContainer } from "react-toastify"
+import { LensConfig, production,LensProvider } from "@lens-protocol/react-web";
+import { bindings } from "@lens-protocol/wagmi";
 
 import "react-phone-input-2/lib/style.css"
 import "react-toastify/dist/ReactToastify.css"
@@ -29,6 +31,10 @@ import { Wallet } from "../lib/nearWallet"
 import { store } from "../redux/store"
 import { SolanaAppWalletProvider } from "@/components/walletProvider"
 
+const lensConfig: LensConfig = {
+  environment: production,
+  bindings: bindings(config),
+};
 
 export const wallet = new Wallet({
   createAccessKeyFor: "registry.i-am-human.near",
@@ -84,10 +90,12 @@ export default function RootLayout(props: any) {
 
   if (process.env.NODE_ENV === "development") {
     return (
+    
       <SessionProvider session={props?.pageProps?.session}>
         <SolanaAppWalletProvider>
           <WagmiProvider config={config as any}>
             <QueryClientProvider client={queryClient}>
+            <LensProvider config={lensConfig}>
               <OwnIDInit
                 config={{
                   appId: "p0zfroqndmvm30",
@@ -132,10 +140,12 @@ export default function RootLayout(props: any) {
                   </ThemeProvider>
                 </body>
               </html>
+              </LensProvider>
             </QueryClientProvider>
           </WagmiProvider>
         </SolanaAppWalletProvider>
       </SessionProvider>
+     
     )
   }
 
@@ -143,10 +153,12 @@ export default function RootLayout(props: any) {
     // Client-side-only code
 
     return (
+
       <SessionProvider session={props?.pageProps?.session}>
         <SolanaAppWalletProvider>
           <WagmiProvider config={config as any}>
             <QueryClientProvider client={queryClient}>
+            <LensProvider config={lensConfig}>
               <OwnIDInit
                 config={{
                   appId: "p0zfroqndmvm30",
@@ -187,10 +199,12 @@ export default function RootLayout(props: any) {
                   </ThemeProvider>
                 </body>
               </html>
+              </LensProvider>
             </QueryClientProvider>
           </WagmiProvider>
         </SolanaAppWalletProvider>
       </SessionProvider>
+   
     )
   } else {
     return <></>

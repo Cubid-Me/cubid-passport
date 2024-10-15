@@ -8,16 +8,17 @@ import axios from "axios"
 import dayjs from "dayjs"
 import { useSelector } from "react-redux"
 import { toast } from "react-toastify"
-import { useAccount, useDisconnect } from "wagmi"
+import { useAccount, useConnect, useDisconnect } from "wagmi"
+
 import Web3 from "web3"
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { useWallet as useSolanaWallet, useConnection as useSolanaConnection } from "@solana/wallet-adapter-react";
 
+import { LoginOptions } from './lensProtocolLogin'
 
 import { useStamps } from "./../../hooks/useStamps"
 import "@near-wallet-selector/modal-ui/styles.css"
 import { useRouter } from "next/navigation"
-import Script from "next/script"
 
 import useAuth from "@/hooks/useAuth"
 import { useCreatedByAppId } from "@/hooks/useCreatedByApp"
@@ -44,7 +45,6 @@ import {
 } from "@/components/ui/sheet"
 import { wallet } from "@/app/layout"
 
-import { encode_data } from "../../lib/encode_data"
 import { supabase } from "../../lib/supabase"
 import { BrightIdConnectSheet } from "./brightIdConnectSheet"
 import { GooddollarConnect } from "./gooddollarConnect"
@@ -118,7 +118,9 @@ export const stampsWithId = {
   evm: 14,
   worldcoin: 26,
   telegram: 27,
-  solana: 53
+  solana: 53,
+  'lens-protocol': 66,
+  'farcaster': 68
 }
 
 export const Stamps = () => {
@@ -132,6 +134,11 @@ export const Stamps = () => {
       },
     })
   }
+
+
+  const { connectors, connect } = useConnect({
+  })
+
 
   const [brightIdData, setBrightIdData] = useState(null)
   const [brightIdSheetOpen, setBrightIdSheetOpen] = useState(false)
@@ -343,10 +350,11 @@ export const Stamps = () => {
     ]
   )
   const { address } = useAccount()
+
   console.log("here is address->", address)
 
   useEffect(() => {
-    if (address) {
+    if (address && !localStorage.getItem("lens-loggin")) {
       connectToWeb3Node(address)
     }
   }, [connectToWeb3Node, address])
@@ -712,6 +720,183 @@ export const Stamps = () => {
             )}
           </CardContent>
         </Card> */}
+
+        <Card>
+          <CardHeader>
+            <img
+              src={
+                "data:image/jpeg;base64,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"
+              }
+              alt="Image"
+              className="mb-1 size-10 rounded-md"
+            />
+            <CardTitle>Lens Protocol</CardTitle>
+            {doesStampExist(stampsWithId["lens-protocol"]) ? (
+              <CardDescription>
+                <div className="flex items-center space-x-1">
+                  <p>Your Lens Protocol is verified</p>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="#00e64d"
+                    className="size-6"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </div>
+              </CardDescription>
+            ) : (
+              <CardDescription>
+                Use a Lens Protocol Account
+              </CardDescription>
+            )}
+          </CardHeader>
+          <CardContent>
+            {doesStampExist(stampsWithId["lens-protocol"]) ? (
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <div className="flex items-center space-x-2">
+                  <Button>Verified Stamp</Button>
+                </div>
+              </div>
+            ) : (
+              <>
+
+                {address ? <>
+                  <LoginOptions wallet={address ?? ""} onSuccess={async (args) => {
+                    const dbUser = await getUser()
+                    await insertStamp({
+                      app_id: parseInt(process.env?.NEXT_PUBLIC_DAPP_ID ?? ""), stamp_type: "lens-protocol",
+                      stampData: {
+                        uniquevalue: args.handle,
+                        identity: args.id
+                      },
+                      user_data: {
+                        user_id: dbUser?.id,
+                        uuid: ""
+                      }
+                    })
+                    disconnect()
+                    fetchUserData()
+                    fetchStampData()
+                    window.location.reload()
+                  }} />
+                </> : <>
+                  {connectors.map((connector) => (
+                    <Button
+                      variant="secondary"
+                      className="bg-blue-500 text-white"
+                      style={{ width: "200px" }}
+                      key={connector.uid}
+                      onClick={() => {
+                        localStorage?.setItem("lens-loggin", 'true');
+                        connect({ connector })
+                      }}
+                    >
+                      {connector.name}
+                    </Button>
+                  ))}
+                </>}
+
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+
+        {/* <Card>
+          <CardHeader>
+            <img
+              src={
+                "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQB0LwYIlZ9aYglKkSRuhEH0TM6VkCmqRqXpQ&s"
+              }
+              alt="Image"
+              className="mb-1 size-10 rounded-md"
+            />
+            <CardTitle>Farcaster</CardTitle>
+            {doesStampExist(stampsWithId["farcaster"]) ? (
+              <CardDescription>
+                <div className="flex items-center space-x-1">
+                  <p>Your Farcaster is verified</p>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="#00e64d"
+                    className="size-6"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </div>
+              </CardDescription>
+            ) : (
+              <CardDescription>
+                Use a Farcaster Account
+              </CardDescription>
+            )}
+          </CardHeader>
+          <CardContent>
+            {doesStampExist(stampsWithId["farcaster"]) ? (
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <div className="flex items-center space-x-2">
+                  <Button>Verified Stamp</Button>
+                </div>
+              </div>
+            ) : (
+              <>
+
+                {address ? <>
+                  <LoginOptions wallet={address ?? ""} onSuccess={async (args) => {
+                    const dbUser = await getUser()
+                    await insertStamp({
+                      app_id: parseInt(process.env?.NEXT_PUBLIC_DAPP_ID ?? ""), stamp_type: "lens-protocol",
+                      stampData: {
+                        uniquevalue: args.handle,
+                        identity: args.id
+                      },
+                      user_data: {
+                        user_id: dbUser?.id,
+                        uuid: ""
+                      }
+                    })
+                    disconnect()
+                    fetchUserData()
+                    fetchStampData()
+                    window.location.reload()
+                  }} />
+                </> : <>
+                  {connectors.map((connector) => (
+                    <Button
+                      variant="secondary"
+                      className="bg-blue-500 text-white"
+                      style={{ width: "200px" }}
+                      key={connector.uid}
+                      onClick={() => {
+                        localStorage?.setItem("lens-loggin", 'true');
+                        connect({ connector })
+                      }}
+                    >
+                      {connector.name}
+                    </Button>
+                  ))}
+                </>}
+
+              </>
+            )}
+          </CardContent>
+        </Card> */}
+
+
         <Card>
           <CardHeader>
             <img
@@ -1110,16 +1295,20 @@ export const Stamps = () => {
                 </DropdownMenu>
               </div>
             ) : (
-              <Button
-                onClick={() => {
-                  open()
-                }}
-                variant="secondary"
-                className="bg-blue-500 text-white"
-                style={{ width: "200px" }}
-              >
-                Connect Wallet
-              </Button>
+              <>
+                {connectors.map((connector) => (
+                  <Button
+                    variant="secondary"
+                    className="bg-blue-500 text-white"
+                    style={{ width: "200px" }}
+                    key={connector.uid}
+                    onClick={() => connect({ connector })}
+                  >
+                    {connector.name}
+                  </Button>
+                ))}
+              </>
+
             )}
           </CardContent>
         </Card>
