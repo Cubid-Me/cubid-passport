@@ -41,7 +41,7 @@ const lensConfig: LensConfig = {
 const configForFarcaster = {
   rpcUrl: 'https://mainnet.optimism.io',
   domain: 'example.com',
-  siweUri: window.location.href
+  siweUri: 'https://passport.cubid.me/'
 };
 
 
