@@ -787,7 +787,7 @@ export const Stamps = () => {
             )}
           </CardHeader>
           <CardContent>
-            {false ? (
+            {doesStampExist(stampsWithId["lens-protocol"]) ? (
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <div className="flex items-center space-x-2">
                   <Button>Verified Stamp</Button>
@@ -796,7 +796,7 @@ export const Stamps = () => {
             ) : (
               <>
 
-                {address ? <>
+                {address  ? <>
                   <LoginOptions wallet={address ?? ""} onSuccess={async (args) => {
                     const dbUser = await getUser()
                     console.log(args, 'lens args')
