@@ -803,8 +803,10 @@ export const Stamps = () => {
                     await insertStamp({
                       app_id: parseInt(process.env?.NEXT_PUBLIC_DAPP_ID ?? ""), stamp_type: "lens-protocol",
                       stampData: {
-                        uniquevalue: args?.id,
+                        uniquevalue: args?.handle?.linkedTo?.nftTokenId,
                         identity: args.handle?.fullHandle,
+                        ...args,
+                        metdata: { ...args?.metadata, picture: null }
                       },
                       user_data: {
                         user_id: dbUser?.id,
@@ -814,7 +816,7 @@ export const Stamps = () => {
                     disconnect()
                     fetchUserData()
                     fetchStampData()
-                    window.location.reload()
+                    // window.location.reload()
                   }} />
                 </> : <>
                   <Sheet
