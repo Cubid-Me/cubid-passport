@@ -19,6 +19,7 @@ import { LoginOptions } from './lensProtocolLogin'
 import { useStamps } from "./../../hooks/useStamps"
 import "@near-wallet-selector/modal-ui/styles.css"
 import { useRouter } from "next/navigation"
+import { useProfile as useFarcasterProfile } from '@farcaster/auth-kit';
 
 import useAuth from "@/hooks/useAuth"
 import { useCreatedByAppId } from "@/hooks/useCreatedByApp"
@@ -51,6 +52,7 @@ import { GooddollarConnect } from "./gooddollarConnect"
 import { InstagramConnect } from "./instagramConnect"
 import { PhoneNumberConnect } from "./phoneNumberConnect"
 import { insertStamp } from "@/lib/stampInsertion"
+import { SignInButton } from '@farcaster/auth-kit';
 
 const socialDataToMap = [
   {
@@ -136,28 +138,14 @@ export const Stamps = () => {
   }
 
 
+
+
   const { connectors, connect } = useConnect({
   })
-
-
-  const [brightIdData, setBrightIdData] = useState(null)
-  const [brightIdSheetOpen, setBrightIdSheetOpen] = useState(false)
-  const [userState, setUserState] = useState({})
-  const [stampVerified, setStampVerified] = useState<any>(null)
-  const [phonenumber, setPhonenumber] = useState<any>(false)
-  const [gitcoinStamps, setGitcoinStamps] = useState(false)
-  const [instagramShow, setInstagramShow] = useState(false)
-  const [stampCategories, setStampCategories] = useState([])
-  const [allStamps, setAllStamps] = useState([])
-  const [stampLoading, setStampLoading] = useState(true)
-  const email: any = useSelector((state: any) => state?.user?.email ?? "")
-  const { stampCollector, fetchNearAndGitcoinStamps, gitcoinScore } = useStamps(
-    {}
-  )
-  const { push } = useRouter()
-
   const { supabaseUser, getUser } = useAuth({})
-  console.log({ supabaseUser }, "supabaseUser")
+
+  const { isAuthenticated: isFarcasterAuthenticated,
+    profile: { username, fid }, } = useFarcasterProfile()
 
   const fetchStampData = useCallback(async () => {
     console.log("fetch Stampdata executed")
@@ -182,6 +170,42 @@ export const Stamps = () => {
       setStampLoading(false)
     }
   }, [supabaseUser])
+
+  useEffect(() => {
+    (async () => {
+      const dbUser = await getUser()
+      if (isFarcasterAuthenticated && fid && username) {
+        await insertStamp({
+          stampData: { uniquevalue: fid, identity: username }, stamp_type: "farcaster", app_id: parseInt(process.env.NEXT_PUBLIC_DAPP_ID ?? ""), user_data: {
+            user_id: dbUser?.id,
+            uuid: '',
+          }
+        })
+        fetchStampData()
+      }
+    })()
+  }, [isFarcasterAuthenticated, fid, username, getUser, fetchStampData])
+
+
+  const [brightIdData, setBrightIdData] = useState(null)
+  const [brightIdSheetOpen, setBrightIdSheetOpen] = useState(false)
+  const [userState, setUserState] = useState({})
+  const [stampVerified, setStampVerified] = useState<any>(null)
+  const [phonenumber, setPhonenumber] = useState<any>(false)
+  const [gitcoinStamps, setGitcoinStamps] = useState(false)
+  const [instagramShow, setInstagramShow] = useState(false)
+  const [stampCategories, setStampCategories] = useState([])
+  const [allStamps, setAllStamps] = useState([])
+  const [stampLoading, setStampLoading] = useState(true)
+  const email: any = useSelector((state: any) => state?.user?.email ?? "")
+  const { stampCollector, fetchNearAndGitcoinStamps, gitcoinScore } = useStamps(
+    {}
+  )
+  const { push } = useRouter()
+
+  console.log({ supabaseUser }, "supabaseUser")
+
+
 
   useEffect(() => {
     fetchStampData()
@@ -809,7 +833,7 @@ export const Stamps = () => {
         </Card>
 
 
-        {/* <Card>
+        <Card>
           <CardHeader>
             <img
               src={
@@ -853,48 +877,12 @@ export const Stamps = () => {
                 </div>
               </div>
             ) : (
-              <>
-
-                {address ? <>
-                  <LoginOptions wallet={address ?? ""} onSuccess={async (args) => {
-                    const dbUser = await getUser()
-                    await insertStamp({
-                      app_id: parseInt(process.env?.NEXT_PUBLIC_DAPP_ID ?? ""), stamp_type: "lens-protocol",
-                      stampData: {
-                        uniquevalue: args.handle,
-                        identity: args.id
-                      },
-                      user_data: {
-                        user_id: dbUser?.id,
-                        uuid: ""
-                      }
-                    })
-                    disconnect()
-                    fetchUserData()
-                    fetchStampData()
-                    window.location.reload()
-                  }} />
-                </> : <>
-                  {connectors.map((connector) => (
-                    <Button
-                      variant="secondary"
-                      className="bg-blue-500 text-white"
-                      style={{ width: "200px" }}
-                      key={connector.uid}
-                      onClick={() => {
-                        localStorage?.setItem("lens-loggin", 'true');
-                        connect({ connector })
-                      }}
-                    >
-                      {connector.name}
-                    </Button>
-                  ))}
-                </>}
-
-              </>
+              <div className="bg-white w-[fit-content] rounded-lg">
+                <SignInButton />
+              </div>
             )}
           </CardContent>
-        </Card> */}
+        </Card>
 
 
         <Card>

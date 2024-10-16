@@ -6,11 +6,12 @@ import "@/styles/globals.css"
 import { useEffect, useLayoutEffect, useState } from "react"
 import { OwnIDInit } from "@ownid/react"
 import { ToastContainer } from "react-toastify"
-import { LensConfig, production,LensProvider } from "@lens-protocol/react-web";
+import { LensConfig, production, LensProvider } from "@lens-protocol/react-web";
 import { bindings } from "@lens-protocol/wagmi";
 
 import "react-phone-input-2/lib/style.css"
 import "react-toastify/dist/ReactToastify.css"
+import '@farcaster/auth-kit/styles.css';
 import { usePathname, useRouter } from "next/navigation"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { createWeb3Modal } from "@web3modal/wagmi/react"
@@ -20,6 +21,7 @@ import { SessionProvider } from "next-auth/react"
 import { Provider } from "react-redux"
 import { WagmiProvider, createConfig, http } from "wagmi"
 import { mainnet, sepolia } from "wagmi/chains"
+import { AuthKitProvider } from '@farcaster/auth-kit';
 
 import { cn } from "@/lib/utils"
 import { SiteHeader } from "@/components/site-header"
@@ -35,6 +37,13 @@ const lensConfig: LensConfig = {
   environment: production,
   bindings: bindings(config),
 };
+
+const configForFarcaster = {
+  rpcUrl: 'https://mainnet.optimism.io',
+  domain: 'example.com',
+  siweUri: window.location.href
+};
+
 
 export const wallet = new Wallet({
   createAccessKeyFor: "registry.i-am-human.near",
@@ -90,62 +99,64 @@ export default function RootLayout(props: any) {
 
   if (process.env.NODE_ENV === "development") {
     return (
-    
+
       <SessionProvider session={props?.pageProps?.session}>
         <SolanaAppWalletProvider>
           <WagmiProvider config={config as any}>
             <QueryClientProvider client={queryClient}>
-            <LensProvider config={lensConfig}>
-              <OwnIDInit
-                config={{
-                  appId: "p0zfroqndmvm30",
-                  firebaseAuth: {
-                    getAuth,
-                    getIdToken,
-                    signInWithCustomToken,
-                  },
-                }}
-              />
-              <html lang="en" suppressHydrationWarning>
-                <head>
-                  <link rel="preconnect" href="https://fonts.googleapis.com" />
-                  <link rel="preconnect" href="https://fonts.gstatic.com" />
-                  <link
-                    href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700;1,800&family=Satisfy&display=swap"
-                    rel="stylesheet"
+              <LensProvider config={lensConfig}>
+                <AuthKitProvider config={config}>
+                  <OwnIDInit
+                    config={{
+                      appId: "p0zfroqndmvm30",
+                      firebaseAuth: {
+                        getAuth,
+                        getIdToken,
+                        signInWithCustomToken,
+                      },
+                    }}
                   />
-                </head>
-                <body
-                  className={cn(
-                    `min-h-screen ${pathName?.includes("allow")
-                      ? "bg-[#F2F2F2] text-black"
-                      : "bg-background"
-                    }  !antialiased`
-                  )}
-                  style={{ fontFamily: "'Open Sans', sans-serif" }}
-                >
-                  <ThemeProvider
-                    attribute="class"
-                    defaultTheme="system"
-                    enableSystem
-                  >
-                    <div>
-                      <SiteHeader />
+                  <html lang="en" suppressHydrationWarning>
+                    <head>
+                      <link rel="preconnect" href="https://fonts.googleapis.com" />
+                      <link rel="preconnect" href="https://fonts.gstatic.com" />
+                      <link
+                        href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700;1,800&family=Satisfy&display=swap"
+                        rel="stylesheet"
+                      />
+                    </head>
+                    <body
+                      className={cn(
+                        `min-h-screen ${pathName?.includes("allow")
+                          ? "bg-[#F2F2F2] text-black"
+                          : "bg-background"
+                        }  !antialiased`
+                      )}
+                      style={{ fontFamily: "'Open Sans', sans-serif" }}
+                    >
+                      <ThemeProvider
+                        attribute="class"
+                        defaultTheme="system"
+                        enableSystem
+                      >
+                        <div>
+                          <SiteHeader />
 
-                      <Provider store={store}>
-                        <div>{props.children}</div>
-                        <ToastContainer />
-                      </Provider>
-                    </div>
-                  </ThemeProvider>
-                </body>
-              </html>
+                          <Provider store={store}>
+                            <div>{props.children}</div>
+                            <ToastContainer />
+                          </Provider>
+                        </div>
+                      </ThemeProvider>
+                    </body>
+                  </html>
+                </AuthKitProvider>
               </LensProvider>
             </QueryClientProvider>
           </WagmiProvider>
         </SolanaAppWalletProvider>
       </SessionProvider>
-     
+
     )
   }
 
@@ -158,53 +169,53 @@ export default function RootLayout(props: any) {
         <SolanaAppWalletProvider>
           <WagmiProvider config={config as any}>
             <QueryClientProvider client={queryClient}>
-            <LensProvider config={lensConfig}>
-              <OwnIDInit
-                config={{
-                  appId: "p0zfroqndmvm30",
-                  firebaseAuth: {
-                    getAuth,
-                    getIdToken,
-                    signInWithCustomToken,
-                  },
-                }}
-              />
-              <html lang="en" suppressHydrationWarning>
-                <head>
-                  <link rel="preconnect" href="https://fonts.googleapis.com" />
-                  <link rel="preconnect" href="https://fonts.gstatic.com" />
-                  <link
-                    href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700;1,800&family=Satisfy&display=swap"
-                    rel="stylesheet"
-                  />
-                </head>
-                <body
-                  className={cn("min-h-screen bg-background !antialiased")}
-                  style={{ fontFamily: "'Open Sans', sans-serif" }}
-                >
-                  <ThemeProvider
-                    attribute="class"
-                    defaultTheme="system"
-                    enableSystem
+              <LensProvider config={lensConfig}>
+                <OwnIDInit
+                  config={{
+                    appId: "p0zfroqndmvm30",
+                    firebaseAuth: {
+                      getAuth,
+                      getIdToken,
+                      signInWithCustomToken,
+                    },
+                  }}
+                />
+                <html lang="en" suppressHydrationWarning>
+                  <head>
+                    <link rel="preconnect" href="https://fonts.googleapis.com" />
+                    <link rel="preconnect" href="https://fonts.gstatic.com" />
+                    <link
+                      href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700;1,800&family=Satisfy&display=swap"
+                      rel="stylesheet"
+                    />
+                  </head>
+                  <body
+                    className={cn("min-h-screen bg-background !antialiased")}
+                    style={{ fontFamily: "'Open Sans', sans-serif" }}
                   >
-                    <div>
-                      {!(window as any)?.location?.href?.includes("/allow") && (
-                        <SiteHeader />
-                      )}
-                      <Provider store={store}>
-                        <div>{props.children}</div>
-                        <ToastContainer />
-                      </Provider>
-                    </div>
-                  </ThemeProvider>
-                </body>
-              </html>
+                    <ThemeProvider
+                      attribute="class"
+                      defaultTheme="system"
+                      enableSystem
+                    >
+                      <div>
+                        {!(window as any)?.location?.href?.includes("/allow") && (
+                          <SiteHeader />
+                        )}
+                        <Provider store={store}>
+                          <div>{props.children}</div>
+                          <ToastContainer />
+                        </Provider>
+                      </div>
+                    </ThemeProvider>
+                  </body>
+                </html>
               </LensProvider>
             </QueryClientProvider>
           </WagmiProvider>
         </SolanaAppWalletProvider>
       </SessionProvider>
-   
+
     )
   } else {
     return <></>
