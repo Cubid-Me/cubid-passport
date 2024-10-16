@@ -262,11 +262,6 @@ export default function IndexPage() {
   })
 
   useEffect(() => {
-    // setValue("email", emailFields.email)
-    setValue("phone", phoneFields.email)
-  }, [phoneFields, emailFields, setValue])
-
-  useEffect(() => {
     if (coordinates?.lat) {
       (async () => {
         await axios.post("/api/supabase/update", {
@@ -353,12 +348,13 @@ export default function IndexPage() {
     const { data } = await axios.post("/api/allow/fetch_uid_data", {
       uid: searchParams.get("uid"),
     })
-
-    setValue(
-      "location",
-      data?.dapp_users[0].users.address?.locationDetails?.formatted_address ??
-      ""
-    )
+    if (!watch('location')) {
+      setValue(
+        "location",
+        data?.dapp_users[0].users.address?.locationDetails?.formatted_address ??
+        ""
+      )
+    }
     setValue("postcode", data?.dapp_users[0].users.address?.postcode ?? "")
     fetchUserUidData()
     setUserData(data)
@@ -367,6 +363,7 @@ export default function IndexPage() {
     } = await axios.post("/api/dapp/get_score_details_cubid", {
       uid: searchParams.get("uid"),
     })
+    console.log({ score_details }, 'scoreeee')
     if (score_details) {
       score_details?.map((item) => {
         // if (item?.email) {
@@ -391,10 +388,16 @@ export default function IndexPage() {
               ?.map((_) => (_ ? { phone: _, type: "personal" } : null))
               ?.filter((item) => item?.phone)
           )
+          if (item?.phone[0]) {
+            setValue(
+              "phone",
+              item?.phone[0]
+            )
+          }
         }
       })
     }
-  }, [])
+  }, [watch])
 
   useEffect(() => {
     fetchCurrentAppIdStamps()
@@ -411,6 +414,8 @@ export default function IndexPage() {
     }
   }, 500)
 
+  console.log('phone is here', watch("phone"))
+
   return (
     <>
       <div className="flex min-h-screen flex-col items-center justify-center py-2">
@@ -418,13 +423,14 @@ export default function IndexPage() {
           <div className="mb-4">
             <p className="text-xl">Welcome to Toronto DAO</p>
             <p className="text-md">
-              Step 2 of 2: Create a Cubid profile for TDAO
+              tep 2 of 2: Create a Private profile for TDAO
             </p>
+            <p className="text-sm">TDAO uses CUBID to capture, store and anonymize private data like your address. CUBID is a protocol for self-sovereign identity management</p>
             <label
               className="mb-2 block text-sm font-bold text-gray-700"
               htmlFor="location"
             >
-              Location
+              Where do you live?
             </label>
             {!manualLocation ? (
               <>
@@ -602,7 +608,6 @@ export default function IndexPage() {
                 the APP
               </p>
               <div className="p-5 rounded-lg shadow-md">
-                <h2 className="text-lg font-semibold mb-4">Location Information</h2>
                 {Boolean(locationDetailsJSON.placename) && (
                   <div className="mb-2">
                     <strong>Place Name:</strong> <span>{locationDetailsJSON.placename}</span>
