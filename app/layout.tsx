@@ -62,12 +62,8 @@ function removeQueryParam(url, paramToRemove) {
 
 export default function RootLayout(props: any) {
   const queryClient = new QueryClient()
-  const configForFarcaster = {
-    rpcUrl: 'https://mainnet.optimism.io',
-    domain: 'example.com',
-    siweUri: 'https://passport.cubid.me/'
-  };
-  
+
+
   const { pageProps } = props
   const pathName = usePathname()
   const { push } = useRouter()
@@ -170,46 +166,48 @@ export default function RootLayout(props: any) {
           <WagmiProvider config={config as any}>
             <QueryClientProvider client={queryClient}>
               <LensProvider config={lensConfig}>
-                <OwnIDInit
-                  config={{
-                    appId: "p0zfroqndmvm30",
-                    firebaseAuth: {
-                      getAuth,
-                      getIdToken,
-                      signInWithCustomToken,
-                    },
-                  }}
-                />
-                <html lang="en" suppressHydrationWarning>
-                  <head>
-                    <link rel="preconnect" href="https://fonts.googleapis.com" />
-                    <link rel="preconnect" href="https://fonts.gstatic.com" />
-                    <link
-                      href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700;1,800&family=Satisfy&display=swap"
-                      rel="stylesheet"
-                    />
-                  </head>
-                  <body
-                    className={cn("min-h-screen bg-background !antialiased")}
-                    style={{ fontFamily: "'Open Sans', sans-serif" }}
-                  >
-                    <ThemeProvider
-                      attribute="class"
-                      defaultTheme="system"
-                      enableSystem
+                <AuthKitProvider config={config}>
+                  <OwnIDInit
+                    config={{
+                      appId: "p0zfroqndmvm30",
+                      firebaseAuth: {
+                        getAuth,
+                        getIdToken,
+                        signInWithCustomToken,
+                      },
+                    }}
+                  />
+                  <html lang="en" suppressHydrationWarning>
+                    <head>
+                      <link rel="preconnect" href="https://fonts.googleapis.com" />
+                      <link rel="preconnect" href="https://fonts.gstatic.com" />
+                      <link
+                        href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700;1,800&family=Satisfy&display=swap"
+                        rel="stylesheet"
+                      />
+                    </head>
+                    <body
+                      className={cn("min-h-screen bg-background !antialiased")}
+                      style={{ fontFamily: "'Open Sans', sans-serif" }}
                     >
-                      <div>
-                        {!(window as any)?.location?.href?.includes("/allow") && (
-                          <SiteHeader />
-                        )}
-                        <Provider store={store}>
-                          <div>{props.children}</div>
-                          <ToastContainer />
-                        </Provider>
-                      </div>
-                    </ThemeProvider>
-                  </body>
-                </html>
+                      <ThemeProvider
+                        attribute="class"
+                        defaultTheme="system"
+                        enableSystem
+                      >
+                        <div>
+                          {!(window as any)?.location?.href?.includes("/allow") && (
+                            <SiteHeader />
+                          )}
+                          <Provider store={store}>
+                            <div>{props.children}</div>
+                            <ToastContainer />
+                          </Provider>
+                        </div>
+                      </ThemeProvider>
+                    </body>
+                  </html>
+                </AuthKitProvider>
               </LensProvider>
             </QueryClientProvider>
           </WagmiProvider>
