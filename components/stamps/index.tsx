@@ -145,7 +145,7 @@ export const Stamps = () => {
   const { supabaseUser, getUser } = useAuth({})
 
   const { isAuthenticated: isFarcasterAuthenticated,
-    profile: { username, fid }, } = useFarcasterProfile()
+    profile: { username, fid, ...restFarcasterJSON }, } = useFarcasterProfile()
 
   const fetchStampData = useCallback(async () => {
     console.log("fetch Stampdata executed")
@@ -176,7 +176,7 @@ export const Stamps = () => {
       const dbUser = await getUser()
       if (isFarcasterAuthenticated && fid && username) {
         await insertStamp({
-          stampData: { uniquevalue: fid, identity: username }, stamp_type: "farcaster", app_id: parseInt(process.env.NEXT_PUBLIC_DAPP_ID ?? ""), user_data: {
+          stampData: { uniquevalue: fid, identity: username, ...restFarcasterJSON }, stamp_type: "farcaster", app_id: parseInt(process.env.NEXT_PUBLIC_DAPP_ID ?? ""), user_data: {
             user_id: dbUser?.id,
             uuid: '',
           }
@@ -184,7 +184,7 @@ export const Stamps = () => {
         fetchStampData()
       }
     })()
-  }, [isFarcasterAuthenticated, fid, username, getUser, fetchStampData])
+  }, [isFarcasterAuthenticated, fid, username, getUser, fetchStampData, restFarcasterJSON])
 
 
   const [brightIdData, setBrightIdData] = useState(null)
@@ -787,7 +787,7 @@ export const Stamps = () => {
             )}
           </CardHeader>
           <CardContent>
-            {doesStampExist(stampsWithId["lens-protocol"]) ? (
+            {false ? (
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <div className="flex items-center space-x-2">
                   <Button>Verified Stamp</Button>
@@ -799,11 +799,12 @@ export const Stamps = () => {
                 {address ? <>
                   <LoginOptions wallet={address ?? ""} onSuccess={async (args) => {
                     const dbUser = await getUser()
+                    console.log(args, 'lens args')
                     await insertStamp({
                       app_id: parseInt(process.env?.NEXT_PUBLIC_DAPP_ID ?? ""), stamp_type: "lens-protocol",
                       stampData: {
-                        uniquevalue: args.handle,
-                        identity: args.id
+                        uniquevalue: args?.id,
+                        identity: args.handle?.fullHandle,
                       },
                       user_data: {
                         user_id: dbUser?.id,
