@@ -549,6 +549,11 @@ export const Stamps = () => {
   const doesStampExist = (stamp_id: number | string) =>
     allStamps?.filter(({ stamptype }) => stamptype == stamp_id)?.[0]
 
+
+  const [lensModalOpen, setLensModalOpen] = useState(false)
+  const [gitcoinModalOpen, setGitcoinModalOpen] = useState(false)
+
+
   return (
     <div className="p-3 pb-16">
       <div className="flex mb-3 items-center justify-between">
@@ -811,20 +816,36 @@ export const Stamps = () => {
                     window.location.reload()
                   }} />
                 </> : <>
-                  {connectors.map((connector) => (
-                    <Button
-                      variant="secondary"
-                      className="bg-blue-500 text-white"
-                      style={{ width: "200px" }}
-                      key={connector.uid}
-                      onClick={() => {
-                        localStorage?.setItem("lens-loggin", 'true');
-                        connect({ connector })
-                      }}
-                    >
-                      {connector.name}
-                    </Button>
-                  ))}
+                  <Sheet
+                    open={lensModalOpen}
+                    onOpenChange={(value) => {
+                      if (value === false) {
+                        setLensModalOpen(false)
+                      }
+                    }}
+                  >
+                    <SheetContent>
+                      <p className="text-xl font-bold mb-5">Connect Web3 Wallet for Lens</p>
+                      {connectors.map((connector) => (
+                        <Button
+                          variant="secondary"
+                          className="bg-blue-500 mb-4 text-white"
+                          style={{ width: "200px" }}
+                          key={connector.uid}
+                          onClick={() => {
+                            localStorage?.setItem("lens-loggin", 'true');
+                            connect({ connector })
+                          }}
+                        >
+                          {connector.name}
+                        </Button>
+                      ))}
+                    </SheetContent>
+                  </Sheet>
+                  <Button variant="outline"
+                    className="bg-blue-500 text-white" onClick={() => {
+                      setLensModalOpen(true)
+                    }}>Connect Lens Wallet</Button>
                 </>}
 
               </>
@@ -1284,17 +1305,36 @@ export const Stamps = () => {
               </div>
             ) : (
               <>
-                {connectors.map((connector) => (
-                  <Button
-                    variant="secondary"
-                    className="bg-blue-500 text-white"
-                    style={{ width: "200px" }}
-                    key={connector.uid}
-                    onClick={() => connect({ connector })}
-                  >
-                    {connector.name}
-                  </Button>
-                ))}
+                <Sheet
+                  open={lensModalOpen}
+                  onOpenChange={(value) => {
+                    if (value === false) {
+                      setGitcoinModalOpen(false)
+                    }
+                  }}
+                >
+                  <SheetContent>
+                    <p className="text-xl font-bold mb-5">Connect Web3 Wallet for Gitcoin Passport</p>
+                    {connectors.map((connector) => (
+                      <Button
+                        variant="secondary"
+                        className="bg-blue-500 mb-4 text-white"
+                        style={{ width: "200px" }}
+                        key={connector.uid}
+                        onClick={() => {
+                          connect({ connector })
+                        }}
+                      >
+                        {connector.name}
+                      </Button>
+                    ))}
+                  </SheetContent>
+                </Sheet>
+                <Button variant="outline"
+                  className="bg-blue-500 text-white" onClick={() => {
+                    setGitcoinModalOpen(true)
+                  }}>Connect Gitcoin</Button>
+
               </>
 
             )}

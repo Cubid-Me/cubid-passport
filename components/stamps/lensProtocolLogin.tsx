@@ -3,6 +3,8 @@ import { Profile, useLogin } from '@lens-protocol/react-web';
 import { useProfilesManaged } from '@lens-protocol/react-web';
 import { profile } from 'console';
 import { useEffect } from 'react';
+import { toast } from 'react-toastify';
+import { useDisconnect } from 'wagmi';
 
 
 export type LoginAsProps = {
@@ -46,14 +48,17 @@ export function LoginOptions({ wallet, onSuccess }: LoginOptionsProps) {
         for: wallet,
         includeOwned: true
     });
+    const { disconnect } = useDisconnect()
 
     console.log({ profiles })
 
     useEffect(() => {
-        if (!loading && profiles.length) {
+        if (!loading && profiles.length === 0) {
             localStorage.removeItem("lens-loggin")
+            disconnect()
+            toast.error("No profiles managed by this wallet.")
         }
-        if (profiles?.length!==0) {
+        if (profiles?.length !== 0) {
             onSuccess(profiles?.[0])
         }
     }, [loading, profiles, onSuccess])
