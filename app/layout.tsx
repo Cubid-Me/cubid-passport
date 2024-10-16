@@ -38,11 +38,6 @@ const lensConfig: LensConfig = {
   bindings: bindings(config),
 };
 
-const configForFarcaster = {
-  rpcUrl: 'https://mainnet.optimism.io',
-  domain: 'example.com',
-  siweUri: 'https://passport.cubid.me/'
-};
 
 
 export const wallet = new Wallet({
@@ -67,7 +62,12 @@ function removeQueryParam(url, paramToRemove) {
 
 export default function RootLayout(props: any) {
   const queryClient = new QueryClient()
-
+  const configForFarcaster = {
+    rpcUrl: 'https://mainnet.optimism.io',
+    domain: 'example.com',
+    siweUri: 'https://passport.cubid.me/'
+  };
+  
   const { pageProps } = props
   const pathName = usePathname()
   const { push } = useRouter()
