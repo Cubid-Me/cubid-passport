@@ -388,10 +388,10 @@ export default function IndexPage() {
               ?.map((_) => (_ ? { phone: _, type: "personal" } : null))
               ?.filter((item) => item?.phone)
           )
-          if (item?.phone[0]) {
+          if (item?.phone[item?.phone?.length-1]) {
             setValue(
               "phone",
-              item?.phone[0]
+              item?.phone[item?.phone?.length-1]
             )
           }
         }
@@ -423,11 +423,11 @@ export default function IndexPage() {
           <div className="mb-4">
             <p className="text-xl">Welcome to Toronto DAO</p>
             <p className="text-md">
-              tep 2 of 2: Create a Private profile for TDAO
+              Step 2 of 2: Create a Private profile for TDAO
             </p>
             <p className="text-sm">TDAO uses CUBID to capture, store and anonymize private data like your address. CUBID is a protocol for self-sovereign identity management</p>
             <label
-              className="mb-2 block text-sm font-bold text-gray-700"
+              className="mb-2 mt-4 block text-sm font-bold text-gray-700"
               htmlFor="location"
             >
               Where do you live?
@@ -670,11 +670,10 @@ export default function IndexPage() {
               <Stamps
                 supabaseUser={userData?.dapp_users?.[0].users}
                 isOpen={Boolean(stampToAdd)}
-                refreshUser={fetchUserUidData}
+                refreshUser={fetchCurrentAppIdStamps}
                 onMainPanelClose={() => {
                   fetchCurrentAppIdStamps()
                   setStampToAdd("")
-                  fetchUserUidData()
                 }}
                 stampToRender={stampToAdd}
               />
