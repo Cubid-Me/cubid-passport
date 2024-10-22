@@ -13,28 +13,9 @@ import { useCreatedByAppId } from "@/hooks/useCreatedByApp"
 
 import { encode_data } from "../../lib/encode_data"
 import { supabase } from "../../lib/supabase"
-import { insertStamp } from "@/lib/stampInsertion"
+import { insertStamp, stampsWithId } from "@/lib/stampInsertion"
 import axios from "axios"
 
-export const stampsWithId = {
-    facebook: 1,
-    github: 2,
-    google: 3,
-    twitter: 4,
-    discord: 5,
-    poh: 6,
-    iah: 7,
-    brightid: 8,
-    gitcoin: 9,
-    instagram: 10,
-    phone: 11,
-    gooddollar: 12,
-    "near-wallet": 15,
-    fractal: 17,
-    evm: 14,
-    email: 13,
-    solana: 53
-}
 
 const Stamps = ({
     stampToRender,
