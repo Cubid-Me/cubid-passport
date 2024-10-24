@@ -98,7 +98,7 @@ export default async function handler(
     const userId = stampData[0].created_by_user_id
     log(`Existing stamp found for user_id: ${userId}`, 55)
 
-    let { data: dappUsers } = await supabase
+    let { data: dappUsers, error: dappUserError } = await supabase
       .from("dapp_users")
       .select("*,users:user_id(*)")
       .match({ user_id: userId, dapp_id: dappId })
@@ -113,14 +113,19 @@ export default async function handler(
 
       return res.status(200).json({
         user_id: newDappUser?.[0]?.uuid,
-        new_user: true,
-        error,
+        is_new_app_user: false,
+        is_sybil_attack: false,
+        is_blacklisted: false,
+        error: error,
       })
     } else {
       log(`Dapp user already exists: ${JSON.stringify(dappUsers[0])}`, 72)
       return res.status(200).json({
         user_id: dappUsers[0]?.uuid,
-        new_user: false,
+        is_new_app_user: false,
+        is_sybil_attack: false,
+        is_blacklisted: false,
+        error: dappUserError,
       })
     }
   } else {
@@ -186,7 +191,9 @@ export default async function handler(
 
     return res.status(200).json({
       user_id: newDappUser?.[0]?.uuid,
-      new_user: true,
+      is_new_app_user: true,
+      is_sybil_attack: false,
+      is_blacklisted: false,
       error,
     })
   }
