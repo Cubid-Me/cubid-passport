@@ -41,13 +41,19 @@ const rough_location = async (req: any, res: any) => {
     return Math.round(number * 100) / 100
   }
 
+  if (!address?.locationDetails?.geometry?.location?.lat) {
+    res.send({
+      error: "No location found for user"
+    })
+  }
+
   const openLocationCode = new OpenLocationCode()
   const { country } = await getLocationDetailsFromPlusCode(
     openLocationCode.encode(
       address?.locationDetails?.geometry?.location?.lat ??
-        all_location?.address?.coordinates?.lat,
+      all_location?.address?.coordinates?.lat,
       address?.locationDetails?.geometry?.location?.lng ??
-        all_location?.address?.coordinates?.lon
+      all_location?.address?.coordinates?.lon
     )
   )
   res.send({
