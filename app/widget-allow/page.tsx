@@ -93,7 +93,7 @@ const Stamps = ({
                     ></div>
                     <h2 className="text-zinc-900 dark:text-white mt-4 animate-pulse ">Loading...</h2>
                     <p className="text-zinc-600 dark:text-zinc-400 animate-pulse">
-                        Initializing your stamps and redirecting you back
+                        Initializing your credentials and redirecting you back
                     </p>
                 </div>
             </div>
