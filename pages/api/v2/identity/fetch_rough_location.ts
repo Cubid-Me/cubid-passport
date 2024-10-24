@@ -2,7 +2,7 @@
 import NextCors from "nextjs-cors"
 import { OpenLocationCode } from "open-location-code"
 
-import { getCountryFromPlusCode } from "../../utils/locationMethods"
+import { getLocationDetailsFromPlusCode } from "../../utils/locationMethods"
 import { stampsWithId } from "../../utils/stampKey"
 import { supabase } from "../../utils/supabase"
 
@@ -41,39 +41,36 @@ const rough_location = async (req: any, res: any) => {
     return Math.round(number * 10) / 10
   }
 
-  if (Boolean(address?.locationDetails?.geometry?.location?.lat ??
-    all_location?.address?.coordinates?.lat) === false) {
+  if (Boolean(address?.locationDetails?.geometry?.location?.lat)) {
     res.send({
       error: "No location found for user"
     })
   }
 
   const openLocationCode = new OpenLocationCode()
-  const country = await getCountryFromPlusCode(
+  const country = await getLocationDetailsFromPlusCode(
     openLocationCode.encode(
       address?.locationDetails?.geometry?.location?.lat ??
-      all_location?.address?.coordinates?.lat,
+      address?.coordinates?.lat,
       address?.locationDetails?.geometry?.location?.lng ??
-      all_location?.address?.coordinates?.lon
+      address?.coordinates?.lon
     )
   )
   res.send({
     cubid_country: country,
     pluscode: openLocationCode.encode(
-      address?.locationDetails?.geometry?.location?.lat ??
-      all_location?.address?.coordinates?.lat,
-      address?.locationDetails?.geometry?.location?.lng ??
-      all_location?.address?.coordinates?.lon,
+      address?.locationDetails?.geometry?.location?.lat,
+      address?.locationDetails?.geometry?.location?.lng,
       6
     ),
     coordinates: {
       lat: roundToTwoDecimals(
         address?.locationDetails?.geometry?.location?.lat ??
-        all_location?.address?.coordinates?.lat
+        address?.coordinates?.lat
       ),
       lng: roundToTwoDecimals(
         address?.locationDetails?.geometry?.location?.lng ??
-        all_location?.address?.coordinates?.lon
+      address?.coordinates?.lon
       ),
     },
     error,

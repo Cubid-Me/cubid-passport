@@ -41,12 +41,7 @@ const rough_location = async (req: any, res: any) => {
     return Math.round(number * 100) / 100
   }
 
-  if (Boolean(address?.locationDetails?.geometry?.location?.lat ??
-    all_location?.address?.coordinates?.lat) === false) {
-    res.send({
-      error: "No location found for user"
-    })
-  }
+
   const openLocationCode = new OpenLocationCode()
   const allLocationData =
     await getLocationDetailsFromPlusCode(
@@ -57,6 +52,12 @@ const rough_location = async (req: any, res: any) => {
         address?.coordinates?.lon
       )
     )
+  if (Boolean(address?.locationDetails?.geometry?.location?.lat ??
+    address?.coordinates?.lat) === false) {
+    res.send({
+      error: "No location found for user"
+    })
+  }
   const { country, postalCode, formattedAddress } = allLocationData ?? {}
 
   function removePlusCode(input) {
