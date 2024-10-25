@@ -388,10 +388,10 @@ export default function IndexPage() {
               ?.map((_) => (_ ? { phone: _, type: "personal" } : null))
               ?.filter((item) => item?.phone)
           )
-          if (item?.phone[item?.phone?.length-1]) {
+          if (item?.phone[item?.phone?.length - 1]) {
             setValue(
               "phone",
-              item?.phone[item?.phone?.length-1]
+              item?.phone[item?.phone?.length - 1]
             )
           }
         }
@@ -401,7 +401,7 @@ export default function IndexPage() {
 
   useEffect(() => {
     fetchCurrentAppIdStamps()
-  }, [fetchCurrentAppIdStamps])
+  }, [fetchCurrentAppIdStamps, stampToAdd])
 
   const handleLocationSearch = debounce(async (input) => {
     setSelectedLocation(null)
@@ -415,6 +415,10 @@ export default function IndexPage() {
   }, 500)
 
   console.log('phone is here', watch("phone"))
+
+  function roundToTwoDecimals(num) {
+    return Math.round(num * 100) / 100;
+  }
 
   return (
     <>
@@ -600,8 +604,8 @@ export default function IndexPage() {
               </span>
             )}
           </div> */}
-
-          {Boolean(locationDetailsJSON) && Boolean(watch("phone")) ? (
+          {console.log({ selectedLocation })}
+          {Boolean(selectedLocation) && Boolean(watch("phone")) ? (
             <div className="text-xs mb-2">
               <p className="text-xs">
                 After clicking submit you agree to share this location data with
@@ -610,17 +614,7 @@ export default function IndexPage() {
               <div className="p-5 rounded-lg shadow-md">
                 {Boolean(locationDetailsJSON.placename) && (
                   <div className="mb-2">
-                    <strong>Place Name:</strong> <span>{locationDetailsJSON.placename}</span>
-                  </div>
-                )}
-                {Boolean(locationDetailsJSON.country) && (
-                  <div className="mb-2">
-                    <strong>Country:</strong> <span>{locationDetailsJSON.country}</span>
-                  </div>
-                )}
-                {Boolean(locationDetailsJSON.postalcode) && (
-                  <div className="mb-2">
-                    <strong>Postal Code:</strong> <span>{locationDetailsJSON.postalcode}</span>
+                    <strong>Place Name:</strong> <span>{selectedLocation.formatted_address}</span>
                   </div>
                 )}
                 {Boolean(locationDetailsJSON.pluscode) && (
@@ -630,7 +624,7 @@ export default function IndexPage() {
                 )}
                 {Boolean(locationDetailsJSON.coordinates) && (
                   <div className="mb-2">
-                    <strong>Coordinates:</strong> <span>Latitude: {locationDetailsJSON.coordinates.lat}, Longitude: {locationDetailsJSON.coordinates.lng}</span>
+                    <strong>Coordinates:</strong> <span>Latitude: {roundToTwoDecimals(selectedLocation.geometry.location.lat)}, Longitude: {roundToTwoDecimals(selectedLocation.geometry.location.lng)}</span>
                   </div>
                 )}
                 {Boolean(locationDetailsJSON.error) && (
