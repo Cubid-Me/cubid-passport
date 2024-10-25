@@ -8,7 +8,7 @@ import { insertStampPerm } from "@/lib/insert_stamp_perm"
 
 import { stampsWithId } from "./utils/stampKey"
 import { supabase } from "./utils/supabase"
-import { insertStamp } from "@/lib/stampInsertion"
+import { server_insertStamp } from "@/lib/stampInsertion"
 
 export default async function handler(
   req: NextApiRequest,
@@ -32,7 +32,7 @@ export default async function handler(
     .from("evm_accounts")
     .insert([{ private_key: privateKey, address: address, dapp_id, user_id }])
 
-  await insertStamp({
+  await server_insertStamp({
     stamp_type: 'evm',
     user_data: { user_id: user_id, uuid: '' },
     stampData: {

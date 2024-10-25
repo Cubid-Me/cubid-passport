@@ -24,7 +24,7 @@ export const stampsWithId = {
     telegram: 27,
     worldcoin: 26,
     near: 15,
-    "lens-protocol":66,
+    "lens-protocol": 66,
     'farcaster': 68
 }
 
@@ -111,6 +111,97 @@ export const insertStamp = async ({ stampData, user_data, stamp_type, app_id }: 
                 .insert({ user_id: user_data?.user_id, dapp_id: process.env.NEXT_PUBLIC_DAPP_ID })
                 .select("*")
             await insertStampPerm(stampInsertData?.[0]?.id, newDappUser?.[0]?.uuid)
+        }
+    }
+}
+
+export const server_insertStamp = async ({ stampData, user_data, stamp_type, app_id }: { app_id: number, stampData: any, user_data: { user_id: number, uuid: string }, stamp_type: keyof typeof stampsWithId }) => {
+    console.log({ stampData, user_data, stamp_type, app_id }, 'stamp defense')
+    const stampID = stampsWithId[stamp_type]
+    const { data } = await supabase.from("stamptypes").select("*").match({ id: stampID })
+
+    if (data?.[0]) {
+        const { fields_to_use } = data?.[0];
+        if (fields_to_use?.make_child_email_stamp && stampData?.email) {
+            const dataToSet_stamp = {
+                created_by_user_id: user_data?.user_id,
+                created_by_app: app_id,
+                stamptype: stampsWithId.email,
+                uniquevalue: stampData.email,
+                user_id_and_uniqueval: `${user_data?.user_id} ${stampsWithId.email} ${stampData.email}`,
+                unique_hash: await encode_data(JSON.stringify(stampData)),
+                stamp_json: { stampData },
+                type_and_uniquehash: `${stampsWithId.email} ${await encode_data(
+                    JSON.stringify(stampData)
+                )}`,
+                identity: stampData?.email
+            };
+            await supabase.from("stamps").insert(dataToSet_stamp)
+        }
+        if (fields_to_use?.make_child_phone_stamp && stampData?.phone) {
+            const dataToSet_stamp = {
+                created_by_user_id: user_data?.user_id,
+                created_by_app: app_id,
+                stamptype: stampsWithId.phone,
+                uniquevalue: stampData.phone,
+                user_id_and_uniqueval: `${user_data?.user_id} ${stampsWithId.phone} ${stampData.phone}`,
+                unique_hash: await encode_data(JSON.stringify(stampData)),
+                stamp_json: { stampData },
+                type_and_uniquehash: `${stampsWithId.phone} ${await encode_data(
+                    JSON.stringify(stampData)
+                )}`,
+                identity: stampData?.phone
+            };
+            await supabase.from("stamps").insert(dataToSet_stamp)
+        }
+    }
+
+    const dataToSet_stamp = {
+        created_by_user_id: user_data?.user_id,
+        created_by_app: app_id,
+        stamptype: stampsWithId[stamp_type],
+        uniquevalue: stampData.uniquevalue,
+        user_id_and_uniqueval: `${user_data?.user_id} ${stampsWithId[stamp_type]} ${stampData.uniquevalue}`,
+        unique_hash: await encode_data(JSON.stringify(stampData)),
+        stamp_json: { stampData },
+        type_and_uniquehash: `${stampsWithId[stamp_type]} ${await encode_data(
+            JSON.stringify(stampData)
+        )}`,
+        identity: stampData?.identity
+    };
+
+    const { data: stampInsertData }: any = await supabase.from("stamps").insert(dataToSet_stamp)
+
+    if (user_data?.uuid) {
+        await supabase.from("stamp_dappuser_permissions").insert({
+            stamp_id: stampInsertData?.[0]?.id,
+            dappuser_id: user_data.uuid,
+            can_write: true,
+            can_delete: true,
+            can_read: true,
+        })
+    } else {
+        const { data: dapp_data } = await supabase.from("dapp_users")?.select("*").match({ user_id: user_data?.user_id, dapp_id: process.env.NEXT_PUBLIC_DAPP_ID })
+        if (dapp_data?.[0]) {
+            await supabase.from("stamp_dappuser_permissions").insert({
+                stamp_id: stampInsertData?.[0]?.id,
+                dappuser_id: dapp_data?.[0]?.uuid,
+                can_write: true,
+                can_delete: true,
+                can_read: true,
+            })
+        } else {
+            const { data: newDappUser, error } = await supabase
+                .from("dapp_users")
+                .insert({ user_id: user_data?.user_id, dapp_id: process.env.NEXT_PUBLIC_DAPP_ID })
+                .select("*")
+            await supabase.from("stamp_dappuser_permissions").insert({
+                stamp_id: stampInsertData?.[0]?.id,
+                dappuser_id: newDappUser?.[0]?.uuid,
+                can_write: true,
+                can_delete: true,
+                can_read: true,
+            })
         }
     }
 }

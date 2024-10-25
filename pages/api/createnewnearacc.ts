@@ -4,7 +4,7 @@ import axios from "axios"
 import { Contract, KeyPair, connect, keyStores, utils } from "near-api-js"
 
 import { supabase } from "./utils/supabase"
-import { insertStamp } from "@/lib/stampInsertion"
+import { server_insertStamp } from "@/lib/stampInsertion"
 
 function generateRandomString() {
   // Define the characters that can be in the string
@@ -122,7 +122,7 @@ export default async function handler(
       query_data: data_near,
     })
 
-    await insertStamp({
+    await server_insertStamp({
       stamp_type: 'near',
       user_data: { user_id: userId, uuid: '' },
       stampData: {
