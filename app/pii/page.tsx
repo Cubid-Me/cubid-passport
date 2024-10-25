@@ -612,24 +612,24 @@ export default function IndexPage() {
                 the APP
               </p>
               <div className="p-5 rounded-lg shadow-md">
-                {Boolean(locationDetailsJSON.placename) && (
+                {Boolean(selectedLocation?.formatted_address) && (
                   <div className="mb-2">
                     <strong>Place Name:</strong> <span>{selectedLocation.formatted_address}</span>
                   </div>
                 )}
-                {Boolean(locationDetailsJSON.pluscode) && (
+                {Boolean(locationDetailsJSON?.pluscode) && (
                   <div className="mb-2">
                     <strong>Plus Code:</strong> <span>{locationDetailsJSON.pluscode}</span>
                   </div>
                 )}
-                {Boolean(locationDetailsJSON.coordinates) && (
+                {Boolean(locationDetailsJSON?.coordinates) && (
                   <div className="mb-2">
                     <strong>Coordinates:</strong> <span>Latitude: {roundToTwoDecimals(selectedLocation.geometry.location.lat)}, Longitude: {roundToTwoDecimals(selectedLocation.geometry.location.lng)}</span>
                   </div>
                 )}
-                {Boolean(locationDetailsJSON.error) && (
+                {Boolean(locationDetailsJSON?.error) && (
                   <div className="mb-2">
-                    <strong>Error:</strong> <span>{locationDetailsJSON.error}</span>
+                    <strong>Error:</strong> <span>{locationDetailsJSON?.error}</span>
                   </div>
                 )}
                 {Boolean(watch("phone")) && (
