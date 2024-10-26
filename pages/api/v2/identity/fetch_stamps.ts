@@ -55,6 +55,11 @@ export default async function handler(req: any, res: any) {
                 stamp_id: item.id,
             })
 
+        if (item.stamptype === 3) {
+            console.log({ permissionData })
+
+        }
+
         return {
             ...item,
             emailForVerification: dapp_users[0]?.users.email,
@@ -66,6 +71,7 @@ export default async function handler(req: any, res: any) {
         const stampDataToSend = await Promise.all(stampPromises)
         res.status(200).json({
             all_stamps: stampDataToSend,
+            email: dapp_users[0]?.users.email
         })
     } catch (err) {
         log("Error processing stamps", 80)
