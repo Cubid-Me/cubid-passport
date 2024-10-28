@@ -25,7 +25,8 @@ export const stampsWithId = {
     worldcoin: 26,
     near: 15,
     "lens-protocol": 66,
-    'farcaster': 68
+    'farcaster': 68,
+    'address': 70
 }
 
 
