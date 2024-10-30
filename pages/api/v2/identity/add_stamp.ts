@@ -15,7 +15,7 @@ const add_stamp = async (req: any, res: any) => {
     const { data:dapp_page_data } = await supabase.from("dapp_pages").select("*").match({ id: page_id })
 
     server_insertStamp({
-        app_id: dapp_page_data?.[0]?.id,
+        app_id: dapp_page_data?.[0]?.dapp_id,
         stampData: stampData, user_data: { user_id: data?.[0]?.user_id, uuid: user_data?.uuid }, stamp_type: stamp_type
     })
     res.send({

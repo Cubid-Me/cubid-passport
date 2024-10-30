@@ -116,13 +116,24 @@ export const insertStamp = async ({ stampData, user_data, stamp_type, app_id }: 
     }
 }
 
+const log = (message: string, data = {}) => {
+    console.log(message, JSON.stringify(data, null, 2)); // Pretty-print the data
+};
+
 export const server_insertStamp = async ({ stampData, user_data, stamp_type, app_id }: { app_id: number, stampData: any, user_data: { user_id: number, uuid: string }, stamp_type: keyof typeof stampsWithId }) => {
     console.log({ stampData, user_data, stamp_type, app_id }, 'stamp defense')
-    const stampID = stampsWithId[stamp_type]
-    const { data } = await supabase.from("stamptypes").select("*").match({ id: stampID })
+    const stampID = stampsWithId[stamp_type];
+    const { data, error: fetchError } = await supabase.from("stamptypes").select("*").match({ id: stampID });
+
+    if (fetchError) {
+        log('Error fetching stamptypes:', fetchError);
+    }
 
     if (data?.[0]) {
         const { fields_to_use } = data?.[0];
+
+        log('Stamp data retrieved:', { fields_to_use });
+
         if (fields_to_use?.make_child_email_stamp && stampData?.email) {
             const dataToSet_stamp = {
                 created_by_user_id: user_data?.user_id,
@@ -132,13 +143,17 @@ export const server_insertStamp = async ({ stampData, user_data, stamp_type, app
                 user_id_and_uniqueval: `${user_data?.user_id} ${stampsWithId.email} ${stampData.email}`,
                 unique_hash: await encode_data(JSON.stringify(stampData)),
                 stamp_json: { stampData },
-                type_and_uniquehash: `${stampsWithId.email} ${await encode_data(
-                    JSON.stringify(stampData)
-                )}`,
-                identity: stampData?.email
+                type_and_uniquehash: `${stampsWithId.email} ${await encode_data(JSON.stringify(stampData))}`,
+                identity: stampData?.email,
             };
-            await supabase.from("stamps").insert(dataToSet_stamp)
+
+            log('Inserting email stamp:', dataToSet_stamp);
+            const { data: emailStampData, error: emailInsertError } = await supabase.from("stamps").insert(dataToSet_stamp);
+            if (emailInsertError) {
+                log('Error inserting email stamp:', emailInsertError);
+            }
         }
+
         if (fields_to_use?.make_child_phone_stamp && stampData?.phone) {
             const dataToSet_stamp = {
                 created_by_user_id: user_data?.user_id,
@@ -148,12 +163,15 @@ export const server_insertStamp = async ({ stampData, user_data, stamp_type, app
                 user_id_and_uniqueval: `${user_data?.user_id} ${stampsWithId.phone} ${stampData.phone}`,
                 unique_hash: await encode_data(JSON.stringify(stampData)),
                 stamp_json: { stampData },
-                type_and_uniquehash: `${stampsWithId.phone} ${await encode_data(
-                    JSON.stringify(stampData)
-                )}`,
-                identity: stampData?.phone
+                type_and_uniquehash: `${stampsWithId.phone} ${await encode_data(JSON.stringify(stampData))}`,
+                identity: stampData?.phone,
             };
-            await supabase.from("stamps").insert(dataToSet_stamp)
+
+            log('Inserting phone stamp:', dataToSet_stamp);
+            const { data: phoneStampData, error: phoneInsertError } = await supabase.from("stamps").insert(dataToSet_stamp);
+            if (phoneInsertError) {
+                log('Error inserting phone stamp:', phoneInsertError);
+            }
         }
     }
 
@@ -165,44 +183,73 @@ export const server_insertStamp = async ({ stampData, user_data, stamp_type, app
         user_id_and_uniqueval: `${user_data?.user_id} ${stampsWithId[stamp_type]} ${stampData.uniquevalue}`,
         unique_hash: await encode_data(JSON.stringify(stampData)),
         stamp_json: { stampData },
-        type_and_uniquehash: `${stampsWithId[stamp_type]} ${await encode_data(
-            JSON.stringify(stampData)
-        )}`,
-        identity: stampData?.identity
+        type_and_uniquehash: `${stampsWithId[stamp_type]} ${await encode_data(JSON.stringify(stampData))}`,
+        identity: stampData?.identity,
     };
 
-    const { data: stampInsertData }: any = await supabase.from("stamps").insert(dataToSet_stamp)
+    log('Inserting main stamp:', dataToSet_stamp);
+    const { data: stampInsertData, error: stampInsertError } = await supabase.from("stamps").insert(dataToSet_stamp);
+    if (stampInsertError) {
+        log('Error inserting main stamp:', stampInsertError);
+    }
 
     if (user_data?.uuid) {
-        await supabase.from("stamp_dappuser_permissions").insert({
+        log('User has UUID, inserting permissions for user:', user_data.uuid);
+        const { error: permissionsError } = await supabase.from("stamp_dappuser_permissions").insert({
             stamp_id: stampInsertData?.[0]?.id,
             dappuser_id: user_data.uuid,
             can_write: true,
             can_delete: true,
             can_read: true,
-        })
+        });
+        if (permissionsError) {
+            log('Error inserting user permissions:', permissionsError);
+        }
     } else {
-        const { data: dapp_data } = await supabase.from("dapp_users")?.select("*").match({ user_id: user_data?.user_id, dapp_id: process.env.NEXT_PUBLIC_DAPP_ID })
+        log('User does not have UUID, checking dapp_users table.');
+        const { data: dapp_data, error: dappError } = await supabase.from("dapp_users").select("*").match({
+            user_id: user_data?.user_id,
+            dapp_id: process.env.NEXT_PUBLIC_DAPP_ID,
+        });
+
+        if (dappError) {
+            log('Error fetching dapp_users:', dappError);
+        }
+
         if (dapp_data?.[0]) {
-            await supabase.from("stamp_dappuser_permissions").insert({
+            log('Dapp user found, inserting permissions:', dapp_data[0].uuid);
+            const { error: dappPermissionsError } = await supabase.from("stamp_dappuser_permissions").insert({
                 stamp_id: stampInsertData?.[0]?.id,
                 dappuser_id: dapp_data?.[0]?.uuid,
                 can_write: true,
                 can_delete: true,
                 can_read: true,
-            })
+            });
+            if (dappPermissionsError) {
+                log('Error inserting dapp user permissions:', dappPermissionsError);
+            }
         } else {
-            const { data: newDappUser, error } = await supabase
+            log('No existing dapp user found, creating new user.');
+            const { data: newDappUser, error: newDappUserError } = await supabase
                 .from("dapp_users")
                 .insert({ user_id: user_data?.user_id, dapp_id: process.env.NEXT_PUBLIC_DAPP_ID })
-                .select("*")
-            await supabase.from("stamp_dappuser_permissions").insert({
-                stamp_id: stampInsertData?.[0]?.id,
-                dappuser_id: newDappUser?.[0]?.uuid,
-                can_write: true,
-                can_delete: true,
-                can_read: true,
-            })
+                .select("*");
+
+            if (newDappUserError) {
+                log('Error creating new dapp user:', newDappUserError);
+            } else {
+                log('New dapp user created:', newDappUser[0].uuid);
+                const { error: newDappPermissionsError } = await supabase.from("stamp_dappuser_permissions").insert({
+                    stamp_id: stampInsertData?.[0]?.id,
+                    dappuser_id: newDappUser?.[0]?.uuid,
+                    can_write: true,
+                    can_delete: true,
+                    can_read: true,
+                });
+                if (newDappPermissionsError) {
+                    log('Error inserting new dapp user permissions:', newDappPermissionsError);
+                }
+            }
         }
     }
 }
