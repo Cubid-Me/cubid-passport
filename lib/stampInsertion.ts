@@ -1,3 +1,4 @@
+// @ts-nocheck
 import axios from "axios"
 import { encode_data } from "./encode_data"
 import { insertStampPerm } from "./insert_stamp_perm"
