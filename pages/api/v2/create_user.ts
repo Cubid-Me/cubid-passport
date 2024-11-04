@@ -131,27 +131,55 @@ export default async function handler(
   } else {
     log("No existing stamp found, checking for existing user", 80)
 
-    const { data: existingUser } = await supabase
+    let existingUser;
+
+    const { data: emailUser } = await supabase
       .from("users")
       .select("*")
       .match({ email: userIdentifiers.email })
     log(`Existing user data: ${JSON.stringify(existingUser)}`, 85)
+
+    if (emailUser?.[0]) {
+      existingUser = emailUser
+    } else {
+      const { data: phone_user } = await supabase
+        .from("users")
+        .select("*")
+        .match({ unique_phone: userIdentifiers.phone })
+      if (phone_user?.[0]) {
+        existingUser = phone_user
+      }
+    }
 
     let userId
     if (existingUser && existingUser.length > 0) {
       userId = existingUser[0].id
       log(`Existing user found with user_id: ${userId}`, 90)
     } else {
-      const { data: newUser } = await supabase
-        .from("users")
-        .insert({
-          email: userIdentifiers.email,
-          created_by_app: dappId,
-          is_3rd_party: true,
-        })
-        .select("*")
-      log(`New user created: ${JSON.stringify(newUser)}`, 97)
-      userId = newUser?.[0].id
+      if (userIdentifiers.email) {
+        const { data: newUser } = await supabase
+          .from("users")
+          .insert({
+            email: userIdentifiers.email,
+            created_by_app: dappId,
+            is_3rd_party: true,
+          })
+          .select("*")
+        log(`New user created: ${JSON.stringify(newUser)}`, 97)
+        userId = newUser?.[0].id
+      } else if (userIdentifiers.phone) {
+        const { data: newUser } = await supabase
+          .from("users")
+          .insert({
+            unique_phone: userIdentifiers.phone,
+            created_by_app: dappId,
+            is_3rd_party: true,
+          })
+          .select("*")
+        log(`New user created: ${JSON.stringify(newUser)}`, 97)
+        userId = newUser?.[0].id
+      }
+
     }
 
     log(`Stamp type to assign: ${stampType}`, 102)

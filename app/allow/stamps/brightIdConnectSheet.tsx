@@ -24,21 +24,20 @@ export const BrightIdConnectSheet = ({
   const { getUser } = useAuth({})
 
   const fetchUserData = useCallback(async () => {
-    if (email) {
-      const user = supabaseUser
-      if (user?.id) {
-        const {
-          data: { data },
-        } = await axios.post("/api/supabase/select", {
-          match: { created_by_user_id: user.id, stamptype: 8 },
-          table: "stamps",
-        })
-        if (data?.[0]) {
-          setBrightIdData?.(data[0])
-        }
-        return data?.[0]
+    const user = supabaseUser
+    if (user?.id) {
+      const {
+        data: { data },
+      } = await axios.post("/api/supabase/select", {
+        match: { created_by_user_id: user.id, stamptype: 8 },
+        table: "stamps",
+      })
+      if (data?.[0]) {
+        setBrightIdData?.(data[0])
       }
+      return data?.[0]
     }
+
   }, [email, getUser, supabaseUser])
 
   useEffect(() => {
@@ -52,7 +51,7 @@ export const BrightIdConnectSheet = ({
         const allUserData = await fetchUserData()
         if (allUserData) {
           closeModal()
-          ;(window as any).location.reload()
+            ; (window as any).location.reload()
         }
       }, 1000)
     } else {

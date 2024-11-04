@@ -84,7 +84,7 @@ export const useAuth = (appHookProps: hookProps) => {
       } = await axios.post("/api/supabase/select", {
         table: "users",
         match: {
-          email: localStorage.getItem("email"),
+          email: localStorage.getItem("email") ?? localStorage.getItem("unique_phone"),
         },
       })
       return dbData?.[0]

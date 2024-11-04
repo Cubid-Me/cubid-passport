@@ -198,6 +198,7 @@ export const Stamps = () => {
   const [allStamps, setAllStamps] = useState([])
   const [stampLoading, setStampLoading] = useState(true)
   const email: any = useSelector((state: any) => state?.user?.email ?? "")
+  const unique_phone: any = useSelector((state: any) => state?.user?.unique_phone ?? "")
   const { stampCollector, fetchNearAndGitcoinStamps, gitcoinScore } = useStamps(
     {}
   )
@@ -221,7 +222,16 @@ export const Stamps = () => {
       })
       setUserState(userData?.[0])
     }
-  }, [email])
+    if (unique_phone) {
+      const {
+        data: { data: userData },
+      } = await axios.post("/api/supabase/select", {
+        match: { unique_phone },
+        table: "users",
+      })
+      setUserState(userData?.[0])
+    }
+  }, [email, unique_phone])
 
   const fetchBrightIdData = useCallback(async () => {
     if (email) {
@@ -403,50 +413,7 @@ export const Stamps = () => {
             },
             app_id: await getIdForApp()
           })
-          // const database = {
-          //   uniquehash: await encode_data(user_metadata?.email),
-          //   stamptype: stampId,
-          //   created_by_user_id: dbUser?.id,
-          //   unencrypted_unique_data: JSON.stringify(user_metadata),
-          //   type_and_hash: `${stampId} ${await encode_data(
-          //     user_metadata?.email
-          //   )}`,
-          // }
-          // const dataToSet = {
-          //   created_by_user_id: dbUser?.id,
-          //   created_by_app: await getIdForApp(),
-          //   stamptype: stampId,
-          //   uniquevalue: user_metadata?.email,
-          //   user_id_and_uniqueval: `${dbUser?.id} ${stampId} ${user_metadata?.email}`,
-          //   unique_hash: await encode_data(user_metadata?.email),
-          //   stamp_json: user_metadata,
-          //   type_and_uniquehash: `${stampId} ${await encode_data(
-          //     user_metadata?.email
-          //   )}`,
-          // }
-          // await axios.post("/api/supabase/insert", {
-          //   table: "uniquestamps",
-          //   body: database,
-          // })
-          // const {
-          //   data: { error, data },
-          // } = await axios.post("/api/supabase/insert", {
-          //   table: "stamps",
-          //   body: dataToSet,
-          // })
-          // if (data?.[0]?.id) {
-          //   await axios.post("/api/supabase/insert", {
-          //     table: "authorized_dapps",
-          //     body: {
-          //       dapp_id: process.env.NEXT_PUBLIC_DAPP_ID,
-          //       dapp_and_stamp_id: `${process.env.NEXT_PUBLIC_DAPP_ID} ${data?.[0]?.id}`,
-          //       stamp_id: data?.[0]?.id,
-          //       can_read: true,
-          //       can_update: true,
-          //       can_delete: true,
-          //     },
-          //   })
-          // }
+  
           fetchStampData()
           supabase.auth.signOut()
         }
@@ -796,7 +763,7 @@ export const Stamps = () => {
             ) : (
               <>
 
-                {address  ? <>
+                {address ? <>
                   <LoginOptions wallet={address ?? ""} onSuccess={async (args) => {
                     const dbUser = await getUser()
                     console.log(args, 'lens args')
