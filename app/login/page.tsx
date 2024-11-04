@@ -14,6 +14,12 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import PhoneInput from "react-phone-input-2"
 import "react-phone-input-2/lib/style.css"
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
 
 function debounce(func: any, delay: any) {
   let timeoutId: any
@@ -38,6 +44,7 @@ export default function AuthenticationPage() {
   const [isOtpSent, setIsOtpSent] = useState(false)
   const [verificationId, setVerificationId] = useState(null)
   const recaptchaVerifier = useRef(null);
+  const [isPhoneOpen, setIsPhoneOpen] = useState(false)
 
   const submit = async (values: any) => {
     try {
@@ -81,7 +88,7 @@ export default function AuthenticationPage() {
         phoneNumber,
         appVerifier
       );
-      
+
       setVerificationId(confirmationResult.verificationId)
       setIsOtpSent(true)
       toast.success("OTP sent successfully")
@@ -148,59 +155,44 @@ export default function AuthenticationPage() {
                 Enter your email below to authenticate
               </p>
             </div>
-            <Input
-              type="email"
-              onChange={(e) => {
-                setEmailVal(e.target.value)
-              }}
-              ref={emailField}
-              placeholder="Email"
-            />
+            {!isPhoneOpen && (
+              <>
+                <Input
+                  type="email"
+                  onChange={(e) => {
+                    setEmailVal(e.target.value)
+                  }}
+                  ref={emailField}
+                  placeholder="Email"
+                />
+                {!isEnabled && (
+                  <button
+                    style={{
+                      backgroundColor: "#0070f2",
+                      color: "white",
+                      padding: 10,
+                      paddingTop: 5,
+                      height: 40,
+                      fontSize: 14,
+                      paddingBottom: 5,
+                      opacity: 0.4,
+                      borderRadius: 5,
+                      width: 90,
+                      border: "1px solid #fff",
+                    }}
+                  >
+                    Continue
+                  </button>
+                )}
+              </>
+            )}
+
             <Input
               type="password"
               style={{ display: "none" }}
               ref={passwordField}
               placeholder="password"
             />
-
-            {/* Phone Authentication Fields with react-phone-input-2 */}
-            <PhoneInput
-              country={"us"}
-              
-              inputClass="!text-black"
-              value={phoneNumber}
-              onChange={(phone) => setPhoneNumber(`+${phone}`)}
-              inputProps={{
-                name: "phone",
-                required: true,
-                autoFocus: true,
-              }}
-              placeholder="Phone Number"
-            />
-            {isOtpSent && (
-              <Input
-                type="text"
-                id="OTPID"
-                placeholder="Enter OTP"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value)}
-              />
-            )}
-            {!isOtpSent && (
-            <div id="catcha-id"></div>
-            )}
-            <Button
-              id="send-otp-button"
-              onClick={sendOtp}
-              disabled={loading || isOtpSent}
-            >
-              Send OTP
-            </Button>
-            {isOtpSent && (
-              <Button onClick={verifyOtp} disabled={loading}>
-                Verify OTP
-              </Button>
-            )}
 
             <div style={{ width: 30, textAlign: "center", paddingLeft: "4px" }}>
               {loading && (
@@ -219,27 +211,17 @@ export default function AuthenticationPage() {
               )}
             </div>
 
-            {!isEnabled && (
-              <button
-                style={{
-                  backgroundColor: "#0070f2",
-                  color: "white",
-                  padding: 10,
-                  paddingTop: 5,
-                  height: 40,
-                  fontSize: 14,
-                  paddingBottom: 5,
-                  opacity: 0.4,
-                  borderRadius: 5,
-                  width: 90,
-                  border: "1px solid #fff",
-                }}
-              >
-                Continue
-              </button>
-            )}
 
-            {!loading && isEnabled && (
+            <Button
+              id="send-otp-button"
+              onClick={() => {
+                setIsPhoneOpen(!isPhoneOpen)
+              }}
+            >
+              Use {isPhoneOpen ? "Email" : "Phone"}
+            </Button>
+
+            {!loading && isEnabled && !isPhoneOpen && (
               <div
                 style={
                   !loading && isEnabled
@@ -261,6 +243,51 @@ export default function AuthenticationPage() {
                   loginIdField={emailField}
                   onError={(error) => console.log(error, "error")}
                 />
+
+              </div>
+            )}
+            {isPhoneOpen && (
+              <div>
+                {/* Phone Authentication Fields with react-phone-input-2 */}
+                <PhoneInput
+                  country={"us"}
+
+                  inputClass="!text-black"
+                  value={phoneNumber}
+                  onChange={(phone) => setPhoneNumber(`+${phone}`)}
+                  inputProps={{
+                    name: "phone",
+                    required: true,
+                    autoFocus: true,
+                  }}
+                  placeholder="Phone Number"
+                />
+                {isOtpSent && (
+                  <Input
+                    type="text"
+                    id="OTPID"
+                    placeholder="Enter OTP"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value)}
+                  />
+                )}
+                {!isOtpSent && (
+                  <div className="mt-2" id="catcha-id"></div>
+                )}
+                <Button
+                  id="send-otp-button"
+                  onClick={sendOtp}
+                  className="my-3"
+                  disabled={loading || isOtpSent}
+                >
+                  Send OTP
+                </Button>
+                {isOtpSent && (
+                  <Button onClick={verifyOtp} disabled={loading}>
+                    Verify OTP
+                  </Button>
+                )}
+
               </div>
             )}
           </div>
