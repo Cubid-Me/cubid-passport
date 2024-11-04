@@ -27,10 +27,12 @@ export const useAuth = (appHookProps: hookProps) => {
           id: user.uid,
           avatar: user.photoURL,
           email: user.email,
+          unique_phone: user.phoneNumber,
           name: user.displayName || user.email,
         }
         console.log({ user }, "new user")
         localStorage.setItem("email", user.email ?? "")
+        localStorage.setItem("unique_phone", user.phoneNumber ?? "")
         localStorage.removeItem("unauthenticated_user")
         setUser(setUserData)
         dispatch(login(setUserData as any)) // if a user is found, set user in Redux store
@@ -38,6 +40,7 @@ export const useAuth = (appHookProps: hookProps) => {
         setUser(null)
         localStorage.setItem("unauthenticated_user", "true")
         localStorage.removeItem("email")
+        localStorage.removeItem("phone")
         dispatch(logout())
       }
       setLoading(false)
@@ -58,6 +61,17 @@ export const useAuth = (appHookProps: hookProps) => {
           },
         })
         setSupabaseUser(dbData?.[0])
+      }
+      if (user?.unique_phone) {
+        const {
+          data: { data: dbData },
+        } = await axios.post("/api/supabase/select", {
+          table: "users",
+          match: {
+            unique_phone: localStorage.getItem("unique_phone") ?? user?.unique_phone,
+          },
+        })
+        setSupabaseUser({ ...dbData?.[0], unique_phone: user?.unique_phone })
       }
     })()
   }, [user])
