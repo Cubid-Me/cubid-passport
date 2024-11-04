@@ -98,7 +98,7 @@ export default function AuthenticationPage() {
       const credential = firebase.auth.PhoneAuthProvider.credential(verificationId, otp)
       try {
         await firebase.auth().signInWithCredential(credential)
-        toast.success("Phone authentication successful")
+        toast.success("Successfully logged into cubid")
       } catch (err) {
         console.error(err)
         toast.error("Invalid OTP")
@@ -166,6 +166,7 @@ export default function AuthenticationPage() {
             {/* Phone Authentication Fields with react-phone-input-2 */}
             <PhoneInput
               country={"us"}
+              
               inputClass="!text-black"
               value={phoneNumber}
               onChange={(phone) => setPhoneNumber(`+${phone}`)}
@@ -179,6 +180,7 @@ export default function AuthenticationPage() {
             {isOtpSent && (
               <Input
                 type="text"
+                id="OTPID"
                 placeholder="Enter OTP"
                 value={otp}
                 onChange={(e) => setOtp(e.target.value)}
