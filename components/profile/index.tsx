@@ -32,7 +32,7 @@ import {
 import { logout } from "../../redux/userSlice"
 
 export const Profile = () => {
-  const { email = "" } = useSelector((state: any) => state?.user) ?? {}
+  const { email = "", unique_phone } = useSelector((state: any) => state?.user) ?? {}
   const dispatch = useDispatch()
   const [userState, setUserState] = useState<any>({})
   const [walletState, setWalletState] = useState<any>({})
@@ -44,6 +44,15 @@ export const Profile = () => {
         data: { data: userData },
       } = await axios.post("/api/supabase/select", {
         match: { email },
+        table: "users",
+      })
+      setUserState(userData?.[0])
+    }
+    if (unique_phone) {
+      const {
+        data: { data: userData },
+      } = await axios.post("/api/supabase/select", {
+        match: { unique_phone },
         table: "users",
       })
       setUserState(userData?.[0])
@@ -64,14 +73,27 @@ export const Profile = () => {
     } else {
       setWalletState(null)
     }
+    const {
+      data: { data: wallet_details_phone },
+    } = await axios.post(`/api/supabase/select`, {
+      match: {
+        unique_phone,
+      },
+      table: "wallet_details",
+    })
+    if (wallet_details_phone?.[0]) {
+      setWalletState(wallet_details_phone?.[0])
+    } else {
+      setWalletState(null)
+    }
   }, [])
 
   useEffect(() => {
-    if (email) {
+    if (email, unique_phone) {
       fetchStamps()
-      fetchWalletDetails(email)
+      fetchWalletDetails(email, unique_phone)
     }
-  }, [fetchStamps, fetchWalletDetails, email])
+  }, [fetchStamps, fetchWalletDetails, email, unique_phone])
 
   const [nearAcc, setNearAcc] = useState([])
   const [allNearData, setAllNearData] = useState([])
@@ -168,15 +190,15 @@ export const Profile = () => {
                       ) as any
                     )?.stamp_json?.transaction?.signature
                   ) && (
-                    <button
-                      onClick={() => {
-                        fetchPrivateKeyWithAddress(item)
-                      }}
-                      className="text-white rounded-md bg-blue-600 text-xs p-2 py-1"
-                    >
-                      Export Private Key
-                    </button>
-                  )}
+                      <button
+                        onClick={() => {
+                          fetchPrivateKeyWithAddress(item)
+                        }}
+                        className="text-white rounded-md bg-blue-600 text-xs p-2 py-1"
+                      >
+                        Export Private Key
+                      </button>
+                    )}
                 </div>
               ))}
             </div>
@@ -208,6 +230,7 @@ export const Profile = () => {
           <CardContent>
             <div>
               <p>Email : {email} </p>
+              <p>Phone : {unique_phone} </p>
               <div className="mt-2 flex items-center gap-2">
                 <img
                   alt="image"

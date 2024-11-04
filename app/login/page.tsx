@@ -275,6 +275,7 @@ export default function AuthenticationPage() {
                   <Input
                     type="text"
                     id="OTPID"
+                    className="mt-3"
                     placeholder="Enter OTP"
                     value={otp}
                     onChange={(e) => setOtp(e.target.value)}
@@ -283,19 +284,21 @@ export default function AuthenticationPage() {
                 {!isOtpSent && (
                   <div className="mt-2" id="catcha-id"></div>
                 )}
-                <Button
-                  id="send-otp-button"
-                  onClick={sendOtp}
-                  className="my-3"
-                  disabled={loading || isOtpSent}
-                >
-                  Send OTP
-                </Button>
-                {isOtpSent && (
-                  <Button onClick={verifyOtp} disabled={loading}>
-                    Verify OTP
+                <div className="flex space-x-2 ">
+                  <Button
+                    id="send-otp-button"
+                    onClick={sendOtp}
+                    className="my-3"
+                    disabled={loading || isOtpSent}
+                  >
+                    Send OTP
                   </Button>
-                )}
+                  {isOtpSent && (
+                    <Button onClick={verifyOtp} disabled={loading}>
+                      Verify OTP
+                    </Button>
+                  )}
+                </div>
 
               </div>
             )}
