@@ -184,7 +184,9 @@ export default function AuthenticationPage() {
                 onChange={(e) => setOtp(e.target.value)}
               />
             )}
+            {!isOtpSent && (
             <div id="catcha-id"></div>
+            )}
             <Button
               id="send-otp-button"
               onClick={sendOtp}
