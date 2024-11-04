@@ -294,7 +294,7 @@ export default function AuthenticationPage() {
                     Send OTP
                   </Button>
                   {isOtpSent && (
-                    <Button onClick={verifyOtp} disabled={loading}>
+                    <Button  className="my-3" onClick={verifyOtp} disabled={loading}>
                       Verify OTP
                     </Button>
                   )}
