@@ -25,20 +25,6 @@ const verifyEmail = async (req: any, res: any) => {
         type: "email"
     })
 
-    const allPromises = allStamps.map((item: any) =>
-        supabase
-            .from("stamp_dappuser_permissions")
-            .insert({
-                dappuser_id: dappuser_id,
-                stamp_id: item.id,
-                can_write: true,
-                can_delete: true,
-                can_read: true,
-            })
-    );
-    await Promise.all(allPromises);
-
-
     res.send({
         success: Boolean(data?.user?.id),
     })
