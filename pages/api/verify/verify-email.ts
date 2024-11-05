@@ -19,7 +19,7 @@ const verifyEmail = async (req: any, res: any) => {
         return res.status(400).json({ error: "Invalid API key" })
     }
 
-    const { data } = await supabase.auth.verifyOtp({
+    const { data, error } = await supabase.auth.verifyOtp({
         email,
         token: otp,
         type: "email"
@@ -27,6 +27,7 @@ const verifyEmail = async (req: any, res: any) => {
 
     res.send({
         success: Boolean(data?.user?.id),
+        error
     })
 
 }
