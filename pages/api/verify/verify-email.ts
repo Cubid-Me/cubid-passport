@@ -15,6 +15,7 @@ const verifyEmail = async (req: any, res: any) => {
         .select("*")
         .match({ apikey })
     const dappId = dataForApp?.[0]?.id
+    console.log({ dappId,dataForApp })
     if (!dappId) {
         return res.status(400).json({ error: "Invalid API key" })
     }
@@ -24,7 +25,11 @@ const verifyEmail = async (req: any, res: any) => {
         token: otp,
         type: "email"
     })
-
+    console.log({
+        email,
+        token: otp,
+        type: "email"
+    })
     res.send({
         success: Boolean(data?.user?.id),
         error
