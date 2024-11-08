@@ -53,6 +53,7 @@ import { InstagramConnect } from "./instagramConnect"
 import { PhoneNumberConnect } from "./phoneNumberConnect"
 import { insertStamp } from "@/lib/stampInsertion"
 import { SignInButton } from '@farcaster/auth-kit';
+import { removeStamp } from "@/lib/webhook_call"
 
 const socialDataToMap = [
   {
@@ -413,7 +414,7 @@ export const Stamps = () => {
             },
             app_id: await getIdForApp()
           })
-  
+
           fetchStampData()
           supabase.auth.signOut()
         }
@@ -484,6 +485,7 @@ export const Stamps = () => {
     const { unique_hash, id } = allStamps.filter(
       (item: any) => item.stamptype === stamp_type
     )[0]
+    await removeStamp({ stampid: id })
     await axios.post("/api/supabase/delete", {
       match: { dapp_id: process.env.NEXT_PUBLIC_DAPP_ID, stamp_id: id },
       table: "authorized_dapps",

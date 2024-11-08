@@ -3,6 +3,7 @@ import axios from "axios"
 import { encode_data } from "./encode_data"
 import { insertStampPerm } from "./insert_stamp_perm"
 import { supabase } from "./supabase"
+import { webhook_call } from "./webhook_call"
 
 export const stampsWithId = {
     facebook: 1,
@@ -115,6 +116,11 @@ export const insertStamp = async ({ stampData, user_data, stamp_type, app_id }: 
             await insertStampPerm(stampInsertData?.[0]?.id, newDappUser?.[0]?.uuid)
         }
     }
+    webhook_call({
+        type_and_uniquehash: `${stampsWithId[stamp_type]} ${await encode_data(
+            JSON.stringify(stampData)
+        )}`
+    })
 }
 
 const log = (message: string, data = {}) => {
@@ -253,4 +259,7 @@ export const server_insertStamp = async ({ stampData, user_data, stamp_type, app
             }
         }
     }
+    webhook_call({
+        type_and_uniquehash: `${stampsWithId[stamp_type]} ${await encode_data(JSON.stringify(stampData))}`
+    })
 }
