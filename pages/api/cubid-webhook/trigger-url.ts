@@ -70,7 +70,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                                 // Update existing webhook event
                                 const { data: inserted_webhook_1 } = await supabase.from("webhook_events").update({
                                     event_type: webhook,
-                                    payload: { stampid },
+                                    dapp_id: item,
                                     retries: webhook_events_data.length,
                                 }).match({ id: webhook_events_data[0].id }).select("*");
                                 inserted_data = inserted_webhook_1?.[0];
@@ -81,6 +81,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                                     event_type: webhook,
                                     payload: { stampid },
                                     retries: 0,
+                                    dapp_id: item
                                 }).select("*");
                                 inserted_data = inserted_webhook_2?.[0];
                                 console.log("Inserted new webhook event:", inserted_data);
