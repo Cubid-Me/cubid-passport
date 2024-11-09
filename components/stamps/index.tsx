@@ -486,18 +486,18 @@ export const Stamps = () => {
       (item: any) => item.stamptype === stamp_type
     )[0]
     await removeStamp({ stampid: id })
-    await axios.post("/api/supabase/delete", {
-      match: { dapp_id: process.env.NEXT_PUBLIC_DAPP_ID, stamp_id: id },
-      table: "authorized_dapps",
-    })
-    await axios.post("/api/supabase/delete", {
-      match: { stamptype: stamp_type, created_by_user_id: supabaseUser?.id },
-      table: "stamps",
-    })
-    await axios.post("/api/supabase/delete", {
-      match: { uniquehash: unique_hash },
-      table: "uniquestamps",
-    })
+    // await axios.post("/api/supabase/delete", {
+    //   match: { dapp_id: process.env.NEXT_PUBLIC_DAPP_ID, stamp_id: id },
+    //   table: "authorized_dapps",
+    // })
+    // await axios.post("/api/supabase/delete", {
+    //   match: { stamptype: stamp_type, created_by_user_id: supabaseUser?.id },
+    //   table: "stamps",
+    // })
+    // await axios.post("/api/supabase/delete", {
+    //   match: { uniquehash: unique_hash },
+    //   table: "uniquestamps",
+    // })
 
     toast.success("Stamp removed successfully")
     fetchUserData()
