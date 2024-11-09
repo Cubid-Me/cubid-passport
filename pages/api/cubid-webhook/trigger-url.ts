@@ -33,6 +33,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
                 // Fetch stamp data
                 const { data, error } = await supabase.from("stamps").select("*").match({ id: stampid });
+                console.log({ data, error })
                 if (error) {
                     console.error("Error fetching stamp data:", error);
                     return;
@@ -135,7 +136,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         // Return success response
         res.status(200).json({ success: true });
-    } catch (err:any) {
+    } catch (err: any) {
         // Catch and log any unexpected errors
         console.error("Unexpected error:", err);
         res.status(500).json({ success: false, error: err.message });
