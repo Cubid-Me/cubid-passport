@@ -135,7 +135,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         // Return success response
         res.status(200).json({ success: true });
-    } catch (err) {
+    } catch (err:any) {
         // Catch and log any unexpected errors
         console.error("Unexpected error:", err);
         res.status(500).json({ success: false, error: err.message });
