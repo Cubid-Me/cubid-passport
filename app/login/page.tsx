@@ -89,13 +89,13 @@ export default function AuthenticationPage() {
         appVerifier
       );
       const { data: { data } } = await axios.post("/api/supabase/select", {
-        match: { unique_phone: phoneNumber },
+        match: { phone: phoneNumber },
         table: "users",
       })
       if (!data?.[0]) {
         await axios.post(`/api/supabase/insert`, {
           table: "users",
-          body: { unique_phone: phoneNumber },
+          body: { phone: phoneNumber },
         })
       }
       setVerificationId(confirmationResult.verificationId)

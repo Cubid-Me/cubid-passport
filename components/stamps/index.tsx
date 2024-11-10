@@ -199,7 +199,7 @@ export const Stamps = () => {
   const [allStamps, setAllStamps] = useState([])
   const [stampLoading, setStampLoading] = useState(true)
   const email: any = useSelector((state: any) => state?.user?.email ?? "")
-  const unique_phone: any = useSelector((state: any) => state?.user?.unique_phone ?? "")
+  const phone: any = useSelector((state: any) => state?.user?.phone ?? "")
   const { stampCollector, fetchNearAndGitcoinStamps, gitcoinScore } = useStamps(
     {}
   )
@@ -223,16 +223,16 @@ export const Stamps = () => {
       })
       setUserState(userData?.[0])
     }
-    if (unique_phone) {
+    if (phone) {
       const {
         data: { data: userData },
       } = await axios.post("/api/supabase/select", {
-        match: { unique_phone },
+        match: { phone },
         table: "users",
       })
       setUserState(userData?.[0])
     }
-  }, [email, unique_phone])
+  }, [email, phone])
 
   const fetchBrightIdData = useCallback(async () => {
     if (email) {

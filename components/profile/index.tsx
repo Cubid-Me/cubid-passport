@@ -32,7 +32,7 @@ import {
 import { logout } from "../../redux/userSlice"
 
 export const Profile = () => {
-  const { email = "", unique_phone } = useSelector((state: any) => state?.user) ?? {}
+  const { email = "", phone } = useSelector((state: any) => state?.user) ?? {}
   const dispatch = useDispatch()
   const [userState, setUserState] = useState<any>({})
   const [walletState, setWalletState] = useState<any>({})
@@ -48,11 +48,11 @@ export const Profile = () => {
       })
       setUserState(userData?.[0])
     }
-    if (unique_phone) {
+    if (phone) {
       const {
         data: { data: userData },
       } = await axios.post("/api/supabase/select", {
-        match: { unique_phone },
+        match: { phone },
         table: "users",
       })
       setUserState(userData?.[0])
@@ -77,7 +77,7 @@ export const Profile = () => {
       data: { data: wallet_details_phone },
     } = await axios.post(`/api/supabase/select`, {
       match: {
-        unique_phone,
+        phone,
       },
       table: "wallet_details",
     })
@@ -89,11 +89,11 @@ export const Profile = () => {
   }, [])
 
   useEffect(() => {
-    if (email, unique_phone) {
+    if (email, phone) {
       fetchStamps()
-      fetchWalletDetails(email, unique_phone)
+      fetchWalletDetails(email, phone)
     }
-  }, [fetchStamps, fetchWalletDetails, email, unique_phone])
+  }, [fetchStamps, fetchWalletDetails, email, phone])
 
   const [nearAcc, setNearAcc] = useState([])
   const [allNearData, setAllNearData] = useState([])
@@ -230,7 +230,7 @@ export const Profile = () => {
           <CardContent>
             <div>
               <p>Email : {email} </p>
-              <p>Phone : {unique_phone} </p>
+              <p>Phone : {phone} </p>
               <div className="mt-2 flex items-center gap-2">
                 <img
                   alt="image"

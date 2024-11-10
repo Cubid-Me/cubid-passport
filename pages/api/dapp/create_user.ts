@@ -45,6 +45,7 @@ export default async function handler(
     phone,
     dapp_id: id_to_read_from,
     stamptype,
+    evm
   } = req.body
 
   const { data: dataForApp } = await supabase.from("dapps").select("*").match({
@@ -53,7 +54,7 @@ export default async function handler(
   const dapp_id = dataForApp?.[0]?.id
   log(`Request body: ${JSON.stringify(req.body)}`, 37)
 
-  let uniqueValue = phone || email
+  let uniqueValue = phone || email || evm
   if (!uniqueValue) {
     log("No valid identifier provided", 40)
     return res.status(400).json({ error: "No valid identifier provided" })
@@ -107,32 +108,82 @@ export default async function handler(
     }
   } else {
     log("No existing stamp found, checking for existing user", 80)
-
-    const { data: existingUser } = await supabase
-      .from("users")
-      .select("*")
-      .match({ email })
-    log(`Existing user data: ${JSON.stringify(existingUser)}`, 85)
-
     let user_id
-    if (existingUser && existingUser.length > 0) {
-      user_id = existingUser[0].id
-      log(`Existing user found with user_id: ${user_id}`, 90)
-    } else {
-      const { data: newUser } = await supabase
+    if (email) {
+      const { data: existingUser } = await supabase
         .from("users")
-        .insert({
-          email,
-          created_by_app: dapp_id,
-          is_3rd_party: true,
-        })
         .select("*")
-      log(`New user created: ${JSON.stringify(newUser)}`, 97)
+        .match({ email })
+      log(`Existing user data: ${JSON.stringify(existingUser)}`, 85)
 
-      user_id = newUser?.[0].id
+      if (existingUser && existingUser.length > 0) {
+        user_id = existingUser[0].id
+        log(`Existing user found with user_id: ${user_id}`, 90)
+      } else {
+        const { data: newUser } = await supabase
+          .from("users")
+          .insert({
+            email,
+            created_by_app: dapp_id,
+            is_3rd_party: true,
+          })
+          .select("*")
+        log(`New user created: ${JSON.stringify(newUser)}`, 97)
+
+        user_id = newUser?.[0].id
+      }
+    }
+    if (phone) {
+      const { data: existingUser } = await supabase
+        .from("users")
+        .select("*")
+        .match({ phone })
+      log(`Existing user data: ${JSON.stringify(existingUser)}`, 85)
+
+      if (existingUser && existingUser.length > 0) {
+        user_id = existingUser[0].id
+        log(`Existing user found with user_id: ${user_id}`, 90)
+      } else {
+        const { data: newUser } = await supabase
+          .from("users")
+          .insert({
+            phone,
+            created_by_app: dapp_id,
+            is_3rd_party: true,
+          })
+          .select("*")
+        log(`New user created: ${JSON.stringify(newUser)}`, 97)
+
+        user_id = newUser?.[0].id
+      }
+    }
+    if (evm) {
+      const { data: existingUser } = await supabase
+        .from("users")
+        .select("*")
+        .match({ evm })
+      log(`Existing user data: ${JSON.stringify(existingUser)}`, 85)
+
+     
+      if (existingUser && existingUser.length > 0) {
+        user_id = existingUser[0].id
+        log(`Existing user found with user_id: ${user_id}`, 90)
+      } else {
+        const { data: newUser } = await supabase
+          .from("users")
+          .insert({
+            evm,
+            created_by_app: dapp_id,
+            is_3rd_party: true,
+          })
+          .select("*")
+        log(`New user created: ${JSON.stringify(newUser)}`, 97)
+
+        user_id = newUser?.[0].id
+      }
     }
 
-    const stampIdToAssign = stampsWithId?.[phone ? "phone" : "email"]
+    const stampIdToAssign = stampsWithId?.[phone ? "phone" : evm ? "evm" : "email"]
     log(`Stamp type to assign: ${stampIdToAssign}`, 102)
 
     const { data: newStamp, error: newStampError } = await supabase
@@ -144,7 +195,7 @@ export default async function handler(
         uniquevalue: uniqueValue,
         user_id_and_uniqueval: `${user_id} ${stampIdToAssign} ${uniqueValue}`,
         unique_hash: cyrb53(uniqueValue),
-        stamp_json: { [phone ? "phone" : "email"]: uniqueValue },
+        stamp_json: { [phone ? "phone" : evm ? "evm" : "email"]: uniqueValue },
         type_and_uniquehash: `${stampIdToAssign} ${cyrb53(uniqueValue)}`,
         identity: email
       })

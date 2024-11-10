@@ -13,7 +13,7 @@ const log = (message: any, lineNumber: any) => {
 const mappedUserIdentifiers = {
   email: "email",
   phone: "phone",
-  evm_account: "evm",
+  evm: "evm",
   github_sub: "github",
   twitter_sub: "twitter",
   google_sub: "google",
@@ -145,9 +145,16 @@ export default async function handler(
       const { data: phone_user } = await supabase
         .from("users")
         .select("*")
-        .match({ unique_phone: userIdentifiers.phone })
+        .match({ phone: userIdentifiers.phone })
       if (phone_user?.[0]) {
         existingUser = phone_user
+      }
+      const { data: evmUser } = await supabase
+        .from("users")
+        .select("*")
+        .match({ evm: userIdentifiers.evm })
+      if (evmUser?.[0]) {
+        existingUser = evmUser
       }
     }
 
@@ -171,7 +178,18 @@ export default async function handler(
         const { data: newUser } = await supabase
           .from("users")
           .insert({
-            unique_phone: userIdentifiers.phone,
+            phone: userIdentifiers.phone,
+            created_by_app: dappId,
+            is_3rd_party: true,
+          })
+          .select("*")
+        log(`New user created: ${JSON.stringify(newUser)}`, 97)
+        userId = newUser?.[0].id
+      } else if (userIdentifiers.evm) {
+        const { data: newUser } = await supabase
+          .from("users")
+          .insert({
+            evm: userIdentifiers.evm,
             created_by_app: dappId,
             is_3rd_party: true,
           })

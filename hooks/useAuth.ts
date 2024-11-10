@@ -27,12 +27,12 @@ export const useAuth = (appHookProps: hookProps) => {
           id: user.uid,
           avatar: user.photoURL,
           email: user.email,
-          unique_phone: user.phoneNumber,
+          phone: user.phoneNumber,
           name: user.displayName || user.email,
         }
         console.log({ user }, "new user")
         localStorage.setItem("email", user.email ?? "")
-        localStorage.setItem("unique_phone", user.phoneNumber ?? "")
+        localStorage.setItem("phone", user.phoneNumber ?? "")
         localStorage.removeItem("unauthenticated_user")
         setUser(setUserData)
         dispatch(login(setUserData as any)) // if a user is found, set user in Redux store
@@ -62,16 +62,16 @@ export const useAuth = (appHookProps: hookProps) => {
         })
         setSupabaseUser(dbData?.[0])
       }
-      if (user?.unique_phone) {
+      if (user?.phone) {
         const {
           data: { data: dbData },
         } = await axios.post("/api/supabase/select", {
           table: "users",
           match: {
-            unique_phone: localStorage.getItem("unique_phone") ?? user?.unique_phone,
+            phone: localStorage.getItem("phone") ?? user?.phone,
           },
         })
-        setSupabaseUser({ ...dbData?.[0], unique_phone: user?.unique_phone })
+        setSupabaseUser({ ...dbData?.[0], phone: user?.phone })
       }
     })()
   }, [user])
@@ -84,7 +84,7 @@ export const useAuth = (appHookProps: hookProps) => {
       } = await axios.post("/api/supabase/select", {
         table: "users",
         match: {
-          email: localStorage.getItem("email") ?? localStorage.getItem("unique_phone"),
+          email: localStorage.getItem("email") ?? localStorage.getItem("phone"),
         },
       })
       return dbData?.[0]
