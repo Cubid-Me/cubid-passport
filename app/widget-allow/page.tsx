@@ -24,6 +24,7 @@ const Stamps = ({
     const searchParams: any = useSearchParams()
 
     const signInWithSocial = async (socialName: any) => {
+        localStorage.clear()
         await supabase.auth.signOut()
         localStorage.setItem("socialName", socialName)
         const { data: d, error: e } = await supabase.auth.signInWithOAuth({
