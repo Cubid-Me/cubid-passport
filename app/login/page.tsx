@@ -174,25 +174,6 @@ export default function AuthenticationPage() {
                   ref={emailField}
                   placeholder="Email"
                 />
-                {!isEnabled && (
-                  <button
-                    style={{
-                      backgroundColor: "#0070f2",
-                      color: "white",
-                      padding: 10,
-                      paddingTop: 5,
-                      height: 40,
-                      fontSize: 14,
-                      paddingBottom: 5,
-                      opacity: 0.4,
-                      borderRadius: 5,
-                      width: 90,
-                      border: "1px solid #fff",
-                    }}
-                  >
-                    Continue
-                  </button>
-                )}
               </>
             )}
 
