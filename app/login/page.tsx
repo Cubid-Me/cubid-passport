@@ -176,6 +176,7 @@ export default function AuthenticationPage() {
                 />
                 {!isEnabled && (
                   <button
+                    id="ownid-auth-button"
                     style={{
                       backgroundColor: "#0070f2",
                       color: "white",
@@ -198,7 +199,6 @@ export default function AuthenticationPage() {
 
             <Input
               type="password"
-              style={{ display: "none" }}
               ref={passwordField}
               placeholder="password"
             />
@@ -240,12 +240,6 @@ export default function AuthenticationPage() {
               >
                 <OwnID
                   type="login"
-                  options={{
-                    appId: "p0zfroqndmvm30",
-                    variant: "ownid-auth-button",
-                    infoTooltip: true,
-                    widgetPosition: "start",
-                  }}
                   onLogin={submit}
                   infoTooltip={true}
                   passwordField={passwordField}
@@ -294,7 +288,7 @@ export default function AuthenticationPage() {
                     Send OTP
                   </Button>
                   {isOtpSent && (
-                    <Button  className="my-3" onClick={verifyOtp} disabled={loading}>
+                    <Button className="my-3" onClick={verifyOtp} disabled={loading}>
                       Verify OTP
                     </Button>
                   )}
