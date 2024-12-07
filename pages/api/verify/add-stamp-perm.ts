@@ -10,10 +10,10 @@ const addStampPerm = async (req: any, res: any) => {
         optionsSuccessStatus: 200, // Some legacy browsers choke on 204
     })
     const { apikey, stamp_id_array, user_id } = typeof req.body === "string" ? JSON.parse(req.body) : req.body
-   const { data: dataForApp } = await supabase
+    const { data: dataForApp } = await supabase
         .from("dapps")
         .select("*")
-        .match({ apikey })
+        .eq("apikey", apikey)
     const dappId = dataForApp?.[0]?.id
 
     if (!dappId) {
