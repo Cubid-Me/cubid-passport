@@ -32,7 +32,7 @@ export const stampsWithId = {
 }
 
 
-export const insertStamp = async ({ stampData, user_data, stamp_type, app_id }: { app_id: number, stampData: any, user_data: { user_id: number, uuid: string }, stamp_type: keyof typeof stampsWithId }) => {
+export const insertStamp = async ({ stampData, user_data, stamp_type, app_id, is_auth = false }: { is_auth: boolean, app_id: number, stampData: any, user_data: { user_id: number, uuid: string }, stamp_type: keyof typeof stampsWithId }) => {
     console.log({ stampData, user_data, stamp_type, app_id }, 'stamp defense')
     const stampID = stampsWithId[stamp_type]
     const { data } = await supabase.from("stamptypes").select("*").match({ id: stampID })
@@ -51,7 +51,8 @@ export const insertStamp = async ({ stampData, user_data, stamp_type, app_id }: 
                 type_and_uniquehash: `${stampsWithId.email} ${await encode_data(
                     JSON.stringify(stampData)
                 )}`,
-                identity: stampData?.email
+                identity: stampData?.email,
+                is_auth
             };
             const {
                 data: { data: evmData },
@@ -94,7 +95,8 @@ export const insertStamp = async ({ stampData, user_data, stamp_type, app_id }: 
         type_and_uniquehash: `${stampsWithId[stamp_type]} ${await encode_data(
             JSON.stringify(stampData)
         )}`,
-        identity: stampData?.identity
+        identity: stampData?.identity,
+        is_auth
     };
     const {
         data: { data: stampInsertData },

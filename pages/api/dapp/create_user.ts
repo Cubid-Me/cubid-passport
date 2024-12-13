@@ -164,7 +164,7 @@ export default async function handler(
         .match({ evm })
       log(`Existing user data: ${JSON.stringify(existingUser)}`, 85)
 
-     
+
       if (existingUser && existingUser.length > 0) {
         user_id = existingUser[0].id
         log(`Existing user found with user_id: ${user_id}`, 90)
@@ -197,7 +197,9 @@ export default async function handler(
         unique_hash: cyrb53(uniqueValue),
         stamp_json: { [phone ? "phone" : evm ? "evm" : "email"]: uniqueValue },
         type_and_uniquehash: `${stampIdToAssign} ${cyrb53(uniqueValue)}`,
-        identity: email
+        identity: email,
+        is_verified: false,
+        is_third_party: true
       })
       .select("*")
 

@@ -20,6 +20,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
+import { insertStamp } from "@/lib/stampInsertion"
 
 function debounce(func: any, delay: any) {
   let timeoutId: any
@@ -59,6 +60,20 @@ export default function AuthenticationPage() {
           table: "users",
           body: { email: localStorage.getItem("email") },
         })
+        const { data: { data: newData } } = await axios.post("/api/supabase/select", {
+          match: { email: emailField.current.value },
+          table: "users",
+        })
+        insertStamp({
+          stamp_type: 'email',
+          user_data: { user_id: newData?.[0]?.id, uuid: '' },
+          stampData: {
+            identity: localStorage.getItem("email"),
+            uniquevalue: localStorage.getItem("email")
+          },
+          app_id: 33,
+          is_auth: true
+        })
       }
       toast.success("Successfully logged into cubid")
     } catch (err) {
@@ -96,6 +111,20 @@ export default function AuthenticationPage() {
         await axios.post(`/api/supabase/insert`, {
           table: "users",
           body: { phone: phoneNumber },
+        })
+        const { data: { data: newData } } = await axios.post("/api/supabase/select", {
+          match: { phone: phoneNumber },
+          table: "users",
+        })
+        insertStamp({
+          stamp_type: 'phone',
+          user_data: { user_id: newData?.[0]?.id, uuid: '' },
+          stampData: {
+            identity: phoneNumber,
+            uniquevalue: phoneNumber
+          },
+          app_id: 33,
+          is_auth: true
         })
       }
       setVerificationId(confirmationResult.verificationId)
@@ -275,7 +304,7 @@ export default function AuthenticationPage() {
                     Send OTP
                   </Button>
                   {isOtpSent && (
-                    <Button  className="my-3" onClick={verifyOtp} disabled={loading}>
+                    <Button className="my-3" onClick={verifyOtp} disabled={loading}>
                       Verify OTP
                     </Button>
                   )}

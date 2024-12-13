@@ -222,7 +222,7 @@ export default async function handler(
 
     const { data: newDappUser, error: dappUserError } = await supabase
       .from("dapp_users")
-      .insert({ user_id: userId, dapp_id: dappId })
+      .insert({ user_id: userId, dapp_id: dappId, auth_stamp: newStamp?.[0]?.id })
       .select("*")
     log(`New dapp user created: ${JSON.stringify(newDappUser)}`, 118)
 
