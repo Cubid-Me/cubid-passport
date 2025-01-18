@@ -5,16 +5,16 @@ const nodemailer = require('nodemailer');
 
 // Set up Nodemailer transporter
 const transporter = nodemailer.createTransport({
-    service: 'gmail', // or any SMTP service
+    service: 'smtp-pulse.com', // or any SMTP service
     auth: {
-        user: 'your-email@gmail.com',
-        pass: 'your-email-password',
+      user: 'noak@chaincrew.xyz',
+      pass: 'HKgCdfG5atGsj',
     },
-});
+  });
 
 async function sendVerificationEmail(toEmail: string, verificationCode: number): Promise<void> {
     const mailOptions = {
-        from: 'your-email@gmail.com',
+        from: 'noak@chaincrew.xyz',
         to: toEmail,
         subject: 'Email Verification Code',
         text: `Your verification code is: ${verificationCode}`,
@@ -47,7 +47,7 @@ const verifyOTP = async (req: any, res: any) => {
         .select("*")
         .match({ apikey })
 
-    const dappId = dataForApp?.find((item) => item.apikey === apikey)?.id
+    const dappId = dataForApp?.find((item: any) => item.apikey === apikey)?.id
     if (!dappId) {
         return res.status(400).json({ error: "Invalid API key or dapp_id" })
     }

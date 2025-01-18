@@ -5,16 +5,19 @@ const nodemailer = require('nodemailer');
 
 // Set up Nodemailer transporter
 const transporter = nodemailer.createTransport({
-  service: 'gmail', // or any SMTP service
+  host: 'smtp-pulse.com',
+  port: 2525, // Default port
+  secure: false, // true for 465, false for other ports
   auth: {
-    user: 'your-email@gmail.com',
-    pass: 'your-email-password',
-  },
+      user: 'noak@chaincrew.xyz',
+      pass: 'HKgCdfG5atGsj' // Replace with actual password
+  }
 });
+
 
 async function sendVerificationEmail(toEmail: string, verificationCode: number): Promise<void> {
   const mailOptions = {
-    from: 'your-email@gmail.com',
+    from: 'noak@chaincrew.xyz',
     to: toEmail,
     subject: 'Email Verification Code',
     text: `Your verification code is: ${verificationCode}`,
@@ -32,8 +35,6 @@ async function sendVerificationEmail(toEmail: string, verificationCode: number):
   });
 }
 
-
-
 const sendOtp = async (req: any, res: any) => {
   await NextCors(req, res, {
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
@@ -47,10 +48,11 @@ const sendOtp = async (req: any, res: any) => {
     .select("*")
     .match({ apikey })
 
-  const dappId = dataForApp?.find((item) => item.apikey === apikey)?.id
+  const dappId = dataForApp?.find((item: any) => item.apikey === apikey)?.id
   if (!dappId) {
     return res.status(400).json({ error: "Invalid API key or dapp_id" })
   }
+  await supabase.from("email_otp").delete().match({ email })
 
   function generateOTP() {
     return Math.floor(1000 + Math.random() * 9000);
