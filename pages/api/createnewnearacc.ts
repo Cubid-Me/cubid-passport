@@ -115,7 +115,6 @@ export default async function handler(
       gas: "300000000000000" as any,
       attachedDeposit: utils.format.parseNearAmount("0.01") as any,
     })
-    console.log(data_near)
     await supabase.from("near-api-accounts").insert({
       account_address: `${accountToCreate}.near`,
       owner_id: userId,

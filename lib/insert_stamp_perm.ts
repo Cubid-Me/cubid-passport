@@ -33,7 +33,6 @@ export const useSelectStampPerm = (dapp_user_id: any) => {
   }
 
   useEffect(() => {
-    console.log({ dapp_user_id }, 'allDappStampPerms')
     if (Boolean(dapp_user_id)) {
       fetchStampPerm()
     } else {

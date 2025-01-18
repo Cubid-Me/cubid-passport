@@ -128,7 +128,6 @@ export const Profile = () => {
   }, [supabaseUser])
 
   const fetchPrivateKeyWithAddress = (nearKey: any) => {
-    console.log(nearKey, allNearData)
     const stampData = (
       allNearData.find((item: any) => item.uniquevalue === nearKey) as any
     )?.stamp_json?.transaction?.signature

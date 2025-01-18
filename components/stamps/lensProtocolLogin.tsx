@@ -43,14 +43,11 @@ type LoginOptionsProps = {
 
 export function LoginOptions({ wallet, onSuccess }: LoginOptionsProps) {
 
-    console.log({ wallet, onSuccess })
     const { data: profiles, error, loading } = useProfilesManaged({
         for: wallet,
         includeOwned: true
     });
     const { disconnect } = useDisconnect()
-
-    console.log({ profiles })
 
     useEffect(() => {
         if (!loading && profiles.length === 0) {

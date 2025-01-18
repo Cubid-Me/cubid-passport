@@ -149,7 +149,6 @@ export const Stamps = () => {
     profile: { username, fid, ...restFarcasterJSON }, } = useFarcasterProfile()
 
   const fetchStampData = useCallback(async () => {
-    console.log("fetch Stampdata executed")
     const {
       data: { data },
     } = await axios.post("/api/supabase/select", {
@@ -166,7 +165,6 @@ export const Stamps = () => {
           created_by_user_id: supabaseUser?.id,
         },
       })
-      console.log("all stamps executed", dbData)
       setAllStamps(dbData)
       setStampLoading(false)
     }
@@ -204,10 +202,6 @@ export const Stamps = () => {
     {}
   )
   const { push } = useRouter()
-
-  console.log({ supabaseUser }, "supabaseUser")
-
-
 
   useEffect(() => {
     fetchStampData()
@@ -254,7 +248,6 @@ export const Stamps = () => {
   const { getIdForApp } = useCreatedByAppId()
 
   const { publicKey, connected: solConnected } = useSolanaWallet()
-  console.log({ publicKey: publicKey?.toString() }, 'sol pub key')
 
   useEffect(() => {
     (async () => {
@@ -279,7 +272,6 @@ export const Stamps = () => {
 
   const connectToWeb3Node = useCallback(
     async (address: string) => {
-      console.log({ address })
       if (address) {
         const {
           data: { stamps, scores },
@@ -386,8 +378,6 @@ export const Stamps = () => {
   )
   const { address } = useAccount()
 
-  console.log("here is address->", address)
-
   useEffect(() => {
     if (address && !localStorage.getItem("lens-loggin")) {
       connectToWeb3Node(address)
@@ -400,7 +390,6 @@ export const Stamps = () => {
         if (session?.user) {
           const { user_metadata } = session?.user
           const providerKey: any = localStorage.getItem("socialName") ?? ""
-          console.log(providerKey, session?.user, 'stamp defense')
           const stampId = (stampsWithId as any)[providerKey]
           const dbUser = await getUser()
           await insertStamp({
@@ -521,6 +510,39 @@ export const Stamps = () => {
 
   const [lensModalOpen, setLensModalOpen] = useState(false)
   const [gitcoinModalOpen, setGitcoinModalOpen] = useState(false)
+
+  const [fractalModalVisible, setFractalModalVisible] = useState(false)
+  const [message, setMessage] = useState("")
+
+  const messageReceiver = useCallback((message: any) => {
+    // React only messages from ID iframe
+    console.log({ message })
+    if (message.data.error) {
+      setMessage(`KYC process failed with: ${JSON.stringify(message.data.error)}`);
+      // Hide iframe ...
+    } else if (message.data.open) {
+      // If you want to use wallet-sign-in, this is required
+      // since there are security limitations, especially with
+      // opening metamask protocol link in mobile device
+      window.open(message.data.open, message.data.target, message.data.features);
+    } else {
+      setMessage(`KYC process is completed.`);
+      // Hide iframe, load data, etc...
+      // Oauth2 attributes are presented in the message data
+      // { 
+      //    "code": "MXES5XpDzMRAHyMI3Jx5K3nrxzZjWjEr-Cskq3Jevso",
+      //    "sub1": "MXES5XpDzMRAHyMI3Jx5K3nrxzZjWjEr-Cskq3Jevso",
+      //    "state": "state_arg"
+      // }
+    }
+
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener("message", messageReceiver);
+
+    return () => window.removeEventListener("message", messageReceiver);
+  }, []);
 
 
   return (
@@ -768,7 +790,6 @@ export const Stamps = () => {
                 {address ? <>
                   <LoginOptions wallet={address ?? ""} onSuccess={async (args) => {
                     const dbUser = await getUser()
-                    console.log(args, 'lens args')
                     await insertStamp({
                       app_id: parseInt(process.env?.NEXT_PUBLIC_DAPP_ID ?? ""), stamp_type: "lens-protocol",
                       stampData: {
@@ -824,7 +845,78 @@ export const Stamps = () => {
             )}
           </CardContent>
         </Card>
-
+        <Card>
+          <CardHeader>
+            <img
+              src={
+                "https://web.fractal.id/wp-content/uploads/2023/07/Vector-1.svg"
+              }
+              alt="Image"
+              className="mb-1 h-[50px] w-[100px] rounded-md"
+            />
+            <CardTitle>Fractal</CardTitle>
+            {doesStampExist(stampsWithId["fractal"]) ? (
+              <CardDescription>
+                <div className="flex items-center space-x-1">
+                  <p>Your Fractal is verified</p>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="#00e64d"
+                    className="size-6"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </div>
+              </CardDescription>
+            ) : (
+              <CardDescription>
+                Use a Fractal to verify yourself
+              </CardDescription>
+            )}
+          </CardHeader>
+          <CardContent>
+            {doesStampExist(stampsWithId["farcaster"]) ? (
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <div className="flex items-center space-x-2">
+                  <Button>Verified Stamp</Button>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white w-[fit-content] rounded-lg">
+                <Button onClick={() => {
+                  setFractalModalVisible(true)
+                }}>Verify Yourself</Button>
+              </div>
+            )}
+          </CardContent>
+          <Sheet
+            open={fractalModalVisible}
+            onOpenChange={(value) => {
+              if (value === false) {
+                setGitcoinModalOpen(false)
+              }
+            }}
+          >
+            <SheetContent className="w-screen">
+              <div className="w-[50vw]">
+                <p className="text-xl font-bold mb-5">Connect with Fractal</p>
+                <iframe
+                  allow="camera *; fullscreen *"
+                  height={'550px'}
+                  src="https://app.staging.sandbox.fractal.id/authorize?response_type=code&scope=contact%3Aread%20verification.basic%3Aread%20verification.basic.details%3Aread%20verification.liveness%3Aread%20verification.liveness.details%3Aread&client_id=dc3aa1910acbb7ff4d22c07e43a6926adc3a81305a9355a304410048c9a91afd&redirect_uri=https%3A%2F%2Fdemo.staging.sandbox.fractal.id%2Fapi%2Fcallback"
+                  sandbox="allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"
+                />
+              </div>
+            </SheetContent>
+          </Sheet>
+        </Card>
 
         <Card>
           <CardHeader>
@@ -1036,43 +1128,6 @@ export const Stamps = () => {
                     WorldId Connected
                   </Button>
                 </div>
-
-                {/* <DropdownMenu>
-                  <DropdownMenuTrigger>
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 15 15"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M2 5H13C13.5523 5 14 5.44772 14 6V9C14 9.55228 13.5523 10 13 10H2C1.44772 10 1 9.55228 1 9V6C1 5.44772 1.44772 5 2 5ZM0 6C0 4.89543 0.895431 4 2 4H13C14.1046 4 15 4.89543 15 6V9C15 10.1046 14.1046 11 13 11H2C0.89543 11 0 10.1046 0 9V6ZM4.5 6.75C4.08579 6.75 3.75 7.08579 3.75 7.5C3.75 7.91421 4.08579 8.25 4.5 8.25C4.91421 8.25 5.25 7.91421 5.25 7.5C5.25 7.08579 4.91421 6.75 4.5 6.75ZM6.75 7.5C6.75 7.08579 7.08579 6.75 7.5 6.75C7.91421 6.75 8.25 7.08579 8.25 7.5C8.25 7.91421 7.91421 8.25 7.5 8.25C7.08579 8.25 6.75 7.91421 6.75 7.5ZM10.5 6.75C10.0858 6.75 9.75 7.08579 9.75 7.5C9.75 7.91421 10.0858 8.25 10.5 8.25C10.9142 8.25 11.25 7.91421 11.25 7.5C11.25 7.08579 10.9142 6.75 10.5 6.75Z"
-                        fill="currentColor"
-                        fill-rule="evenodd"
-                        clip-rule="evenodd"
-                      ></path>
-                    </svg>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuItem
-                      onClick={() => {
-                        //
-                      }}
-                    >
-                      View Stamp
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={() => {
-                        //delete world coin
-                      }}
-                      style={{ color: "red" }}
-                    >
-                      Remove Stamp
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu> */}
               </div>
             ) : (
               <Button
@@ -1227,7 +1282,6 @@ export const Stamps = () => {
               </div>
             ) : (
               <WalletMultiButton />
-
             )}
           </CardContent>
         </Card>

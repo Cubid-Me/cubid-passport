@@ -6,7 +6,6 @@ import { insertStamp } from "@/lib/stampInsertion";
 
 export default async function handler(req, res) {
   const { code, userid } = req.body;
-  console.log("Received request with body:", req.body);
 
   try {
     const data = new URLSearchParams();
@@ -15,7 +14,6 @@ export default async function handler(req, res) {
     data.append("redirect_uri", "https://passport.cubid.me/worldcoin");
     data.append("client_id", process.env.WLD_CLIENT_ID ?? "");
 
-    console.log("Sending request to Worldcoin API for token exchange.");
     const { data: dta } = await axios.post(
       "https://id.worldcoin.org/token",
       data,
@@ -30,7 +28,6 @@ export default async function handler(req, res) {
     );
 
     const { access_token, ...all_data } = dta;
-    console.log("Token received from Worldcoin:", { access_token, ...all_data });
 
     const user_data_raw = await fetch("https://id.worldcoin.org/userinfo", {
       method: "POST",
@@ -40,7 +37,6 @@ export default async function handler(req, res) {
     });
 
     const user_data = await user_data_raw?.json();
-    console.log("User data retrieved:", user_data);
 
     const stampId = 26;
     const dbUser = userid;
@@ -55,7 +51,6 @@ export default async function handler(req, res) {
     })
 
     res.send({ user_data });
-    console.log("Response sent successfully.");
 
   } catch (err) {
     console.error("Error occurred:", err);

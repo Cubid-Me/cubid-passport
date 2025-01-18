@@ -18,7 +18,6 @@ const sendOtp = async (req: any, res: any) => {
     origin: "*", // Allow all origins
     optionsSuccessStatus: 200,
   })
-  console.log(req.body)
   const { apikey, phone } = typeof req.body === "string" ? JSON.parse(req.body) : req.body
   if (!apikey || !phone) {
     log("Missing required parameters", 37)

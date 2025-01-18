@@ -230,7 +230,6 @@ const AllowPage = () => {
                       </>
                     ) : (
                       <>
-                        {console.log({ userUidData })}
                         <a
                           href={`${userUidData?.page_data?.redirect_url}?status=success`}
                           onClick={() => {

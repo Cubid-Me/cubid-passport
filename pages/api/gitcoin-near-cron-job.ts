@@ -42,7 +42,6 @@ export default async function handler(
     .from("cronjobs")
     .select("*")
     .eq("cronjob_type", "gp-score")
-  console.log(data)
 
   try {
     const nearAccounts = []
@@ -90,7 +89,6 @@ export default async function handler(
             reference, // Represents None for Option<String>
             reference_hash, // Represents None for Option<Base64VecU8>
           ])
-          console.log(refrenceArray)
           if (idx === nearAccounts.length - 1) {
             const data = await contract.sbt_update_token_references(
               { updates: refrenceArray },
@@ -100,7 +98,6 @@ export default async function handler(
         })
       }
     })
-    console.log(nearAccounts)
 
     res.send(true)
   } catch (err) {

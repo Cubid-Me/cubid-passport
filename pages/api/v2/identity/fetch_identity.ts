@@ -37,7 +37,6 @@ export default async function handler(req: any, res: any) {
       created_by_user_id: dapp_users?.[0]?.users.id,
     })
 
-  console.log(stampData)
   function switchKeyValue(obj: any): any {
     const switchedObj = {}
     for (const key in obj) {
@@ -50,7 +49,6 @@ export default async function handler(req: any, res: any) {
 
   const { data: stamp_perms } = await supabase.from("dapp_stamptypes").select("*").match({ dapp_id: dappId })
   const allStampIds = [...stamp_perms?.map((item) => item.stamptype_id), 13]
-  console.log({ allStampIds })
   const stampsToSend = stampData?.filter((_) => allStampIds?.includes(_.stamptype))
 
   res.send({

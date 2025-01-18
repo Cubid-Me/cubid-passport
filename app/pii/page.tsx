@@ -363,7 +363,6 @@ export default function IndexPage() {
     } = await axios.post("/api/dapp/get_score_details_cubid", {
       uid: searchParams.get("uid"),
     })
-    console.log({ score_details }, 'scoreeee')
     if (score_details) {
       score_details?.map((item) => {
         // if (item?.email) {
@@ -413,8 +412,6 @@ export default function IndexPage() {
       // Handle the autocomplete response
     }
   }, 500)
-
-  console.log('phone is here', watch("phone"))
 
   function roundToTwoDecimals(num) {
     return Math.round(num * 100) / 100;
@@ -604,7 +601,6 @@ export default function IndexPage() {
               </span>
             )}
           </div> */}
-          {console.log({ selectedLocation })}
           {Boolean(selectedLocation) && Boolean(watch("phone")) ? (
             <div className="text-xs mb-2">
               <p className="text-xs">

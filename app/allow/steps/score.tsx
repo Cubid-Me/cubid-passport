@@ -8,7 +8,6 @@ export const Score = ({
   setSteps,
   stampScores,
 }: any) => {
-  console.log(stampScores, stampsList, setStampToAdd)
   const isStampsValid = Array.isArray(stamps) && stamps.length !== 0
 
   if (!isStampsValid) {

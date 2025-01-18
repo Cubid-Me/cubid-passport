@@ -40,7 +40,6 @@ export const PhoneNumberConnect = ({
   }
 
   const { user, getUser } = useAuth({ appId })
-  console.log({ appId }, "phone")
   const { email = "" } = user ?? {}
   const { getIdForApp } = useCreatedByAppId()
 
@@ -55,7 +54,6 @@ export const PhoneNumberConnect = ({
       onClose()
       const stampId = stampsWithId.phone
       const dbUser = await getUser()
-      console.log(dbUser)
 
       await insertStamp({
         stamp_type: 'phone',

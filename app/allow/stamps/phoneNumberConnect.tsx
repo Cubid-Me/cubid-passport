@@ -44,7 +44,6 @@ export const PhoneNumberConnect = ({
     setOtpSent(true)
   }
 
-  console.log({ appId }, "phone")
   const { getIdForApp } = useCreatedByAppId()
 
   const verifyOtp = async () => {
@@ -57,7 +56,6 @@ export const PhoneNumberConnect = ({
       setOtpSent(true)
       onClose()
       const stampId = stampsWithId.phone
-      console.log(dbUser)
 
       await insertStamp({
         stamp_type: 'phone',

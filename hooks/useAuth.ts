@@ -30,7 +30,6 @@ export const useAuth = (appHookProps: hookProps) => {
           phone: user.phoneNumber,
           name: user.displayName || user.email,
         }
-        console.log({ user }, "new user")
         localStorage.setItem("email", user.email ?? "")
         localStorage.setItem("phone", user.phoneNumber ?? "")
         localStorage.removeItem("unauthenticated_user")
@@ -77,7 +76,6 @@ export const useAuth = (appHookProps: hookProps) => {
   }, [user])
 
   const getUser = useCallback(async () => {
-    console.log(localStorage.getItem("unauthenticated_user"), 'unauthenticated_user')
     if (!localStorage.getItem("unauthenticated_user")) {
       const {
         data: { data: dbData },

@@ -80,7 +80,6 @@ const fetchAllowUid = async (req: any, res: any) => {
 
   log(`Score data fetched: ${JSON.stringify(scoreData)}`, 57);
 
-  console.log({ scoreData })
 
   const { data: stampScores, error: stampScoresError } = await supabase
     .from("stampscores_available")
@@ -88,7 +87,6 @@ const fetchAllowUid = async (req: any, res: any) => {
     .match({
       schema_id: scoreData?.[0]?.schema_id,
     });
-    console.log(dapp_users?.[0],'line 93',scoreData?.[0])
 
   if (stampScoresError) {
     log(`Error fetching stamp scores: ${stampScoresError.message}`, 64);

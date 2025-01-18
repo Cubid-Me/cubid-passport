@@ -29,7 +29,6 @@ export const OptionalInfo = ({ stamps, setStampToAdd, stampsList, allDappStampPe
               const relevant_stamp = stampsList.find(
                 (_: any) => _.stamptype === item?.stamptypes?.id
               )
-              console.log({ relevant_stamp })
               return (
                 <tr
                   key={item.id}

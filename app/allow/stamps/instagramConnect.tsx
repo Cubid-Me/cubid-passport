@@ -97,7 +97,6 @@ export const InstagramConnect = ({
     [dbUser, email, fetchStamps, getIdForApp, uid]
   )
   useEffect(() => {
-    console.log({ code: searchParams?.get("code") })
     const code = searchParams?.get("code")
 
     if (code) {

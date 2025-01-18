@@ -44,7 +44,6 @@ export const EmailConnect = ({
     setOtpSent(true)
   }
 
-  console.log({ appId }, "email")
   const { getIdForApp } = useCreatedByAppId()
 
   const verifyOtp = async () => {

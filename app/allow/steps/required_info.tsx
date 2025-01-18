@@ -30,7 +30,6 @@ export const RequiredInfo = ({ stamps, stampsList, setStampToAdd, allDappStampPe
               const relevant_stamp = stampsList.find(
                 (_: any) => _.stamptype === item?.stamptypes?.id
               )
-              console.log({ relevant_stamp }, 'allDappStampPerms')
               return (
                 <tr
                   key={item.id}

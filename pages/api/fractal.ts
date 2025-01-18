@@ -21,10 +21,8 @@ export default async function handler(req: any, res: any) {
         },
       }
     )
-    console.log(data2)
     res.send(data2)
   } catch (err: any) {
-    console.log(err.response.data)
     res.send({ data: err.response.data, err })
   }
 }

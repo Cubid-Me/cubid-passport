@@ -20,7 +20,6 @@ import axios from "axios"
 const Stamps = ({
     stampToRender,
 }: any) => {
-    console.log({ stampToRender })
     const searchParams: any = useSearchParams()
 
     const signInWithSocial = async (socialName: any) => {
@@ -54,7 +53,6 @@ const Stamps = ({
             if (session?.user) {
                 const { user_metadata } = session?.user
                 const providerKey: any = localStorage.getItem("socialName") ?? ""
-                console.log(providerKey, session?.user, 'stamp defense')
                 const stampId = (stampsWithId as any)[providerKey]
                 const dbUser = await getUser()
                 await insertStamp({

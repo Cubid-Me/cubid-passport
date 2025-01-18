@@ -4,21 +4,17 @@ export const useGeolocation = () => {
   const [coordinates, setCoordinates] = useState<any>({ lat: null, lon: null });
   const [error, setError] = useState<any>(null);
 
-  console.log({ coordinates }, 'this siss')
-
   useEffect(() => {
     const getGeolocation = async () => {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (position) => {
-            console.log({ position }, 'position')
             setCoordinates({
               lat: position.coords.latitude,
               lon: position.coords.longitude,
             });
           },
           async (error) => {
-            console.log({ error }, 'error')
             setError(error.message);
             try {
               const response = await fetch('http://ip-api.com/json');

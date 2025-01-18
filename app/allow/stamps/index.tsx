@@ -128,7 +128,6 @@ export const Stamps = ({
   onMainPanelClose,
   isOpen,
 }: any) => {
-  console.log({ stampToRender })
   const signInWithSocial = async (socialName: any) => {
     await supabase.auth.signOut()
     localStorage.setItem("socialName", socialName)
@@ -160,7 +159,6 @@ export const Stamps = ({
   const [emailPanel, setEmailPanel] = useState(false)
 
   const fetchStampData = useCallback(async () => {
-    console.log("fetch stampdata executed")
     const {
       data: { data },
     } = await axios.post("/api/supabase/select", {
@@ -219,10 +217,8 @@ export const Stamps = ({
 
   const mintEVM = useCallback(
     async (address: string) => {
-      console.log({ address })
       if (address) {
         const dbUser = await getUser()
-        console.log({ dbUser })
         insertStamp({
           stamp_type: 'evm',
           user_data: { user_id: dbUser?.id, uuid: uuid },
@@ -242,7 +238,6 @@ export const Stamps = ({
   )
 
   const { publicKey, connected: solConnected } = useSolanaWallet()
-  console.log({ publicKey: publicKey?.toString() }, 'sol pub key')
 
   useEffect(() => {
     (async () => {
@@ -267,7 +262,6 @@ export const Stamps = ({
 
   const connectToWeb3Node = useCallback(
     async (address: string) => {
-      console.log({ address })
       if (address) {
         const {
           data: { stamps, scores },
@@ -376,7 +370,6 @@ export const Stamps = ({
   const { address, isConnected } = useAccount({
     config,
   })
-  console.log("here is address->", address)
 
   useEffect(() => {
     if (isOpen) {
@@ -394,7 +387,6 @@ export const Stamps = ({
         if (session?.user) {
           const { user_metadata } = session?.user
           const providerKey: any = localStorage.getItem("socialName") ?? ""
-          console.log(providerKey, session?.user, 'stamp defense')
           const stampId = (stampsWithId as any)[providerKey]
           const dbUser = await getUser()
           await insertStamp({
