@@ -20,7 +20,7 @@ const fetch_blacklisted_creds = async (req: any, res: any) => {
 
     const { data: all_blacklisted_stamps_raw } = await supabase
         .from('all_blacklisted_stamps_raw')
-        .select("*").match({ uniquevalue: cred })
+        .select("*").match({ uniquevalue: cred, dapp_id: dappId })
 
     res.send({
         success: true,
