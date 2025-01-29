@@ -10,11 +10,12 @@ export default async function handler(req: any, res: any) {
             origin: "*", // Allow all origins
             optionsSuccessStatus: 200, // Some legacy browsers choke on 204
         })
-        const { dapp_uid, chain, public_key } = req.body;
+        const { dapp_uid, chain, public_key, is_generated_via_lib } = req.body;
         const { data, error } = await supabase.from("wallet_list").insert({
             dapp_user: dapp_uid,
             chain: chain,
-            public_key
+            public_key,
+            is_generated_via_lib
         }).select("*")
         console.log({ data, error })
         res.send({ data, error })
