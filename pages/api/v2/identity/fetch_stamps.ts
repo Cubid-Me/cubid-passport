@@ -62,7 +62,7 @@ export default async function handler(req: any, res: any) {
 
         return {
             ...item,
-            stamptype: stampsWithId[item.stamptype],
+            stamptype_string: stampsWithId[item.stamptype],
             emailForVerification: dapp_users[0]?.users.email,
             permAvailable: Boolean(permissionData?.[0]),
         }
