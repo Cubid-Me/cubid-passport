@@ -66,6 +66,7 @@ export default async function handler(req: any, res: any) {
             emailForVerification: dapp_users[0]?.users.email,
             permAvailable: Boolean(permissionData?.[0]),
         }
+        
     })
 
     try {
