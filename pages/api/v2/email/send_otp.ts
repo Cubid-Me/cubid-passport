@@ -6,7 +6,7 @@ const nodemailer = require('nodemailer');
 // Set up Nodemailer transporter
 const transporter = nodemailer.createTransport({
   host: 'smtp-pulse.com',
-  port: 2525, // Default port
+  port: 587, // Default port
   secure: false, // true for 465, false for other ports
   auth: {
       user: 'noak@chaincrew.xyz',
@@ -17,7 +17,7 @@ const transporter = nodemailer.createTransport({
 
 async function sendVerificationEmail(toEmail: string, verificationCode: number): Promise<void> {
   const mailOptions = {
-    from: 'noak@chaincrew.xyz',
+    from: 'login@chaincrew.xyz',
     to: toEmail,
     subject: 'Email Verification Code',
     text: `Your verification code is: ${verificationCode}`,
@@ -41,6 +41,7 @@ const sendOtp = async (req: any, res: any) => {
     origin: "*", // Allow all origins
     optionsSuccessStatus: 200,
   })
+  console.log(req.body)
   const { apikey, email } = typeof req.body === "string" ? JSON.parse(req.body) : req.body
 
   const { data: dataForApp } = await supabase
