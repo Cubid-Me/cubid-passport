@@ -55,18 +55,17 @@ export default async function handler(req: any, res: any) {
                 stamp_id: item.id,
             })
 
-        if (item.stamptype === 3) {
-            console.log({ permissionData })
-
+        function swapKeyValue(obj) {
+            return Object.fromEntries(Object.entries(obj).map(([key, value]) => [value, key]));
         }
 
         return {
             ...item,
-            stamptype_string: stampsWithId[item.stamptype],
+            stamptype_string: swapKeyValue(stampsWithId)[item.stamptype],
             emailForVerification: dapp_users[0]?.users.email,
             permAvailable: Boolean(permissionData?.[0]),
         }
-        
+
     })
 
     try {
