@@ -19,7 +19,7 @@ const add_stamp = async (req: any, res: any) => {
             address: {
                 coordinates: {
                     lat: stampData.geometry.location.lat,
-                    lon: stampData.geometry.location.lon,
+                    lon: stampData.geometry.location.lng,
                 }
             },
         }).match({ id: data?.[0]?.user_id })
