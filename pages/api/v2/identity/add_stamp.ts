@@ -17,8 +17,10 @@ const add_stamp = async (req: any, res: any) => {
     if (stamp_type === "address") {
         await supabase.from("users").update({
             address: {
-                lat: stampData.geometry.location.lat,
-                lon: stampData.geometry.location.lon,
+                coordinates: {
+                    lat: stampData.geometry.location.lat,
+                    lon: stampData.geometry.location.lon,
+                }
             },
         }).match({ id: data?.[0]?.user_id })
     }
