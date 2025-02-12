@@ -24,7 +24,7 @@ const fetch_blacklisted_creds = async (req: any, res: any) => {
 
     res.send({
         success: true,
-        is_blacklisted: Boolean(all_blacklisted_stamps_raw)
+        is_blacklisted: Boolean(all_blacklisted_stamps_raw?.[0])
     })
 }
 
