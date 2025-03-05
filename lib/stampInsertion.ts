@@ -28,7 +28,8 @@ export const stampsWithId = {
     near: 15,
     "lens-protocol": 66,
     'farcaster': 68,
-    'address': 70
+    'address': 70,
+    sui: 72
 }
 
 
@@ -195,9 +196,11 @@ export const server_insertStamp = async ({ stampData, user_data, stamp_type, app
     };
 
     log('Inserting main stamp:', dataToSet_stamp);
-    const { data: stampInsertData, error: stampInsertError } = await supabase.from("stamps").insert(dataToSet_stamp);
+    const { data: stampInsertData, error: stampInsertError } = await supabase.from("stamps").insert(dataToSet_stamp).select("*");
     if (stampInsertError) {
         log('Error inserting main stamp:', stampInsertError);
+    }else{
+        console.log('stamp inserted')
     }
 
     if (user_data?.uuid) {
@@ -223,7 +226,7 @@ export const server_insertStamp = async ({ stampData, user_data, stamp_type, app
             log('Error fetching dapp_users:', dappError);
         }
 
-        if (dapp_data?.[0]) {
+        if (dapp_data?.[0] && stampInsertData?.[0]?.id) {
             log('Dapp user found, inserting permissions:', dapp_data[0].uuid);
             const { error: dappPermissionsError } = await supabase.from("stamp_dappuser_permissions").insert({
                 stamp_id: stampInsertData?.[0]?.id,

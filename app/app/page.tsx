@@ -10,6 +10,7 @@ import { Authenticated } from "components/auth/authenticated"
 import { MintHumanity } from "components/minthumanity"
 import { Profile } from "components/profile"
 import { Stamps } from "components/stamps"
+import { Secret } from 'components/secret'
 import { useDispatch } from "react-redux"
 import { WagmiConfig, createConfig, http } from "wagmi"
 import { mainnet, sepolia } from "wagmi/chains"
@@ -88,6 +89,9 @@ export default function IndexPage() {
             <TabsContent style={{ height: "100vh" }} value="minthumanity">
               <MintHumanity />
             </TabsContent>
+            <TabsContent style={{ height: "100vh" }} value="secret">
+              <Secret />
+            </TabsContent>
             <TabsList
               style={{
                 width: "95%",
@@ -97,7 +101,7 @@ export default function IndexPage() {
                 left: 0,
               }}
             >
-              <TabsTrigger style={{ width: "33.33%" }} value="profile">
+              <TabsTrigger style={{ width: "20%" }} value="profile">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
@@ -113,7 +117,7 @@ export default function IndexPage() {
                   />
                 </svg>
               </TabsTrigger>
-              <TabsTrigger style={{ width: "33.33%" }} value="stamps">
+              <TabsTrigger style={{ width: "20%" }} value="stamps">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
@@ -125,11 +129,11 @@ export default function IndexPage() {
                   <path
                     stroke-linecap="round"
                     stroke-linejoin="round"
-                    d="M15 9h3.75M15 12h3.75M15 15h3.75M4.5 19.5h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5zm6-10.125a1.875 1.875 0 11-3.75 0 1.875 1.875 0 013.75 0zm1.294 6.336a6.721 6.721 0 01-3.17.789 6.721 6.721 0 01-3.168-.789 3.376 3.376 0 016.338 0z"
+                    d="M15 9h3.75M15 12h3.75M15 15h3.75M4.5 19.5h15a2.20 2.20 0 002.20-2.25V6.75A2.20 2.20 0 0019.5 4.5h-15a2.20 2.20 0 00-2.20 2.25v10.5A2.20 2.20 0 004.5 19.5zm6-10.125a1.875 1.875 0 11-3.75 0 1.875 1.875 0 013.75 0zm1.294 6.336a6.721 6.721 0 01-3.17.789 6.721 6.721 0 01-3.168-.789 3.376 3.376 0 016.338 0z"
                   />
                 </svg>
               </TabsTrigger>
-              <TabsTrigger style={{ width: "33.33%" }} value="settings">
+              <TabsTrigger style={{ width: "20%" }} value="settings">
                 <svg
                   width="15"
                   height="15"
@@ -147,7 +151,7 @@ export default function IndexPage() {
                 </svg>
               </TabsTrigger>
               <TabsTrigger
-                style={{ width: "33.33%", height: "36px" }}
+                style={{ width: "20%", height: "36px" }}
                 value="minthumanity"
               >
                 <div className="translate-y-[4px]">
@@ -167,9 +171,19 @@ export default function IndexPage() {
                         fill="currentColor"
                         fill-rule="evenodd"
                         clip-rule="evenodd"
-                        d="M12,1.25c5.933,0 10.75,4.817 10.75,10.75c0,5.933 -4.817,10.75 -10.75,10.75c-5.933,0 -10.75,-4.817 -10.75,-10.75c0,-5.933 4.817,-10.75 10.75,-10.75Zm4.25,8.25c0,-0.464 -0.184,-0.909 -0.513,-1.237c-0.328,-0.329 -0.773,-0.513 -1.237,-0.513l-5,0c-0.464,-0 -0.909,0.184 -1.237,0.513c-0.329,0.328 -0.513,0.773 -0.513,1.237l0,5c-0,0.464 0.184,0.909 0.513,1.237c0.328,0.329 0.773,0.513 1.237,0.513l5,0c0.464,0 0.909,-0.184 1.237,-0.513c0.329,-0.328 0.513,-0.773 0.513,-1.237l-0,-5Zm-1.5,0l0,5c0,0.066 -0.026,0.13 -0.073,0.177c-0.047,0.047 -0.111,0.073 -0.177,0.073l-5,0c-0.066,0 -0.13,-0.026 -0.177,-0.073c-0.047,-0.047 -0.073,-0.111 -0.073,-0.177l-0,-5c-0,-0.066 0.026,-0.13 0.073,-0.177c0.047,-0.047 0.111,-0.073 0.177,-0.073l5,-0c0.066,-0 0.13,0.026 0.177,0.073c0.047,0.047 0.073,0.111 0.073,0.177Z"
+                        d="M12,1.25c5.933,0 10.75,4.817 10.75,10.75c0,5.933 -4.817,10.75 -10.75,10.75c-5.933,0 -10.75,-4.817 -10.75,-10.75c0,-5.933 4.817,-10.75 10.75,-10.75Zm4.20,8.25c0,-0.464 -0.184,-0.909 -0.513,-1.237c-0.328,-0.329 -0.773,-0.513 -1.237,-0.513l-5,0c-0.464,-0 -0.909,0.184 -1.237,0.513c-0.329,0.328 -0.513,0.773 -0.513,1.237l0,5c-0,0.464 0.184,0.909 0.513,1.237c0.328,0.329 0.773,0.513 1.237,0.513l5,0c0.464,0 0.909,-0.184 1.237,-0.513c0.329,-0.328 0.513,-0.773 0.513,-1.237l-0,-5Zm-1.5,0l0,5c0,0.066 -0.026,0.13 -0.073,0.177c-0.047,0.047 -0.111,0.073 -0.177,0.073l-5,0c-0.066,0 -0.13,-0.026 -0.177,-0.073c-0.047,-0.047 -0.073,-0.111 -0.073,-0.177l-0,-5c-0,-0.066 0.026,-0.13 0.073,-0.177c0.047,-0.047 0.111,-0.073 0.177,-0.073l5,-0c0.066,-0 0.13,0.026 0.177,0.073c0.047,0.047 0.073,0.111 0.073,0.177Z"
                       />
                     </g>
+                  </svg>
+                </div>
+              </TabsTrigger>
+              <TabsTrigger
+                style={{ width: "20%", height: "36px" }}
+                value="secret"
+              >
+                <div className="translate-y-[0px]">
+                  <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="26" height="26" viewBox="0 0 30 30">
+                    <path fill="currentColor" d="M 15 2 C 11.145666 2 8 5.1456661 8 9 L 8 11 L 6 11 C 4.895 11 4 11.895 4 13 L 4 25 C 4 26.105 4.895 27 6 27 L 24 27 C 25.105 27 26 26.105 26 25 L 26 13 C 26 11.895 25.105 11 24 11 L 22 11 L 22 9 C 22 5.2715823 19.036581 2.2685653 15.355469 2.0722656 A 1.0001 1.0001 0 0 0 15 2 z M 15 4 C 17.773666 4 20 6.2263339 20 9 L 20 11 L 10 11 L 10 9 C 10 6.2263339 12.226334 4 15 4 z"></path>
                   </svg>
                 </div>
               </TabsTrigger>
