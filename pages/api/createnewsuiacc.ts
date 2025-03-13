@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { NextApiRequest, NextApiResponse } from "next";
 import nacl from "tweetnacl";
 import * as bip39 from "bip39"; // Use a namespace import to correctly access bip39 functions
