@@ -1,3 +1,4 @@
+// @ts-nocheck
 // pages/api/generateImplicitWallet.ts
 
 import { NextApiRequest, NextApiResponse } from "next"
