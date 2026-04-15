@@ -46,10 +46,10 @@ Parallelization note: This section should start first. Once `A01` defines worksp
 
 - Status: Completed
 - Timestamp started: 2026-04-15T13:30:46-0400
-- Timestamp completed: 2026-04-15T13:30:46-0400
+- Timestamp completed: 2026-04-15T13:37:32-0400
 - Feature branch: codex/repo-cleanup-roadmap
-- Head: 0b538d7ba551a269b501e830bfbdc657a64bec96
-- Session-log reference(s): session: v2
+- Head: 9260661
+- Session-log reference(s): session: v2, session: v3
 
 Write and ratify the monorepo architecture decision record before moving files. Decide the workspace toolchain, package manager, task runner, shared TypeScript strategy, CI graph, and release model. The output should define top-level folders such as `apps/`, `packages/`, `services/`, `tooling/`, and `docs/`, plus naming conventions for shared libraries. Include how `cubid-passport`, `cubid-admin`, the future OIDC service, shared UI, shared auth, and shared domain packages will interact. Capture server-only versus client-safe package rules, environment variable ownership, and build/test boundaries per workspace. This todo should also define migration principles: preserve behavior first, move code second, improve internals third. Without this, the repo risks becoming a larger version of the current architectural sprawl instead of a true platform monorepo.
 

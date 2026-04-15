@@ -121,3 +121,29 @@ Commit the A01 operating-model artifacts and make the todo execution protocol du
 
 - commit this full A01 documentation bundle immediately after this session entry
 - begin A02 next, using the locked operating-model document as the migration contract
+
+### session: v4
+
+- timestamp: 2026-04-15T13:37:32-0400
+- agent: **OpenAI-Codex**
+- branch: **codex/repo-cleanup-roadmap**
+- head: **`9260661`**
+- session name: **Align A01 todo metadata**
+
+#### Objective
+
+Bring the completed A01 todo metadata into sync with the actual implementation commit so the roadmap reflects the final branch, head, completion time, and session references.
+
+#### Actions Taken
+
+- updated [agent-context/todo.md](/Users/botmaster/src/cubid/cubid-passport/agent-context/todo.md) so `A01` now references the actual implementation commit head and both relevant session-log entries
+- corrected `A01` completion metadata to reflect the point at which the operating-model artifacts were committed
+
+#### Verification
+
+- reviewed the `A01` metadata block after the operating-model commit to confirm head and session references were accurate
+- confirmed the follow-up commit contains only roadmap metadata alignment
+
+#### Follow-up
+
+- start `A02` next on a new feature branch once ready to relocate Passport into `apps/passport`
