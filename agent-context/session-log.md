@@ -265,3 +265,29 @@ Remove stray repo-shell and generated artifacts that slipped into the A03 implem
 #### Follow-up
 
 - align the `A03` todo metadata to the final post-cleanup head and include both A03 session-log references
+
+### session: v9
+
+- timestamp: 2026-04-15T14:48:01-0400
+- agent: **OpenAI-Codex**
+- branch: **codex/a03-import-admin**
+- head: **`6b29457`**
+- session name: **Align A03 completion metadata**
+
+#### Objective
+
+Bring the completed `A03` roadmap metadata into sync with the actual post-cleanup implementation head so the todo points at the real task commit history.
+
+#### Actions Taken
+
+- updated [agent-context/todo.md](/Users/botmaster/src/cubid/cubid-passport/agent-context/todo.md) so `A03` now references the post-cleanup implementation head and all three relevant session-log entries
+- kept the completion timestamp tied to the point where the implementation work itself finished, rather than the metadata-only follow-up commit
+
+#### Verification
+
+- reviewed the `A03` metadata block after the cleanup follow-up commit
+- confirmed the task head now points at the final non-metadata A03 commit
+
+#### Follow-up
+
+- start `B01` next to define the OIDC and trust architecture on top of the stabilized two-app monorepo baseline
