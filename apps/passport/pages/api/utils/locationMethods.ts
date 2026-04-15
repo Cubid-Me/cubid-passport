@@ -1,6 +1,6 @@
 import axios from "axios"
 
-const apiKeyForGoogle = "AIzaSyCW7A2LY_XIQtmNym9t0hs17nPYO7O7A0A"
+const apiKeyForGoogle = process.env.GOOGLE_MAPS_API_KEY
 
 export const getCountryFromPlusCode = async (plusCode: any) => {
   try {

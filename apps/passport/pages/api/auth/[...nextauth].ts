@@ -10,7 +10,9 @@ export const authOptions = {
       authorization: {
         params: {
           scope: "openid",
-          redirect_uri: "https://passport.cubid.me/worldcoin",
+          redirect_uri:
+            process.env.WLD_REDIRECT_URI ??
+            process.env.NEXT_PUBLIC_WORLDCOIN_REDIRECT_URI,
           response_type: "code",
         },
       },

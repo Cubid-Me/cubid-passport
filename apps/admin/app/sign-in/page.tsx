@@ -74,7 +74,7 @@ export default function SignIn() {
                 <OwnID
                   type='login'
                   options={{
-                    appId: 'p0zfroqndmvm30',
+                    appId: process.env.NEXT_PUBLIC_OWNID_APP_ID ?? '',
                     variant: 'ownid-auth-button',
                     infoTooltip: true,
                     widgetPosition: 'start',

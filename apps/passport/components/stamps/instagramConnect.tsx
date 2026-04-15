@@ -17,11 +17,11 @@ import { stampsWithId } from "."
 import { Button } from "../ui/button"
 import { insertStamp } from "@/lib/stampInsertion"
 
-const redirectUri = "https://passport.cubid.me/app/"
+const redirectUri = process.env.NEXT_PUBLIC_INSTAGRAM_REDIRECT_URI ?? ""
 
 const InstagramAuth = ({ allowPage }: any) => {
   const handleLogin = () => {
-    const clientId = "328555189879651"
+    const clientId = process.env.NEXT_PUBLIC_INSTAGRAM_CLIENT_ID ?? ""
     if (allowPage) {
       localStorage.setItem(
         "allow_url",

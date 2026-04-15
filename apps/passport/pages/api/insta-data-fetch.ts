@@ -8,12 +8,19 @@ export default async function handler(
 ) {
   let code = req.body.code
   let redirectUri = req.body.redirectUri
+  const instagramClientId = process.env.NEXT_PUBLIC_INSTAGRAM_CLIENT_ID
+  const instagramClientSecret = process.env.INSTAGRAM_CLIENT_SECRET
+
+  if (!instagramClientId || !instagramClientSecret) {
+    return res.status(500).send({ error: "Missing Instagram environment configuration" })
+  }
+
   // send form based request to Instagram API
   const formData = new URLSearchParams()
 
   // Append your data
-  formData.append("client_id", "328555189879651")
-  formData.append("client_secret", "6a567d49fb0d7a3500f12dec14423945")
+  formData.append("client_id", instagramClientId)
+  formData.append("client_secret", instagramClientSecret)
   formData.append("grant_type", "authorization_code")
   formData.append("redirect_uri", redirectUri) // replace with your value
   formData.append("code", code) // replace with your value

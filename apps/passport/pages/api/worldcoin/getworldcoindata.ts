@@ -6,12 +6,18 @@ import { insertStamp } from "@/lib/stampInsertion";
 
 export default async function handler(req, res) {
   const { code, userid } = req.body;
+  const worldcoinRedirectUri =
+    process.env.WLD_REDIRECT_URI ?? process.env.NEXT_PUBLIC_WORLDCOIN_REDIRECT_URI ?? "";
+
+  if (!process.env.WLD_CLIENT_ID || !process.env.WLD_CLIENT_SECRET || !worldcoinRedirectUri) {
+    return res.status(500).send({ error: "Missing Worldcoin environment configuration" });
+  }
 
   try {
     const data = new URLSearchParams();
     data.append("code", code);
     data.append("grant_type", "authorization_code");
-    data.append("redirect_uri", "https://passport.cubid.me/worldcoin");
+    data.append("redirect_uri", worldcoinRedirectUri);
     data.append("client_id", process.env.WLD_CLIENT_ID ?? "");
 
     const { data: dta } = await axios.post(

@@ -24,8 +24,13 @@ export default async function handler(
       return res.status(400).json({ error: "Invalid API key" })
     }
     
+    const googleMapsApiKey = process.env.GOOGLE_MAPS_API_KEY
+    if (!googleMapsApiKey) {
+      return res.status(500).json({ error: "Missing GOOGLE_MAPS_API_KEY" })
+    }
+
     const response = await axios.get(
-        `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${location_input}&key=AIzaSyCW7A2LY_XIQtmNym9t0hs17nPYO7O7A0A`
+        `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${location_input}&key=${googleMapsApiKey}`
     )
     res.status(200).json(response.data.results)
 }

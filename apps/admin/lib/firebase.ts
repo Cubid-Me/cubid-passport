@@ -1,16 +1,18 @@
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/auth';
 
+const firebaseConfig = {
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
+};
+
 if (!firebase.apps.length) {
-  firebase.initializeApp({
-    apiKey: 'AIzaSyDw83-gENumukAXAy_ZQW3YeixTwAM8TTk',
-    authDomain: 'cubid-c6ac4.firebaseapp.com',
-    projectId: 'cubid-c6ac4',
-    storageBucket: 'cubid-c6ac4.appspot.com',
-    messagingSenderId: '474272043641',
-    appId: '1:474272043641:web:ebfc6f7ac57fa18fb93aa8',
-    measurementId: 'G-Q8WPWQ6HS4',
-  });
+  firebase.initializeApp(firebaseConfig);
 }
 
 export default firebase;

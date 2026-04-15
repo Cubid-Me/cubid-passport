@@ -129,32 +129,42 @@ export default async function handler(
   } else {
     log("No existing stamp found, checking for existing user", 80)
 
-    let existingUser;
+    let existingUser = null
 
-    const { data: emailUser } = await supabase
-      .from("users")
-      .select("*")
-      .match({ email: userIdentifiers.email })
-    log(`Existing user data: ${JSON.stringify(existingUser)}`, 85)
+    if (userIdentifiers.email) {
+      const { data: emailUser } = await supabase
+        .from("users")
+        .select("*")
+        .match({ email: userIdentifiers.email })
 
-    if (emailUser?.[0]) {
-      existingUser = emailUser
-    } else {
-      const { data: phone_user } = await supabase
+      if (emailUser?.[0]) {
+        existingUser = emailUser
+      }
+    }
+
+    if (!existingUser && userIdentifiers.phone) {
+      const { data: phoneUser } = await supabase
         .from("users")
         .select("*")
         .match({ phone: userIdentifiers.phone })
-      if (phone_user?.[0]) {
-        existingUser = phone_user
+
+      if (phoneUser?.[0]) {
+        existingUser = phoneUser
       }
+    }
+
+    if (!existingUser && userIdentifiers.evm) {
       const { data: evmUser } = await supabase
         .from("users")
         .select("*")
         .match({ evm: userIdentifiers.evm })
+
       if (evmUser?.[0]) {
         existingUser = evmUser
       }
     }
+
+    log(`Existing user data: ${JSON.stringify(existingUser)}`, 85)
 
     let userId
     if (existingUser && existingUser.length > 0) {

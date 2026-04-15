@@ -32,7 +32,7 @@ export default function IndexPage() {
 
   useEffect(() => {
     // 1. Get projectId
-    const projectId = "6833ed2c1539b9d27e8840c51f53bd0c"
+    const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ?? ""
 
     const metadata = {
       name: "Web3Modal",

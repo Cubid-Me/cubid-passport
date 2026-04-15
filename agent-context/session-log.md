@@ -321,3 +321,61 @@ Implement B01 by producing the decision-complete OIDC and trust architecture for
 
 - start `B02` next by scaffolding `services/oidc` against the contracts locked in the new B01 architecture document
 - use `@cubid/auth`, `@cubid/identity`, and `@cubid/claims` as the first package boundaries to extract while building the issuer runtime
+
+### session: v11
+
+- timestamp: 2026-04-15T16:50:06-0400
+- agent: **OpenAI-Codex**
+- branch: **codex/b01-oidc-architecture**
+- head: **`7479974`**
+- session name: **Align B01 completion metadata**
+
+#### Objective
+
+Sync the completed `B01` roadmap metadata to the actual implementation commit so the todo points at the real committed OIDC architecture baseline.
+
+#### Actions Taken
+
+- updated [agent-context/todo.md](/Users/botmaster/src/cubid/cubid-passport/agent-context/todo.md) so `B01` now references the actual implementation commit head and final commit timestamp
+- kept the target-state document reference in the B01 metadata block and expanded the session-log references to include both the implementation-design entry and this metadata-alignment follow-up
+
+#### Verification
+
+- confirmed the implementation commit hash for the B01 documentation bundle before updating the todo metadata
+- limited the follow-up change to roadmap metadata only
+
+#### Follow-up
+
+- start `B02` next by scaffolding `services/oidc` and the first shared auth, identity, and claims contracts against the accepted B01 design
+
+### session: v12
+
+- timestamp: 2026-04-15T19:50:31-0400
+- agent: **GitHub Copilot (GPT-5.4)**
+- branch: **codex/c01-local-env-and-supabase**
+- head: **`7479974`**
+- session name: **Local Supabase baseline and env hardening**
+
+#### Objective
+
+Stand up a safe local Supabase-backed Passport development baseline, remove hardcoded third-party configuration from runtime code, and verify the local signup flow still persists users end to end.
+
+#### Actions Taken
+
+- added local Supabase project files under [supabase/config.toml](/Users/botmaster/src/cubid/cubid-passport/supabase/config.toml), [supabase/.gitignore](/Users/botmaster/src/cubid/cubid-passport/supabase/.gitignore), [supabase/migrations/20260331020028_remote_schema.sql](/Users/botmaster/src/cubid/cubid-passport/supabase/migrations/20260331020028_remote_schema.sql), and [supabase/seed.sql](/Users/botmaster/src/cubid/cubid-passport/supabase/seed.sql) so Passport can run safely against a local schema baseline with synthetic seed data
+- replaced hardcoded Supabase configuration with env-driven client selection in [apps/passport/lib/supabase.ts](/Users/botmaster/src/cubid/cubid-passport/apps/passport/lib/supabase.ts) and simplified [apps/passport/pages/api/utils/supabase.ts](/Users/botmaster/src/cubid/cubid-passport/apps/passport/pages/api/utils/supabase.ts) to share that configuration
+- moved remaining hardcoded Firebase, OwnID, WalletConnect, Worldcoin, Instagram, Fractal, Google Maps, and PII test configuration into env-backed code paths across Passport and Admin, and expanded [apps/passport/.env.example](/Users/botmaster/src/cubid/cubid-passport/apps/passport/.env.example), [apps/admin/.env.example](/Users/botmaster/src/cubid/cubid-passport/apps/admin/.env.example), and [.gitignore](/Users/botmaster/src/cubid/cubid-passport/.gitignore) to support local-only configuration
+- fixed [apps/passport/pages/api/v2/create_user.ts](/Users/botmaster/src/cubid/cubid-passport/apps/passport/pages/api/v2/create_user.ts) so it only checks existing users against identifiers that were actually supplied, which unblocked local user creation after the schema import
+- fixed Passport SSR startup by deferring wallet initialization in [apps/passport/app/layout.tsx](/Users/botmaster/src/cubid/cubid-passport/apps/passport/app/layout.tsx), [apps/passport/lib/wallet.ts](/Users/botmaster/src/cubid/cubid-passport/apps/passport/lib/wallet.ts), [apps/passport/config/web3Config.ts](/Users/botmaster/src/cubid/cubid-passport/apps/passport/config/web3Config.ts), and [apps/passport/app/allow/page.tsx](/Users/botmaster/src/cubid/cubid-passport/apps/passport/app/allow/page.tsx) so the login route no longer trips browser-storage access during server render
+
+#### Verification
+
+- started local Supabase and reset the local database against the imported schema and synthetic seed
+- ran `pnpm dev` for Passport with local env configuration and confirmed `GET /login 200`
+- smoke-tested the login route after the SSR wallet fix and confirmed it still served successfully
+- posted to `/api/v2/create_user` with the seeded local dapp and confirmed a new user was returned and persisted in local Postgres via direct `psql` lookup
+
+#### Follow-up
+
+- align `C01` todo metadata to the implementation commit head in a small follow-up commit
+- start `C02` next by replacing the generic Supabase CRUD endpoints with typed domain services

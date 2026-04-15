@@ -1,17 +1,18 @@
 import { http, createConfig } from 'wagmi'
 import { mainnet } from 'wagmi/chains'
-const projectId = "6833ed2c1539b9d27e8840c51f53bd0c"
+const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ?? ""
 import { injected, metaMask, safe, walletConnect } from 'wagmi/connectors'
 import { polygon } from "wagmi/chains";
 
+const connectors = [injected(), metaMask(), safe()]
+
+if (typeof window !== 'undefined' && projectId) {
+    connectors.splice(1, 0, walletConnect({ projectId }))
+}
+
 export const config = createConfig({
     chains: [mainnet,polygon],
-    connectors: [
-        injected(),
-        walletConnect({ projectId }),
-        metaMask(),
-        safe(),
-    ],
+    connectors,
     transports: {
         [polygon.id]:http(),
         [mainnet.id]: http(),

@@ -101,21 +101,12 @@ const AllowPage = () => {
     return string.charAt(0).toUpperCase() + string.slice(1)
   }
 
-  const [wagmiConfig, setWagmiConfig] = useState(
-    defaultWagmiConfig({
-      chains: [mainnet, arbitrum],
-      projectId: "6833ed2c1539b9d27e8840c51f53bd0c",
-      metadata: {
-        name: "Web3Modal",
-        description: "Web3Modal Example",
-        url: "https://web3modal.com",
-        icons: ["https://avatars.githubusercontent.com/u/37784886"],
-      },
-    })
-  )
+  const walletConnectProjectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ?? ""
+
+  const [wagmiConfig, setWagmiConfig] = useState(null)
   useEffect(() => {
     // 1. Get projectId
-    const projectId = "6833ed2c1539b9d27e8840c51f53bd0c"
+    const projectId = walletConnectProjectId
 
     // 2. Create wagmiConfig
     const metadata = {

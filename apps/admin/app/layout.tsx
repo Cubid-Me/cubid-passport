@@ -28,7 +28,7 @@ export default function RootLayout({
       <body>
         <OwnIDInit
           config={{
-            appId: 'p0zfroqndmvm30',
+            appId: process.env.NEXT_PUBLIC_OWNID_APP_ID ?? '',
             firebaseAuth: {
               getAuth,
               getIdToken,

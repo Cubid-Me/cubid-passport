@@ -1,6 +1,26 @@
 import { createClient } from "@supabase/supabase-js"
 
-export const supabase = createClient(
-  "https://cggycnbvljcdptzyjpju.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNnZ3ljbmJ2bGpjZHB0enlqcGp1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTY4MDQ2MjQ3MCwiZXhwIjoxOTk2MDM4NDcwfQ.LncxIJhT0HgOG5Kzoa9i57uIQL3jqOzXaDOnErbB_7M"
-);
+const supabaseUrl =
+  process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL
+
+const clientSupabaseKey =
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+const serverSupabaseKey =
+  process.env.SUPABASE_SERVICE_ROLE_KEY ?? clientSupabaseKey
+
+if (!supabaseUrl) {
+  throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_URL")
+}
+
+const supabaseKey =
+  typeof window === "undefined" ? serverSupabaseKey : clientSupabaseKey
+
+if (!supabaseKey) {
+  throw new Error(
+    "Missing Supabase key. Set NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, NEXT_PUBLIC_SUPABASE_ANON_KEY, or SUPABASE_SERVICE_ROLE_KEY"
+  )
+}
+
+export const supabase = createClient(supabaseUrl, supabaseKey)

@@ -1132,8 +1132,15 @@ export const Stamps = () => {
             ) : (
               <Button
                 onClick={() => {
-                  window.location.href =
-                    "https://id.worldcoin.org/authorize?response_type=code&response_mode=query&client_id=app_541763ec208991dcb4232108de2f9553&redirect_uri=https://passport.cubid.me/worldcoin&ready=true&scope=openid"
+                  window.location.href = `https://id.worldcoin.org/authorize?${new URLSearchParams({
+                    response_type: "code",
+                    response_mode: "query",
+                    client_id: process.env.NEXT_PUBLIC_WLD_CLIENT_ID ?? "",
+                    redirect_uri:
+                      process.env.NEXT_PUBLIC_WORLDCOIN_REDIRECT_URI ?? "",
+                    ready: "true",
+                    scope: "openid",
+                  }).toString()}`
                 }}
                 variant="secondary"
                 className="bg-blue-500 text-white"

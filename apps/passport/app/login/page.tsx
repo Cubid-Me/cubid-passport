@@ -71,7 +71,7 @@ export default function AuthenticationPage() {
             identity: localStorage.getItem("email"),
             uniquevalue: localStorage.getItem("email")
           },
-          app_id: 33,
+          app_id: parseInt(process.env.NEXT_PUBLIC_DAPP_ID ?? "0"),
           is_auth: true
         })
       }
@@ -251,7 +251,7 @@ export default function AuthenticationPage() {
                 <OwnID
                   type="login"
                   options={{
-                    appId: "p0zfroqndmvm30",
+                    appId: process.env.NEXT_PUBLIC_OWNID_APP_ID ?? "",
                     variant: "ownid-auth-button",
                     infoTooltip: true,
                     widgetPosition: "start",

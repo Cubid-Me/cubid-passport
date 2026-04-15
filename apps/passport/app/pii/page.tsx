@@ -279,7 +279,7 @@ export default function IndexPage() {
           "/api/v2/identity/fetch_approx_location",
           {
             user_id: searchParams.get("uid"),
-            apikey: "bb345ead-ee52-4a83-ab4d-6958ae6fe622",
+            apikey: process.env.NEXT_PUBLIC_PII_DAPP_API_KEY ?? "",
           }
         )
         setLocationDetailsJSON(data)

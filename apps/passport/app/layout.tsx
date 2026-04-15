@@ -37,7 +37,6 @@ const lensConfig: LensConfig = {
   environment: production,
   bindings: bindings(config),
 };
-wallet.startUp()
 
 function removeQueryParam(url, paramToRemove) {
   // Parse the URL
@@ -55,11 +54,17 @@ function removeQueryParam(url, paramToRemove) {
 
 export default function RootLayout(props: any) {
   const queryClient = new QueryClient()
-
+  const ownIdAppId = process.env.NEXT_PUBLIC_OWNID_APP_ID ?? ""
 
   const { pageProps } = props
   const pathName = usePathname()
   const { push } = useRouter()
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      wallet?.startUp()
+    }
+  }, [])
 
   useLayoutEffect(() => {
     if (typeof window !== "undefined") {
@@ -97,7 +102,7 @@ export default function RootLayout(props: any) {
                 <AuthKitProvider config={config}>
                   <OwnIDInit
                     config={{
-                      appId: "p0zfroqndmvm30",
+                      appId: ownIdAppId,
                       firebaseAuth: {
                         getAuth,
                         getIdToken,
@@ -162,7 +167,7 @@ export default function RootLayout(props: any) {
                 <AuthKitProvider config={config}>
                   <OwnIDInit
                     config={{
-                      appId: "p0zfroqndmvm30",
+                      appId: ownIdAppId,
                       firebaseAuth: {
                         getAuth,
                         getIdToken,
