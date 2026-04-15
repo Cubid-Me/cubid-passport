@@ -1,4 +1,4 @@
-# Cubid Passport Current-State Architecture
+# Cubid Current-State Architecture
 
 Last updated: 2026-04-15
 
@@ -8,13 +8,23 @@ This document describes the current implementation architecture of the `cubid-pa
 
 ## System Summary
 
-Cubid Passport is a hybrid Next.js 14 application that lets end users:
+The monorepo currently contains two application workspaces:
 
-- authenticate with email, phone, and several social or identity providers
-- collect "stamps" that represent identity proofs and connected accounts
-- share selected stamps with third-party dapps through allow-list flows
-- create or link blockchain accounts across EVM, Solana, and NEAR
-- mint a Gitcoin Passport score onto NEAR as an SBT
+- Cubid Passport, a hybrid Next.js 14 application that lets end users:
+
+  - authenticate with email, phone, and several social or identity providers
+  - collect "stamps" that represent identity proofs and connected accounts
+  - share selected stamps with third-party dapps through allow-list flows
+  - create or link blockchain accounts across EVM, Solana, and NEAR
+  - mint a Gitcoin Passport score onto NEAR as an SBT
+
+- Cubid Admin, a preserve-first imported Next.js 13 canary application that lets operators:
+
+  - authenticate with Firebase-issued bearer tokens
+  - manage dapp configuration and page records
+  - rotate app API keys
+  - manage webhook records
+  - use server-side Supabase access for admin workflows
 
 The repository combines:
 
@@ -23,7 +33,7 @@ The repository combines:
 - a client-heavy React shell with many global providers
 - direct Supabase database access from both browser code and server handlers
 - blockchain and identity-provider integrations embedded across UI components and API endpoints
-- a monorepo root shell that currently hosts one active application workspace
+- a monorepo root shell that now hosts two active application workspaces and the first shared packages
 
 ## High-Level Topology
 
@@ -53,14 +63,24 @@ flowchart LR
 
 - `apps/passport/app/`
   UI routes for landing, login, authenticated app, allow flow, widget flow, Worldcoin callback, Telegram flow, and PII flow.
+- `apps/admin/app/`
+  Admin UI routes and client-side shell for the control-plane experience.
 - `apps/passport/components/`
   Shared UI plus large feature components for stamps, profile, minting, auth wrappers, and wallet integrations.
+- `apps/admin/components/`
+  Admin-presentational components, links, and layout helpers.
 - `apps/passport/hooks/`
   Browser hooks for auth, stamp loading, and app-id resolution.
+- `apps/admin/hooks/`
+  Admin-specific React hooks and UI helpers.
 - `apps/passport/redux/`
   Minimal Redux store for authenticated user state.
+- `apps/admin/redux/`
+  Admin Redux store and associated slices.
 - `apps/passport/config/`
   Site config plus Wagmi connector config.
+- `apps/admin/constant/`
+  Admin site config and environment-flags module.
 - `apps/passport/styles/`
   Global Tailwind styles.
 
@@ -68,10 +88,29 @@ flowchart LR
 
 - `apps/passport/pages/api/`
   All server endpoints. This includes generic Supabase CRUD handlers, dapp APIs, wallet flows, verification flows, webhooks, and third-party callbacks.
+- `apps/admin/pages/api/admin/`
+  Authenticated admin API routes for app config, page config, webhook management, metadata, and auth synchronization.
 - `apps/passport/lib/`
   Shared browser/server helpers for Supabase, Firebase, stamp insertion, NEAR wallet handling, hashing, and outbound webhook triggers.
+- `apps/admin/lib/server/`
+  Server-only helpers for Supabase access, Firebase Admin bearer-token verification, and admin API authorization helpers.
+- `packages/config/`
+  Shared env-loading helpers currently used by Admin server code.
+- `packages/types/`
+  Shared cross-workspace type contracts, currently used for site and navigation metadata.
 
 ## Runtime Architecture
+
+## Monorepo Shell
+
+The repo root now acts as a true monorepo shell rather than an application root.
+
+Current traits:
+
+- `pnpm-workspace.yaml` defines `apps/*`, `services/*`, `packages/*`, and `tooling/*` workspaces.
+- `turbo.json` defines the shared task graph.
+- Root `pnpm build`, `pnpm lint`, `pnpm typecheck`, and `pnpm test` now validate all workspaces that expose those tasks.
+- Root `pnpm dev` still defaults to Passport, while `pnpm dev:admin` starts the Admin workspace explicitly.
 
 ## Frontend Shell
 
@@ -164,6 +203,22 @@ NextAuth is present but narrowly used:
 - [middleware.ts](/Users/botmaster/src/cubid/cubid-passport/apps/passport/middleware.ts) protects `/admin` and `/me`
 
 In practice, Firebase plus local state appears to drive the core app experience more than NextAuth.
+
+## Admin Authentication and Data Model
+
+Admin has a distinct trust boundary from Passport.
+
+### Admin access model
+
+- Browser clients authenticate with Firebase and present bearer tokens to `apps/admin/pages/api/admin/*`.
+- `apps/admin/lib/server/firebaseAdmin.ts` verifies those tokens server-side.
+- `apps/admin/lib/server/adminApi.ts` loads the matching `dapp-admin-users` row and enforces that the caller is an authorized admin user before privileged reads or writes continue.
+
+### Admin data access
+
+- `apps/admin/lib/server/supabase.ts` uses a server-side Supabase service role.
+- Admin routes operate on dapp configuration, page records, webhook records, and metadata rather than Passport’s stamp-consent flows.
+- The Admin workspace currently preserves its original app structure, but its runtime now participates in the same monorepo install and validation graph as Passport.
 
 ## State Management
 

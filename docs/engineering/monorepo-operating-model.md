@@ -1,13 +1,13 @@
 # Cubid Monorepo Operating Model
 
 Last updated: 2026-04-15
-Status: Accepted for A01
+Status: Accepted in A01, enacted through A03
 
 ## Purpose
 
 This document is the source of truth for the Cubid monorepo operating model. It defines the repo root, workspace toolchain, target layout, package boundaries, environment ownership, CI/task contract, and migration sequence that later tasks must follow.
 
-A01 locks the operating model. It does not relocate application code yet.
+A01 locked the operating model. A02 and A03 then enacted the first live pieces of that model by moving Passport into `apps/passport`, importing Admin into `apps/admin`, and introducing the first shared packages.
 
 ## Locked Decisions
 
@@ -24,19 +24,18 @@ A01 locks the operating model. It does not relocate application code yet.
 
 ## Current State
 
-Today the platform is split across sibling repositories under `/Users/botmaster/src/cubid/`.
+Today the platform lives in one monorepo rooted at `/Users/botmaster/src/cubid/cubid-passport`.
 
-- `cubid-passport`
-  - current repo root
-  - Next.js 14 app
-  - npm-oriented today
-  - now contains architecture and roadmap docs
-- `cubid-admin`
-  - parallel repo to be imported later
-  - older Next.js 13 canary starter baseline
-  - mixed npm and yarn signals today
+- `apps/passport`
+  - active Next.js 14 user-facing application
+- `apps/admin`
+  - imported Next.js 13 canary admin control plane
+- `packages/config`
+  - shared server-side env helpers
+- `packages/types`
+  - shared cross-workspace type contracts
 
-This means the target monorepo must accommodate multiple Next.js applications with temporarily different internal maturity levels.
+The repository still needs deeper package extraction, but it already has to accommodate multiple Next.js applications with temporarily different internal maturity levels.
 
 ## Target Repository Shape
 
@@ -216,10 +215,10 @@ Each app, service, and package must declare at least the scripts it actually sup
 
 ### Admin import rule
 
-- `cubid-admin` is imported into `apps/admin` in A03.
+- `cubid-admin` is imported into `apps/admin` in A03 as a single snapshot from source head `60080e4`.
 - The import is preserve-first, not a modernization project.
 - `apps/admin` may temporarily keep its current internal structure and older app conventions.
-- During or immediately after import, it must conform to workspace-level install, build, lint, and typecheck contracts.
+- During or immediately after import, it must conform to workspace-level install, build, lint, typecheck, and test contracts.
 
 ## Current-to-Target Mapping
 
@@ -231,7 +230,7 @@ Each app, service, and package must declare at least the scripts it actually sup
 
 ### Admin
 
-- current state: sibling repository at `/Users/botmaster/src/cubid/cubid-admin`
+- current state: `apps/admin` workspace imported from sibling repository head `60080e4`
 - target state: `apps/admin`
 - migration expectation: import as-is where practical, then normalize gradually
 

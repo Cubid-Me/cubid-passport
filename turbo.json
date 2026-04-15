@@ -25,6 +25,10 @@
     "format": {
       "cache": false,
       "outputs": []
+    },
+    "format:write": {
+      "cache": false,
+      "outputs": []
     }
   }
 }

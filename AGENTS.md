@@ -19,6 +19,9 @@ At the start of a new session, inspect and summarize the relevant work from:
 ## Repository Map
 
 - `apps/passport/`: live Passport app workspace containing the App Router UI, `pages/api` handlers, app config, shared components, hooks, and frontend support files
+- `apps/admin/`: admin control-plane workspace containing the admin UI shell, `pages/api/admin` handlers, Firebase bearer-token verification, and server-side Supabase access
+- `packages/config/`: shared environment helper package for server-side runtime configuration
+- `packages/types/`: shared type contracts that can be consumed by multiple workspaces
 - `apps/passport/public/`: Passport static assets
 - `agent-context/`: session logging, feature notes, and small local follow-ups
 - `docs/engineering/`: architecture and operating-model docs
@@ -29,7 +32,8 @@ At the start of a new session, inspect and summarize the relevant work from:
 - Use Node 20 when working locally
 - Install dependencies with `pnpm install`
 - Start local development with `pnpm dev`
-- Validate changes with `pnpm lint`, `pnpm typecheck`, and `pnpm build`
+- Start the admin app explicitly with `pnpm dev:admin`
+- Validate changes with `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm build`
 
 ## Notes
 

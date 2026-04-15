@@ -17,6 +17,7 @@
     "format:check": "pnpm exec prettier --check \"**/*.{ts,tsx,mdx}\" --cache"
   },
   "dependencies": {
+        "@cubid/types": "workspace:*",
         "@celo/contractkit": "^5.0.4",
         "@ethersproject/bignumber": "^5.7.0",
         "@farcaster/auth-kit": "^0.6.0",

@@ -1,6 +1,1 @@
-export interface NavItem {
-  title: string
-  href?: string
-  disabled?: boolean
-  external?: boolean
-};
+export type { NavItem } from "@cubid/types"

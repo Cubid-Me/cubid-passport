@@ -13,7 +13,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
-import { wallet } from "@/app/layout"
+import { wallet } from "@/lib/wallet"
 
 import { stampsWithId } from "."
 import { insertStamp } from "@/lib/stampInsertion"

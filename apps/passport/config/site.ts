@@ -1,4 +1,4 @@
-export type SiteConfig = typeof siteConfig
+import type { SiteConfig as SharedSiteConfig } from "@cubid/types"
 
 export const siteConfig = {
   name: "Next.js",
@@ -15,4 +15,6 @@ export const siteConfig = {
     github: "https://github.com/shadcn/ui",
     docs: "https://ui.shadcn.com",
   },
-}
+} satisfies SharedSiteConfig
+
+export type SiteConfig = typeof siteConfig

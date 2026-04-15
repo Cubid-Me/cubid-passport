@@ -41,7 +41,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
-import { wallet } from "@/app/layout"
+import { wallet } from "@/lib/wallet"
 
 import { config } from "../../../config/web3Config"
 import { encode_data } from "../../../lib/encode_data"

@@ -24,12 +24,12 @@ import { mainnet, sepolia } from "wagmi/chains"
 import { AuthKitProvider } from '@farcaster/auth-kit';
 
 import { cn } from "@/lib/utils"
+import { wallet } from "@/lib/wallet"
 import { SiteHeader } from "@/components/site-header"
 import { TailwindIndicator } from "@/components/tailwind-indicator"
 import { ThemeProvider } from "@/components/theme-provider"
 
 import { config } from "../config/web3Config"
-import { Wallet } from "../lib/nearWallet"
 import { store } from "../redux/store"
 import { SolanaAppWalletProvider } from "@/components/walletProvider"
 
@@ -37,13 +37,6 @@ const lensConfig: LensConfig = {
   environment: production,
   bindings: bindings(config),
 };
-
-
-
-export const wallet = new Wallet({
-  createAccessKeyFor: "registry.i-am-human.near",
-})
-
 wallet.startUp()
 
 function removeQueryParam(url, paramToRemove) {

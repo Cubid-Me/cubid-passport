@@ -205,3 +205,36 @@ Sync the completed `A02` roadmap metadata to the actual implementation commit so
 #### Follow-up
 
 - begin `A03` next to import `cubid-admin` into `apps/admin` on top of the new workspace shell
+
+### session: v7
+
+- timestamp: 2026-04-15T14:44:29-0400
+- agent: **OpenAI-Codex**
+- branch: **codex/a03-import-admin**
+- head: **`faa4dc7`**
+- session name: **Import Admin into the monorepo workspace graph**
+
+#### Objective
+
+Implement A03 by importing `cubid-admin` as `apps/admin`, normalizing it to the monorepo shell, introducing the minimum shared packages needed for cross-workspace contracts, and validating the resulting two-app repository from the root.
+
+#### Actions Taken
+
+- imported the `cubid-admin` snapshot from sibling repo head `60080e4` into [apps/admin](/Users/botmaster/src/cubid/cubid-passport/apps/admin), excluding the old standalone repo shell and documenting the import policy in [docs/engineering/admin-import-record.md](/Users/botmaster/src/cubid/cubid-passport/docs/engineering/admin-import-record.md)
+- converted the root monorepo shell to validate both apps, added `dev:admin`, updated CI to run tests, and refreshed the long-lived docs in [README.md](/Users/botmaster/src/cubid/cubid-passport/README.md), [AGENTS.md](/Users/botmaster/src/cubid/cubid-passport/AGENTS.md), [docs/engineering/current-state-architecture.md](/Users/botmaster/src/cubid/cubid-passport/docs/engineering/current-state-architecture.md), and [docs/engineering/monorepo-operating-model.md](/Users/botmaster/src/cubid/cubid-passport/docs/engineering/monorepo-operating-model.md)
+- created [packages/config](/Users/botmaster/src/cubid/cubid-passport/packages/config) and [packages/types](/Users/botmaster/src/cubid/cubid-passport/packages/types), wired Admin server env helpers through `@cubid/config`, and reused `@cubid/types` from both Admin and Passport
+- fixed imported Admin workspace compatibility issues for pnpm, Turbo, Jest, TypeScript, ESLint, Firebase dependency pinning, and Next build behavior, and moved Passport’s exported wallet singleton out of `app/layout.tsx` into [apps/passport/lib/wallet.ts](/Users/botmaster/src/cubid/cubid-passport/apps/passport/lib/wallet.ts) so the App Router type contract remains valid under the expanded root checks
+
+#### Verification
+
+- `npx -y -p node@20 -p npm@10 npm exec --package=pnpm@10 pnpm -- install --no-frozen-lockfile --reporter append-only`
+- `npx -y -p node@20 -p npm@10 npm exec --package=pnpm@10 pnpm -- lint` (passes with existing warnings in both apps)
+- `npx -y -p node@20 -p npm@10 npm exec --package=pnpm@10 pnpm -- typecheck`
+- `npx -y -p node@20 -p npm@10 npm exec --package=pnpm@10 pnpm -- test`
+- `npx -y -p node@20 -p npm@10 npm exec --package=pnpm@10 pnpm -- build` (passes with existing Passport `@celo/contractkit` `fs` and `localStorage is not defined` warnings, plus Admin `caniuse-lite` warnings)
+- `npx -y -p node@20 -p npm@10 npm exec --package=pnpm@10 pnpm -- dev:admin` plus `HEAD /sign-in 200`
+
+#### Follow-up
+
+- align the `A03` todo metadata to the exact implementation commit head once this work is committed
+- start `B01` next to define the OIDC and trust architecture on top of the now-stable two-app monorepo baseline

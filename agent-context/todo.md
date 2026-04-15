@@ -66,14 +66,14 @@ Move the current `cubid-passport` codebase into the agreed `apps/passport` works
 
 ### A03. Import cubid-admin and normalize the shared platform contracts
 
-- Status: Not started
-- Timestamp started: TBD
-- Timestamp completed: TBD
-- Feature branch: TBD
+- Status: Completed
+- Timestamp started: 2026-04-15T14:30:34-0400
+- Timestamp completed: 2026-04-15T14:44:29-0400
+- Feature branch: codex/a03-import-admin
 - Head: TBD
-- Session-log reference(s): TBD
+- Session-log reference(s): session: v7
 
-Bring the parallel `cubid-admin` repository into the monorepo as `apps/admin`, preserving git history if possible or at minimum preserving authorship and commit context in the migration notes. Once imported, align it with the same workspace conventions used by Passport: shared linting, shared TypeScript bases, shared environment handling, shared auth clients, and shared domain packages. Identify duplicate logic between Admin and Passport, especially around stamps, dapp management, claims, user records, webhooks, and Supabase access. Replace duplicated constants and helper layers with workspace packages that can be owned centrally. End this todo with both apps building from the same repo and consuming the same foundational packages, even if some internal implementation remains legacy for a short time. This creates the baseline required for OIDC, claims, and passkey work.
+Import the parallel `cubid-admin` repository into the monorepo as `apps/admin` as a preserve-first snapshot, archive the old standalone repo-shell metadata through engineering docs, and normalize the imported app to the shared workspace contract. Align it with the same `pnpm`, Turbo, CI, TypeScript, and environment conventions used by Passport without turning the task into a deeper Admin modernization. Extract only the first foundational shared packages that both apps can use safely now, especially shared env helpers and shared type contracts. End this todo with both apps building from the same repo, Admin booting from `pnpm dev:admin`, root validation covering the active workspaces, and the import source plus omitted-file policy documented clearly enough for later OIDC, claims, and passkey work to build on.
 
 ## B. Identity Platform and "Login with Cubid"
 

@@ -9,15 +9,18 @@
   },
   "scripts": {
     "dev": "turbo run dev --filter=@cubid/passport",
-    "build": "turbo run build --filter=@cubid/passport",
+    "dev:admin": "turbo run dev --filter=@cubid/admin",
+    "build": "turbo run build",
     "start": "pnpm --filter @cubid/passport start",
-    "lint": "turbo run lint --filter=@cubid/passport",
-    "typecheck": "turbo run typecheck --filter=@cubid/passport",
-    "test": "turbo run test --filter=@cubid/passport",
-    "format": "turbo run format --filter=@cubid/passport",
-    "format:write": "pnpm --filter @cubid/passport format:write"
+    "start:admin": "pnpm --filter @cubid/admin start",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "format": "turbo run format",
+    "format:write": "turbo run format:write"
   },
   "devDependencies": {
-    "turbo": "^2.5.8"
+    "turbo": "^2.5.8",
+    "typescript": "5.2.2"
   }
 }
