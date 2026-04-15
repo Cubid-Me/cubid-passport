@@ -180,3 +180,28 @@ Implement A02 by moving the live Passport app into `apps/passport`, turning the 
 
 - update the `A02` todo metadata after the implementation commit so it references the exact final head
 - start `A03` next to import `cubid-admin` into `apps/admin` against the new workspace shell
+
+### session: v6
+
+- timestamp: 2026-04-15T14:09:02-0400
+- agent: **OpenAI-Codex**
+- branch: **codex/a02-passport-monorepo-shell**
+- head: **`6b865a5`**
+- session name: **Align A02 completion metadata**
+
+#### Objective
+
+Sync the completed `A02` roadmap metadata to the actual implementation commit so the todo state and session log reference the exact branch head that contains the monorepo migration.
+
+#### Actions Taken
+
+- updated [agent-context/todo.md](/Users/botmaster/src/cubid/cubid-passport/agent-context/todo.md) so `A02` now references the implementation commit head, final completion timestamp, and both relevant session-log entries
+
+#### Verification
+
+- confirmed the working tree was clean immediately after the A02 implementation commit
+- reviewed the `A02` metadata block after updating the final head and session references
+
+#### Follow-up
+
+- begin `A03` next to import `cubid-admin` into `apps/admin` on top of the new workspace shell

@@ -57,10 +57,10 @@ Write and ratify the monorepo architecture decision record before moving files. 
 
 - Status: Completed
 - Timestamp started: 2026-04-15T13:54:43-0400
-- Timestamp completed: 2026-04-15T14:08:05-0400
+- Timestamp completed: 2026-04-15T14:09:02-0400
 - Feature branch: codex/a02-passport-monorepo-shell
-- Head: TBD
-- Session-log reference(s): session: v5
+- Head: 6b865a5
+- Session-log reference(s): session: v5, session: v6
 
 Move the current `cubid-passport` codebase into the agreed `apps/passport` workspace while keeping the app runnable throughout the migration. Create shared root configuration for TypeScript, ESLint, Prettier, environment loading, and CI tasks, then trim app-local config down to what is actually specific to Passport. Extract obvious cross-cutting assets into packages only when there is immediate reuse value, especially auth helpers, Supabase access layers, stamp registries, and common UI primitives. Update imports, scripts, and path aliases to use workspace-safe conventions instead of ad hoc relative references. The goal is not yet deep refactoring; it is to make Passport a well-bounded app inside a platform repo, with deterministic local boot, deterministic builds, and clear boundaries between application code and shared platform code.
 
