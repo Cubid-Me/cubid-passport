@@ -238,3 +238,30 @@ Implement A03 by importing `cubid-admin` as `apps/admin`, normalizing it to the 
 
 - align the `A03` todo metadata to the exact implementation commit head once this work is committed
 - start `B01` next to define the OIDC and trust architecture on top of the now-stable two-app monorepo baseline
+
+### session: v8
+
+- timestamp: 2026-04-15T14:47:30-0400
+- agent: **OpenAI-Codex**
+- branch: **codex/a03-import-admin**
+- head: **`5b23674`**
+- session name: **Trim unintended Admin import artifacts**
+
+#### Objective
+
+Remove stray repo-shell and generated artifacts that slipped into the A03 implementation commit so the imported Admin workspace matches the documented snapshot policy.
+
+#### Actions Taken
+
+- removed the accidentally tracked `apps/admin/.vscode/settings.json` file from the imported Admin workspace
+- removed generated sitemap artifacts under `apps/admin/public/` that came from local build output rather than source intent
+- updated [.gitignore](/Users/botmaster/src/cubid/cubid-passport/.gitignore) to keep those Admin-local repo-shell and generated files from reappearing in future commits
+
+#### Verification
+
+- reviewed the cleaned Admin workspace paths against the omit list in [docs/engineering/admin-import-record.md](/Users/botmaster/src/cubid/cubid-passport/docs/engineering/admin-import-record.md)
+- confirmed the cleanup targets were limited to repo-shell and generated artifacts, not runtime source files
+
+#### Follow-up
+
+- align the `A03` todo metadata to the final post-cleanup head and include both A03 session-log references

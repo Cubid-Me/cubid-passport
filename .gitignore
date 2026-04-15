@@ -21,6 +21,8 @@ out/
 .vercel
 key.json/
 pages/api/key.json
+apps/admin/.vscode/
+apps/admin/public/sitemap*.xml
 
 # debug
 npm-debug.log*
@@ -39,6 +41,5 @@ yarn-error.log*
 
 .contentlayer
 .env
-
 
 
