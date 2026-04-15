@@ -21,6 +21,6 @@
     "format:write": "echo \"No format changes required for @cubid/types\""
   },
   "devDependencies": {
-    "typescript": "5.2.2"
+    "typescript": "5.9.3"
   }
 }

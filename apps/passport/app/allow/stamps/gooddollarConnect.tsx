@@ -3,8 +3,6 @@
 "use client"
 
 import React, { useCallback, useEffect, useState } from "react"
-import { newKitFromWeb3 } from "@celo/contractkit"
-import { ClaimSDK } from "@gooddollar/web3sdk-v2"
 import { useWeb3Modal } from "@web3modal/wagmi/react"
 import axios from "axios"
 import dayjs from "dayjs"
@@ -45,7 +43,6 @@ const nodeUrl = "https://forno.celo.org"
 const goodDollarAddress = "0xC361A6E67822a0EDc17D899227dd9FC50BD62F42" // replace with GoodDollar contract address
 
 const web3 = new Web3(nodeUrl)
-const kit = newKitFromWeb3(web3 as any)
 
 // Load the GoodDollar contract
 const goodDollarContract = new web3.eth.Contract(

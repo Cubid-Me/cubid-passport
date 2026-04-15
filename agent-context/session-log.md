@@ -291,3 +291,34 @@ Bring the completed `A03` roadmap metadata into sync with the actual post-cleanu
 #### Follow-up
 
 - start `B01` next to define the OIDC and trust architecture on top of the stabilized two-app monorepo baseline
+
+### session: v10
+
+- timestamp: 2026-04-15T15:02:32-0400
+- agent: **OpenAI-Codex**
+- branch: **codex/deps-warning-cleanup**
+- head: **`c5b2d28`**
+- session name: **Refresh dependencies and trim validation noise**
+
+#### Objective
+
+Update the repo to a newer, still-compatible dependency set and remove a few high-noise warnings from the monorepo validation path without turning the task into a framework migration.
+
+#### Actions Taken
+
+- updated root, Passport, Admin, and shared-package dependency manifests plus [pnpm-lock.yaml](/Users/botmaster/src/cubid/cubid-passport/pnpm-lock.yaml), including a unified TypeScript `5.9.3` baseline, newer Supabase, Axios, Day.js, React Hook Form, React Query, OwnID, Heroicons, and related supporting packages
+- fixed the Passport `localStorage is not defined` build warning source by moving `wallet.startUp()` into a client-only effect in [apps/passport/app/layout.tsx](/Users/botmaster/src/cubid/cubid-passport/apps/passport/app/layout.tsx)
+- removed unused GoodDollar imports from [apps/passport/components/stamps/gooddollarConnect.tsx](/Users/botmaster/src/cubid/cubid-passport/apps/passport/components/stamps/gooddollarConnect.tsx) and [apps/passport/app/allow/stamps/gooddollarConnect.tsx](/Users/botmaster/src/cubid/cubid-passport/apps/passport/app/allow/stamps/gooddollarConnect.tsx), which eliminates the prior `@celo/contractkit` `fs` bundling warning
+- aligned shared TypeScript and Turbo config in [tsconfig.base.json](/Users/botmaster/src/cubid/cubid-passport/tsconfig.base.json) and [turbo.json](/Users/botmaster/src/cubid/cubid-passport/turbo.json), and refreshed `caniuse-lite` so Passport build no longer emits the stale Browserslist warning
+
+#### Verification
+
+- `npx -y -p node@20 -p npm@10 npm exec --package=pnpm@10 pnpm -- install`
+- `npx -y -p node@20 -p npm@10 npm exec --package=pnpm@10 pnpm -- turbo run typecheck lint test build --force`
+- `npx -y update-browserslist-db@latest`
+- `npx -y -p node@20 -p npm@10 npm exec --package=pnpm@10 pnpm -- --filter @cubid/passport build`
+
+#### Follow-up
+
+- the repo still carries a large existing lint-warning backlog in Passport and Admin, mostly Tailwind migration/style warnings and React hook dependency warnings
+- peer-dependency noise remains in older NEAR, Solana, React Native, and GoodDollar transitive packages and should be handled in targeted follow-up work rather than inside this maintenance pass

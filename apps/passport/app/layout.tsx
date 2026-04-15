@@ -3,7 +3,7 @@
 "use client"
 
 import "@/styles/globals.css"
-import { useEffect, useLayoutEffect, useState } from "react"
+import { useEffect, useLayoutEffect } from "react"
 import { OwnIDInit } from "@ownid/react"
 import { ToastContainer } from "react-toastify"
 import { LensConfig, production, LensProvider } from "@lens-protocol/react-web";
@@ -37,7 +37,6 @@ const lensConfig: LensConfig = {
   environment: production,
   bindings: bindings(config),
 };
-wallet.startUp()
 
 function removeQueryParam(url, paramToRemove) {
   // Parse the URL
@@ -55,11 +54,13 @@ function removeQueryParam(url, paramToRemove) {
 
 export default function RootLayout(props: any) {
   const queryClient = new QueryClient()
-
-
   const { pageProps } = props
   const pathName = usePathname()
   const { push } = useRouter()
+
+  useEffect(() => {
+    void wallet.startUp().catch(() => undefined)
+  }, [])
 
   useLayoutEffect(() => {
     if (typeof window !== "undefined") {
@@ -84,7 +85,6 @@ export default function RootLayout(props: any) {
       }
     }
   }, [push])
-  const [configSet, setConfigSet] = useState(false)
 
   if (process.env.NODE_ENV === "development") {
     return (
