@@ -16,6 +16,10 @@ build
 # misc
 .DS_Store
 *.pem
+*.tsbuildinfo
+.vercel
+key.json/
+pages/api/key.json
 
 # debug
 npm-debug.log*
@@ -34,7 +38,6 @@ yarn-error.log*
 
 .contentlayer
 .env
-
 
 
 

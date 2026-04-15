@@ -1,7 +1,8 @@
 {
-    "name": "next-template",
+    "name": "cubid-passport",
     "version": "0.0.2",
     "private": true,
+    "description": "Passwordless identity onboarding and passport stamping for Cubid.",
     "scripts": {
         "dev": "next dev",
         "build": "next build",
