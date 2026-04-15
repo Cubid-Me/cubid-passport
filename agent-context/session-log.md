@@ -379,3 +379,28 @@ Stand up a safe local Supabase-backed Passport development baseline, remove hard
 
 - align `C01` todo metadata to the implementation commit head in a small follow-up commit
 - start `C02` next by replacing the generic Supabase CRUD endpoints with typed domain services
+
+### session: v13
+
+- timestamp: 2026-04-15T19:51:37-0400
+- agent: **GitHub Copilot (GPT-5.4)**
+- branch: **codex/c01-local-env-and-supabase**
+- head: **`e68bc6a`**
+- session name: **Align C01 completion metadata**
+
+#### Objective
+
+Sync the completed `C01` roadmap metadata to the actual implementation commit so the security-hardening plan points at the correct branch head and session-log references.
+
+#### Actions Taken
+
+- updated [agent-context/todo.md](/Users/botmaster/src/cubid/cubid-passport/agent-context/todo.md) so `C01` now references the implementation commit head, completion timestamp, active feature branch, and both relevant session-log entries
+
+#### Verification
+
+- confirmed the implementation commit hash for the local Supabase plus env-hardening work before updating the roadmap metadata
+- limited the follow-up change to todo metadata alignment only
+
+#### Follow-up
+
+- start `C02` next by replacing the generic Supabase CRUD endpoints with typed domain services

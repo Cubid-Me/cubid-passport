@@ -130,12 +130,12 @@ Parallelization note: This section can begin immediately after `A01` and should 
 
 ### C01. Remove secrets from source, rotate credentials, and enforce server-only configuration
 
-- Status: Not started
-- Timestamp started: TBD
-- Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Status: Completed
+- Timestamp started: 2026-04-15T19:50:31-0400
+- Timestamp completed: 2026-04-15T19:51:37-0400
+- Feature branch: codex/c01-local-env-and-supabase
+- Head: e68bc6a
+- Session-log reference(s): session: v12, session: v13
 
 Perform a full secrets incident response sweep, not just a cleanup patch. Inventory hardcoded credentials, leaked service keys, third-party API secrets, and any previously committed private material across Passport and the imported Admin app. Move everything to typed environment configuration with separate scopes for browser-safe values, server-only values, and operator-only values. Add runtime guards so privileged services fail closed when required secrets are missing. Rotate Supabase keys, third-party API keys, webhook secrets, NEAR signing keys, and any other exposed credentials rather than assuming deletion from git is sufficient. Create a shared configuration package in the monorepo that makes insecure patterns harder to reintroduce. Finish by documenting ownership, rotation cadence, and emergency replacement steps so the platform can be operated safely over time.
 
