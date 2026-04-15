@@ -6,6 +6,7 @@
 - Create a feature branch for every change and open a pull request back into `main`.
 - Rebase or otherwise sync frequently from `main` so long-running branches do not drift.
 - Add a new entry to `agent-context/session-log.md` immediately before every commit.
+- After implementing each todo, commit immediately once the task is in a coherent state and the required session-log entry has been added.
 
 ## Session Startup
 
@@ -38,3 +39,4 @@ At the start of a new session, inspect and summarize the relevant work from:
 
 - Treat committed secrets as incidents, not convenience. Use environment variables or local-only files that are ignored by Git.
 - Keep cleanup-only changes separate from feature work whenever practical.
+- In every final readout, explicitly report whether a commit was made, whether the repo is clean, and propose the next todo to tackle.

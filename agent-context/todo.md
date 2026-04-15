@@ -1,5 +1,41 @@
 # Cubid Engineering Todo
 
+## Execution Protocol
+
+- Always build on feature branches.
+- When starting a task:
+  - update the status to `Started`
+  - set `Timestamp started`
+  - set `Feature branch`
+  - set `Head`
+  - reference [agent-context/cubid-backgrounder.md](/Users/botmaster/src/cubid/cubid-passport/agent-context/cubid-backgrounder.md), [docs/engineering/current-state-architecture.md](/Users/botmaster/src/cubid/cubid-passport/docs/engineering/current-state-architecture.md), and the relevant target-state doc before building
+  - until a dedicated target-state architecture document exists, use [docs/engineering/monorepo-operating-model.md](/Users/botmaster/src/cubid/cubid-passport/docs/engineering/monorepo-operating-model.md) as the target-state source of truth for monorepo work
+- While building:
+  - make underway commits if needed, always with an accompanying session-log entry
+  - add unit tests and smoke tests for new features where appropriate
+  - smoke test before reporting complete
+  - do not write implementation history in this file; write that in `agent-context/session-log.md`
+- After implementing each todo:
+  - commit immediately once the task is in a coherent state
+  - ensure the required session-log entry is already in place before that commit
+- At the end of each task:
+  - update relevant long-lived engineering docs in `docs/engineering/` whenever architecture, route decisions, workflows, or operating assumptions changed
+  - if a dedicated target-state architecture doc was created or changed, reference it from the relevant todo metadata and follow-up session entries
+- If a todo needs to be split, or if spillover actions were not completed:
+  - remove those words from the current todo
+  - create a new smaller todo in the right place in this document, for example `A01.1` immediately after `A01`
+  - update any downstream todos that depend on the split work
+- Once completed:
+  - set status to `Completed`
+  - update `Timestamp completed`
+  - update `Head`
+  - ensure all relevant session-log references are listed
+- In every implementation readout:
+  - state whether the commit was done
+  - state whether the repo is clean
+  - propose which todo should be done next
+- Use this file to track task state and intent, not as a build diary.
+
 This file turns the current repo scan, the Cubid backgrounder, and the requested platform direction into a working plan. Sections are intended to be owned by different streams in parallel. Within each section, complete todos in order because later items assume the previous item is finished or at least stabilized behind an agreed interface.
 
 ## A. Monorepo Foundation
@@ -8,12 +44,12 @@ Parallelization note: This section should start first. Once `A01` defines worksp
 
 ### A01. Define the target monorepo operating model
 
-- Status: Not started
-- Timestamp started: TBD
-- Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Status: Completed
+- Timestamp started: 2026-04-15T13:30:46-0400
+- Timestamp completed: 2026-04-15T13:30:46-0400
+- Feature branch: codex/repo-cleanup-roadmap
+- Head: 0b538d7ba551a269b501e830bfbdc657a64bec96
+- Session-log reference(s): session: v2
 
 Write and ratify the monorepo architecture decision record before moving files. Decide the workspace toolchain, package manager, task runner, shared TypeScript strategy, CI graph, and release model. The output should define top-level folders such as `apps/`, `packages/`, `services/`, `tooling/`, and `docs/`, plus naming conventions for shared libraries. Include how `cubid-passport`, `cubid-admin`, the future OIDC service, shared UI, shared auth, and shared domain packages will interact. Capture server-only versus client-safe package rules, environment variable ownership, and build/test boundaries per workspace. This todo should also define migration principles: preserve behavior first, move code second, improve internals third. Without this, the repo risks becoming a larger version of the current architectural sprawl instead of a true platform monorepo.
 
