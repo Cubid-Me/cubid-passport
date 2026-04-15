@@ -1,60 +1,65 @@
-# Cubid Passport
+# Cubid Monorepo
 
-Cubid Passport is a Next.js app for passwordless identity onboarding, Gitcoin Passport stamp collection, and minting a Gitcoin Passport score onto NEAR as a soulbound token.
+This repository is now the umbrella monorepo for Cubid platform work. Today it contains one active application workspace, `@cubid/passport`, with the repo structure and tooling prepared for `apps/admin`, `services/oidc`, and shared packages to land next.
 
-The original hackathon walkthrough is here:
+The original Passport hackathon walkthrough is here:
 [YouTube demo](https://www.youtube.com/watch?v=Um1-IB7lmNg)
 
-## Stack
+## Active Workspace
 
-- Next.js 14 with the App Router and legacy `pages/api` routes
-- TypeScript, Tailwind CSS, Redux Toolkit, and NextAuth
-- Supabase-backed API flows
-- NEAR, Gitcoin Passport, Worldcoin, Twilio, and other identity integrations
+- `apps/passport`: Next.js 14 app for passwordless identity onboarding, Gitcoin Passport stamp collection, dapp allow flows, and minting a Gitcoin Passport score onto NEAR as a soulbound token
 
 ## Local Setup
 
-This repository is standardized on `npm`.
-Use Node 20 for the least surprising install and build behavior.
+Use Node 20 and `pnpm`.
 
 ```bash
-npm ci --legacy-peer-deps
-npm run dev
+pnpm install
+pnpm dev
 ```
 
-The main verification commands are:
+Root developer commands currently default to the Passport workspace:
 
 ```bash
-npm run lint
-npm run typecheck
-npm run build
+pnpm build
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm format
+```
+
+If you want to target the workspace explicitly:
+
+```bash
+pnpm --filter @cubid/passport dev
 ```
 
 ## Environment Notes
 
-The app expects several credentials at runtime, including values such as:
+Passport runtime env files now belong under `apps/passport/`. Use [apps/passport/.env.example](/Users/botmaster/src/cubid/cubid-passport/apps/passport/.env.example) as the workspace-local baseline.
+
+Known Passport env variables include:
 
 - `NEXT_PUBLIC_DAPP_ID`
-- `private_key_near`
 - `WLD_CLIENT_ID`
 - `WLD_CLIENT_SECRET`
-- `twilio_sid`
 - `authToken`
 - `is_allow_token`
+- `private_key_near`
+- `twilio_sid`
 
 Some third-party credentials are still hardcoded in source files and should be moved into environment variables before this app is treated as production-ready.
 
 ## Repository Layout
 
-- `app/`: App Router pages and UI flows
-- `components/`: reusable UI, auth, and web3 components
-- `pages/api/`: API routes and integration endpoints
-- `lib/`: shared helpers for Supabase, NEAR, Firebase, and stamping
-- `redux/`: Redux store and slices
-- `config/`, `hooks/`, `styles/`, `types/`: supporting app modules
+- `apps/passport/`: live Passport application workspace
+- `agent-context/`: execution roadmap, session logs, and feature notes
+- `docs/engineering/`: architecture docs, operating model docs, and migration guidance
+- `.github/`: CI workflows and repo automation
+- `pnpm-workspace.yaml`, `turbo.json`, `tsconfig.base.json`: monorepo workspace and shared tooling contracts
 
-## Cleanup Notes
+## Current Focus
 
-- Removed tracked Finder metadata and TypeScript build cache output
-- Removed duplicate lockfiles so the repo has a single package-manager source of truth
-- Removed committed NEAR key files from the repo; rotate any exposed keys before further deployment
+- finish the app relocation baseline and shared workspace contracts
+- import `cubid-admin` as `apps/admin`
+- add the dedicated OIDC service and shared identity packages

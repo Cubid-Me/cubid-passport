@@ -18,11 +18,12 @@ Cubid Passport is a hybrid Next.js 14 application that lets end users:
 
 The repository combines:
 
-- App Router pages under `app/`
-- legacy API routes under `pages/api/`
+- App Router pages under `apps/passport/app/`
+- legacy API routes under `apps/passport/pages/api/`
 - a client-heavy React shell with many global providers
 - direct Supabase database access from both browser code and server handlers
 - blockchain and identity-provider integrations embedded across UI components and API endpoints
+- a monorepo root shell that currently hosts one active application workspace
 
 ## High-Level Topology
 
@@ -50,31 +51,31 @@ flowchart LR
 
 ### Frontend
 
-- `app/`
+- `apps/passport/app/`
   UI routes for landing, login, authenticated app, allow flow, widget flow, Worldcoin callback, Telegram flow, and PII flow.
-- `components/`
+- `apps/passport/components/`
   Shared UI plus large feature components for stamps, profile, minting, auth wrappers, and wallet integrations.
-- `hooks/`
+- `apps/passport/hooks/`
   Browser hooks for auth, stamp loading, and app-id resolution.
-- `redux/`
+- `apps/passport/redux/`
   Minimal Redux store for authenticated user state.
-- `config/`
+- `apps/passport/config/`
   Site config plus Wagmi connector config.
-- `styles/`
+- `apps/passport/styles/`
   Global Tailwind styles.
 
 ### Backend and Shared Logic
 
-- `pages/api/`
+- `apps/passport/pages/api/`
   All server endpoints. This includes generic Supabase CRUD handlers, dapp APIs, wallet flows, verification flows, webhooks, and third-party callbacks.
-- `lib/`
+- `apps/passport/lib/`
   Shared browser/server helpers for Supabase, Firebase, stamp insertion, NEAR wallet handling, hashing, and outbound webhook triggers.
 
 ## Runtime Architecture
 
 ## Frontend Shell
 
-The root shell is defined in [app/layout.tsx](/Users/botmaster/src/cubid/cubid-passport/app/layout.tsx).
+The Passport application shell is defined in [app/layout.tsx](/Users/botmaster/src/cubid/cubid-passport/apps/passport/app/layout.tsx) inside the `apps/passport` workspace.
 
 Current traits:
 
@@ -101,7 +102,7 @@ Practical consequence:
 
 ### App Router Pages
 
-Key routes under `app/`:
+Key routes under `apps/passport/app/`:
 
 - `/`
   Landing page and Fractal callback handling.
@@ -122,7 +123,7 @@ Key routes under `app/`:
 
 ### Legacy API Routes
 
-All server endpoints remain under `pages/api/`. The codebase has not been migrated to App Router route handlers.
+All server endpoints remain under `apps/passport/pages/api/`. The codebase has not been migrated to App Router route handlers.
 
 ## Authentication and Session Model
 
@@ -130,7 +131,7 @@ Authentication is split across several systems instead of one unified auth bound
 
 ### Primary User Login
 
-The main login experience in [app/login/page.tsx](/Users/botmaster/src/cubid/cubid-passport/app/login/page.tsx) uses:
+The main login experience in [app/login/page.tsx](/Users/botmaster/src/cubid/cubid-passport/apps/passport/app/login/page.tsx) uses:
 
 - OwnID plus Firebase custom tokens for email login
 - Firebase phone auth for SMS OTP login
@@ -152,15 +153,15 @@ Additional provider logins happen outside the primary login flow:
 
 ### Guest vs Authenticated Guards
 
-- [components/auth/guest.tsx](/Users/botmaster/src/cubid/cubid-passport/components/auth/guest.tsx) redirects signed-in users to `/app`
-- [components/auth/authenticated.tsx](/Users/botmaster/src/cubid/cubid-passport/components/auth/authenticated.tsx) redirects guests to `/login` unless the allow-flow token path is active
+- [components/auth/guest.tsx](/Users/botmaster/src/cubid/cubid-passport/apps/passport/components/auth/guest.tsx) redirects signed-in users to `/app`
+- [components/auth/authenticated.tsx](/Users/botmaster/src/cubid/cubid-passport/apps/passport/components/auth/authenticated.tsx) redirects guests to `/login` unless the allow-flow token path is active
 
 ### NextAuth Usage
 
 NextAuth is present but narrowly used:
 
-- [pages/api/auth/[...nextauth].ts](/Users/botmaster/src/cubid/cubid-passport/pages/api/auth/%5B...nextauth%5D.ts) defines a Worldcoin OAuth provider
-- [middleware.ts](/Users/botmaster/src/cubid/cubid-passport/middleware.ts) protects `/admin` and `/me`
+- [pages/api/auth/[...nextauth].ts](/Users/botmaster/src/cubid/cubid-passport/apps/passport/pages/api/auth/%5B...nextauth%5D.ts) defines a Worldcoin OAuth provider
+- [middleware.ts](/Users/botmaster/src/cubid/cubid-passport/apps/passport/middleware.ts) protects `/admin` and `/me`
 
 In practice, Firebase plus local state appears to drive the core app experience more than NextAuth.
 
@@ -193,13 +194,13 @@ There are two active patterns:
 1. Direct client-side Supabase usage
    - Social login in `components/stamps/index.tsx`
    - Widget allow flow in `app/widget-allow/page.tsx`
-   - Shared client import from [lib/supabase.ts](/Users/botmaster/src/cubid/cubid-passport/lib/supabase.ts)
+   - Shared client import from [lib/supabase.ts](/Users/botmaster/src/cubid/cubid-passport/apps/passport/lib/supabase.ts)
 
 2. Generic API wrappers over Supabase
-   - [pages/api/supabase/select.ts](/Users/botmaster/src/cubid/cubid-passport/pages/api/supabase/select.ts)
-   - [pages/api/supabase/insert.ts](/Users/botmaster/src/cubid/cubid-passport/pages/api/supabase/insert.ts)
-   - [pages/api/supabase/update.ts](/Users/botmaster/src/cubid/cubid-passport/pages/api/supabase/update.ts)
-   - [pages/api/supabase/delete.ts](/Users/botmaster/src/cubid/cubid-passport/pages/api/supabase/delete.ts)
+   - [pages/api/supabase/select.ts](/Users/botmaster/src/cubid/cubid-passport/apps/passport/pages/api/supabase/select.ts)
+   - [pages/api/supabase/insert.ts](/Users/botmaster/src/cubid/cubid-passport/apps/passport/pages/api/supabase/insert.ts)
+   - [pages/api/supabase/update.ts](/Users/botmaster/src/cubid/cubid-passport/apps/passport/pages/api/supabase/update.ts)
+   - [pages/api/supabase/delete.ts](/Users/botmaster/src/cubid/cubid-passport/apps/passport/pages/api/supabase/delete.ts)
 
 The generic CRUD endpoints accept arbitrary table names and filters from the caller. That is a major architectural characteristic of the current system.
 
@@ -232,13 +233,13 @@ The stamp system is the core domain concept.
 
 Stamp type IDs are duplicated in multiple places, especially:
 
-- [lib/stampInsertion.ts](/Users/botmaster/src/cubid/cubid-passport/lib/stampInsertion.ts)
-- [pages/api/utils/stampKey.ts](/Users/botmaster/src/cubid/cubid-passport/pages/api/utils/stampKey.ts)
+- [lib/stampInsertion.ts](/Users/botmaster/src/cubid/cubid-passport/apps/passport/lib/stampInsertion.ts)
+- [pages/api/utils/stampKey.ts](/Users/botmaster/src/cubid/cubid-passport/apps/passport/pages/api/utils/stampKey.ts)
 - feature components that keep local copies
 
 ### Stamp Write Path
 
-The main write helper is `insertStamp` in [lib/stampInsertion.ts](/Users/botmaster/src/cubid/cubid-passport/lib/stampInsertion.ts).
+The main write helper is `insertStamp` in [lib/stampInsertion.ts](/Users/botmaster/src/cubid/cubid-passport/apps/passport/lib/stampInsertion.ts).
 
 What it currently does:
 
@@ -257,7 +258,7 @@ Sharing with dapps is permissioned through `stamp_dappuser_permissions`.
 
 - allow flows load dapp-specific permission rows
 - users can selectively grant stamp access during `/allow`
-- the hook in [lib/insert_stamp_perm.ts](/Users/botmaster/src/cubid/cubid-passport/lib/insert_stamp_perm.ts) bridges stamp creation and permission insertion
+- the hook in [lib/insert_stamp_perm.ts](/Users/botmaster/src/cubid/cubid-passport/apps/passport/lib/insert_stamp_perm.ts) bridges stamp creation and permission insertion
 
 ## Main User Flows
 
@@ -290,7 +291,7 @@ The authenticated app at `/app` is a tabbed container around:
 
 ## 2. Stamp Collection
 
-The stamp collection UI in [components/stamps/index.tsx](/Users/botmaster/src/cubid/cubid-passport/components/stamps/index.tsx) acts as a large orchestration layer for:
+The stamp collection UI in [components/stamps/index.tsx](/Users/botmaster/src/cubid/cubid-passport/apps/passport/components/stamps/index.tsx) acts as a large orchestration layer for:
 
 - Supabase OAuth social providers
 - Gitcoin Passport
@@ -310,8 +311,8 @@ This component directly coordinates UI state, provider SDKs, Supabase lookups, a
 
 The allow flow is centered on:
 
-- [app/allow/page.tsx](/Users/botmaster/src/cubid/cubid-passport/app/allow/page.tsx)
-- [pages/api/allow/fetch_allow_uid.ts](/Users/botmaster/src/cubid/cubid-passport/pages/api/allow/fetch_allow_uid.ts)
+- [app/allow/page.tsx](/Users/botmaster/src/cubid/cubid-passport/apps/passport/app/allow/page.tsx)
+- [pages/api/allow/fetch_allow_uid.ts](/Users/botmaster/src/cubid/cubid-passport/apps/passport/pages/api/allow/fetch_allow_uid.ts)
 
 Current behavior:
 
@@ -321,7 +322,7 @@ Current behavior:
 - writes permission rows when a user approves a stamp
 - redirects back to the dapp page redirect URL on submit
 
-The embedded social widget path in [app/widget-allow/page.tsx](/Users/botmaster/src/cubid/cubid-passport/app/widget-allow/page.tsx) performs a provider login, inserts the resulting stamp, then redirects back to the requesting dapp page.
+The embedded social widget path in [app/widget-allow/page.tsx](/Users/botmaster/src/cubid/cubid-passport/apps/passport/app/widget-allow/page.tsx) performs a provider login, inserts the resulting stamp, then redirects back to the requesting dapp page.
 
 ## 4. Wallet and On-Chain Identity Flows
 
@@ -338,7 +339,7 @@ The embedded social widget path in [app/widget-allow/page.tsx](/Users/botmaster/
 
 ### NEAR
 
-- [lib/nearWallet.ts](/Users/botmaster/src/cubid/cubid-passport/lib/nearWallet.ts) wraps NEAR wallet selector.
+- [lib/nearWallet.ts](/Users/botmaster/src/cubid/cubid-passport/apps/passport/lib/nearWallet.ts) wraps NEAR wallet selector.
 - `/api/createnewnearacc` creates new NEAR accounts under `issuer.cubidme.near`.
 - `/api/mint-sbt` mints an SBT representing a Gitcoin Passport score onto NEAR.
 - `components/minthumanity/nearFlow.tsx` is the main UI for this journey.
@@ -411,18 +412,18 @@ These are not opinions about an ideal future design. They are the notable traits
 - There is no strong separation between presentation, orchestration, and domain logic.
 - Supabase acts as the primary backend, identity store, and permissions store.
 - The API layer mixes public integration endpoints, internal helper endpoints, and generic database access in the same namespace.
-- App Router pages are modernized, but the backend remains fully legacy `pages/api`.
+- App Router pages are modernized, but the backend remains fully legacy `pages/api` inside `apps/passport`.
 
 ## Current Risks and Technical Debt
 
 These are visible implementation risks that affect the current architecture.
 
 - The root layout depends on `window` and `localStorage`, which already causes build-time browser-only warnings.
-- Supabase service-role style access is imported directly into browser code through [lib/supabase.ts](/Users/botmaster/src/cubid/cubid-passport/lib/supabase.ts).
+- Supabase service-role style access is imported directly into browser code through [lib/supabase.ts](/Users/botmaster/src/cubid/cubid-passport/apps/passport/lib/supabase.ts).
 - Generic Supabase CRUD endpoints allow arbitrary table access patterns from callers.
 - Authentication is fragmented across Firebase, Supabase OAuth, OwnID, Farcaster, and limited NextAuth usage.
 - Stamp type mappings are duplicated across the codebase.
-- Large feature components such as [components/stamps/index.tsx](/Users/botmaster/src/cubid/cubid-passport/components/stamps/index.tsx) combine UI, data loading, third-party SDK orchestration, and persistence writes.
+- Large feature components such as [components/stamps/index.tsx](/Users/botmaster/src/cubid/cubid-passport/apps/passport/components/stamps/index.tsx) combine UI, data loading, third-party SDK orchestration, and persistence writes.
 - There are still hardcoded integration credentials and project IDs in the repo.
 - Build output already shows `localStorage is not defined` warnings and a Celo dependency warning around `fs` resolution.
 
@@ -430,14 +431,14 @@ These are visible implementation risks that affect the current architecture.
 
 For engineers getting oriented, this is the fastest path through the codebase:
 
-1. [app/layout.tsx](/Users/botmaster/src/cubid/cubid-passport/app/layout.tsx)
-2. [hooks/useAuth.ts](/Users/botmaster/src/cubid/cubid-passport/hooks/useAuth.ts)
-3. [components/stamps/index.tsx](/Users/botmaster/src/cubid/cubid-passport/components/stamps/index.tsx)
-4. [lib/stampInsertion.ts](/Users/botmaster/src/cubid/cubid-passport/lib/stampInsertion.ts)
-5. [app/allow/page.tsx](/Users/botmaster/src/cubid/cubid-passport/app/allow/page.tsx)
-6. [pages/api/allow/fetch_allow_uid.ts](/Users/botmaster/src/cubid/cubid-passport/pages/api/allow/fetch_allow_uid.ts)
-7. [components/minthumanity/nearFlow.tsx](/Users/botmaster/src/cubid/cubid-passport/components/minthumanity/nearFlow.tsx)
-8. [pages/api/mint-sbt.ts](/Users/botmaster/src/cubid/cubid-passport/pages/api/mint-sbt.ts)
+1. [app/layout.tsx](/Users/botmaster/src/cubid/cubid-passport/apps/passport/app/layout.tsx)
+2. [hooks/useAuth.ts](/Users/botmaster/src/cubid/cubid-passport/apps/passport/hooks/useAuth.ts)
+3. [components/stamps/index.tsx](/Users/botmaster/src/cubid/cubid-passport/apps/passport/components/stamps/index.tsx)
+4. [lib/stampInsertion.ts](/Users/botmaster/src/cubid/cubid-passport/apps/passport/lib/stampInsertion.ts)
+5. [app/allow/page.tsx](/Users/botmaster/src/cubid/cubid-passport/apps/passport/app/allow/page.tsx)
+6. [pages/api/allow/fetch_allow_uid.ts](/Users/botmaster/src/cubid/cubid-passport/apps/passport/pages/api/allow/fetch_allow_uid.ts)
+7. [components/minthumanity/nearFlow.tsx](/Users/botmaster/src/cubid/cubid-passport/apps/passport/components/minthumanity/nearFlow.tsx)
+8. [pages/api/mint-sbt.ts](/Users/botmaster/src/cubid/cubid-passport/apps/passport/pages/api/mint-sbt.ts)
 
 ## Bottom Line
 

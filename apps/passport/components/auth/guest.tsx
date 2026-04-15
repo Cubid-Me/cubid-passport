@@ -2,10 +2,12 @@
 import { useEffect, useState } from "react"
 import { useRouter } from 'next/navigation';
 import { useAuth } from "hooks/useAuth"
-import PropTypes from "prop-types"
 
-export const Guest = (props:any) => {
-  const { children } = props
+type GuestProps = {
+  children: React.ReactNode
+}
+
+export const Guest = ({ children }: GuestProps) => {
   const router = useRouter()
   const { user, loading } = useAuth({});
   const [unverified, setUnverified] = useState(false)
@@ -27,8 +29,4 @@ export const Guest = (props:any) => {
   }
 
   return <>{children}</>
-}
-
-Guest.propTypes = {
-  children: PropTypes.node,
 }

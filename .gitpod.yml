@@ -5,5 +5,5 @@
 # Learn more from ready-to-use templates: https://www.gitpod.io/docs/introduction/getting-started/quickstart
 
 tasks:
-  - init: npm ci --legacy-peer-deps && npm run build
-    command: npm run dev
+  - init: pnpm install && pnpm build
+    command: pnpm dev

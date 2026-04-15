@@ -9,9 +9,9 @@ node_modules
 coverage
 
 # next.js
-.next/
+**/.next/
 out/
-build
+**/build
 
 # misc
 .DS_Store
@@ -38,7 +38,6 @@ yarn-error.log*
 
 .contentlayer
 .env
-
 
 
 

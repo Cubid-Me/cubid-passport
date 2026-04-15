@@ -18,22 +18,18 @@ At the start of a new session, inspect and summarize the relevant work from:
 
 ## Repository Map
 
-- `app/`: App Router pages and client-side flows
-- `components/`: shared UI, auth, and wallet components
-- `pages/api/`: server endpoints and third-party integration handlers
-- `lib/`: shared helpers and service clients
-- `config/`: site and web3 configuration
-- `redux/`: store setup and slices
-- `styles/`, `types/`, `hooks/`: shared frontend support files
-- `public/`: static assets
+- `apps/passport/`: live Passport app workspace containing the App Router UI, `pages/api` handlers, app config, shared components, hooks, and frontend support files
+- `apps/passport/public/`: Passport static assets
 - `agent-context/`: session logging, feature notes, and small local follow-ups
+- `docs/engineering/`: architecture and operating-model docs
+- `.github/`: CI workflows
 
 ## Commands
 
 - Use Node 20 when working locally
-- Install dependencies with `npm ci --legacy-peer-deps`
-- Start local development with `npm run dev`
-- Validate changes with `npm run lint`, `npm run typecheck`, and `npm run build`
+- Install dependencies with `pnpm install`
+- Start local development with `pnpm dev`
+- Validate changes with `pnpm lint`, `pnpm typecheck`, and `pnpm build`
 
 ## Notes
 

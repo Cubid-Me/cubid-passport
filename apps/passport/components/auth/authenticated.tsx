@@ -4,10 +4,12 @@ import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import axios from "axios"
 import { useAuth } from "hooks/useAuth"
-import PropTypes from "prop-types"
 
-export const Authenticated = (props: any) => {
-  const { children } = props
+type AuthenticatedProps = {
+  children: React.ReactNode
+}
+
+export const Authenticated = ({ children }: AuthenticatedProps) => {
   const router = useRouter()
   const { user, loading } = useAuth({})
   const [verified, setVerified] = useState(false)
@@ -47,8 +49,4 @@ export const Authenticated = (props: any) => {
   }
 
   return <>{children}</>
-}
-
-Authenticated.propTypes = {
-  children: PropTypes.node,
 }

@@ -177,7 +177,7 @@ The monorepo will use a root `turbo.json` that defines at least:
 
 ### Root package contract
 
-After A02 relocates Passport into `apps/passport`, the root `package.json` becomes a pure monorepo package and its top-level scripts will delegate through Turbo.
+As of A02, Passport lives in `apps/passport` and the root `package.json` is a pure monorepo package whose top-level scripts delegate through Turbo.
 
 Those root scripts are locked to:
 
@@ -191,8 +191,8 @@ Those root scripts are locked to:
 Important A01 compatibility note:
 
 - A01 introduces the workspace and Turbo contract files now.
-- A01 does not repoint the current root `package.json` scripts yet, because the root package is still the live Passport application.
-- Script delegation moves in A02 when the repo root stops being the app itself.
+- A01 intentionally stopped short of repointing the current root `package.json` scripts, because the root package was still the live Passport application at that time.
+- A02 completed that script delegation when the repo root stopped being the app itself.
 
 ## CI Contract
 
@@ -225,7 +225,7 @@ Each app, service, and package must declare at least the scripts it actually sup
 
 ### Passport
 
-- current state: repo root application
+- current state: `apps/passport` workspace inside the monorepo
 - target state: `apps/passport`
 - migration expectation: behavior-preserving file move first, package extraction later
 

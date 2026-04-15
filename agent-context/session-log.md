@@ -147,3 +147,36 @@ Bring the completed A01 todo metadata into sync with the actual implementation c
 #### Follow-up
 
 - start `A02` next on a new feature branch once ready to relocate Passport into `apps/passport`
+
+### session: v5
+
+- timestamp: 2026-04-15T14:08:05-0400
+- agent: **OpenAI-Codex**
+- branch: **codex/a02-passport-monorepo-shell**
+- head: **`4051e81`**
+- session name: **Relocate Passport into the monorepo app shell**
+
+#### Objective
+
+Implement A02 by moving the live Passport app into `apps/passport`, turning the repo root into a real `pnpm` plus Turbo monorepo shell, and preserving the root developer workflow for Passport during the transition.
+
+#### Actions Taken
+
+- moved the existing Passport application source and app-owned config into `apps/passport`, including the App Router tree, `pages/api`, shared components, hooks, config, Redux state, static assets, and deploy/config files
+- replaced the root package contract with a monorepo shell using `pnpm`, Turbo-driven root scripts, a shared TypeScript base config, and updated CI and Gitpod commands
+- preserved the Passport app as `@cubid/passport`, added workspace-local env and ESLint entrypoints, and updated docs in [README.md](/Users/botmaster/src/cubid/cubid-passport/README.md), [AGENTS.md](/Users/botmaster/src/cubid/cubid-passport/AGENTS.md), [docs/engineering/current-state-architecture.md](/Users/botmaster/src/cubid/cubid-passport/docs/engineering/current-state-architecture.md), and [docs/engineering/monorepo-operating-model.md](/Users/botmaster/src/cubid/cubid-passport/docs/engineering/monorepo-operating-model.md)
+- deleted the unrelated root `mac.py` artifact and replaced the legacy npm lock with a root `pnpm-lock.yaml` generated from the prior committed dependency graph
+
+#### Verification
+
+- `npx -y -p node@20 -p npm@10 npm exec --package=pnpm@10 pnpm -- install --frozen-lockfile --reporter append-only`
+- `npx -y -p node@20 -p npm@10 npm exec --package=pnpm@10 pnpm -- lint` (passes with existing warnings)
+- `npx -y -p node@20 -p npm@10 npm exec --package=pnpm@10 pnpm -- typecheck`
+- `npx -y -p node@20 -p npm@10 npm exec --package=pnpm@10 pnpm -- test`
+- `npx -y -p node@20 -p npm@10 npm exec --package=pnpm@10 pnpm -- build` (passes with existing `@celo/contractkit` `fs` and `localStorage is not defined` warnings)
+- `npx -y -p node@20 -p npm@10 npm exec --package=pnpm@10 pnpm -- dev` plus `HEAD /login 200` from the running app, with the same existing `localStorage is not defined` runtime warning surfacing during SSR
+
+#### Follow-up
+
+- update the `A02` todo metadata after the implementation commit so it references the exact final head
+- start `A03` next to import `cubid-admin` into `apps/admin` against the new workspace shell
