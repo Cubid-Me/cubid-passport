@@ -81,12 +81,13 @@ Parallelization note: Start after `A01`. This section can run in parallel with `
 
 ### B01. Design the OIDC and trust architecture for Login with Cubid
 
-- Status: Not started
-- Timestamp started: TBD
-- Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Status: Completed
+- Timestamp started: 2026-04-15T16:23:27-0400
+- Timestamp completed: 2026-04-15T16:28:29-0400
+- Feature branch: codex/b01-oidc-architecture
+- Head: c5b2d28 (uncommitted)
+- Session-log reference(s): session: v10
+- Target-state doc(s): [docs/engineering/login-with-cubid-oidc-architecture.md](/Users/botmaster/src/cubid/cubid-passport/docs/engineering/login-with-cubid-oidc-architecture.md)
 
 Produce a concrete identity architecture for "Login with Cubid" before building endpoints. Define the issuer, audience model, relying-party registration flow, consent UX, supported grant types, token lifetimes, revocation model, and how app-scoped identities will map to OIDC subjects without breaking Cubid’s anti-tracking goals. Specify which claims are standard versus Cubid-specific, including how personhood depth, verification signals, stamp-derived overlays, and selective disclosure rules are represented. Include how Admin manages client apps, scopes, redirect URIs, and identity-depth policies. The design must explicitly preserve backgrounder principles: developers are the core customer, users control disclosure, and Cubid should behave like protocol infrastructure rather than a centralized surveillance identity provider. This todo should end with a signed-off spec and implementation boundary between Admin, Passport, and the new OIDC service.
 

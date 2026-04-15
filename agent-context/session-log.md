@@ -291,3 +291,33 @@ Bring the completed `A03` roadmap metadata into sync with the actual post-cleanu
 #### Follow-up
 
 - start `B01` next to define the OIDC and trust architecture on top of the stabilized two-app monorepo baseline
+
+### session: v10
+
+- timestamp: 2026-04-15T16:28:29-0400
+- agent: **OpenAI-Codex**
+- branch: **codex/b01-oidc-architecture**
+- head: **`c5b2d28`**
+- session name: **Lock Login with Cubid OIDC trust architecture**
+
+#### Objective
+
+Implement B01 by producing the decision-complete OIDC and trust architecture for Login with Cubid, including pairwise subject semantics, open dynamic client registration, scope and claim policy, and the implementation boundary between Passport, Admin, and the future issuer service.
+
+#### Actions Taken
+
+- added [docs/engineering/login-with-cubid-oidc-architecture.md](/Users/botmaster/src/cubid/cubid-passport/docs/engineering/login-with-cubid-oidc-architecture.md) as the B01 source of truth for issuer responsibilities, stable issuer URL, client model, grant support, pairwise subject derivation, claims and consent policy, revocation behavior, shared package boundaries, and the initial OIDC data contracts
+- included sequence flows in the new architecture document for web login, native login, device authorization, backend registration plus client credentials, consent grant, consent revocation, and token revocation so B02 can implement from an explicit protocol contract
+- updated [docs/engineering/monorepo-operating-model.md](/Users/botmaster/src/cubid/cubid-passport/docs/engineering/monorepo-operating-model.md) so the future `services/oidc` workspace now points to the dedicated B01 target-state architecture doc
+- updated [agent-context/todo.md](/Users/botmaster/src/cubid/cubid-passport/agent-context/todo.md) to mark `B01` completed and reference the new target-state architecture document directly
+
+#### Verification
+
+- reviewed the new OIDC architecture spec against the B01 acceptance criteria to confirm it explicitly answers pairwise `sub`, client types, supported grants, dynamic registration behavior, unverified-client capabilities, consent ownership, claim taxonomy, and the Passport/Admin/OIDC split
+- reviewed the sequence-flow coverage to confirm every required flow for B01 is documented
+- no runtime validation was required because this task is design-only and changed architecture documentation only
+
+#### Follow-up
+
+- start `B02` next by scaffolding `services/oidc` against the contracts locked in the new B01 architecture document
+- use `@cubid/auth`, `@cubid/identity`, and `@cubid/claims` as the first package boundaries to extract while building the issuer runtime
