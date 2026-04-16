@@ -14,7 +14,7 @@
     "start": "pnpm exec tsx src/server.ts",
     "lint": "pnpm exec tsc --noEmit -p tsconfig.json",
     "typecheck": "pnpm exec tsc --noEmit -p tsconfig.json",
-    "test": "echo \"No tests defined for @cubid/oidc\"",
+    "test": "pnpm exec tsx --test src/**/*.test.ts",
     "format": "echo \"No format changes required for @cubid/oidc\"",
     "format:write": "echo \"No format changes required for @cubid/oidc\""
   },

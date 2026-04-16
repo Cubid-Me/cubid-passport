@@ -5,6 +5,15 @@ import {
 } from "@cubid/auth";
 import { ALL_OIDC_SCOPES } from "@cubid/claims";
 
+import {
+  AuthorizationRequestError,
+  approveConsentChallenge,
+  completeLoginChallenge,
+  createLoginChallengeFromAuthorizationRequest,
+  getConsentChallenge,
+  getLoginChallenge,
+  rejectConsentChallenge,
+} from "./authorize";
 import { getOidcRuntimeConfig } from "./config";
 import { createDynamicClientRegistration, getRegisteredClient } from "./registration";
 import { getOidcSupabase } from "./supabase";
@@ -23,6 +32,15 @@ function notImplemented(feature: string): Response {
   return jsonResponse(501, {
     error: "not_implemented",
     error_description: `${feature} is not implemented yet in the current B02 slice.`,
+  });
+}
+
+function redirectResponse(location: string, status = 302): Response {
+  return new Response(null, {
+    status,
+    headers: {
+      location,
+    },
   });
 }
 
@@ -126,7 +144,141 @@ export async function handleOidcRequest(request: Request): Promise<Response> {
   }
 
   if (method === "GET" && pathname === "/authorize") {
-    return notImplemented("Authorization flow");
+    try {
+      const result = await createLoginChallengeFromAuthorizationRequest(getOidcSupabase(), request, getRequestId(request));
+      return redirectResponse(result.redirectTo);
+    } catch (error) {
+      if (error instanceof AuthorizationRequestError) {
+        if (error.redirectTo) {
+          return redirectResponse(error.redirectTo);
+        }
+
+        return jsonResponse(error.statusCode, {
+          error: error.error,
+          error_description: error.errorDescription,
+        });
+      }
+
+      return jsonResponse(500, {
+        error: "server_error",
+        error_description: error instanceof Error ? error.message : "Unable to create authorization challenge.",
+      });
+    }
+  }
+
+  const pathParts = pathname.split("/").filter(Boolean);
+
+  if (pathParts[0] === "interaction" && pathParts[1] === "login" && method === "GET" && pathParts.length === 3) {
+    try {
+      const challenge = await getLoginChallenge(getOidcSupabase(), pathParts[2]);
+
+      if (!challenge) {
+        return jsonResponse(404, {
+          error: "challenge_not_found",
+          error_description: "The login challenge could not be found or is no longer active.",
+        });
+      }
+
+      return jsonResponse(200, challenge);
+    } catch (error) {
+      return jsonResponse(500, {
+        error: "server_error",
+        error_description: error instanceof Error ? error.message : "Unable to load login challenge.",
+      });
+    }
+  }
+
+  if (pathParts[0] === "interaction" && pathParts[1] === "login" && method === "POST" && pathParts.length === 4 && pathParts[3] === "complete") {
+    try {
+      const requestBody = (await request.json()) as Record<string, unknown>;
+      const result = await completeLoginChallenge(getOidcSupabase(), pathParts[2], requestBody, getRequestId(request));
+
+      return jsonResponse(200, {
+        status: "ok",
+        next: result.next,
+        redirect_to: result.redirectTo,
+        session_id: result.sessionId,
+      });
+    } catch (error) {
+      if (error instanceof AuthorizationRequestError) {
+        return jsonResponse(error.statusCode, {
+          error: error.error,
+          error_description: error.errorDescription,
+        });
+      }
+
+      return jsonResponse(500, {
+        error: "server_error",
+        error_description: error instanceof Error ? error.message : "Unable to complete login challenge.",
+      });
+    }
+  }
+
+  if (pathParts[0] === "interaction" && pathParts[1] === "consent" && method === "GET" && pathParts.length === 3) {
+    try {
+      const challenge = await getConsentChallenge(getOidcSupabase(), pathParts[2]);
+
+      if (!challenge) {
+        return jsonResponse(404, {
+          error: "challenge_not_found",
+          error_description: "The consent challenge could not be found or is no longer active.",
+        });
+      }
+
+      return jsonResponse(200, challenge);
+    } catch (error) {
+      return jsonResponse(500, {
+        error: "server_error",
+        error_description: error instanceof Error ? error.message : "Unable to load consent challenge.",
+      });
+    }
+  }
+
+  if (pathParts[0] === "interaction" && pathParts[1] === "consent" && method === "POST" && pathParts.length === 4 && pathParts[3] === "approve") {
+    try {
+      const result = await approveConsentChallenge(getOidcSupabase(), pathParts[2], getRequestId(request));
+
+      return jsonResponse(200, {
+        status: "ok",
+        redirect_to: result.redirectTo,
+        authorization_code: result.authorizationCode,
+      });
+    } catch (error) {
+      if (error instanceof AuthorizationRequestError) {
+        return jsonResponse(error.statusCode, {
+          error: error.error,
+          error_description: error.errorDescription,
+        });
+      }
+
+      return jsonResponse(500, {
+        error: "server_error",
+        error_description: error instanceof Error ? error.message : "Unable to approve consent challenge.",
+      });
+    }
+  }
+
+  if (pathParts[0] === "interaction" && pathParts[1] === "consent" && method === "POST" && pathParts.length === 4 && pathParts[3] === "reject") {
+    try {
+      const result = await rejectConsentChallenge(getOidcSupabase(), pathParts[2], getRequestId(request));
+
+      return jsonResponse(200, {
+        status: "rejected",
+        redirect_to: result.redirectTo,
+      });
+    } catch (error) {
+      if (error instanceof AuthorizationRequestError) {
+        return jsonResponse(error.statusCode, {
+          error: error.error,
+          error_description: error.errorDescription,
+        });
+      }
+
+      return jsonResponse(500, {
+        error: "server_error",
+        error_description: error instanceof Error ? error.message : "Unable to reject consent challenge.",
+      });
+    }
   }
 
   if (method === "POST" && pathname === "/token") {

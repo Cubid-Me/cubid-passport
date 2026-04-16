@@ -98,7 +98,7 @@ Produce a concrete identity architecture for "Login with Cubid" before building 
 - Timestamp completed: TBD
 - Feature branch: codex/b02-oidc-foundation
 - Head: e89af74
-- Session-log reference(s): session: v14
+- Session-log reference(s): session: v14, session: v15
 
 Create a dedicated OIDC service workspace, likely `services/oidc`, rather than embedding protocol behavior inside Passport UI code. Implement discovery, authorization, token, JWKS, userinfo, client registration or client management hooks, session handling, logout behavior, and audit-ready token issuance. Back the service with shared auth and domain packages from the monorepo instead of duplicating user, stamp, or consent logic. Design it as a clean server application with strong runtime validation, typed configuration, proper key management, and explicit boundaries between public endpoints and internal administrative operations. Passport should become a relying-party and consent experience, while Admin manages issuer metadata and policies. This service becomes the durable platform center of "Login with Cubid" and should be built so other apps, SDKs, and agents can rely on it without depending on Passport internals.
 

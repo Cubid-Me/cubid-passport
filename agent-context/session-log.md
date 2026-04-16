@@ -440,3 +440,34 @@ Implement the first coherent B02 slice by creating the new OIDC service workspac
 
 - implement the real `/authorize` and Passport handoff flow next, including OTP bootstrap for first-time Cubid users who verify email or phone inside the OIDC login journey
 - add token issuance, consent persistence, and JWKS-backed signing once the login challenge contract is wired through Passport
+
+### session: v15
+
+- timestamp: 2026-04-16T00:38:44-0400
+- agent: **GitHub Copilot (GPT-5.4)**
+- branch: **codex/b02-oidc-foundation**
+- head: **`bad7b87`**
+- session name: **Add authorize and interaction challenge flow**
+
+#### Objective
+
+Extend B02 past the service skeleton by validating `/authorize` requests, persisting authorization challenge state, and exposing the Passport-facing interaction endpoints needed to complete login and consent in later UI slices.
+
+#### Actions Taken
+
+- added [services/oidc/src/authorize.ts](/Users/botmaster/src/cubid/cubid-passport/services/oidc/src/authorize.ts) to validate authorization requests, enforce exact redirect and scope rules plus PKCE `S256`, persist login and consent challenge state, resolve or create Cubid users from verified email or phone login results, create issuer sessions, reuse or create consent grants, and issue authorization codes after consent approval
+- updated [services/oidc/src/app.ts](/Users/botmaster/src/cubid/cubid-passport/services/oidc/src/app.ts) so `/authorize` now redirects into Passport login challenges and the service now exposes `GET /interaction/login/:challenge`, `POST /interaction/login/:challenge/complete`, `GET /interaction/consent/:challenge`, `POST /interaction/consent/:challenge/approve`, and `POST /interaction/consent/:challenge/reject`
+- updated [services/oidc/src/index.ts](/Users/botmaster/src/cubid/cubid-passport/services/oidc/src/index.ts) and [services/oidc/package.json](/Users/botmaster/src/cubid/cubid-passport/services/oidc/package.json) to export the new authorize helpers and run real service tests instead of the earlier placeholder test command
+- added [services/oidc/src/authorize.test.ts](/Users/botmaster/src/cubid/cubid-passport/services/oidc/src/authorize.test.ts) to cover prompt parsing, scope parsing, and authorization redirect helpers
+- added [supabase/migrations/20260416004000_oidc_authorization_requests.sql](/Users/botmaster/src/cubid/cubid-passport/supabase/migrations/20260416004000_oidc_authorization_requests.sql) to persist authorization request and challenge lifecycle state separately from sessions and authorization codes
+
+#### Verification
+
+- `pnpm --filter @cubid/oidc test`
+- `pnpm --filter @cubid/oidc typecheck`
+- `pnpm --filter @cubid/oidc build`
+
+#### Follow-up
+
+- wire Passport login and allow UI to these new interaction endpoints so OTP verification can complete login challenges and consent grants in-browser
+- implement `/token` so the issued authorization codes can be exchanged for signed ID and access tokens
