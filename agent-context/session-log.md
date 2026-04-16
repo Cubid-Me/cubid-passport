@@ -1026,3 +1026,27 @@ Address the PR review finding that Admin initialized Firebase even when the requ
 #### Follow-up
 
 - replace the broken absolute local filesystem doc link with a repo-relative link so the architecture reference works on GitHub
+
+### session: v37
+
+- timestamp: 2026-04-16T11:27:00-0400
+- agent: **GitHub Copilot (GPT-5.4)**
+- branch: **codex/b04-passkeys-core-followups**
+- head: **`a78aa48`**
+- session name: **Fix architecture doc link path**
+
+#### Objective
+
+Address the PR review finding that the monorepo operating-model document linked to the OIDC architecture spec using an absolute local filesystem path.
+
+#### Actions Taken
+
+- updated [docs/engineering/monorepo-operating-model.md](/Users/botmaster/src/cubid/cubid-passport/docs/engineering/monorepo-operating-model.md) to replace the broken `/Users/...` link target with a repo-relative markdown link to `login-with-cubid-oidc-architecture.md`
+
+#### Verification
+
+- reviewed the rendered markdown target path to confirm it is repository-relative and GitHub-safe
+
+#### Follow-up
+
+- push the follow-up branch, open the follow-up PR, then reply to and resolve all fully addressed review threads on PR 144

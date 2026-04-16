@@ -239,7 +239,7 @@ Each app, service, and package must declare at least the scripts it actually sup
 - current state: not implemented
 - target state: `services/oidc`
 - migration expectation: build only after both Passport and Admin are present in the workspace and shared domain contracts have started to stabilize
-- detailed OIDC and trust contract: [docs/engineering/login-with-cubid-oidc-architecture.md](/Users/botmaster/src/cubid/cubid-passport/docs/engineering/login-with-cubid-oidc-architecture.md)
+- detailed OIDC and trust contract: [docs/engineering/login-with-cubid-oidc-architecture.md](./login-with-cubid-oidc-architecture.md)
 
 ## Migration Sequence
 
