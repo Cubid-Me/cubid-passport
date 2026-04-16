@@ -1001,3 +1001,28 @@ Address the PR review finding that passkey authentication requested user verific
 #### Follow-up
 
 - apply the same Firebase environment hardening in Admin that was already added for Passport
+
+### session: v36
+
+- timestamp: 2026-04-16T11:23:00-0400
+- agent: **GitHub Copilot (GPT-5.4)**
+- branch: **codex/b04-passkeys-core-followups**
+- head: **`557c00c`**
+- session name: **Validate Admin Firebase env**
+
+#### Objective
+
+Address the PR review finding that Admin initialized Firebase even when the required public Firebase environment variables were missing.
+
+#### Actions Taken
+
+- updated [apps/admin/lib/firebase.ts](/Users/botmaster/src/cubid/cubid-passport/apps/admin/lib/firebase.ts) to validate the required Firebase env vars before `initializeApp`, mirroring the fail-fast guard already added in Passport and surfacing a clear configuration error when keys are missing
+
+#### Verification
+
+- `pnpm --filter @cubid/admin typecheck`
+- `CI=1 pnpm typecheck`
+
+#### Follow-up
+
+- replace the broken absolute local filesystem doc link with a repo-relative link so the architecture reference works on GitHub
