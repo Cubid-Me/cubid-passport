@@ -555,3 +555,32 @@ Sync the new `B03.1` roadmap metadata to the actual implementation commit so the
 #### Follow-up
 
 - implement `B03.2` next by adding Admin repositories and authenticated API routes for claims, threshold policies, and client bindings
+
+### session: v19
+
+- timestamp: 2026-04-16T08:33:45-04:00
+- agent: **GitHub Copilot (GPT-5.4)**
+- branch: **codex/b03-claims-registry**
+- head: **`dd5f286`**
+- session name: **Add Admin APIs for the claim registry**
+
+#### Objective
+
+Implement the B03.2 control-plane slice by adding authenticated Admin repositories and POST-only API routes for OIDC claim definitions, threshold-based identity-depth policies, client claim-policy bindings, and the metadata that the later B03.3 UI will need.
+
+#### Actions Taken
+
+- added [apps/admin/lib/server/oidcPolicyRegistry.ts](/Users/botmaster/src/cubid/cubid-passport/apps/admin/lib/server/oidcPolicyRegistry.ts) as the shared Admin repository layer for listing, creating, updating, and archiving claim-registry records, identity-depth policies, client claim-policy bindings, and OIDC client metadata while validating scopes, protecting seeded claims, and checking live client and policy references
+- added POST-only Admin routes under [apps/admin/pages/api/admin/oidc/claims/list.ts](/Users/botmaster/src/cubid/cubid-passport/apps/admin/pages/api/admin/oidc/claims/list.ts), [apps/admin/pages/api/admin/oidc/claims/upsert.ts](/Users/botmaster/src/cubid/cubid-passport/apps/admin/pages/api/admin/oidc/claims/upsert.ts), [apps/admin/pages/api/admin/oidc/claims/archive.ts](/Users/botmaster/src/cubid/cubid-passport/apps/admin/pages/api/admin/oidc/claims/archive.ts), [apps/admin/pages/api/admin/oidc/policies/list.ts](/Users/botmaster/src/cubid/cubid-passport/apps/admin/pages/api/admin/oidc/policies/list.ts), [apps/admin/pages/api/admin/oidc/policies/upsert.ts](/Users/botmaster/src/cubid/cubid-passport/apps/admin/pages/api/admin/oidc/policies/upsert.ts), [apps/admin/pages/api/admin/oidc/policies/archive.ts](/Users/botmaster/src/cubid/cubid-passport/apps/admin/pages/api/admin/oidc/policies/archive.ts), [apps/admin/pages/api/admin/oidc/bindings/list.ts](/Users/botmaster/src/cubid/cubid-passport/apps/admin/pages/api/admin/oidc/bindings/list.ts), [apps/admin/pages/api/admin/oidc/bindings/upsert.ts](/Users/botmaster/src/cubid/cubid-passport/apps/admin/pages/api/admin/oidc/bindings/upsert.ts), [apps/admin/pages/api/admin/oidc/bindings/archive.ts](/Users/botmaster/src/cubid/cubid-passport/apps/admin/pages/api/admin/oidc/bindings/archive.ts), and [apps/admin/pages/api/admin/oidc/metadata.ts](/Users/botmaster/src/cubid/cubid-passport/apps/admin/pages/api/admin/oidc/metadata.ts)
+- updated [apps/admin/package.json](/Users/botmaster/src/cubid/cubid-passport/apps/admin/package.json) to depend on `@cubid/claims` and refreshed [pnpm-lock.yaml](/Users/botmaster/src/cubid/cubid-passport/pnpm-lock.yaml) so the Admin workspace can compile against the shared B03.1 contracts instead of duplicating them locally
+
+#### Verification
+
+- `pnpm install --filter @cubid/admin...`
+- `pnpm --filter @cubid/admin typecheck`
+- editor diagnostics for the new Admin OIDC repository helper and metadata route report no errors
+
+#### Follow-up
+
+- implement `B03.3` next by adding an Admin UI surface that consumes the new OIDC metadata, claims, policies, and bindings endpoints
+- keep `services/oidc` out of this slice so registry management stabilizes before runtime claim evaluation is wired in
