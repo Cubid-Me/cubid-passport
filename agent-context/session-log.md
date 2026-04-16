@@ -951,3 +951,28 @@ Address the PR review finding that Passport initialized Firebase even when requi
 #### Follow-up
 
 - address the WagmiConfig and WalletConnect readiness review comment on the allow page next
+
+### session: v34
+
+- timestamp: 2026-04-16T11:03:00-0400
+- agent: **GitHub Copilot (GPT-5.4)**
+- branch: **codex/b04-passkeys-core-followups**
+- head: **`9481b19`**
+- session name: **Stabilize allow-page Wagmi setup**
+
+#### Objective
+
+Address the PR review finding that the allow page rendered `WagmiConfig` with a null config during the initial render and initialized WalletConnect even when its project id was absent.
+
+#### Actions Taken
+
+- updated [apps/passport/app/allow/page.tsx](/Users/botmaster/src/cubid/cubid-passport/apps/passport/app/allow/page.tsx) to use the shared Passport wagmi config synchronously instead of a null-first local state, and to initialize Web3Modal only when `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` is actually configured
+
+#### Verification
+
+- `pnpm --dir apps/passport typecheck`
+- `pnpm --dir apps/passport build`
+
+#### Follow-up
+
+- push the follow-up branch again and re-check whether any additional review comments remain outstanding

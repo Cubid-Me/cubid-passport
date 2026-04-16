@@ -7,12 +7,11 @@ import { Dialog, Transition } from "@headlessui/react"
 import { MagnifyingGlassIcon } from "@heroicons/react/20/solid"
 import { XMarkIcon } from "@heroicons/react/24/outline"
 import { createWeb3Modal } from "@web3modal/wagmi/react"
-import { defaultWagmiConfig } from "@web3modal/wagmi/react/config"
 import axios from "axios"
 import { Sheet } from "lucide-react"
 import { useTheme } from "next-themes"
 import { WagmiConfig } from "wagmi"
-import { arbitrum, mainnet } from "wagmi/chains"
+import { config as passportWagmiConfig } from "../../config/web3Config"
 import { useSelectStampPerm } from '../../lib/insert_stamp_perm'
 
 import { Stamps } from "./stamps"
@@ -165,33 +164,18 @@ const AllowPage = () => {
 
   const walletConnectProjectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ?? ""
 
-  const [wagmiConfig, setWagmiConfig] = useState(null)
   useEffect(() => {
-    // 1. Get projectId
-    const projectId = walletConnectProjectId
-
-    // 2. Create wagmiConfig
-    const metadata = {
-      name: "Web3Modal",
-      description: "Web3Modal Example",
-      url: "https://web3modal.com",
-      icons: ["https://avatars.githubusercontent.com/u/37784886"],
+    if (!walletConnectProjectId) {
+      return
     }
 
-    const chains = [mainnet]
-    const wConfig = defaultWagmiConfig({
-      chains: chains as any,
-      projectId,
-      metadata,
-    })
-    setWagmiConfig(wConfig as any)
     createWeb3Modal({
-      wagmiConfig: wConfig,
-      projectId,
-      enableAnalytics: true, // Optional - defaults to your Cloud configuration
-      enableOnramp: true, // Optional - false as default })
+      wagmiConfig: passportWagmiConfig as any,
+      projectId: walletConnectProjectId,
+      enableAnalytics: true,
+      enableOnramp: true,
     })
-  }, [])
+  }, [walletConnectProjectId])
 
   const [steps, setSteps] = useState(1)
 
@@ -292,7 +276,7 @@ const AllowPage = () => {
   }
 
   return (
-    <WagmiConfig config={wagmiConfig as any}>
+    <WagmiConfig config={passportWagmiConfig as any}>
 
       {loading || selectStampLoading ? (
         <>
