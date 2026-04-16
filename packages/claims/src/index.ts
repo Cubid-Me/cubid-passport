@@ -5,6 +5,20 @@ export const ALL_OIDC_SCOPES = [...STANDARD_OIDC_SCOPES, ...CUBID_SCOPES] as con
 
 export type OidcScope = typeof ALL_OIDC_SCOPES[number];
 export type CubidClaimClassification = "identity" | "hashed" | "boolean" | "score" | "json";
+export type ClaimRegistryStatus = "active" | "archived";
+export type ClaimAvailabilityMode = "global" | "client_bound";
+export type ClaimRegistrySource = "seed" | "admin";
+export type ClaimComputationMethod =
+  | "seeded"
+  | "derived_score"
+  | "derived_verification"
+  | "derived_stamps"
+  | "custom_json"
+  | "custom_boolean"
+  | "custom_identity";
+export type IdentityDepthPolicyStatus = "active" | "archived";
+
+const EMPTY_STRING_ARRAY: readonly string[] = [];
 
 export interface OidcClaimDefinition {
   name: string;
@@ -21,6 +35,49 @@ export interface ClientScopePolicyBinding {
   allowedClaims: readonly string[];
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ClaimRegistryRecord extends OidcClaimDefinition {
+  claimId: string;
+  displayName: string;
+  source: ClaimRegistrySource;
+  status: ClaimRegistryStatus;
+  computationMethod: ClaimComputationMethod;
+  requiresExplicitConsent: boolean;
+  availabilityMode: ClaimAvailabilityMode;
+  boundClientIds: readonly string[];
+  metadata: Readonly<Record<string, unknown>>;
+  createdAt: string;
+  updatedAt: string;
+  archivedAt: string | null;
+}
+
+export interface IdentityDepthThresholdPolicy {
+  policyId: string;
+  name: string;
+  description: string;
+  status: IdentityDepthPolicyStatus;
+  targetClaims: readonly string[];
+  targetScopes: readonly OidcScope[];
+  minimumScoreBand: string | null;
+  requiredVerificationClaims: readonly string[];
+  requiredStampKeys: readonly string[];
+  policyVersion: number;
+  metadata: Readonly<Record<string, unknown>>;
+  createdAt: string;
+  updatedAt: string;
+  archivedAt: string | null;
+}
+
+export interface ClientClaimPolicyBinding {
+  bindingId: string;
+  clientId: string;
+  claimName: string;
+  policyId: string | null;
+  enabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+  archivedAt: string | null;
 }
 
 export const CLAIM_DEFINITIONS: readonly OidcClaimDefinition[] = [
@@ -154,6 +211,62 @@ export const CLAIM_DEFINITIONS: readonly OidcClaimDefinition[] = [
   },
 ] as const;
 
+function createDisplayName(claimName: string): string {
+  return claimName
+    .split("_")
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join(" ");
+}
+
+function inferComputationMethod(classification: CubidClaimClassification): ClaimComputationMethod {
+  switch (classification) {
+    case "score":
+      return "derived_score";
+    case "boolean":
+      return "derived_verification";
+    case "json":
+      return "derived_stamps";
+    case "identity":
+    case "hashed":
+    default:
+      return "seeded";
+  }
+}
+
+export function createSeededClaimRegistryRecord(
+  definition: OidcClaimDefinition,
+  overrides: Partial<ClaimRegistryRecord> = {},
+): ClaimRegistryRecord {
+  const claimId = overrides.claimId ?? `seed:${definition.name}`;
+  const createdAt = overrides.createdAt ?? "seed";
+  const updatedAt = overrides.updatedAt ?? createdAt;
+
+  return {
+    claimId,
+    name: definition.name,
+    displayName: overrides.displayName ?? createDisplayName(definition.name),
+    scopes: overrides.scopes ?? definition.scopes,
+    classification: overrides.classification ?? definition.classification,
+    description: overrides.description ?? definition.description,
+    tokenEligible: overrides.tokenEligible ?? definition.tokenEligible,
+    userinfoEligible: overrides.userinfoEligible ?? definition.userinfoEligible,
+    source: overrides.source ?? "seed",
+    status: overrides.status ?? "active",
+    computationMethod: overrides.computationMethod ?? inferComputationMethod(definition.classification),
+    requiresExplicitConsent: overrides.requiresExplicitConsent ?? definition.name !== "sub",
+    availabilityMode: overrides.availabilityMode ?? "global",
+    boundClientIds: overrides.boundClientIds ?? EMPTY_STRING_ARRAY,
+    metadata: overrides.metadata ?? {},
+    createdAt,
+    updatedAt,
+    archivedAt: overrides.archivedAt ?? null,
+  };
+}
+
+export const SEEDED_CLAIM_REGISTRY: readonly ClaimRegistryRecord[] = CLAIM_DEFINITIONS.map((definition) =>
+  createSeededClaimRegistryRecord(definition),
+);
+
 export function isSupportedScope(scope: string): scope is OidcScope {
   return (ALL_OIDC_SCOPES as readonly string[]).includes(scope);
 }
@@ -162,10 +275,28 @@ export function getClaimDefinition(name: string): OidcClaimDefinition | null {
   return CLAIM_DEFINITIONS.find((definition) => definition.name === name) ?? null;
 }
 
+export function getClaimRegistryRecord(name: string): ClaimRegistryRecord | null {
+  return SEEDED_CLAIM_REGISTRY.find((definition) => definition.name === name) ?? null;
+}
+
 export function getClaimsForScopes(scopes: readonly string[]): string[] {
   const uniqueScopes = new Set(scopes.filter(isSupportedScope));
 
   return CLAIM_DEFINITIONS
     .filter((definition) => definition.scopes.some((scope) => uniqueScopes.has(scope)))
     .map((definition) => definition.name);
+}
+
+export function isThresholdPolicySatisfied(
+  policy: Pick<IdentityDepthThresholdPolicy, "requiredVerificationClaims" | "requiredStampKeys">,
+  input: {
+    verificationClaims: readonly string[];
+    stampKeys: readonly string[];
+  },
+): boolean {
+  const verificationClaims = new Set(input.verificationClaims);
+  const stampKeys = new Set(input.stampKeys);
+
+  return policy.requiredVerificationClaims.every((claim) => verificationClaims.has(claim))
+    && policy.requiredStampKeys.every((stampKey) => stampKeys.has(stampKey));
 }

@@ -499,3 +499,33 @@ Connect the existing Passport login and allow pages to the new OIDC interaction 
 
 - implement `/token` and signing-key-backed JWT issuance so the browser authorization flow can complete the final OAuth exchange
 - add a dedicated Passport OIDC consent UI later if the new challenge branch needs richer disclosure text than the current minimal bridge screen
+
+### session: v17
+
+- timestamp: 2026-04-16T00:56:56-0400
+- agent: **GitHub Copilot (GPT-5.4)**
+- branch: **codex/b03-claims-registry**
+- head: **`c3343c1`**
+- session name: **Lay down the B03 registry foundation**
+
+#### Objective
+
+Start B03 by splitting the oversized roadmap item into concrete execution slices, then implement the first coherent slice: Supabase persistence for the claim registry and threshold-based identity-depth policies plus the shared claim package contracts those later Admin APIs and screens will consume.
+
+#### Actions Taken
+
+- updated [agent-context/todo.md](/Users/botmaster/src/cubid/cubid-passport/agent-context/todo.md) to mark `B03` started on `codex/b03-claims-registry` and split it into `B03.1`, `B03.2`, and `B03.3` so schema and shared contracts can land independently from the later Admin API and UI work
+- extended [packages/claims/src/index.ts](/Users/botmaster/src/cubid/cubid-passport/packages/claims/src/index.ts) with registry-first shared types for claim records, threshold-based identity-depth policies, client claim-policy bindings, seeded registry overlays, and simple threshold satisfaction helpers while keeping the existing static claim taxonomy as the seed source of truth
+- expanded [packages/claims/src/index.test.ts](/Users/botmaster/src/cubid/cubid-passport/packages/claims/src/index.test.ts) to cover the new seeded registry overlays and threshold helper behavior
+- added [supabase/migrations/20260416011000_claim_registry_foundation.sql](/Users/botmaster/src/cubid/cubid-passport/supabase/migrations/20260416011000_claim_registry_foundation.sql) to create `oidc_claim_registry`, `oidc_identity_depth_policies`, and `oidc_client_claim_policy_bindings`, seed the built-in OIDC and Cubid claims into the registry table, and support soft-archived binding replacement through a partial unique index
+
+#### Verification
+
+- `pnpm --filter @cubid/claims test`
+- `pnpm --filter @cubid/claims typecheck`
+- editor diagnostics for the touched claims package files and new migration report no errors
+
+#### Follow-up
+
+- implement `B03.2` next by adding Admin repositories and authenticated API routes for claim definitions, threshold policies, and client bindings
+- keep `services/oidc` out of scope until the registry-first Admin control plane exists and the schema settles

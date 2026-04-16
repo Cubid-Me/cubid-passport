@@ -86,7 +86,7 @@ Parallelization note: Start after `A01`. This section can run in parallel with `
 - Timestamp completed: 2026-04-15T16:50:06-0400
 - Feature branch: codex/b01-oidc-architecture
 - Head: 7479974
-- Session-log reference(s): session: v10, session: v11
+- Session-log reference(s): sessions v10 & v11
 - Target-state doc(s): [docs/engineering/login-with-cubid-oidc-architecture.md](/Users/botmaster/src/cubid/cubid-passport/docs/engineering/login-with-cubid-oidc-architecture.md)
 
 Produce a concrete identity architecture for "Login with Cubid" before building endpoints. Define the issuer, audience model, relying-party registration flow, consent UX, supported grant types, token lifetimes, revocation model, and how app-scoped identities will map to OIDC subjects without breaking Cubid’s anti-tracking goals. Specify which claims are standard versus Cubid-specific, including how personhood depth, verification signals, stamp-derived overlays, and selective disclosure rules are represented. Include how Admin manages client apps, scopes, redirect URIs, and identity-depth policies. The design must explicitly preserve backgrounder principles: developers are the core customer, users control disclosure, and Cubid should behave like protocol infrastructure rather than a centralized surveillance identity provider. This todo should end with a signed-off spec and implementation boundary between Admin, Passport, and the new OIDC service.
@@ -98,11 +98,33 @@ Produce a concrete identity architecture for "Login with Cubid" before building 
 - Timestamp completed: TBD
 - Feature branch: codex/b02-oidc-foundation
 - Head: e89af74
-- Session-log reference(s): session: v14, session: v15, session: v16
+- Session-log reference(s): sessions v14-v16
 
 Create a dedicated OIDC service workspace, likely `services/oidc`, rather than embedding protocol behavior inside Passport UI code. Implement discovery, authorization, token, JWKS, userinfo, client registration or client management hooks, session handling, logout behavior, and audit-ready token issuance. Back the service with shared auth and domain packages from the monorepo instead of duplicating user, stamp, or consent logic. Design it as a clean server application with strong runtime validation, typed configuration, proper key management, and explicit boundaries between public endpoints and internal administrative operations. Passport should become a relying-party and consent experience, while Admin manages issuer metadata and policies. This service becomes the durable platform center of "Login with Cubid" and should be built so other apps, SDKs, and agents can rely on it without depending on Passport internals.
 
 ### B03. Build the custom claim registry and identity-depth policy controls in cubid-admin
+
+- Status: Started
+- Timestamp started: 2026-04-16T00:54:08-0400
+- Timestamp completed: TBD
+- Feature branch: codex/b03-claims-registry
+- Head: c3343c1
+- Session-log reference(s): session: v17
+
+Extend `cubid-admin` so it becomes the control plane for Cubid-specific claims and relying-party policy. Implement a claim registry where Admin users can define which claims exist, how they are computed, which are globally available versus partner-specific, and which require explicit consent. Add management for identity-depth rules, such as thresholds or derived assertions based on stamps, scores, or review workflows. The admin UI should let operators connect claims to client apps, scopes, token templates, and webhook behavior without hardcoding policy inside Passport or the OIDC service. Treat claim evaluation as a shared server capability, not just an admin screen feature, so the OIDC service can resolve claims from a typed backend contract. This todo should end with a usable policy console that governs Cubid identity semantics centrally.
+
+### B03.1 Add claim registry schema and shared policy contracts
+
+- Status: Started
+- Timestamp started: 2026-04-16T00:54:08-0400
+- Timestamp completed: TBD
+- Feature branch: codex/b03-claims-registry
+- Head: c3343c1
+- Session-log reference(s): session: v17
+
+Implement the first registry-first B03 slice by extending the Supabase schema for claim definitions, identity-depth policies, and client bindings, then add the typed shared contracts needed by Admin and later issuer reads. This slice should not yet build Admin APIs or UI. It should leave the repo with a durable persistence shape and shared package surface that the next B03 slices can consume directly.
+
+### B03.2 Add Admin APIs for claims, policies, and client bindings
 
 - Status: Not started
 - Timestamp started: TBD
@@ -111,7 +133,18 @@ Create a dedicated OIDC service workspace, likely `services/oidc`, rather than e
 - Head: TBD
 - Session-log reference(s): TBD
 
-Extend `cubid-admin` so it becomes the control plane for Cubid-specific claims and relying-party policy. Implement a claim registry where Admin users can define which claims exist, how they are computed, which are globally available versus partner-specific, and which require explicit consent. Add management for identity-depth rules, such as thresholds or derived assertions based on stamps, scores, or review workflows. The admin UI should let operators connect claims to client apps, scopes, token templates, and webhook behavior without hardcoding policy inside Passport or the OIDC service. Treat claim evaluation as a shared server capability, not just an admin screen feature, so the OIDC service can resolve claims from a typed backend contract. This todo should end with a usable policy console that governs Cubid identity semantics centrally.
+Add authenticated Admin routes and server-side repositories for claim definitions, threshold-based identity-depth policies, and client claim-policy bindings. Reuse the current Admin request-context and error-handling patterns instead of introducing a new server framework.
+
+### B03.3 Add Admin UI for registry, policies, and bindings
+
+- Status: Not started
+- Timestamp started: TBD
+- Timestamp completed: TBD
+- Feature branch: TBD
+- Head: TBD
+- Session-log reference(s): TBD
+
+Extend the existing Admin tab shell with a claims and policies area that lets operators create or edit claims, create or edit threshold-based identity-depth policies, and bind those records to existing OIDC clients. This slice should make the control plane usable without yet changing OIDC token issuance behavior.
 
 ### B04. Add passkey support to Login with Cubid
 
