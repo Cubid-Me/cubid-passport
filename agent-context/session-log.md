@@ -529,3 +529,29 @@ Start B03 by splitting the oversized roadmap item into concrete execution slices
 
 - implement `B03.2` next by adding Admin repositories and authenticated API routes for claim definitions, threshold policies, and client bindings
 - keep `services/oidc` out of scope until the registry-first Admin control plane exists and the schema settles
+
+### session: v18
+
+- timestamp: 2026-04-16T00:57:36-0400
+- agent: **GitHub Copilot (GPT-5.4)**
+- branch: **codex/b03-claims-registry**
+- head: **`47352af`**
+- session name: **Align B03.1 completion metadata**
+
+#### Objective
+
+Sync the new `B03.1` roadmap metadata to the actual implementation commit so the first claim-registry slice references the real branch head and completion point.
+
+#### Actions Taken
+
+- updated [agent-context/todo.md](/Users/botmaster/src/cubid/cubid-passport/agent-context/todo.md) so `B03.1` now references the implementation commit head and completion timestamp while leaving the parent `B03` item marked in progress for the later API and UI slices
+- updated the in-progress `B03` metadata to point at the current branch head after the foundation commit and expanded its session references to include the metadata alignment follow-up
+
+#### Verification
+
+- confirmed the implementation commit hash for the B03.1 foundation slice before updating the roadmap metadata
+- limited the follow-up change to roadmap metadata alignment only
+
+#### Follow-up
+
+- implement `B03.2` next by adding Admin repositories and authenticated API routes for claims, threshold policies, and client bindings

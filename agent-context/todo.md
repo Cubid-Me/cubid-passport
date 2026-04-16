@@ -108,19 +108,19 @@ Create a dedicated OIDC service workspace, likely `services/oidc`, rather than e
 - Timestamp started: 2026-04-16T00:54:08-0400
 - Timestamp completed: TBD
 - Feature branch: codex/b03-claims-registry
-- Head: c3343c1
-- Session-log reference(s): session: v17
+- Head: 47352af
+- Session-log reference(s): session: v17, session: v18
 
 Extend `cubid-admin` so it becomes the control plane for Cubid-specific claims and relying-party policy. Implement a claim registry where Admin users can define which claims exist, how they are computed, which are globally available versus partner-specific, and which require explicit consent. Add management for identity-depth rules, such as thresholds or derived assertions based on stamps, scores, or review workflows. The admin UI should let operators connect claims to client apps, scopes, token templates, and webhook behavior without hardcoding policy inside Passport or the OIDC service. Treat claim evaluation as a shared server capability, not just an admin screen feature, so the OIDC service can resolve claims from a typed backend contract. This todo should end with a usable policy console that governs Cubid identity semantics centrally.
 
 ### B03.1 Add claim registry schema and shared policy contracts
 
-- Status: Started
+- Status: Completed
 - Timestamp started: 2026-04-16T00:54:08-0400
-- Timestamp completed: TBD
+- Timestamp completed: 2026-04-16T00:57:36-0400
 - Feature branch: codex/b03-claims-registry
-- Head: c3343c1
-- Session-log reference(s): session: v17
+- Head: 47352af
+- Session-log reference(s): session: v17, session: v18
 
 Implement the first registry-first B03 slice by extending the Supabase schema for claim definitions, identity-depth policies, and client bindings, then add the typed shared contracts needed by Admin and later issuer reads. This slice should not yet build Admin APIs or UI. It should leave the repo with a durable persistence shape and shared package surface that the next B03 slices can consume directly.
 
