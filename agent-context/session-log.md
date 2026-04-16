@@ -637,3 +637,29 @@ Implement the B03.3 UI slice by extending the Admin tab shell with a usable clai
 #### Follow-up
 
 - decide whether the next highest-leverage step is returning to `B02` token and userinfo work or starting `B04` passkeys now that the Admin control plane exists
+
+### session: v22
+
+- timestamp: 2026-04-16T08:41:42-04:00
+- agent: **GitHub Copilot (GPT-5.4)**
+- branch: **codex/b03-claims-registry**
+- head: **`ffe1ad2`**
+- session name: **Align B03 completion metadata**
+
+#### Objective
+
+Sync the roadmap metadata to the implementation commit that finished the Admin claim-registry UI and mark the overall B03 control-plane todo completed now that the schema, APIs, and UI slices have all landed.
+
+#### Actions Taken
+
+- updated [agent-context/todo.md](/Users/botmaster/src/cubid/cubid-passport/agent-context/todo.md) so `B03.3` is marked completed with the UI implementation commit head and completion timestamp
+- marked the parent `B03` todo completed because the registry schema, Admin APIs, and Admin UI slices are all now landed on the same feature branch
+
+#### Verification
+
+- confirmed the post-commit branch head and clean working tree before editing roadmap metadata
+- limited the follow-up change to metadata alignment only
+
+#### Follow-up
+
+- return to `B02` next and finish `/token`, JWT issuance, and `/userinfo` now that the Admin-side registry control plane exists
