@@ -850,3 +850,28 @@ Address the preview deployment failures caused by Vercel building from the monor
 #### Follow-up
 
 - push the follow-up branch and re-check remote PR status, noting that the separate `cubid-passport` blocked-account deployment remains an external Vercel account issue
+
+### session: v30
+
+- timestamp: 2026-04-16T10:37:00-0400
+- agent: **GitHub Copilot (GPT-5.4)**
+- branch: **codex/b04-passkeys-core-followups**
+- head: **`64c29e3`**
+- session name: **Make passkey challenge consumption atomic**
+
+#### Objective
+
+Address the PR review finding that concurrent passkey completions could reuse the same WebAuthn challenge.
+
+#### Actions Taken
+
+- updated [services/oidc/src/passkeys.ts](/Users/botmaster/src/cubid/cubid-passport/services/oidc/src/passkeys.ts) so `consumeChallenge` now updates only rows whose `consumed_at` is still null, selects the updated row, and returns a typed challenge-not-found error when a completion races with an already-consumed challenge
+
+#### Verification
+
+- `pnpm --filter @cubid/oidc typecheck`
+- `CI=1 pnpm typecheck`
+
+#### Follow-up
+
+- address the nullable registration `user_handle` review comment in the passkey registration path next

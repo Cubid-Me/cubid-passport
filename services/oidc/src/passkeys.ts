@@ -334,16 +334,27 @@ async function consumeChallenge(
   challengeId: string,
   metadataPatch?: Record<string, unknown>,
 ): Promise<void> {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("oidc_webauthn_challenges")
     .update({
       consumed_at: nowIso(),
       metadata: metadataPatch,
     })
-    .eq("challenge_id", challengeId);
+    .eq("challenge_id", challengeId)
+    .is("consumed_at", null)
+    .select("challenge_id")
+    .maybeSingle();
 
   if (error) {
     throw new Error(`Failed to consume WebAuthn challenge: ${error.message}`);
+  }
+
+  if (!data) {
+    throw new AuthorizationRequestError(
+      "challenge_not_found",
+      "The requested passkey challenge could not be found or is no longer active.",
+      { statusCode: 404 },
+    );
   }
 }
 
