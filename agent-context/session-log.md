@@ -749,3 +749,29 @@ Implement `B04.2` by adding issuer-owned WebAuthn challenge and verification flo
 
 - align the `B04.2` roadmap metadata to the implementation commit that lands this backend slice
 - implement `B04.3` next by wiring Passport login and recovery UX to the new OIDC passkey routes and removing the localStorage-backed hidden auth state assumptions
+
+### session: v26
+
+- timestamp: 2026-04-16T09:37:16-0400
+- agent: **GitHub Copilot (GPT-5.4)**
+- branch: **codex/b04-passkeys-core**
+- head: **`1a36f1f`**
+- session name: **Align B04.2 completion metadata**
+
+#### Objective
+
+Sync the roadmap metadata to the implementation commit that landed the OIDC passkey ceremony backend so the B04.2 slice and the parent B04 item reference the actual branch head.
+
+#### Actions Taken
+
+- updated [agent-context/todo.md](/Users/botmaster/src/cubid/cubid-passport/agent-context/todo.md) so `B04.2` is marked completed with the implementation commit head and completion timestamp
+- updated the parent `B04` metadata to point at the latest branch head after landing the OIDC passkey backend slice and expanded its session references to include the metadata alignment follow-up
+
+#### Verification
+
+- confirmed the post-commit branch head and clean working tree before editing roadmap metadata
+- limited the follow-up change to metadata alignment only
+
+#### Follow-up
+
+- implement `B04.3` next by wiring Passport login and recovery UX to the new OIDC passkey routes and reducing the localStorage-backed auth state assumptions in Passport

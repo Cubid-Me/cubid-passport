@@ -152,8 +152,8 @@ Extend the existing Admin tab shell with a claims and policies area that lets op
 - Timestamp started: 2026-04-16T09:09:36-04:00
 - Timestamp completed: TBD
 - Feature branch: codex/b04-passkeys-core
-- Head: 83587e9
-- Session-log reference(s): session: v23, session: v24, session: v25
+- Head: 1a36f1f
+- Session-log reference(s): session: v23, session: v24, session: v25, session: v26
 
 Implement WebAuthn-based passkeys as a first-class authentication method for "Login with Cubid" rather than another side flow bolted onto the app. Support registration, authentication, recovery fallback strategy, device lifecycle management, and risk-aware step-up behavior for sensitive admin actions. Passport should expose a clean user experience for creating and using passkeys, while the shared auth service owns the credential ceremonies, challenge generation, attestation policy, and credential storage. Admin should be able to see passkey status and policy constraints for debugging and support. Make sure passkeys work with app-scoped identity rules and with the OIDC session model so they are a durable platform credential, not a one-off browser convenience. This todo should explicitly include rollout sequencing and migration paths from email or phone-based login.
 
@@ -170,12 +170,12 @@ Lay down the first B04 slice by adding Supabase persistence for WebAuthn credent
 
 ### B04.2 Add OIDC passkey ceremony backend
 
-- Status: Started
+- Status: Completed
 - Timestamp started: 2026-04-16T09:34:26-0400
-- Timestamp completed: TBD
+- Timestamp completed: 2026-04-16T09:37:16-0400
 - Feature branch: codex/b04-passkeys-core
-- Head: e2ab34b
-- Session-log reference(s): session: v25
+- Head: 1a36f1f
+- Session-log reference(s): session: v25, session: v26
 
 Add OIDC-service-owned endpoints and repositories for passkey registration and authentication challenges, challenge consumption, credential verification, and login-challenge completion using passkey authentication methods.
 
