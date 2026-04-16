@@ -584,3 +584,29 @@ Implement the B03.2 control-plane slice by adding authenticated Admin repositori
 
 - implement `B03.3` next by adding an Admin UI surface that consumes the new OIDC metadata, claims, policies, and bindings endpoints
 - keep `services/oidc` out of this slice so registry management stabilizes before runtime claim evaluation is wired in
+
+### session: v20
+
+- timestamp: 2026-04-16T08:34:52-04:00
+- agent: **GitHub Copilot (GPT-5.4)**
+- branch: **codex/b03-claims-registry**
+- head: **`b66a8ba`**
+- session name: **Align B03.2 completion metadata**
+
+#### Objective
+
+Sync the B03 and B03.2 roadmap metadata to the implementation commit that landed the Admin OIDC registry APIs so the todo state points at the actual finished slice.
+
+#### Actions Taken
+
+- updated [agent-context/todo.md](/Users/botmaster/src/cubid/cubid-passport/agent-context/todo.md) so `B03.2` is marked completed with the implementation commit head and completion timestamp
+- updated the parent `B03` metadata to point at the latest branch head after landing the Admin API slice and expanded its session references to include the metadata follow-up
+
+#### Verification
+
+- confirmed the post-commit branch head and clean working tree before editing roadmap metadata
+- limited the follow-up change to metadata alignment only
+
+#### Follow-up
+
+- implement `B03.3` next by adding the Admin UI on top of the new OIDC registry API surface
