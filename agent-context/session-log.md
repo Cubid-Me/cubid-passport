@@ -693,3 +693,29 @@ Start B04 by splitting the broad passkey todo into coherent delivery slices, the
 
 - implement `B04.2` next by adding OIDC-service-owned passkey challenge issuance, verification, and login-challenge completion flows
 - keep the first passkey delivery global to the Cubid account and leave rich device lifecycle management and ACR step-up for the later `B04.4` follow-up
+
+### session: v24
+
+- timestamp: 2026-04-16T09:14:45-04:00
+- agent: **GitHub Copilot (GPT-5.4)**
+- branch: **codex/b04-passkeys-core**
+- head: **`83587e9`**
+- session name: **Align B04.1 foundation metadata**
+
+#### Objective
+
+Sync the new B04 roadmap metadata to the implementation commit that landed the WebAuthn schema and shared auth contracts so the first passkey slice references the real completion point.
+
+#### Actions Taken
+
+- updated [agent-context/todo.md](/Users/botmaster/src/cubid/cubid-passport/agent-context/todo.md) so `B04.1` is marked completed with the foundation commit head and completion timestamp
+- updated the in-progress `B04` parent metadata to point at the latest branch head after the foundation slice and expanded its session references to include the alignment follow-up
+
+#### Verification
+
+- confirmed the post-commit branch head and clean working tree before editing roadmap metadata
+- limited the follow-up change to metadata alignment only
+
+#### Follow-up
+
+- implement `B04.2` next by adding OIDC-service-owned passkey challenge issuance, verification, and login-challenge completion flows

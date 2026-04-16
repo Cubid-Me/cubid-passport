@@ -152,19 +152,19 @@ Extend the existing Admin tab shell with a claims and policies area that lets op
 - Timestamp started: 2026-04-16T09:09:36-04:00
 - Timestamp completed: TBD
 - Feature branch: codex/b04-passkeys-core
-- Head: af54cd3
-- Session-log reference(s): session: v23
+- Head: 83587e9
+- Session-log reference(s): session: v23, session: v24
 
 Implement WebAuthn-based passkeys as a first-class authentication method for "Login with Cubid" rather than another side flow bolted onto the app. Support registration, authentication, recovery fallback strategy, device lifecycle management, and risk-aware step-up behavior for sensitive admin actions. Passport should expose a clean user experience for creating and using passkeys, while the shared auth service owns the credential ceremonies, challenge generation, attestation policy, and credential storage. Admin should be able to see passkey status and policy constraints for debugging and support. Make sure passkeys work with app-scoped identity rules and with the OIDC session model so they are a durable platform credential, not a one-off browser convenience. This todo should explicitly include rollout sequencing and migration paths from email or phone-based login.
 
 ### B04.1 Add WebAuthn schema and shared auth contracts
 
-- Status: Started
+- Status: Completed
 - Timestamp started: 2026-04-16T09:09:36-04:00
-- Timestamp completed: TBD
+- Timestamp completed: 2026-04-16T09:14:45-04:00
 - Feature branch: codex/b04-passkeys-core
-- Head: af54cd3
-- Session-log reference(s): session: v23
+- Head: 83587e9
+- Session-log reference(s): session: v23, session: v24
 
 Lay down the first B04 slice by adding Supabase persistence for WebAuthn credentials and single-use challenges, then extend the shared auth package with the typed ceremony and session contracts that both Passport and the OIDC service will consume.
 
