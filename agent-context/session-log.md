@@ -900,3 +900,29 @@ Address the PR review finding that a malformed or legacy registration challenge 
 #### Follow-up
 
 - address the remaining Passport-side review comments around Worldcoin env guarding, Firebase initialization safety, and WagmiConfig readiness
+
+### session: v32
+
+- timestamp: 2026-04-16T10:49:00-0400
+- agent: **GitHub Copilot (GPT-5.4)**
+- branch: **codex/b04-passkeys-core-followups**
+- head: **`3c70fa9`**
+- session name: **Guard Worldcoin configuration paths**
+
+#### Objective
+
+Address the PR review findings that Passport could launch or configure a broken Worldcoin auth flow when required environment variables were missing.
+
+#### Actions Taken
+
+- updated [apps/passport/components/stamps/index.tsx](/Users/botmaster/src/cubid/cubid-passport/apps/passport/components/stamps/index.tsx) to build the Worldcoin authorize URL only when both required public env vars are present, disable the connect button otherwise, and show a clear UI hint instead of redirecting into a broken flow
+- updated [apps/passport/pages/api/auth/[...nextauth].ts](/Users/botmaster/src/cubid/cubid-passport/apps/passport/pages/api/auth/[...nextauth].ts) to validate the required Worldcoin provider env vars up front and fail fast with a clear configuration error before NextAuth constructs the provider
+
+#### Verification
+
+- `pnpm --dir apps/passport typecheck`
+- `pnpm --dir apps/passport build`
+
+#### Follow-up
+
+- address the Firebase initialization review comment next

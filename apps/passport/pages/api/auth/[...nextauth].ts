@@ -1,5 +1,13 @@
 import NextAuth from "next-auth"
 
+const worldcoinClientId = process.env.WLD_CLIENT_ID
+const worldcoinClientSecret = process.env.WLD_CLIENT_SECRET
+const worldcoinRedirectUri = process.env.WLD_REDIRECT_URI ?? process.env.NEXT_PUBLIC_WORLDCOIN_REDIRECT_URI
+
+if (!worldcoinClientId || !worldcoinClientSecret || !worldcoinRedirectUri) {
+  throw new Error("Missing Worldcoin environment configuration for NextAuth")
+}
+
 export const authOptions = {
   providers: [
     {
@@ -10,14 +18,12 @@ export const authOptions = {
       authorization: {
         params: {
           scope: "openid",
-          redirect_uri:
-            process.env.WLD_REDIRECT_URI ??
-            process.env.NEXT_PUBLIC_WORLDCOIN_REDIRECT_URI,
+          redirect_uri: worldcoinRedirectUri,
           response_type: "code",
         },
       },
-      clientId: process.env.WLD_CLIENT_ID,
-      clientSecret: process.env.WLD_CLIENT_SECRET,
+      clientId: worldcoinClientId,
+      clientSecret: worldcoinClientSecret,
     },
   ],
   callbacks: {

@@ -127,6 +127,19 @@ export const stampsWithId = {
 }
 
 export const Stamps = () => {
+  const worldcoinClientId = process.env.NEXT_PUBLIC_WLD_CLIENT_ID ?? ""
+  const worldcoinRedirectUri = process.env.NEXT_PUBLIC_WORLDCOIN_REDIRECT_URI ?? ""
+  const worldcoinAuthorizeUrl = worldcoinClientId && worldcoinRedirectUri
+    ? `https://id.worldcoin.org/authorize?${new URLSearchParams({
+        response_type: "code",
+        response_mode: "query",
+        client_id: worldcoinClientId,
+        redirect_uri: worldcoinRedirectUri,
+        ready: "true",
+        scope: "openid",
+      }).toString()}`
+    : null
+
   const signInWithSocial = async (socialName: any) => {
     await supabase.auth.signOut()
     localStorage.setItem("socialName", socialName)
@@ -1135,16 +1148,13 @@ export const Stamps = () => {
             ) : (
               <Button
                 onClick={() => {
-                  window.location.href = `https://id.worldcoin.org/authorize?${new URLSearchParams({
-                    response_type: "code",
-                    response_mode: "query",
-                    client_id: process.env.NEXT_PUBLIC_WLD_CLIENT_ID ?? "",
-                    redirect_uri:
-                      process.env.NEXT_PUBLIC_WORLDCOIN_REDIRECT_URI ?? "",
-                    ready: "true",
-                    scope: "openid",
-                  }).toString()}`
+                  if (!worldcoinAuthorizeUrl) {
+                    return
+                  }
+
+                  window.location.href = worldcoinAuthorizeUrl
                 }}
+                disabled={!worldcoinAuthorizeUrl}
                 variant="secondary"
                 className="bg-blue-500 text-white"
                 style={{ width: "200px" }}
@@ -1152,6 +1162,11 @@ export const Stamps = () => {
                 Connect Worldcoin
               </Button>
             )}
+            {!doesStampExist(stampsWithId["worldcoin"]) && !worldcoinAuthorizeUrl ? (
+              <p className="mt-2 text-center text-sm text-muted-foreground">
+                Worldcoin is unavailable until its public client id and redirect URI are configured.
+              </p>
+            ) : null}
           </CardContent>
         </Card>
         <Card>
