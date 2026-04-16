@@ -663,3 +663,33 @@ Sync the roadmap metadata to the implementation commit that finished the Admin c
 #### Follow-up
 
 - return to `B02` next and finish `/token`, JWT issuance, and `/userinfo` now that the Admin-side registry control plane exists
+
+### session: v23
+
+- timestamp: 2026-04-16T09:13:10-04:00
+- agent: **GitHub Copilot (GPT-5.4)**
+- branch: **codex/b04-passkeys-core**
+- head: **`af54cd3`**
+- session name: **Lay down the B04 passkey foundation**
+
+#### Objective
+
+Start B04 by splitting the broad passkey todo into coherent delivery slices, then implement the first foundation slice: WebAuthn persistence in Supabase plus shared auth contracts for passkey ceremonies and user-handle encoding that later OIDC and Passport work will consume.
+
+#### Actions Taken
+
+- updated [agent-context/todo.md](/Users/botmaster/src/cubid/cubid-passport/agent-context/todo.md) to mark `B04` started on `codex/b04-passkeys-core` and split it into `B04.1` through `B04.4` so schema, OIDC backend, Passport UX, and later lifecycle follow-ups can land independently
+- added [supabase/migrations/20260416020000_webauthn_foundation.sql](/Users/botmaster/src/cubid/cubid-passport/supabase/migrations/20260416020000_webauthn_foundation.sql) to create `oidc_webauthn_credentials`, `oidc_webauthn_challenges`, and the session-to-credential link needed for passkey-backed OIDC sessions
+- extended [packages/auth/src/index.ts](/Users/botmaster/src/cubid/cubid-passport/packages/auth/src/index.ts) with passkey authentication-method constants, typed WebAuthn challenge and credential contracts, and reusable helpers to encode and decode the Cubid WebAuthn user handle
+- expanded [packages/auth/src/index.test.ts](/Users/botmaster/src/cubid/cubid-passport/packages/auth/src/index.test.ts) to cover the new base64url decoding and WebAuthn user-handle helpers
+
+#### Verification
+
+- `pnpm --filter @cubid/auth test`
+- `pnpm --filter @cubid/auth typecheck`
+- editor diagnostics for the touched auth package files, roadmap file, and new migration report no errors
+
+#### Follow-up
+
+- implement `B04.2` next by adding OIDC-service-owned passkey challenge issuance, verification, and login-challenge completion flows
+- keep the first passkey delivery global to the Cubid account and leave rich device lifecycle management and ACR step-up for the later `B04.4` follow-up
