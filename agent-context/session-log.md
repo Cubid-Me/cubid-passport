@@ -976,3 +976,28 @@ Address the PR review finding that the allow page rendered `WagmiConfig` with a 
 #### Follow-up
 
 - push the follow-up branch again and re-check whether any additional review comments remain outstanding
+
+### session: v35
+
+- timestamp: 2026-04-16T11:18:00-0400
+- agent: **GitHub Copilot (GPT-5.4)**
+- branch: **codex/b04-passkeys-core-followups**
+- head: **`0842e9b`**
+- session name: **Require UV for passkey auth challenges**
+
+#### Objective
+
+Address the PR review finding that passkey authentication requested user verification as only preferred while later requiring user verification during assertion verification.
+
+#### Actions Taken
+
+- updated [services/oidc/src/passkeys.ts](/Users/botmaster/src/cubid/cubid-passport/services/oidc/src/passkeys.ts) so passkey authentication challenges now request `userVerification: "required"` and persist the same requirement in the challenge row, keeping challenge generation aligned with the downstream verification policy
+
+#### Verification
+
+- `pnpm --filter @cubid/oidc typecheck`
+- `CI=1 pnpm typecheck`
+
+#### Follow-up
+
+- apply the same Firebase environment hardening in Admin that was already added for Passport

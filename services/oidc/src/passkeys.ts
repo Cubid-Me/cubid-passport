@@ -474,7 +474,7 @@ export async function createPasskeyAuthenticationOptions(
           transports: ensureStringArray(credential.transports) as NonNullable<WebAuthnCredential["transports"]>,
         }))
       : undefined,
-    userVerification: "preferred",
+    userVerification: "required",
   });
 
   const challengeId = createOpaqueId("webauthn_challenge");
@@ -493,7 +493,7 @@ export async function createPasskeyAuthenticationOptions(
         })
       : null,
     rp_id: config.passkeyRpId,
-    user_verification: "preferred",
+    user_verification: "required",
     expires_at: plusMs(PASSKEY_CHALLENGE_LIFETIME_MS),
     consumed_at: null,
     metadata: {
