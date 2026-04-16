@@ -81,6 +81,15 @@ Passport owns:
 
 Passport does not mint OIDC tokens. It fulfills login and consent challenges issued by the OIDC service.
 
+### Passkey Ceremony Split
+
+Core WebAuthn delivery for B04 follows the same trust split as the rest of the OIDC stack.
+
+- `services/oidc` owns passkey challenge issuance, challenge verification, credential persistence, and audit logging.
+- Passport hosts the browser ceremony UX, so the WebAuthn RP ID and expected origins are derived from the Passport host rather than the issuer host.
+- Login-challenge passkey authentication is exposed from the issuer under interaction-scoped routes, while passkey registration is exposed from session-scoped routes after the user already has an active issuer session.
+- Full device lifecycle management, richer support tooling, and ACR-driven step-up remain deferred follow-up work under later B04 slices.
+
 ### Admin
 
 Admin owns:

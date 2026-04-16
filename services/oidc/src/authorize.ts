@@ -81,6 +81,7 @@ type PersistedSessionRow = {
   client_id: string;
   cubid_user_id: number | null;
   human_subject_key: string | null;
+  webauthn_credential_id: string | null;
   login_challenge_id: string | null;
   consent_challenge_id: string | null;
   authentication_methods: string[];
@@ -152,6 +153,17 @@ type LoginCompletionInput = {
   verifiedPhone: string | null;
   cubidUserId: number | null;
   authenticationMethods: string[];
+};
+
+export type OidcAuthenticatedLoginSubject = {
+  cubidUserId: number | null;
+  humanSubjectKey: string;
+  verifiedEmail: string | null;
+  verifiedPhone: string | null;
+  authenticationMethods: string[];
+  webAuthnCredentialId?: string | null;
+  metadata?: Record<string, unknown>;
+  auditDetails?: Record<string, unknown>;
 };
 
 type CompleteLoginChallengeResult = {
@@ -1149,6 +1161,32 @@ export async function completeLoginChallenge(
   payload: Record<string, unknown>,
   requestId: string,
 ): Promise<CompleteLoginChallengeResult> {
+  const input = parseLoginCompletionInput(payload);
+  const user = await resolveUserByIdentifiers(supabase, input);
+  const humanSubject = await resolveHumanSubject(supabase, user);
+  return completeLoginChallengeForSubject(
+    supabase,
+    challengeId,
+    {
+      cubidUserId: user.id,
+      humanSubjectKey: humanSubject.human_subject_key,
+      verifiedEmail: input.verifiedEmail,
+      verifiedPhone: input.verifiedPhone,
+      authenticationMethods: input.authenticationMethods,
+      metadata: {
+        bootstrap: input.verifiedEmail || input.verifiedPhone ? true : false,
+      },
+    },
+    requestId,
+  );
+}
+
+export async function completeLoginChallengeForSubject(
+  supabase: SupabaseClient,
+  challengeId: string,
+  subject: OidcAuthenticatedLoginSubject,
+  requestId: string,
+): Promise<CompleteLoginChallengeResult> {
   const requestRow = await getAuthorizationRequestByLoginChallenge(supabase, challengeId);
   if (!requestRow || requestRow.status !== "pending_login" || isExpired(requestRow.expires_at)) {
     throw new AuthorizationRequestError("challenge_not_found", "The login challenge could not be found or is no longer active.", { statusCode: 404 });
@@ -1159,25 +1197,23 @@ export async function completeLoginChallenge(
     throw new AuthorizationRequestError("unauthorized_client", "The OIDC client is not available for login completion.", { statusCode: 403 });
   }
 
-  const input = parseLoginCompletionInput(payload);
-  const user = await resolveUserByIdentifiers(supabase, input);
-  const humanSubject = await resolveHumanSubject(supabase, user);
   const sessionId = createOpaqueId("session");
   const sessionExpiresAt = plusMs(SESSION_LIFETIME_MS);
 
   const { error } = await supabase.from("oidc_sessions").insert({
     session_id: sessionId,
     client_id: requestRow.client_id,
-    cubid_user_id: user.id,
-    human_subject_key: humanSubject.human_subject_key,
+    cubid_user_id: subject.cubidUserId,
+    human_subject_key: subject.humanSubjectKey,
+    webauthn_credential_id: subject.webAuthnCredentialId ?? null,
     login_challenge_id: requestRow.login_challenge_id,
-    authentication_methods: input.authenticationMethods,
-    verified_email: input.verifiedEmail,
-    verified_phone: input.verifiedPhone,
+    authentication_methods: subject.authenticationMethods,
+    verified_email: subject.verifiedEmail,
+    verified_phone: subject.verifiedPhone,
     expires_at: sessionExpiresAt,
     metadata: {
       request_id: requestId,
-      bootstrap: input.verifiedEmail || input.verifiedPhone ? true : false,
+      ...(subject.metadata ?? {}),
     },
   });
 
@@ -1198,11 +1234,13 @@ export async function completeLoginChallenge(
     requestId,
     outcome: "success",
     actorType: "user",
-    actorIdentifier: humanSubject.human_subject_key,
+    actorIdentifier: subject.humanSubjectKey,
     details: {
-      verified_email: input.verifiedEmail,
-      verified_phone: input.verifiedPhone,
-      authentication_methods: input.authenticationMethods,
+      verified_email: subject.verifiedEmail,
+      verified_phone: subject.verifiedPhone,
+      authentication_methods: subject.authenticationMethods,
+      webauthn_credential_id: subject.webAuthnCredentialId ?? null,
+      ...(subject.auditDetails ?? {}),
     },
   });
 

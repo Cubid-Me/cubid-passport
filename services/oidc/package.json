@@ -23,6 +23,7 @@
     "@cubid/claims": "workspace:*",
     "@cubid/config": "workspace:*",
     "@cubid/identity": "workspace:*",
+    "@simplewebauthn/server": "^13.3.0",
     "@supabase/supabase-js": "^2.38.4"
   },
   "devDependencies": {

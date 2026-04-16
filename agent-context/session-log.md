@@ -719,3 +719,33 @@ Sync the new B04 roadmap metadata to the implementation commit that landed the W
 #### Follow-up
 
 - implement `B04.2` next by adding OIDC-service-owned passkey challenge issuance, verification, and login-challenge completion flows
+
+### session: v25
+
+- timestamp: 2026-04-16T09:34:26-0400
+- agent: **GitHub Copilot (GPT-5.4)**
+- branch: **codex/b04-passkeys-core**
+- head: **`e2ab34b`**
+- session name: **Add the OIDC passkey ceremony backend**
+
+#### Objective
+
+Implement `B04.2` by adding issuer-owned WebAuthn challenge and verification flows for passkey authentication and registration, while reusing the existing login-challenge completion path for passkey-backed OIDC sessions.
+
+#### Actions Taken
+
+- added [services/oidc/src/passkeys.ts](/Users/botmaster/src/cubid/cubid-passport/services/oidc/src/passkeys.ts) as the OIDC-owned WebAuthn backend for authentication challenge issuance, registration challenge issuance, challenge consumption, credential verification, credential persistence, and audit logging
+- updated [services/oidc/src/authorize.ts](/Users/botmaster/src/cubid/cubid-passport/services/oidc/src/authorize.ts) to expose a reusable subject-based login completion helper so passkey authentication can feed the existing consent and redirect flow without duplicating OIDC session logic
+- extended [services/oidc/src/app.ts](/Users/botmaster/src/cubid/cubid-passport/services/oidc/src/app.ts), [services/oidc/src/index.ts](/Users/botmaster/src/cubid/cubid-passport/services/oidc/src/index.ts), [services/oidc/src/config.ts](/Users/botmaster/src/cubid/cubid-passport/services/oidc/src/config.ts), and [services/oidc/.env.example](/Users/botmaster/src/cubid/cubid-passport/services/oidc/.env.example) with passkey routes, passkey RP configuration derived from Passport origin, exported backend APIs, and the environment contract for core WebAuthn delivery
+- added [services/oidc/src/passkeys.test.ts](/Users/botmaster/src/cubid/cubid-passport/services/oidc/src/passkeys.test.ts), updated [services/oidc/package.json](/Users/botmaster/src/cubid/cubid-passport/services/oidc/package.json), refreshed [pnpm-lock.yaml](/Users/botmaster/src/cubid/cubid-passport/pnpm-lock.yaml), and updated [docs/engineering/login-with-cubid-oidc-architecture.md](/Users/botmaster/src/cubid/cubid-passport/docs/engineering/login-with-cubid-oidc-architecture.md) so the backend slice ships with focused config tests, an explicit WebAuthn server dependency, and durable architecture notes about Passport-hosted RP identity
+
+#### Verification
+
+- `pnpm --filter @cubid/oidc test`
+- `pnpm --filter @cubid/oidc typecheck`
+- editor diagnostics for the touched OIDC files report no errors
+
+#### Follow-up
+
+- align the `B04.2` roadmap metadata to the implementation commit that lands this backend slice
+- implement `B04.3` next by wiring Passport login and recovery UX to the new OIDC passkey routes and removing the localStorage-backed hidden auth state assumptions

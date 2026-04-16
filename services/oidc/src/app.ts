@@ -15,6 +15,12 @@ import {
   rejectConsentChallenge,
 } from "./authorize";
 import { getOidcRuntimeConfig } from "./config";
+import {
+  completePasskeyAuthentication,
+  completePasskeyRegistration,
+  createPasskeyAuthenticationOptions,
+  createPasskeyRegistrationOptions,
+} from "./passkeys";
 import { createDynamicClientRegistration, getRegisteredClient } from "./registration";
 import { getOidcSupabase } from "./supabase";
 
@@ -214,6 +220,74 @@ export async function handleOidcRequest(request: Request): Promise<Response> {
     }
   }
 
+  if (
+    pathParts[0] === "interaction"
+    && pathParts[1] === "login"
+    && pathParts.length === 6
+    && pathParts[3] === "passkeys"
+    && pathParts[4] === "authentication"
+    && pathParts[5] === "options"
+    && method === "POST"
+  ) {
+    try {
+      const requestBody = (await request.json()) as Record<string, unknown>;
+      const result = await createPasskeyAuthenticationOptions(getOidcSupabase(), pathParts[2], requestBody, getRequestId(request));
+      return jsonResponse(200, result);
+    } catch (error) {
+      if (error instanceof AuthorizationRequestError) {
+        return jsonResponse(error.statusCode, {
+          error: error.error,
+          error_description: error.errorDescription,
+        });
+      }
+
+      return jsonResponse(500, {
+        error: "server_error",
+        error_description: error instanceof Error ? error.message : "Unable to create passkey authentication challenge.",
+      });
+    }
+  }
+
+  if (
+    pathParts[0] === "interaction"
+    && pathParts[1] === "login"
+    && pathParts.length === 6
+    && pathParts[3] === "passkeys"
+    && pathParts[4] === "authentication"
+    && pathParts[5] === "complete"
+    && method === "POST"
+  ) {
+    try {
+      const requestBody = (await request.json()) as Record<string, unknown>;
+      const result = await completePasskeyAuthentication(
+        getOidcSupabase(),
+        pathParts[2],
+        requestBody as unknown as Parameters<typeof completePasskeyAuthentication>[2],
+        getRequestId(request),
+      );
+
+      return jsonResponse(200, {
+        status: "ok",
+        next: result.next,
+        redirect_to: result.redirectTo,
+        session_id: result.sessionId,
+        webauthn_credential_id: result.webAuthnCredentialId,
+      });
+    } catch (error) {
+      if (error instanceof AuthorizationRequestError) {
+        return jsonResponse(error.statusCode, {
+          error: error.error,
+          error_description: error.errorDescription,
+        });
+      }
+
+      return jsonResponse(500, {
+        error: "server_error",
+        error_description: error instanceof Error ? error.message : "Unable to complete passkey authentication.",
+      });
+    }
+  }
+
   if (pathParts[0] === "interaction" && pathParts[1] === "consent" && method === "GET" && pathParts.length === 3) {
     try {
       const challenge = await getConsentChallenge(getOidcSupabase(), pathParts[2]);
@@ -277,6 +351,67 @@ export async function handleOidcRequest(request: Request): Promise<Response> {
       return jsonResponse(500, {
         error: "server_error",
         error_description: error instanceof Error ? error.message : "Unable to reject consent challenge.",
+      });
+    }
+  }
+
+  if (
+    pathParts[0] === "sessions"
+    && pathParts.length === 5
+    && pathParts[2] === "passkeys"
+    && pathParts[3] === "registration"
+    && pathParts[4] === "options"
+    && method === "POST"
+  ) {
+    try {
+      const result = await createPasskeyRegistrationOptions(getOidcSupabase(), pathParts[1], getRequestId(request));
+      return jsonResponse(200, result);
+    } catch (error) {
+      if (error instanceof AuthorizationRequestError) {
+        return jsonResponse(error.statusCode, {
+          error: error.error,
+          error_description: error.errorDescription,
+        });
+      }
+
+      return jsonResponse(500, {
+        error: "server_error",
+        error_description: error instanceof Error ? error.message : "Unable to create passkey registration challenge.",
+      });
+    }
+  }
+
+  if (
+    pathParts[0] === "sessions"
+    && pathParts.length === 5
+    && pathParts[2] === "passkeys"
+    && pathParts[3] === "registration"
+    && pathParts[4] === "complete"
+    && method === "POST"
+  ) {
+    try {
+      const requestBody = (await request.json()) as Record<string, unknown>;
+      const result = await completePasskeyRegistration(
+        getOidcSupabase(),
+        pathParts[1],
+        requestBody as unknown as Parameters<typeof completePasskeyRegistration>[2],
+        getRequestId(request),
+      );
+      return jsonResponse(200, {
+        status: "ok",
+        credential: result.credential,
+      });
+    } catch (error) {
+      if (error instanceof AuthorizationRequestError) {
+        return jsonResponse(error.statusCode, {
+          error: error.error,
+          error_description: error.errorDescription,
+        });
+      }
+
+      return jsonResponse(500, {
+        error: "server_error",
+        error_description: error instanceof Error ? error.message : "Unable to complete passkey registration.",
       });
     }
   }
