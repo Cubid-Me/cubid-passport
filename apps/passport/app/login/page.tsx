@@ -4,6 +4,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Metadata } from "next"
 import Image from "next/image"
+import { useSearchParams } from "next/navigation"
 import { OwnID } from "@ownid/react"
 import axios from "axios"
 import { Guest } from "components/auth/guest"
@@ -33,11 +34,14 @@ function debounce(func: any, delay: any) {
 }
 
 export default function AuthenticationPage() {
+  const searchParams = useSearchParams()
   const emailField = useRef(null)
   const [emailVal, setEmailVal] = useState("")
   const passwordField = useRef(null)
   const [isEnabled, setIsEnabled] = useState(true)
   const [loading, setLoading] = useState(false)
+  const [oidcChallenge, setOidcChallenge] = useState<any>(null)
+  const [oidcLoading, setOidcLoading] = useState(false)
 
   // New states for phone authentication
   const [phoneNumber, setPhoneNumber] = useState("")
@@ -46,6 +50,46 @@ export default function AuthenticationPage() {
   const [verificationId, setVerificationId] = useState(null)
   const recaptchaVerifier = useRef(null);
   const [isPhoneOpen, setIsPhoneOpen] = useState(false)
+  const loginChallengeId = searchParams.get("login_challenge")
+  const oidcOrigin = process.env.NEXT_PUBLIC_OIDC_ORIGIN ?? "http://localhost:4280"
+
+  const loadOidcChallenge = useCallback(async () => {
+    if (!loginChallengeId) {
+      setOidcChallenge(null)
+      return
+    }
+
+    setOidcLoading(true)
+    try {
+      const { data } = await axios.get(`${oidcOrigin}/interaction/login/${loginChallengeId}`)
+      setOidcChallenge(data)
+    } catch (error) {
+      console.error(error)
+      toast.error("Unable to load the login challenge")
+    } finally {
+      setOidcLoading(false)
+    }
+  }, [loginChallengeId, oidcOrigin])
+
+  useEffect(() => {
+    loadOidcChallenge()
+  }, [loadOidcChallenge])
+
+  const completeOidcLogin = useCallback(async (payload: Record<string, unknown>) => {
+    if (!loginChallengeId) {
+      return false
+    }
+
+    const { data } = await axios.post(`${oidcOrigin}/interaction/login/${loginChallengeId}/complete`, payload)
+    const redirectTo = data?.redirect_to
+
+    if (!redirectTo) {
+      throw new Error("OIDC login completion did not return a redirect target")
+    }
+
+    window.location.href = redirectTo
+    return true
+  }, [loginChallengeId, oidcOrigin])
 
   const submit = async (values: any) => {
     try {
@@ -75,6 +119,14 @@ export default function AuthenticationPage() {
           is_auth: true
         })
       }
+
+      if (await completeOidcLogin({
+        verified_email: localStorage.getItem("email") ?? emailField.current.value,
+        authentication_methods: ["email_ownid"],
+      })) {
+        return
+      }
+
       toast.success("Successfully logged into cubid")
     } catch (err) {
       console.error(err)
@@ -143,6 +195,14 @@ export default function AuthenticationPage() {
       const credential = firebase.auth.PhoneAuthProvider.credential(verificationId, otp)
       try {
         await firebase.auth().signInWithCredential(credential)
+
+        if (await completeOidcLogin({
+          verified_phone: phoneNumber,
+          authentication_methods: ["phone_otp", "firebase_phone"],
+        })) {
+          return
+        }
+
         toast.success("Successfully logged into cubid")
       } catch (err) {
         console.error(err)
@@ -187,11 +247,20 @@ export default function AuthenticationPage() {
           <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
             <div className="flex flex-col space-y-2 text-center">
               <h1 className="text-2xl font-semibold tracking-tight">
-                Authenticate
+                {oidcChallenge?.client?.client_name
+                  ? `Continue to ${oidcChallenge.client.client_name}`
+                  : "Authenticate"}
               </h1>
               <p className="text-sm text-muted-foreground">
-                Enter your email below to authenticate
+                {oidcChallenge?.requested_scopes?.length
+                  ? `Verify your email or phone to continue the OIDC sign-in request for scopes: ${oidcChallenge.requested_scopes.join(", ")}`
+                  : "Enter your email below to authenticate"}
               </p>
+              {oidcLoading && (
+                <p className="text-xs text-muted-foreground">
+                  Loading sign-in challenge...
+                </p>
+              )}
             </div>
             {!isPhoneOpen && (
               <>

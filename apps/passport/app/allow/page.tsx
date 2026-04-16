@@ -22,21 +22,30 @@ import { Score } from "./steps/score"
 
 const AllowPage = () => {
   const searchParams: any = useSearchParams()
+  const consentChallengeId = searchParams.get("consent_challenge")
+  const isOidcConsentFlow = Boolean(consentChallengeId)
   const [loading, setLoading] = useState(true)
   const [isValid, setIsValid] = useState(false)
   const [userUidData, setUserUidData] = useState<any>({})
   const [stampToAdd, setStampToAdd] = useState("")
   const [stampsList, setStampsList] = useState([])
+  const [oidcConsentChallenge, setOidcConsentChallenge] = useState<any>(null)
+  const [oidcSubmitting, setOidcSubmitting] = useState(false)
 
   const uuid = searchParams.get("uid")
   const page_id = searchParams.get("page_id")
   const colormode = searchParams.get("colormode")
+  const oidcOrigin = process.env.NEXT_PUBLIC_OIDC_ORIGIN ?? "http://localhost:4280"
 
   const { allDappStampPerms, loading: selectStampLoading, insertStampDappPerm,stampInsertLoading } = useSelectStampPerm(uuid)
 
   const { setTheme } = useTheme()
 
   useEffect(() => {
+    if (isOidcConsentFlow) {
+      return
+    }
+
     if (uuid) {
       localStorage.setItem("allow-uuid", uuid)
     }
@@ -46,7 +55,7 @@ const AllowPage = () => {
     if (page_id) {
       localStorage.setItem("page_id", page_id)
     }
-  }, [uuid, setTheme, colormode, page_id])
+  }, [isOidcConsentFlow, uuid, setTheme, colormode, page_id])
 
   const fetchAllStamps = useCallback(async (userId: any) => {
     const {
@@ -61,6 +70,10 @@ const AllowPage = () => {
   }, [])
 
   const fetchUserUidData = useCallback(async () => {
+    if (isOidcConsentFlow) {
+      return
+    }
+
     const { data } = await axios.post("/api/allow/fetch_allow_uid", {
       uid: uuid,
       page_id,
@@ -69,21 +82,49 @@ const AllowPage = () => {
     await fetchAllStamps(data?.dapp_users?.[0]?.users?.id)
     setIsValid(true)
     setLoading(false)
-  }, [uuid, page_id, fetchAllStamps])
+  }, [isOidcConsentFlow, uuid, page_id, fetchAllStamps])
+
+  const fetchOidcConsentChallenge = useCallback(async () => {
+    if (!consentChallengeId) {
+      return
+    }
+
+    setLoading(true)
+    try {
+      const { data } = await axios.get(`${oidcOrigin}/interaction/consent/${consentChallengeId}`)
+      setOidcConsentChallenge(data)
+      setIsValid(true)
+    } finally {
+      setLoading(false)
+    }
+  }, [consentChallengeId, oidcOrigin])
 
   useEffect(() => {
+    if (isOidcConsentFlow) {
+      fetchOidcConsentChallenge()
+      return
+    }
+
     fetchUserUidData()
-  }, [fetchUserUidData])
+  }, [fetchOidcConsentChallenge, fetchUserUidData, isOidcConsentFlow])
 
   const fetchStamps = useCallback(async () => { }, [])
 
   const { push } = useRouter()
 
   useEffect(() => {
+    if (isOidcConsentFlow) {
+      return
+    }
+
     fetchStamps()
-  }, [fetchStamps])
+  }, [fetchStamps, isOidcConsentFlow])
 
   useEffect(() => {
+    if (isOidcConsentFlow) {
+      return
+    }
+
     setTimeout(() => {
       if (localStorage.getItem("allow_url")) {
         if (
@@ -95,7 +136,28 @@ const AllowPage = () => {
         }
       }
     }, 2000)
-  }, [push])
+  }, [isOidcConsentFlow, push])
+
+  const finalizeOidcConsent = useCallback(async (action: "approve" | "reject") => {
+    if (!consentChallengeId) {
+      return
+    }
+
+    setOidcSubmitting(true)
+    try {
+      const { data } = await axios.post(`${oidcOrigin}/interaction/consent/${consentChallengeId}/${action}`)
+      const redirectTo = data?.redirect_to
+
+      if (!redirectTo) {
+        throw new Error("OIDC consent completion did not return a redirect target")
+      }
+
+      window.location.href = redirectTo
+    } catch (error) {
+      console.error(error)
+      setOidcSubmitting(false)
+    }
+  }, [consentChallengeId, oidcOrigin])
 
   function capitalizeFirstLetter(string: string) {
     return string.charAt(0).toUpperCase() + string.slice(1)
@@ -149,6 +211,84 @@ const AllowPage = () => {
       <div className="p-5 flex h-[100vh] w-[100vw] dark:bg-gray-900 items-center justify-center dark:text-white">
         <p>Invalid UID provided in URL</p>
       </div>)
+  }
+
+  if (isOidcConsentFlow) {
+    if (loading) {
+      return (
+        <div className="flex h-[100vh] w-[100vw] items-center justify-center dark:bg-gray-900 dark:text-white">
+          <p>Loading consent request...</p>
+        </div>
+      )
+    }
+
+    if (!oidcConsentChallenge) {
+      return (
+        <div className="flex h-[100vh] w-[100vw] items-center justify-center dark:bg-gray-900 dark:text-white">
+          <p>Invalid or expired consent challenge.</p>
+        </div>
+      )
+    }
+
+    return (
+      <div className="min-h-[100vh] bg-background px-4 py-16 text-foreground">
+        <div className="mx-auto max-w-2xl rounded-xl border bg-card p-8 shadow-sm">
+          <p className="text-sm uppercase tracking-[0.2em] text-muted-foreground">
+            Login with Cubid
+          </p>
+          <h1 className="mt-3 text-3xl font-semibold">
+            Share Cubid data with {oidcConsentChallenge?.client?.client_name}
+          </h1>
+          <p className="mt-3 text-sm text-muted-foreground">
+            Review the requested access before finishing sign-in.
+          </p>
+
+          <div className="mt-8 grid gap-6 md:grid-cols-2">
+            <div className="rounded-lg border p-4">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                Requested scopes
+              </h2>
+              <ul className="mt-3 space-y-2 text-sm">
+                {(oidcConsentChallenge?.requested_scopes ?? []).map((scope: string) => (
+                  <li key={scope} className="rounded bg-muted px-3 py-2">
+                    {scope}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="rounded-lg border p-4">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                Requested claims
+              </h2>
+              <ul className="mt-3 space-y-2 text-sm">
+                {(oidcConsentChallenge?.requestedClaims ?? []).map((claim: string) => (
+                  <li key={claim} className="rounded bg-muted px-3 py-2">
+                    {claim}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          <div className="mt-8 flex flex-wrap gap-3">
+            <button
+              className="rounded-lg border border-red-200 px-4 py-2 text-sm text-red-700 disabled:opacity-60"
+              disabled={oidcSubmitting}
+              onClick={() => finalizeOidcConsent("reject")}
+            >
+              Deny
+            </button>
+            <button
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white disabled:opacity-60"
+              disabled={oidcSubmitting}
+              onClick={() => finalizeOidcConsent("approve")}
+            >
+              Approve and continue
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (

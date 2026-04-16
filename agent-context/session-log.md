@@ -471,3 +471,31 @@ Extend B02 past the service skeleton by validating `/authorize` requests, persis
 
 - wire Passport login and allow UI to these new interaction endpoints so OTP verification can complete login challenges and consent grants in-browser
 - implement `/token` so the issued authorization codes can be exchanged for signed ID and access tokens
+
+### session: v16
+
+- timestamp: 2026-04-16T00:38:44-0400
+- agent: **GitHub Copilot (GPT-5.4)**
+- branch: **codex/b02-oidc-foundation**
+- head: **`c751aac`**
+- session name: **Bridge Passport login and consent to OIDC challenges**
+
+#### Objective
+
+Connect the existing Passport login and allow pages to the new OIDC interaction endpoints so OIDC browser flows can reuse verified email and phone login instead of waiting for a full UI rewrite.
+
+#### Actions Taken
+
+- updated [apps/passport/app/login/page.tsx](/Users/botmaster/src/cubid/cubid-passport/apps/passport/app/login/page.tsx) to detect `login_challenge`, load the challenge from the OIDC service, adjust the page copy for relying-party login, and complete the login challenge after successful OwnID email login or Firebase phone OTP verification before redirecting back into the OIDC flow
+- updated [apps/passport/app/allow/page.tsx](/Users/botmaster/src/cubid/cubid-passport/apps/passport/app/allow/page.tsx) to detect `consent_challenge`, bypass the legacy dapp allow flow when present, fetch the requested scopes and claims from the OIDC service, and expose approve or deny actions that redirect back through the issuer challenge lifecycle
+- updated [apps/passport/.env.example](/Users/botmaster/src/cubid/cubid-passport/apps/passport/.env.example) with `NEXT_PUBLIC_OIDC_ORIGIN` so Passport can call the OIDC service explicitly in local and deployed environments
+
+#### Verification
+
+- editor diagnostics for the touched Passport files report no errors
+- `pnpm --filter @cubid/passport typecheck` still fails, but only in pre-existing unrelated files [apps/passport/components/stamps/index.tsx](/Users/botmaster/src/cubid/cubid-passport/apps/passport/components/stamps/index.tsx) and [apps/passport/config/web3Config.ts](/Users/botmaster/src/cubid/cubid-passport/apps/passport/config/web3Config.ts); no new type errors were reported in the OIDC bridge files
+
+#### Follow-up
+
+- implement `/token` and signing-key-backed JWT issuance so the browser authorization flow can complete the final OAuth exchange
+- add a dedicated Passport OIDC consent UI later if the new challenge branch needs richer disclosure text than the current minimal bridge screen
