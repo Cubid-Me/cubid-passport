@@ -825,3 +825,28 @@ Address the remaining Passport typecheck failure by constructing the wagmi conne
 #### Follow-up
 
 - address the root Vercel preview build mismatch as the third separate follow-up commit
+
+### session: v29
+
+- timestamp: 2026-04-16T10:24:00-0400
+- agent: **GitHub Copilot (GPT-5.4)**
+- branch: **codex/b04-passkeys-core-followups**
+- head: **`e5ddd9c`**
+- session name: **Restore root Vercel monorepo deployment config**
+
+#### Objective
+
+Address the preview deployment failures caused by Vercel building from the monorepo root after Passport moved into `apps/passport`.
+
+#### Actions Taken
+
+- added [vercel.json](/Users/botmaster/src/cubid/cubid-passport/vercel.json) at the repo root so root-based Vercel projects install with `pnpm`, build the Passport app from `apps/passport`, and retain the existing Passport API cron and header settings that were previously only defined in the app-local Vercel config
+
+#### Verification
+
+- `pnpm --dir apps/passport build`
+- confirmed [vercel.json](/Users/botmaster/src/cubid/cubid-passport/vercel.json) has no editor diagnostics
+
+#### Follow-up
+
+- push the follow-up branch and re-check remote PR status, noting that the separate `cubid-passport` blocked-account deployment remains an external Vercel account issue
