@@ -775,3 +775,28 @@ Sync the roadmap metadata to the implementation commit that landed the OIDC pass
 #### Follow-up
 
 - implement `B04.3` next by wiring Passport login and recovery UX to the new OIDC passkey routes and reducing the localStorage-backed auth state assumptions in Passport
+
+### session: v27
+
+- timestamp: 2026-04-16T10:10:00-0400
+- agent: **GitHub Copilot (GPT-5.4)**
+- branch: **codex/b04-passkeys-core-followups**
+- head: **`3796ffb`**
+- session name: **Fix nullable NEAR wallet access in Passport**
+
+#### Objective
+
+Address the Passport typecheck and build failure caused by calling NEAR wallet methods through a nullable singleton reference inside the stamps UI.
+
+#### Actions Taken
+
+- updated [apps/passport/components/stamps/index.tsx](/Users/botmaster/src/cubid/cubid-passport/apps/passport/components/stamps/index.tsx) to narrow the imported NEAR wallet once, read `accountId` through a guarded local value, and only call `viewMethod`, `signOut`, or `signIn` after a real runtime check
+
+#### Verification
+
+- `pnpm --dir apps/passport typecheck` now clears the wallet-related errors and only fails on the separate `config/web3Config.ts` connector typing issue
+- `pnpm --dir apps/passport build` previously failed at the same wallet call site and no longer reports that component error before reaching the remaining connector typing failure
+
+#### Follow-up
+
+- fix the wagmi connector typing error in [apps/passport/config/web3Config.ts](/Users/botmaster/src/cubid/cubid-passport/apps/passport/config/web3Config.ts) as the second follow-up commit

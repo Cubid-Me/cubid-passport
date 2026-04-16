@@ -424,12 +424,15 @@ export const Stamps = () => {
   }, [fetchBrightIdData])
 
   const fetchNearWallet = useCallback(async () => {
-    if (email && (wallet as any)?.accountId) {
-      const dataCategory = await wallet.viewMethod({
+    const nearWallet = wallet
+    const nearAccountId = (nearWallet as { accountId?: string } | null)?.accountId
+
+    if (email && nearWallet && nearAccountId) {
+      const dataCategory = await nearWallet.viewMethod({
         contractId: "registry.i-am-human.near",
         method: "sbt_tokens_by_owner",
         args: {
-          account: `${(wallet as any).accountId}`,
+          account: nearAccountId,
           issuer: "fractal.i-am-human.near",
         },
       })
@@ -440,8 +443,8 @@ export const Stamps = () => {
           stamp_type: 'iah',
           user_data: { user_id: dbUser?.id, uuid: "" },
           stampData: {
-            identity: (wallet as any).accountId,
-            uniquevalue: (wallet as any).accountId,
+            identity: nearAccountId,
+            uniquevalue: nearAccountId,
           },
           app_id: await getIdForApp()
         })
@@ -450,8 +453,8 @@ export const Stamps = () => {
           stamp_type: 'near-wallet',
           user_data: { user_id: dbUser?.id, uuid: "" },
           stampData: {
-            identity: (wallet as any).accountId,
-            uniquevalue: (wallet as any).accountId,
+            identity: nearAccountId,
+            uniquevalue: nearAccountId,
           },
           app_id: await getIdForApp()
         })
@@ -460,7 +463,7 @@ export const Stamps = () => {
 
         fetchUserData()
         fetchStampData()
-        wallet.signOut()
+        nearWallet.signOut()
       }
     }
   }, [email, fetchStampData, fetchUserData, getUser, getIdForApp])
@@ -1013,7 +1016,7 @@ export const Stamps = () => {
                   <Button>Verified Stamp</Button>
                   <Button
                     onClick={() => {
-                      wallet.signIn()
+                      wallet?.signIn()
                     }}
                     variant="secondary"
                     className="bg-blue-500 text-white"
@@ -1068,7 +1071,7 @@ export const Stamps = () => {
             ) : (
               <Button
                 onClick={() => {
-                  wallet.signIn()
+                  wallet?.signIn()
                 }}
                 variant="secondary"
                 className="bg-blue-500 text-white"
