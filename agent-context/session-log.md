@@ -800,3 +800,28 @@ Address the Passport typecheck and build failure caused by calling NEAR wallet m
 #### Follow-up
 
 - fix the wagmi connector typing error in [apps/passport/config/web3Config.ts](/Users/botmaster/src/cubid/cubid-passport/apps/passport/config/web3Config.ts) as the second follow-up commit
+
+### session: v28
+
+- timestamp: 2026-04-16T10:16:00-0400
+- agent: **GitHub Copilot (GPT-5.4)**
+- branch: **codex/b04-passkeys-core-followups**
+- head: **`19b1d1c`**
+- session name: **Fix Passport wagmi connector typing**
+
+#### Objective
+
+Address the remaining Passport typecheck failure by constructing the wagmi connector list without mutating a narrowly inferred connector tuple.
+
+#### Actions Taken
+
+- updated [apps/passport/config/web3Config.ts](/Users/botmaster/src/cubid/cubid-passport/apps/passport/config/web3Config.ts) to build the connector list in one typed expression, conditionally including `walletConnect` only when the browser and WalletConnect project id are both available
+
+#### Verification
+
+- `pnpm --dir apps/passport typecheck`
+- `CI=1 pnpm typecheck`
+
+#### Follow-up
+
+- address the root Vercel preview build mismatch as the third separate follow-up commit
