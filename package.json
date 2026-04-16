@@ -10,9 +10,11 @@
   "scripts": {
     "dev": "turbo run dev --filter=@cubid/passport",
     "dev:admin": "turbo run dev --filter=@cubid/admin",
+    "dev:oidc": "pnpm --filter @cubid/oidc dev",
     "build": "turbo run build",
     "start": "pnpm --filter @cubid/passport start",
     "start:admin": "pnpm --filter @cubid/admin start",
+    "start:oidc": "pnpm --filter @cubid/oidc start",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",

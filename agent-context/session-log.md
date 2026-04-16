@@ -404,3 +404,39 @@ Sync the completed `C01` roadmap metadata to the actual implementation commit so
 #### Follow-up
 
 - start `C02` next by replacing the generic Supabase CRUD endpoints with typed domain services
+
+### session: v14
+
+- timestamp: 2026-04-15T20:27:09-0400
+- agent: **GitHub Copilot (GPT-5.4)**
+- branch: **codex/b02-oidc-foundation**
+- head: **`e89af74`**
+- session name: **Lay down the first OIDC issuer foundation slice**
+
+#### Objective
+
+Implement the first coherent B02 slice by creating the new OIDC service workspace, extracting the initial shared auth, identity, and claims contracts, and adding the backing Supabase schema needed for client registration and future authorization state.
+
+#### Actions Taken
+
+- added [packages/auth](/Users/botmaster/src/cubid/cubid-passport/packages/auth/package.json), [packages/identity](/Users/botmaster/src/cubid/cubid-passport/packages/identity/package.json), and [packages/claims](/Users/botmaster/src/cubid/cubid-passport/packages/claims/package.json) as the first shared platform packages for PKCE and OIDC request contracts, pairwise-subject plus consent derivation, and Cubid scope plus claim metadata, each with focused unit tests
+- added the new [services/oidc](/Users/botmaster/src/cubid/cubid-passport/services/oidc/package.json) workspace with typed runtime config, Supabase service-role access, discovery and JWKS endpoints, dynamic client registration plus registration lookup, and explicit `501` placeholders for the remaining protocol endpoints so later B02 slices can fill them in against a stable service boundary
+- added [supabase/migrations/20260416001000_oidc_foundation.sql](/Users/botmaster/src/cubid/cubid-passport/supabase/migrations/20260416001000_oidc_foundation.sql) to persist OIDC clients, signing keys, human subjects, sessions, authorization codes, refresh tokens, device codes, consents, and audit logs locally in Supabase
+- updated [package.json](/Users/botmaster/src/cubid/cubid-passport/package.json) to expose root `dev:oidc` and `start:oidc` workflows, and refreshed [pnpm-lock.yaml](/Users/botmaster/src/cubid/cubid-passport/pnpm-lock.yaml) for the new workspaces
+- fixed the initial compile issues in the new workspaces by making the claims metadata readonly-safe and moving the new package plus service tsconfigs to `moduleResolution: "bundler"`
+
+#### Verification
+
+- `pnpm --filter @cubid/auth test`
+- `pnpm --filter @cubid/identity test`
+- `pnpm --filter @cubid/claims test`
+- `pnpm --filter @cubid/auth typecheck`
+- `pnpm --filter @cubid/identity typecheck`
+- `pnpm --filter @cubid/claims typecheck`
+- `pnpm --filter @cubid/oidc build`
+- editor diagnostics for the new B02 files return no remaining errors
+
+#### Follow-up
+
+- implement the real `/authorize` and Passport handoff flow next, including OTP bootstrap for first-time Cubid users who verify email or phone inside the OIDC login journey
+- add token issuance, consent persistence, and JWKS-backed signing once the login challenge contract is wired through Passport

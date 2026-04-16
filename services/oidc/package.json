@@ -1,0 +1,33 @@
+{
+  "name": "@cubid/oidc",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "dev": "pnpm exec tsx watch src/server.ts",
+    "build": "pnpm exec tsc -p tsconfig.json",
+    "start": "pnpm exec tsx src/server.ts",
+    "lint": "pnpm exec tsc --noEmit -p tsconfig.json",
+    "typecheck": "pnpm exec tsc --noEmit -p tsconfig.json",
+    "test": "echo \"No tests defined for @cubid/oidc\"",
+    "format": "echo \"No format changes required for @cubid/oidc\"",
+    "format:write": "echo \"No format changes required for @cubid/oidc\""
+  },
+  "dependencies": {
+    "@cubid/auth": "workspace:*",
+    "@cubid/claims": "workspace:*",
+    "@cubid/config": "workspace:*",
+    "@cubid/identity": "workspace:*",
+    "@supabase/supabase-js": "^2.38.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.10",
+    "tsx": "^4.19.4",
+    "typescript": "5.2.2"
+  }
+}
