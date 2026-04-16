@@ -108,8 +108,8 @@ Create a dedicated OIDC service workspace, likely `services/oidc`, rather than e
 - Timestamp started: 2026-04-16T00:54:08-0400
 - Timestamp completed: TBD
 - Feature branch: codex/b03-claims-registry
-- Head: b66a8ba
-- Session-log reference(s): session: v17, session: v18, session: v19, session: v20
+- Head: 824dc5d
+- Session-log reference(s): session: v17, session: v18, session: v19, session: v20, session: v21
 
 Extend `cubid-admin` so it becomes the control plane for Cubid-specific claims and relying-party policy. Implement a claim registry where Admin users can define which claims exist, how they are computed, which are globally available versus partner-specific, and which require explicit consent. Add management for identity-depth rules, such as thresholds or derived assertions based on stamps, scores, or review workflows. The admin UI should let operators connect claims to client apps, scopes, token templates, and webhook behavior without hardcoding policy inside Passport or the OIDC service. Treat claim evaluation as a shared server capability, not just an admin screen feature, so the OIDC service can resolve claims from a typed backend contract. This todo should end with a usable policy console that governs Cubid identity semantics centrally.
 
@@ -137,12 +137,12 @@ Add authenticated Admin routes and server-side repositories for claim definition
 
 ### B03.3 Add Admin UI for registry, policies, and bindings
 
-- Status: Not started
-- Timestamp started: TBD
+- Status: Started
+- Timestamp started: 2026-04-16T08:40:18-04:00
 - Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Feature branch: codex/b03-claims-registry
+- Head: 824dc5d
+- Session-log reference(s): session: v21
 
 Extend the existing Admin tab shell with a claims and policies area that lets operators create or edit claims, create or edit threshold-based identity-depth policies, and bind those records to existing OIDC clients. This slice should make the control plane usable without yet changing OIDC token issuance behavior.
 

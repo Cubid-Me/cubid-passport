@@ -1,3 +1,13 @@
+import type {
+  ClaimAvailabilityMode,
+  ClaimComputationMethod,
+  ClaimRegistryRecord,
+  CubidClaimClassification,
+  IdentityDepthPolicyStatus,
+  IdentityDepthThresholdPolicy,
+  OidcScope,
+} from '@cubid/claims';
+
 export interface SchemaRecord {
   description: string;
   id: number;
@@ -48,6 +58,48 @@ export interface RequestedInfoItem {
   required: boolean;
   score: boolean;
   selectedOption: InfoSharingValue;
+}
+
+export interface OidcAdminClientSummary {
+  allowedScopes: OidcScope[];
+  clientId: string;
+  clientName: string;
+  clientType: string;
+  createdAt: string;
+  defaultScopes: OidcScope[];
+  status: string;
+  updatedAt: string;
+  verificationStatus: string;
+}
+
+export interface OidcClientClaimPolicyBindingRecord {
+  archivedAt: string | null;
+  bindingId: string;
+  claimName: string;
+  clientId: string;
+  createdAt: string;
+  enabled: boolean;
+  metadata: Record<string, unknown>;
+  policyId: string | null;
+  updatedAt: string;
+}
+
+export interface OidcAdminRegistryMetadata {
+  allScopes: OidcScope[];
+  availabilityModes: ClaimAvailabilityMode[];
+  claimClassifications: CubidClaimClassification[];
+  claimComputationMethods: ClaimComputationMethod[];
+  claimSources: Array<'seed' | 'admin'>;
+  claimStatuses: Array<'active' | 'archived'>;
+  identityPolicyStatuses: IdentityDepthPolicyStatus[];
+  supportedMinimumScoreBands: string[];
+}
+
+export interface OidcAdminMetadataPayload {
+  claims: ClaimRegistryRecord[];
+  clients: OidcAdminClientSummary[];
+  metadata: OidcAdminRegistryMetadata;
+  policies: IdentityDepthThresholdPolicy[];
 }
 
 export type RequestedInfoMap = Record<string, RequestedInfoItem>;

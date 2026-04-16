@@ -610,3 +610,30 @@ Sync the B03 and B03.2 roadmap metadata to the implementation commit that landed
 #### Follow-up
 
 - implement `B03.3` next by adding the Admin UI on top of the new OIDC registry API surface
+
+### session: v21
+
+- timestamp: 2026-04-16T08:40:18-04:00
+- agent: **GitHub Copilot (GPT-5.4)**
+- branch: **codex/b03-claims-registry**
+- head: **`824dc5d`**
+- session name: **Add the Admin claim-registry UI**
+
+#### Objective
+
+Implement the B03.3 UI slice by extending the Admin tab shell with a usable claim and policy console that consumes the B03.2 APIs for registry claims, threshold policies, and client bindings.
+
+#### Actions Taken
+
+- updated [apps/admin/app/admin/page.tsx](/Users/botmaster/src/cubid/cubid-passport/apps/admin/app/admin/page.tsx) to add a dedicated `Claims & Policies` tab inside the existing Admin shell instead of introducing a separate route surface
+- extended [apps/admin/app/admin/shared.ts](/Users/botmaster/src/cubid/cubid-passport/apps/admin/app/admin/shared.ts) with client-side OIDC registry payload types so the new screen can consume the B03.2 metadata and binding responses without duplicating ad hoc shapes
+- added [apps/admin/app/admin/oidcRegistry.tsx](/Users/botmaster/src/cubid/cubid-passport/apps/admin/app/admin/oidcRegistry.tsx) to render the registry dashboard, active-claim and policy summaries, editable claim forms, editable threshold-policy forms, editable client-binding forms, and the list tables backed by the new OIDC Admin endpoints
+
+#### Verification
+
+- `pnpm --filter @cubid/admin typecheck`
+- editor diagnostics for the new Admin OIDC registry screen and its updated shared types report no errors
+
+#### Follow-up
+
+- decide whether the next highest-leverage step is returning to `B02` token and userinfo work or starting `B04` passkeys now that the Admin control plane exists
