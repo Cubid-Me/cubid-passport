@@ -926,3 +926,28 @@ Address the PR review findings that Passport could launch or configure a broken 
 #### Follow-up
 
 - address the Firebase initialization review comment next
+
+### session: v33
+
+- timestamp: 2026-04-16T10:56:00-0400
+- agent: **GitHub Copilot (GPT-5.4)**
+- branch: **codex/b04-passkeys-core-followups**
+- head: **`8526e1b`**
+- session name: **Fail fast on missing Firebase env**
+
+#### Objective
+
+Address the PR review finding that Passport initialized Firebase even when required public Firebase env vars were missing, which would otherwise fail later with confusing auth/runtime errors.
+
+#### Actions Taken
+
+- updated [apps/passport/lib/firebase.ts](/Users/botmaster/src/cubid/cubid-passport/apps/passport/lib/firebase.ts) to validate the required Firebase env vars before calling `initializeApp`, and to raise a clear configuration error listing any missing keys
+
+#### Verification
+
+- `pnpm --dir apps/passport typecheck`
+- `pnpm --dir apps/passport build`
+
+#### Follow-up
+
+- address the WagmiConfig and WalletConnect readiness review comment on the allow page next
