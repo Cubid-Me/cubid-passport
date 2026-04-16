@@ -875,3 +875,28 @@ Address the PR review finding that concurrent passkey completions could reuse th
 #### Follow-up
 
 - address the nullable registration `user_handle` review comment in the passkey registration path next
+
+### session: v31
+
+- timestamp: 2026-04-16T10:42:00-0400
+- agent: **GitHub Copilot (GPT-5.4)**
+- branch: **codex/b04-passkeys-core-followups**
+- head: **`15c3fcb`**
+- session name: **Guard passkey registration user handles**
+
+#### Objective
+
+Address the PR review finding that a malformed or legacy registration challenge with a null `user_handle` could crash the credential insert path.
+
+#### Actions Taken
+
+- updated [services/oidc/src/passkeys.ts](/Users/botmaster/src/cubid/cubid-passport/services/oidc/src/passkeys.ts) to require a non-empty challenge `user_handle` before parsing or persisting a registration result, and to raise a typed `invalid_request` error when the registration challenge is structurally incomplete
+
+#### Verification
+
+- `pnpm --filter @cubid/oidc typecheck`
+- `CI=1 pnpm typecheck`
+
+#### Follow-up
+
+- address the remaining Passport-side review comments around Worldcoin env guarding, Firebase initialization safety, and WagmiConfig readiness

@@ -373,6 +373,20 @@ function ensureChallengeIsActive(
   return challenge;
 }
 
+function requireChallengeUserHandle(challenge: PersistedWebAuthnChallengeRow): string {
+  const userHandle = normalizeOptionalString(challenge.user_handle);
+
+  if (!userHandle) {
+    throw new AuthorizationRequestError(
+      "invalid_request",
+      "The requested passkey challenge is missing the expected Cubid user handle.",
+      { statusCode: 409 },
+    );
+  }
+
+  return userHandle;
+}
+
 function toAuthenticationResponseJSON(input: CompleteCubidWebAuthnAuthenticationInput): AuthenticationResponseJSON {
   const response = input.credential.response as Record<string, unknown>;
   const clientDataJSON = normalizeOptionalString(response.clientDataJSON);
@@ -803,10 +817,8 @@ export async function completePasskeyRegistration(
     throw new AuthorizationRequestError("invalid_request", "This passkey is already registered with Cubid.", { statusCode: 409 });
   }
 
-  const subjectFromHandle = parseCubidWebAuthnUserHandle(challenge.user_handle ?? createCubidWebAuthnUserHandle({
-    humanSubjectKey: session.human_subject_key,
-    cubidUserId: session.cubid_user_id,
-  }));
+  const challengeUserHandle = requireChallengeUserHandle(challenge);
+  const subjectFromHandle = parseCubidWebAuthnUserHandle(challengeUserHandle);
   if (
     subjectFromHandle.humanSubjectKey !== session.human_subject_key
     || subjectFromHandle.cubidUserId !== session.cubid_user_id
@@ -816,7 +828,7 @@ export async function completePasskeyRegistration(
 
   const persistedCredential = {
     credential_id: verification.registrationInfo.credential.id,
-    user_handle: challenge.user_handle,
+    user_handle: challengeUserHandle,
     human_subject_key: session.human_subject_key,
     cubid_user_id: session.cubid_user_id,
     credential_label: normalizeOptionalString(input.credentialLabel),
