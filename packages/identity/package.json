@@ -16,7 +16,7 @@
     "build": "pnpm exec tsc -p tsconfig.json",
     "lint": "pnpm exec tsc --noEmit -p tsconfig.json",
     "typecheck": "pnpm exec tsc --noEmit -p tsconfig.json",
-    "test": "pnpm exec tsx --test src/**/*.test.ts",
+    "test": "pnpm exec tsx --test src/*.test.ts",
     "format": "echo \"No format changes required for @cubid/identity\"",
     "format:write": "echo \"No format changes required for @cubid/identity\""
   },

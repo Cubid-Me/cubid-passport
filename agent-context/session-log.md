@@ -1077,3 +1077,30 @@ Assess the current Section B implementation state and update the roadmap so the 
 #### Follow-up
 
 - implement `B02.3` next before treating Login with Cubid as usable by TCOIN or any other relying party
+
+### session: v39
+
+- timestamp: 2026-04-17T20:35:00-0400
+- agent: **GitHub Copilot (GPT-5.4)**
+- branch: **codex/b04-passkeys-core-followups**
+- head: **`eba125d`**
+- session name: **Fix shared package test discovery globs**
+
+#### Objective
+
+Address the PR 145 CI failure where shared package tests passed locally in zsh but failed under the workspace test runner because `src/**/*.test.ts` did not match top-level test files reliably.
+
+#### Actions Taken
+
+- updated [packages/auth/package.json](/Users/botmaster/src/cubid/cubid-passport/packages/auth/package.json), [packages/claims/package.json](/Users/botmaster/src/cubid/cubid-passport/packages/claims/package.json), and [packages/identity/package.json](/Users/botmaster/src/cubid/cubid-passport/packages/identity/package.json) to replace the shell-sensitive `src/**/*.test.ts` pattern with `src/*.test.ts` so the shared package test scripts discover the existing top-level test files consistently in CI
+
+#### Verification
+
+- `npx -y -p node@20 -p pnpm@10 pnpm --dir /Users/botmaster/src/cubid/cubid-passport --filter @cubid/auth test`
+- `npx -y -p node@20 -p pnpm@10 pnpm --dir /Users/botmaster/src/cubid/cubid-passport --filter @cubid/claims test`
+- `npx -y -p node@20 -p pnpm@10 pnpm --dir /Users/botmaster/src/cubid/cubid-passport --filter @cubid/identity test`
+- `npx -y -p node@20 -p pnpm@10 pnpm --dir /Users/botmaster/src/cubid/cubid-passport exec turbo run test --ui=stream`
+
+#### Follow-up
+
+- re-run PR 145 CI and confirm the `validate` check goes green now that the shared package test scripts no longer depend on the failing glob form
