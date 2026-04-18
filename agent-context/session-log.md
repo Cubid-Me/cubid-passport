@@ -1050,3 +1050,30 @@ Address the PR review finding that the monorepo operating-model document linked 
 #### Follow-up
 
 - push the follow-up branch, open the follow-up PR, then reply to and resolve all fully addressed review threads on PR 144
+
+### session: v38
+
+- timestamp: 2026-04-17T20:13:05-0400
+- agent: **OpenAI-Codex**
+- branch: **codex/b04-passkeys-core-followups**
+- head: **`c66e3a7`**
+- session name: **Assess Section B and harden OIDC relying-party todos**
+
+#### Objective
+
+Assess the current Section B implementation state and update the roadmap so the unfinished TCOIN relying-party loop is explicit before more Login with Cubid work proceeds.
+
+#### Actions Taken
+
+- reviewed [agent-context/todo.md](/Users/botmaster/src/cubid/cubid-passport/agent-context/todo.md), Section B session-log entries, and [services/oidc/src/app.ts](/Users/botmaster/src/cubid/cubid-passport/services/oidc/src/app.ts) to confirm the current issuer state
+- documented that `B01` and `B03` are complete, `B04` has backend passkey foundations, and `B02` remains the main production blocker because `/token` and `/userinfo` still return explicit `501` placeholders
+- split the broad `B02` roadmap into completed foundation slices plus new not-started blockers for the TCOIN Authorization Code + PKCE token loop, issuer deployment/client configuration, and production controls such as revocation, logout, rate limits, and observability
+
+#### Verification
+
+- documentation-only pass; no runtime validation was required
+- confirmed the specific current gap in `services/oidc/src/app.ts` where `/token` and `/userinfo` remain unimplemented
+
+#### Follow-up
+
+- implement `B02.3` next before treating Login with Cubid as usable by TCOIN or any other relying party
