@@ -13,15 +13,6 @@
     "tailwindcss/no-custom-classname": "off",
     "react/no-unescaped-entities": 0
   },
-  "settings": {
-    "tailwindcss": {
-      "callees": ["cn"],
-      "config": "tailwind.config.js"
-    },
-    "next": {
-      "rootDir": ["./"]
-    }
-  },
   "overrides": [
     {
       "files": ["*.ts", "*.tsx"],
@@ -29,5 +20,3 @@
     }
   ]
 }
-
-

@@ -1,0 +1,26 @@
+{
+  "name": "@cubid/types",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "src",
+    "dist"
+  ],
+  "scripts": {
+    "build": "pnpm exec tsc -p tsconfig.json",
+    "lint": "pnpm exec tsc --noEmit -p tsconfig.json",
+    "typecheck": "pnpm exec tsc --noEmit -p tsconfig.json",
+    "test": "echo \"No tests defined for @cubid/types\"",
+    "format": "echo \"No format changes required for @cubid/types\"",
+    "format:write": "echo \"No format changes required for @cubid/types\""
+  },
+  "devDependencies": {
+    "typescript": "5.2.2"
+  }
+}
