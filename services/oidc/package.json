@@ -12,6 +12,7 @@
     "dev": "pnpm exec tsx watch src/server.ts",
     "build": "pnpm exec tsc -p tsconfig.json",
     "start": "pnpm exec tsx src/server.ts",
+    "seed:tcoin": "pnpm exec tsx scripts/seed-tcoin-client.ts",
     "lint": "pnpm exec tsc --noEmit -p tsconfig.json",
     "typecheck": "pnpm exec tsc --noEmit -p tsconfig.json",
     "test": "pnpm exec tsx --test src/**/*.test.ts",
@@ -23,6 +24,7 @@
     "@cubid/claims": "workspace:*",
     "@cubid/config": "workspace:*",
     "@cubid/identity": "workspace:*",
+    "jose": "^4.15.9",
     "@simplewebauthn/server": "^13.3.0",
     "@supabase/supabase-js": "^2.38.4"
   },

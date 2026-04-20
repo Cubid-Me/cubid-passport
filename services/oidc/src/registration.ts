@@ -117,13 +117,13 @@ function generateOpaqueToken(prefix: string): string {
   return `${prefix}_${randomBytes(24).toString("hex")}`;
 }
 
-function hashSecret(secret: string): string {
+export function hashOidcSecret(secret: string): string {
   const salt = randomBytes(16).toString("hex");
   const hash = scryptSync(secret, salt, 64).toString("hex");
   return `${salt}:${hash}`;
 }
 
-function verifySecret(secret: string, storedHash: string): boolean {
+export function verifyOidcSecret(secret: string, storedHash: string): boolean {
   const [salt, expectedHash] = storedHash.split(":");
   if (!salt || !expectedHash) {
     return false;
@@ -240,6 +240,10 @@ function normalizeAuthMethod(clientType: CubidClientType, value: unknown): OidcT
   const nextValue = typeof value === "string" && (OIDC_TOKEN_ENDPOINT_AUTH_METHODS as readonly string[]).includes(value)
     ? (value as OidcTokenEndpointAuthMethod)
     : fallback;
+
+  if (nextValue === "private_key_jwt") {
+    throw new Error("private_key_jwt client authentication is not implemented yet.");
+  }
 
   if (PUBLIC_CLIENT_TYPES.has(clientType) && nextValue !== "none") {
     throw new Error("Public clients must not use a client secret authentication method.");
@@ -358,8 +362,8 @@ export async function createDynamicClientRegistration(
     rate_limit_tier: "starter",
     owner_account_id: null,
     registration_client_uri: registrationClientUri,
-    registration_access_token_hash: hashSecret(registrationAccessToken),
-    client_secret_hash: clientSecret ? hashSecret(clientSecret) : null,
+    registration_access_token_hash: hashOidcSecret(registrationAccessToken),
+    client_secret_hash: clientSecret ? hashOidcSecret(clientSecret) : null,
     secret_version: clientSecret ? 1 : null,
     metadata: {
       contacts: parseStringArray(requestBody.contacts),
@@ -438,7 +442,7 @@ export async function getRegisteredClient(
   }
 
   const row = data as PersistedClientRow;
-  if (!verifySecret(registrationAccessToken, row.registration_access_token_hash)) {
+  if (!verifyOidcSecret(registrationAccessToken, row.registration_access_token_hash)) {
     return null;
   }
 

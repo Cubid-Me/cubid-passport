@@ -586,6 +586,9 @@ importers:
       '@supabase/supabase-js':
         specifier: ^2.38.4
         version: 2.39.3(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+      jose:
+        specifier: ^4.15.9
+        version: 4.15.9
     devDependencies:
       '@types/node':
         specifier: ^20.17.10
@@ -9991,6 +9994,9 @@ packages:
   jose@4.15.4:
     resolution: {integrity: sha512-W+oqK4H+r5sITxfxpSU+MMdr/YSWGvgZMQDIsNoBDGGy4i7GBPTtvFKibQzW06n3U3TqHjhvBJsirShsEJ6eeQ==}
 
+  jose@4.15.9:
+    resolution: {integrity: sha512-1vUQX+IdDMVPj4k8kOxgUqlcK518yluMuGZwqlr44FS1ppZB/5GWh4rZG89erpOBOJjU/OBsnCVFfapsRz6nEA==}
+
   joycon@3.1.1:
     resolution: {integrity: sha512-34wB/Y7MW7bzjKRjUKTa46I2Z7eV62Rkhva+KkopW7Qvv/OSWBqvkSY7vusOPrNuZcUG3tApvdVgNB8POj3SPw==}
     engines: {node: '>=10'}
@@ -14920,11 +14926,11 @@ snapshots:
   '@aws-sdk/types@3.502.0':
     dependencies:
       '@smithy/types': 2.9.1
-      tslib: 2.7.0
+      tslib: 2.8.1
 
   '@aws-sdk/util-utf8-browser@3.259.0':
     dependencies:
-      tslib: 2.7.0
+      tslib: 2.8.1
 
   '@babel/code-frame@7.10.4':
     dependencies:
@@ -20528,7 +20534,7 @@ snapshots:
 
   '@smithy/types@2.9.1':
     dependencies:
-      tslib: 2.7.0
+      tslib: 2.8.1
 
   '@socket.io/component-emitter@3.1.0': {}
 
@@ -24234,7 +24240,7 @@ snapshots:
 
   async-mutex@0.2.6:
     dependencies:
-      tslib: 2.7.0
+      tslib: 2.8.1
 
   async-mutex@0.4.1:
     dependencies:
@@ -29067,6 +29073,8 @@ snapshots:
 
   jose@4.15.4: {}
 
+  jose@4.15.9: {}
+
   joycon@3.1.1: {}
 
   js-base64@3.7.7: {}
@@ -29365,7 +29373,7 @@ snapshots:
     dependencies:
       '@types/jsonwebtoken': 9.0.10
       debug: 4.4.3(supports-color@8.1.1)
-      jose: 4.15.4
+      jose: 4.15.9
       limiter: 1.1.5
       lru-memoizer: 2.3.0
     transitivePeerDependencies:
@@ -30786,7 +30794,7 @@ snapshots:
 
   openid-client@5.6.4:
     dependencies:
-      jose: 4.15.4
+      jose: 4.15.9
       lru-cache: 6.0.0
       object-hash: 2.2.0
       oidc-token-hash: 5.0.3

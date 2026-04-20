@@ -1,7 +1,5 @@
 import {
   OIDC_CODE_CHALLENGE_METHODS,
-  OIDC_GRANT_TYPES,
-  OIDC_TOKEN_ENDPOINT_AUTH_METHODS,
 } from "@cubid/auth";
 import { ALL_OIDC_SCOPES } from "@cubid/claims";
 
@@ -21,8 +19,25 @@ import {
   createPasskeyAuthenticationOptions,
   createPasskeyRegistrationOptions,
 } from "./passkeys";
+import {
+  enforceRateLimit,
+  getRateLimitKey,
+  RateLimitError,
+} from "./rateLimit";
 import { createDynamicClientRegistration, getRegisteredClient } from "./registration";
+import { createOidcJwks } from "./signing";
 import { getOidcSupabase } from "./supabase";
+import {
+  exchangeAuthorizationCode,
+  getUserInfo,
+  logout,
+  OidcEndpointError,
+  parseTokenEndpointInput,
+  revokeToken,
+} from "./tokens";
+
+const IMPLEMENTED_GRANT_TYPES = ["authorization_code"] as const;
+const IMPLEMENTED_TOKEN_ENDPOINT_AUTH_METHODS = ["none", "client_secret_basic", "client_secret_post"] as const;
 
 function jsonResponse(status: number, body: unknown, headers?: Record<string, string>): Response {
   return new Response(JSON.stringify(body, null, 2), {
@@ -34,19 +49,39 @@ function jsonResponse(status: number, body: unknown, headers?: Record<string, st
   });
 }
 
-function notImplemented(feature: string): Response {
-  return jsonResponse(501, {
-    error: "not_implemented",
-    error_description: `${feature} is not implemented yet in the current B02 slice.`,
-  });
-}
-
 function redirectResponse(location: string, status = 302): Response {
   return new Response(null, {
     status,
     headers: {
       location,
     },
+  });
+}
+
+function oidcErrorResponse(error: unknown): Response {
+  if (error instanceof OidcEndpointError) {
+    return jsonResponse(error.statusCode, {
+      error: error.error,
+      error_description: error.errorDescription,
+    });
+  }
+
+  if (error instanceof RateLimitError) {
+    return jsonResponse(
+      429,
+      {
+        error: "rate_limit_exceeded",
+        error_description: "Too many requests for this OIDC endpoint.",
+      },
+      {
+        "retry-after": String(error.retryAfterSeconds),
+      },
+    );
+  }
+
+  return jsonResponse(500, {
+    error: "server_error",
+    error_description: error instanceof Error ? error.message : "Unable to process OIDC request.",
   });
 }
 
@@ -78,13 +113,12 @@ export function createOpenIdConfiguration() {
     revocation_endpoint: `${publicOrigin}/revoke`,
     end_session_endpoint: `${publicOrigin}/logout`,
     registration_endpoint: `${publicOrigin}/register`,
-    device_authorization_endpoint: `${publicOrigin}/device_authorization`,
-    grant_types_supported: OIDC_GRANT_TYPES,
+    grant_types_supported: IMPLEMENTED_GRANT_TYPES,
     response_types_supported: ["code"],
     scopes_supported: ALL_OIDC_SCOPES,
     subject_types_supported: ["pairwise"],
     id_token_signing_alg_values_supported: ["RS256"],
-    token_endpoint_auth_methods_supported: OIDC_TOKEN_ENDPOINT_AUTH_METHODS,
+    token_endpoint_auth_methods_supported: IMPLEMENTED_TOKEN_ENDPOINT_AUTH_METHODS,
     code_challenge_methods_supported: OIDC_CODE_CHALLENGE_METHODS,
   };
 }
@@ -93,9 +127,16 @@ export async function handleOidcRequest(request: Request): Promise<Response> {
   const url = new URL(request.url);
   const pathname = url.pathname;
   const method = request.method.toUpperCase();
+  const requestId = getRequestId(request);
 
   if (method === "GET" && pathname === "/health") {
-    return jsonResponse(200, { ok: true, service: "oidc" });
+    const jwks = await createOidcJwks();
+    return jsonResponse(200, {
+      ok: true,
+      service: "oidc",
+      issuer: getOidcRuntimeConfig().issuer,
+      jwks_active: jwks.keys.length > 0,
+    });
   }
 
   if (method === "GET" && pathname === "/.well-known/openid-configuration") {
@@ -103,13 +144,13 @@ export async function handleOidcRequest(request: Request): Promise<Response> {
   }
 
   if (method === "GET" && pathname === "/jwks") {
-    return jsonResponse(200, getOidcRuntimeConfig().jwks);
+    return jsonResponse(200, await createOidcJwks());
   }
 
   if (method === "POST" && pathname === "/register") {
     try {
       const requestBody = (await request.json()) as Record<string, unknown>;
-      const responseBody = await createDynamicClientRegistration(getOidcSupabase(), requestBody, getRequestId(request));
+      const responseBody = await createDynamicClientRegistration(getOidcSupabase(), requestBody, requestId);
       return jsonResponse(201, responseBody, { location: responseBody.registration_client_uri });
     } catch (error) {
       return jsonResponse(400, {
@@ -151,9 +192,19 @@ export async function handleOidcRequest(request: Request): Promise<Response> {
 
   if (method === "GET" && pathname === "/authorize") {
     try {
-      const result = await createLoginChallengeFromAuthorizationRequest(getOidcSupabase(), request, getRequestId(request));
+      await enforceRateLimit(getOidcSupabase(), {
+        route: "authorize",
+        key: getRateLimitKey(request, url.searchParams.get("client_id") ?? "anonymous"),
+        clientId: url.searchParams.get("client_id"),
+        requestId,
+      });
+      const result = await createLoginChallengeFromAuthorizationRequest(getOidcSupabase(), request, requestId);
       return redirectResponse(result.redirectTo);
     } catch (error) {
+      if (error instanceof RateLimitError) {
+        return oidcErrorResponse(error);
+      }
+
       if (error instanceof AuthorizationRequestError) {
         if (error.redirectTo) {
           return redirectResponse(error.redirectTo);
@@ -196,8 +247,13 @@ export async function handleOidcRequest(request: Request): Promise<Response> {
 
   if (pathParts[0] === "interaction" && pathParts[1] === "login" && method === "POST" && pathParts.length === 4 && pathParts[3] === "complete") {
     try {
+      await enforceRateLimit(getOidcSupabase(), {
+        route: "login_complete",
+        key: getRateLimitKey(request, pathParts[2]),
+        requestId,
+      });
       const requestBody = (await request.json()) as Record<string, unknown>;
-      const result = await completeLoginChallenge(getOidcSupabase(), pathParts[2], requestBody, getRequestId(request));
+      const result = await completeLoginChallenge(getOidcSupabase(), pathParts[2], requestBody, requestId);
 
       return jsonResponse(200, {
         status: "ok",
@@ -211,6 +267,10 @@ export async function handleOidcRequest(request: Request): Promise<Response> {
           error: error.error,
           error_description: error.errorDescription,
         });
+      }
+
+      if (error instanceof RateLimitError) {
+        return oidcErrorResponse(error);
       }
 
       return jsonResponse(500, {
@@ -230,8 +290,13 @@ export async function handleOidcRequest(request: Request): Promise<Response> {
     && method === "POST"
   ) {
     try {
+      await enforceRateLimit(getOidcSupabase(), {
+        route: "passkey_challenge",
+        key: getRateLimitKey(request, pathParts[2]),
+        requestId,
+      });
       const requestBody = (await request.json()) as Record<string, unknown>;
-      const result = await createPasskeyAuthenticationOptions(getOidcSupabase(), pathParts[2], requestBody, getRequestId(request));
+      const result = await createPasskeyAuthenticationOptions(getOidcSupabase(), pathParts[2], requestBody, requestId);
       return jsonResponse(200, result);
     } catch (error) {
       if (error instanceof AuthorizationRequestError) {
@@ -239,6 +304,10 @@ export async function handleOidcRequest(request: Request): Promise<Response> {
           error: error.error,
           error_description: error.errorDescription,
         });
+      }
+
+      if (error instanceof RateLimitError) {
+        return oidcErrorResponse(error);
       }
 
       return jsonResponse(500, {
@@ -258,12 +327,17 @@ export async function handleOidcRequest(request: Request): Promise<Response> {
     && method === "POST"
   ) {
     try {
+      await enforceRateLimit(getOidcSupabase(), {
+        route: "passkey_challenge",
+        key: getRateLimitKey(request, pathParts[2]),
+        requestId,
+      });
       const requestBody = (await request.json()) as Record<string, unknown>;
       const result = await completePasskeyAuthentication(
         getOidcSupabase(),
         pathParts[2],
         requestBody as unknown as Parameters<typeof completePasskeyAuthentication>[2],
-        getRequestId(request),
+        requestId,
       );
 
       return jsonResponse(200, {
@@ -279,6 +353,10 @@ export async function handleOidcRequest(request: Request): Promise<Response> {
           error: error.error,
           error_description: error.errorDescription,
         });
+      }
+
+      if (error instanceof RateLimitError) {
+        return oidcErrorResponse(error);
       }
 
       return jsonResponse(500, {
@@ -310,7 +388,7 @@ export async function handleOidcRequest(request: Request): Promise<Response> {
 
   if (pathParts[0] === "interaction" && pathParts[1] === "consent" && method === "POST" && pathParts.length === 4 && pathParts[3] === "approve") {
     try {
-      const result = await approveConsentChallenge(getOidcSupabase(), pathParts[2], getRequestId(request));
+      const result = await approveConsentChallenge(getOidcSupabase(), pathParts[2], requestId);
 
       return jsonResponse(200, {
         status: "ok",
@@ -334,7 +412,7 @@ export async function handleOidcRequest(request: Request): Promise<Response> {
 
   if (pathParts[0] === "interaction" && pathParts[1] === "consent" && method === "POST" && pathParts.length === 4 && pathParts[3] === "reject") {
     try {
-      const result = await rejectConsentChallenge(getOidcSupabase(), pathParts[2], getRequestId(request));
+      const result = await rejectConsentChallenge(getOidcSupabase(), pathParts[2], requestId);
 
       return jsonResponse(200, {
         status: "rejected",
@@ -364,7 +442,12 @@ export async function handleOidcRequest(request: Request): Promise<Response> {
     && method === "POST"
   ) {
     try {
-      const result = await createPasskeyRegistrationOptions(getOidcSupabase(), pathParts[1], getRequestId(request));
+      await enforceRateLimit(getOidcSupabase(), {
+        route: "passkey_challenge",
+        key: getRateLimitKey(request, pathParts[1]),
+        requestId,
+      });
+      const result = await createPasskeyRegistrationOptions(getOidcSupabase(), pathParts[1], requestId);
       return jsonResponse(200, result);
     } catch (error) {
       if (error instanceof AuthorizationRequestError) {
@@ -372,6 +455,10 @@ export async function handleOidcRequest(request: Request): Promise<Response> {
           error: error.error,
           error_description: error.errorDescription,
         });
+      }
+
+      if (error instanceof RateLimitError) {
+        return oidcErrorResponse(error);
       }
 
       return jsonResponse(500, {
@@ -390,12 +477,17 @@ export async function handleOidcRequest(request: Request): Promise<Response> {
     && method === "POST"
   ) {
     try {
+      await enforceRateLimit(getOidcSupabase(), {
+        route: "passkey_challenge",
+        key: getRateLimitKey(request, pathParts[1]),
+        requestId,
+      });
       const requestBody = (await request.json()) as Record<string, unknown>;
       const result = await completePasskeyRegistration(
         getOidcSupabase(),
         pathParts[1],
         requestBody as unknown as Parameters<typeof completePasskeyRegistration>[2],
-        getRequestId(request),
+        requestId,
       );
       return jsonResponse(200, {
         status: "ok",
@@ -409,6 +501,10 @@ export async function handleOidcRequest(request: Request): Promise<Response> {
         });
       }
 
+      if (error instanceof RateLimitError) {
+        return oidcErrorResponse(error);
+      }
+
       return jsonResponse(500, {
         error: "server_error",
         error_description: error instanceof Error ? error.message : "Unable to complete passkey registration.",
@@ -417,23 +513,53 @@ export async function handleOidcRequest(request: Request): Promise<Response> {
   }
 
   if (method === "POST" && pathname === "/token") {
-    return notImplemented("Token exchange");
+    try {
+      await enforceRateLimit(getOidcSupabase(), {
+        route: "token",
+        key: getRateLimitKey(request, "token"),
+        requestId,
+      });
+      const input = await parseTokenEndpointInput(request);
+      const responseBody = await exchangeAuthorizationCode(getOidcSupabase(), input, requestId);
+      return jsonResponse(200, responseBody, { "cache-control": "no-store", pragma: "no-cache" });
+    } catch (error) {
+      return oidcErrorResponse(error);
+    }
   }
 
   if ((method === "GET" || method === "POST") && pathname === "/userinfo") {
-    return notImplemented("Userinfo");
+    try {
+      await enforceRateLimit(getOidcSupabase(), {
+        route: "userinfo",
+        key: getRateLimitKey(request, "userinfo"),
+        requestId,
+      });
+      return jsonResponse(200, await getUserInfo(getOidcSupabase(), getBearerToken(request), requestId));
+    } catch (error) {
+      return oidcErrorResponse(error);
+    }
   }
 
   if (method === "POST" && pathname === "/revoke") {
-    return notImplemented("Token revocation");
+    try {
+      await revokeToken(getOidcSupabase(), await request.formData(), requestId);
+      return new Response(null, { status: 200 });
+    } catch (error) {
+      return oidcErrorResponse(error);
+    }
   }
 
   if (method === "GET" && pathname === "/logout") {
-    return notImplemented("Logout");
-  }
+    try {
+      const result = await logout(getOidcSupabase(), request, requestId);
+      if (result.redirectTo) {
+        return redirectResponse(result.redirectTo);
+      }
 
-  if (method === "POST" && pathname === "/device_authorization") {
-    return notImplemented("Device authorization");
+      return jsonResponse(200, { status: "ok" });
+    } catch (error) {
+      return oidcErrorResponse(error);
+    }
   }
 
   return jsonResponse(404, {

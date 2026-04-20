@@ -1104,3 +1104,33 @@ Address the PR 145 CI failure where shared package tests passed locally in zsh b
 #### Follow-up
 
 - re-run PR 145 CI and confirm the `validate` check goes green now that the shared package test scripts no longer depend on the failing glob form
+
+### session: v40
+
+- timestamp: 2026-04-19T21:43:28-0400
+- agent: **OpenAI Codex**
+- branch: **codex/b02-relying-party-completion**
+- head: **`fe48a9e`**
+- session name: **Implement OIDC relying-party completion**
+
+#### Objective
+
+Complete the backend TCOIN relying-party loop for `B02.3`, repo-side issuer readiness for `B02.4`, and issuer-side controls for `B02.5` without performing live deployment work.
+
+#### Actions Taken
+
+- replaced the `/token` and `/userinfo` placeholders with Authorization Code + PKCE exchange, signed JWT issuance, access-token persistence, userinfo validation, and consent-scoped claim release
+- added env-backed private JWK signing, active JWKS derivation, token revocation, logout session revocation, DB-backed rate-limit buckets, and structured audit events for the new issuer paths
+- added OIDC token-control migrations, TCOIN seed configuration, expanded `.env.example`, and a repo-readiness doc for staging/production issuer setup
+- split Passport consent revocation UI and richer Admin issuer operations views into `B02.5.1` because the backend issuer controls landed here but the authenticated product surfaces should be a separate security-sensitive slice
+
+#### Verification
+
+- `pnpm --filter @cubid/oidc typecheck`
+- `pnpm --filter @cubid/oidc test`
+- `pnpm --filter @cubid/oidc build`
+
+#### Follow-up
+
+- update todo metadata with the resulting commit hash after this implementation commit lands
+- implement `B02.5.1` before broad production launch so users and operators have first-class consent and client operations surfaces

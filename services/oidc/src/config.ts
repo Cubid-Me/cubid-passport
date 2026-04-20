@@ -10,6 +10,8 @@ export interface OidcRuntimeConfig {
   passkeyRpId: string;
   passkeyExpectedOrigins: string[];
   passkeyRpName: string;
+  signingPrivateJwk: Record<string, unknown> | null;
+  activeSigningKid: string | null;
   jwks: { keys: unknown[] };
   supabaseUrl: string;
   supabaseServiceRoleKey: string;
@@ -31,6 +33,20 @@ function parseJwks(rawValue: string | null): { keys: unknown[] } {
   return {
     keys: Array.isArray(parsed.keys) ? parsed.keys : [],
   };
+}
+
+function parseJsonObject(rawValue: string | null, envName: string): Record<string, unknown> | null {
+  if (!rawValue) {
+    return null;
+  }
+
+  const parsed = JSON.parse(rawValue) as unknown;
+
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+    throw new Error(`${envName} must be a JSON object.`);
+  }
+
+  return parsed as Record<string, unknown>;
 }
 
 function splitCsv(rawValue: string | null): string[] {
@@ -78,6 +94,8 @@ export function buildOidcRuntimeConfig(env: NodeJS.ProcessEnv): OidcRuntimeConfi
     passkeyRpId: getOptionalEnv(env, "OIDC_PASSKEY_RP_ID") ?? new URL(passportPublicOrigin).hostname,
     passkeyExpectedOrigins: passkeyExpectedOrigins.length > 0 ? passkeyExpectedOrigins : [passportPublicOrigin],
     passkeyRpName: getOptionalEnv(env, "OIDC_PASSKEY_RP_NAME") ?? "Cubid Passport",
+    signingPrivateJwk: parseJsonObject(getOptionalEnv(env, "OIDC_SIGNING_PRIVATE_JWK_JSON"), "OIDC_SIGNING_PRIVATE_JWK_JSON"),
+    activeSigningKid: getOptionalEnv(env, "OIDC_ACTIVE_SIGNING_KID"),
     jwks: parseJwks(getOptionalEnv(env, "OIDC_JWKS_JSON")),
     supabaseUrl: getRequiredEnvFrom(env, "SUPABASE_URL"),
     supabaseServiceRoleKey: getRequiredEnvFrom(env, "SUPABASE_SERVICE_ROLE_KEY"),

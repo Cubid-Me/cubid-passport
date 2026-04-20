@@ -79,7 +79,7 @@ Import the parallel `cubid-admin` repository into the monorepo as `apps/admin` a
 
 Parallelization note: Start after `A01`. This section can run in parallel with `C`, `D`, and `E`, but its implementation should target the monorepo contracts created in section `A`.
 
-Implementation assessment as of 2026-04-17: Section B is partially implemented, but the relying-party loop is not shippable yet. `B01` is complete, `B03` is complete, and `B04` has backend passkey foundations in place. `B02` has meaningful issuer foundation work, including discovery, JWKS shape, dynamic client registration, `/authorize`, interaction challenges, Passport login challenge handling, Passport consent challenge handling, OIDC schema, and shared auth/identity/claims packages. The critical remaining gap is that `services/oidc/src/app.ts` still returns explicit `501` placeholders for `/token` and `/userinfo`, so a relying party such as TCOIN cannot complete Authorization Code + PKCE or receive verifiable ID/access tokens. Do not treat Login with Cubid as production-ready until `B02.3`, `B02.4`, and `B02.5` are completed.
+Implementation assessment as of 2026-04-19: Section B now has the backend relying-party loop needed for a TCOIN prototype, including `/token`, signed JWTs, `/userinfo`, `/revoke`, `/logout`, active JWKS derivation, access-token persistence, and repo-side TCOIN seeding/configuration. `B01`, `B02.1`, `B02.2`, `B02.3`, `B02.4`, `B02.5`, and `B03` are complete; `B04` has backend passkey foundations in place. Remaining Section B launch work is now narrower: apply migrations and deploy real environments, complete the Passport/Admin consent operations follow-up in `B02.5.1`, and continue the open B04 Passport passkey UI/device lifecycle slices. Do not treat Login with Cubid as broadly production-launched until the live issuer, secrets, DNS, and TCOIN relying-party configuration are verified outside the repo.
 
 ### B01. Design the OIDC and trust architecture for Login with Cubid
 
@@ -128,28 +128,39 @@ Implement the browser-facing first half of the Authorization Code + PKCE flow. `
 
 ### B02.3 Finish the TCOIN Authorization Code + PKCE token loop
 
-- Status: Not started
-- Timestamp started: TBD
+- Status: Started
+- Timestamp started: 2026-04-19T21:43:28-0400
 - Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Feature branch: codex/b02-relying-party-completion
+- Head: fe48a9e
+- Session-log reference(s): session: v40
 
 Finish the blocking relying-party loop for a real TCOIN "Sign in with Cubid" option. Replace the explicit `501` placeholders for `/token` and `/userinfo` in `services/oidc/src/app.ts` with production-grade behavior. `/token` must accept an authorization code plus PKCE verifier, enforce one-time code use, validate the original client and redirect URI, verify `S256`, and return signed ID and access tokens. JWT signing must use real issuer keys, include a `kid`, expose the active public key through `/jwks`, and produce a stable pairwise `sub` for the TCOIN client without leaking Cubid user IDs or cross-app identifiers. `/userinfo` must validate access tokens and return at least `sub`, with `email`, `email_verified`, `name`, or profile claims when allowed by `openid email profile` consent.
 
-### B02.4 Deploy and configure a TCOIN-ready issuer environment
+### B02.4 Prepare and configure a TCOIN-ready issuer environment
 
-- Status: Not started
-- Timestamp started: TBD
+- Status: Started
+- Timestamp started: 2026-04-19T21:43:28-0400
 - Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Feature branch: codex/b02-relying-party-completion
+- Head: fe48a9e
+- Session-log reference(s): session: v40
 
-Make the issuer usable outside local development. Deploy the OIDC service at a stable HTTPS issuer URL such as `https://id.cubid.me` and ensure `/.well-known/openid-configuration` advertises working production URLs for authorization, token, userinfo, JWKS, revocation, and logout endpoints as they become available. Register TCOIN as an OIDC client with exact redirect URIs for local development, preview, staging, and production. Configure TCOIN's first-pass consent policy narrowly around `openid email profile`, leaving `cubid:stamps` and `cubid:verification` for later trust and off-ramp features. Confirm the Cubid environment has the required database migrations deployed for OIDC clients, sessions, auth codes, human subjects, consents, claim registry, and passkeys. Add a documented staging issuer separate from production so TCOIN can test realistic auth without using production identity state.
+Make the issuer repo-ready for use outside local development without performing live infrastructure deployment in this todo. Document the stable production issuer target such as `https://id.cubid.me`, the staging issuer target, required runtime secrets, key-rotation expectations, migration checklist, and health checks. Ensure `/.well-known/openid-configuration` advertises only endpoint and grant behavior that works in the repo. Add an idempotent TCOIN client seed path with exact redirect URI configuration supplied by environment variables for local development, preview, staging, and production. Configure TCOIN's first-pass consent policy narrowly around `openid email profile`, leaving `cubid:stamps` and `cubid:verification` for later trust and off-ramp features. Actual hosting, DNS, secret provisioning, and Supabase migration execution remain deployment work outside this repo-only slice.
 
 ### B02.5 Add production issuer controls, revocation, and observability
 
+- Status: Started
+- Timestamp started: 2026-04-19T21:43:28-0400
+- Timestamp completed: TBD
+- Feature branch: codex/b02-relying-party-completion
+- Head: fe48a9e
+- Session-log reference(s): session: v40
+
+Add the issuer-side production controls that should exist before broad rollout even if the local prototype works. Implement `/logout` so TCOIN can offer a clean Cubid sign-out experience or at least avoid confusing partial logout behavior. Implement `/revoke` for access tokens now and keep refresh-token issuance disabled for public web clients until a later refresh-token rotation slice. Add rate limits on `/authorize`, `/token`, `/userinfo`, login challenge completion, and passkey challenge endpoints. Add audit events for token issuance failures, token issuance success, userinfo responses, revocation, logout, and rate-limit denials. Expand issuer health output so operators can verify issuer identity and JWKS availability. Keep richer Passport and Admin operations surfaces in `B02.5.1`.
+
+### B02.5.1 Add Passport consent revocation and Admin issuer operations views
+
 - Status: Not started
 - Timestamp started: TBD
 - Timestamp completed: TBD
@@ -157,7 +168,7 @@ Make the issuer usable outside local development. Deploy the OIDC service at a s
 - Head: TBD
 - Session-log reference(s): TBD
 
-Add the production controls that should exist before broad rollout even if the local prototype works. Implement `/logout` so TCOIN can offer a clean Cubid sign-out experience or at least avoid confusing partial logout behavior. Implement `/revoke`, especially before refresh tokens are issued or consent revocation semantics are promised. Add a Passport consent-revocation UI so users can remove TCOIN's access after granting it. Expand Admin visibility for the TCOIN client, including redirect URIs, allowed scopes, claim policy, client status, rate-limit tier, and audit logs. Add rate limits on `/authorize`, `/token`, `/userinfo`, login challenge completion, and passkey challenge endpoints. Add operational monitoring for issuer health, JWKS validity, failed token exchanges, failed userinfo calls, and abnormal client activity.
+Build the user-facing and operator-facing surfaces that sit on top of the issuer controls added in `B02.5`. Passport should let authenticated users review active OIDC consents by client, scope, claim set, grant time, and policy version, then revoke a consent without exposing raw human subject keys or Cubid user IDs to browser state. Admin should expose richer visibility for TCOIN and other OIDC clients: redirect URIs, allowed scopes, claim policy, client status, rate-limit tier, recent audit events, token/userinfo failure counts, and suspension controls. This follow-up must use authenticated server routes rather than the existing generic Supabase proxy helpers, because consent revocation and client operations are security-sensitive account-management actions.
 
 ### B03. Build the custom claim registry and identity-depth policy controls in cubid-admin
 
