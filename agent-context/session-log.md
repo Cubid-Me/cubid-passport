@@ -1238,6 +1238,30 @@ Address the PR 146 Vercel deployment failures where Passport preview deployments
 
 - push the preview-env fallback and re-check Vercel preview statuses after deployment reruns
 
+### session: v52
+
+- timestamp: 2026-04-20T13:52:22-0400
+- agent: **OpenAI Codex**
+- branch: **codex/b02-5-1-oidc-ops**
+- head: **`230a203`**
+- session name: **Complete B02.5.1 metadata**
+
+#### Objective
+
+Mark B02.5.1 completed after the implementation commit and record the resulting task head in the roadmap metadata.
+
+#### Actions Taken
+
+- updated B02.5.1 status, completion timestamp, head, and session-log references in `agent-context/todo.md`
+
+#### Verification
+
+- metadata-only update following the validated implementation commit
+
+#### Follow-up
+
+- open a PR for `codex/b02-5-1-oidc-ops` when ready
+
 ### session: v51
 
 - timestamp: 2026-04-20T13:50:52-0400
