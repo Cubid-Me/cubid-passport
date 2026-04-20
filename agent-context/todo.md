@@ -130,10 +130,10 @@ Implement the browser-facing first half of the Authorization Code + PKCE flow. `
 
 - Status: Started
 - Timestamp started: 2026-04-19T21:43:28-0400
-- Timestamp completed: TBD
+- Timestamp completed: 2026-04-19T21:46:40-0400
 - Feature branch: codex/b02-relying-party-completion
-- Head: fe48a9e
-- Session-log reference(s): session: v40
+- Head: 41206f4
+- Session-log reference(s): session: v40, session: v41
 
 Finish the blocking relying-party loop for a real TCOIN "Sign in with Cubid" option. Replace the explicit `501` placeholders for `/token` and `/userinfo` in `services/oidc/src/app.ts` with production-grade behavior. `/token` must accept an authorization code plus PKCE verifier, enforce one-time code use, validate the original client and redirect URI, verify `S256`, and return signed ID and access tokens. JWT signing must use real issuer keys, include a `kid`, expose the active public key through `/jwks`, and produce a stable pairwise `sub` for the TCOIN client without leaking Cubid user IDs or cross-app identifiers. `/userinfo` must validate access tokens and return at least `sub`, with `email`, `email_verified`, `name`, or profile claims when allowed by `openid email profile` consent.
 
@@ -141,10 +141,10 @@ Finish the blocking relying-party loop for a real TCOIN "Sign in with Cubid" opt
 
 - Status: Started
 - Timestamp started: 2026-04-19T21:43:28-0400
-- Timestamp completed: TBD
+- Timestamp completed: 2026-04-19T21:46:40-0400
 - Feature branch: codex/b02-relying-party-completion
-- Head: fe48a9e
-- Session-log reference(s): session: v40
+- Head: 41206f4
+- Session-log reference(s): session: v40, session: v41
 
 Make the issuer repo-ready for use outside local development without performing live infrastructure deployment in this todo. Document the stable production issuer target such as `https://id.cubid.me`, the staging issuer target, required runtime secrets, key-rotation expectations, migration checklist, and health checks. Ensure `/.well-known/openid-configuration` advertises only endpoint and grant behavior that works in the repo. Add an idempotent TCOIN client seed path with exact redirect URI configuration supplied by environment variables for local development, preview, staging, and production. Configure TCOIN's first-pass consent policy narrowly around `openid email profile`, leaving `cubid:stamps` and `cubid:verification` for later trust and off-ramp features. Actual hosting, DNS, secret provisioning, and Supabase migration execution remain deployment work outside this repo-only slice.
 
@@ -152,10 +152,10 @@ Make the issuer repo-ready for use outside local development without performing 
 
 - Status: Started
 - Timestamp started: 2026-04-19T21:43:28-0400
-- Timestamp completed: TBD
+- Timestamp completed: 2026-04-19T21:46:40-0400
 - Feature branch: codex/b02-relying-party-completion
-- Head: fe48a9e
-- Session-log reference(s): session: v40
+- Head: 41206f4
+- Session-log reference(s): session: v40, session: v41
 
 Add the issuer-side production controls that should exist before broad rollout even if the local prototype works. Implement `/logout` so TCOIN can offer a clean Cubid sign-out experience or at least avoid confusing partial logout behavior. Implement `/revoke` for access tokens now and keep refresh-token issuance disabled for public web clients until a later refresh-token rotation slice. Add rate limits on `/authorize`, `/token`, `/userinfo`, login challenge completion, and passkey challenge endpoints. Add audit events for token issuance failures, token issuance success, userinfo responses, revocation, logout, and rate-limit denials. Expand issuer health output so operators can verify issuer identity and JWKS availability. Keep richer Passport and Admin operations surfaces in `B02.5.1`.
 

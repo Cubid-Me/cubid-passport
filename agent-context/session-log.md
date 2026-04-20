@@ -1134,3 +1134,28 @@ Complete the backend TCOIN relying-party loop for `B02.3`, repo-side issuer read
 
 - update todo metadata with the resulting commit hash after this implementation commit lands
 - implement `B02.5.1` before broad production launch so users and operators have first-class consent and client operations surfaces
+
+### session: v41
+
+- timestamp: 2026-04-19T21:46:40-0400
+- agent: **OpenAI Codex**
+- branch: **codex/b02-relying-party-completion**
+- head: **`41206f4`**
+- session name: **Close B02.3 through B02.5 metadata**
+
+#### Objective
+
+Record the actual implementation commit hash for the B02.3, B02.4, and B02.5 todos after the OIDC relying-party completion commit landed.
+
+#### Actions Taken
+
+- marked `B02.3`, `B02.4`, and `B02.5` completed in [agent-context/todo.md](/Users/botmaster/src/cubid/cubid-passport/agent-context/todo.md)
+- updated each completed todo with the implementation head `41206f4` and session-log references
+
+#### Verification
+
+- metadata-only follow-up; implementation validation is recorded in `session: v40`
+
+#### Follow-up
+
+- implement `B02.5.1` next to add authenticated Passport consent revocation and richer Admin issuer operations views
