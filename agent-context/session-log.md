@@ -1,3 +1,28 @@
+### session: v58
+
+- timestamp: 2026-04-20T17:17:41-0400
+- agent: **OpenAI Codex**
+- branch: **codex/b04-3-passkey-ux-otp-recovery**
+- head: **`ca28575`**
+- session name: **Complete B04.3 roadmap metadata**
+
+#### Objective
+
+Record the completed B04.3 todo state after the integrated passkey UX implementation landed on the feature branch.
+
+#### Actions Taken
+
+- marked `B04.3` completed in [agent-context/todo.md](/Users/botmaster/src/cubid/cubid-passport/agent-context/todo.md)
+- set the completed timestamp, feature branch, implementation head, and session-log references
+
+#### Verification
+
+- metadata-only change following the B04.3 validation suite recorded in `session: v57`
+
+#### Follow-up
+
+- publish the B04.3 branch for review when ready
+
 ### session: v57
 
 - timestamp: 2026-04-20T17:16:15-0400
