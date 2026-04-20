@@ -1159,3 +1159,28 @@ Record the actual implementation commit hash for the B02.3, B02.4, and B02.5 tod
 #### Follow-up
 
 - implement `B02.5.1` next to add authenticated Passport consent revocation and richer Admin issuer operations views
+
+### session: v42
+
+- timestamp: 2026-04-20T02:54:09-0400
+- agent: **OpenAI Codex**
+- branch: **codex/b02-relying-party-completion**
+- head: **`a38b071`**
+- session name: **Fix OIDC CI test glob**
+
+#### Objective
+
+Address the PR 146 `validate` CI failure where `@cubid/oidc` tests failed because CI passed the literal `src/**/*.test.ts` path to `tsx`.
+
+#### Actions Taken
+
+- updated [services/oidc/package.json](/Users/botmaster/src/cubid/cubid-passport/services/oidc/package.json) to use `src/*.test.ts`, matching the existing top-level OIDC test layout and the prior shared-package CI glob fix
+
+#### Verification
+
+- `pnpm --filter @cubid/oidc test`
+- `pnpm test`
+
+#### Follow-up
+
+- push the fix and re-check PR 146 CI after the required polling interval

@@ -15,7 +15,7 @@
     "seed:tcoin": "pnpm exec tsx scripts/seed-tcoin-client.ts",
     "lint": "pnpm exec tsc --noEmit -p tsconfig.json",
     "typecheck": "pnpm exec tsc --noEmit -p tsconfig.json",
-    "test": "pnpm exec tsx --test src/**/*.test.ts",
+    "test": "pnpm exec tsx --test src/*.test.ts",
     "format": "echo \"No format changes required for @cubid/oidc\"",
     "format:write": "echo \"No format changes required for @cubid/oidc\""
   },
