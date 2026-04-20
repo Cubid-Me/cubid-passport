@@ -826,6 +826,7 @@ sequenceDiagram
 - login challenge completion
 - consent challenge completion
 - user consent history and user-initiated revocation UI
+- authenticated Passport server routes for user-owned consent listing and revocation
 
 ### Admin owns
 
@@ -834,6 +835,7 @@ sequenceDiagram
 - allowed scopes and claim policy configuration
 - rate-limit tier adjustments and suspension controls
 - audit review for client and token events
+- Ops v1 controls for client suspension/reactivation and rate-limit tier updates
 
 ### OIDC service owns
 

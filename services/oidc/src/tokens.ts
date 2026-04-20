@@ -238,6 +238,17 @@ async function insertAuditEvent(
   }
 }
 
+async function tryInsertAuditEvent(
+  supabase: SupabaseClient,
+  input: Parameters<typeof insertAuditEvent>[1],
+): Promise<void> {
+  try {
+    await insertAuditEvent(supabase, input);
+  } catch (error) {
+    process.stderr.write(`Failed to write OIDC audit event: ${error instanceof Error ? error.message : String(error)}\n`);
+  }
+}
+
 async function getClient(supabase: SupabaseClient, clientId: string): Promise<PersistedClientRow | null> {
   const { data, error } = await supabase
     .from("oidc_clients")
@@ -630,57 +641,85 @@ export async function getUserInfo(
   accessToken: string | null,
   requestId: string,
 ): Promise<Record<string, unknown>> {
-  if (!accessToken) {
-    throw new OidcEndpointError(401, "invalid_token", "A bearer access token is required.");
+  let failureClientId: string | null = null;
+  let failureSessionId: string | null = null;
+  let failureJti: string | null = null;
+
+  try {
+    if (!accessToken) {
+      throw new OidcEndpointError(401, "invalid_token", "A bearer access token is required.");
+    }
+
+    const verified = await verifyOidcJwt(accessToken, `${getOidcRuntimeConfig().issuer}/userinfo`);
+    const jti = verified.payload.jti;
+
+    if (!jti) {
+      throw new OidcEndpointError(401, "invalid_token", "Access token is missing a token id.");
+    }
+
+    failureJti = jti;
+
+    const tokenRecord = await getAccessTokenRecord(supabase, jti);
+    failureClientId = tokenRecord?.client_id ?? null;
+    failureSessionId = tokenRecord?.session_id ?? null;
+
+    if (!tokenRecord || tokenRecord.revoked_at || isExpired(tokenRecord.expires_at)) {
+      throw new OidcEndpointError(401, "invalid_token", "Access token is not active.");
+    }
+
+    const [client, session, consent] = await Promise.all([
+      getClient(supabase, tokenRecord.client_id),
+      getSession(supabase, tokenRecord.session_id),
+      tokenRecord.consent_id ? getConsent(supabase, tokenRecord.consent_id) : Promise.resolve(null),
+    ]);
+
+    if (!client || client.status !== "active") {
+      throw new OidcEndpointError(401, "invalid_token", "Client is no longer active.");
+    }
+
+    if (!session || session.revoked_at || isExpired(session.expires_at)) {
+      throw new OidcEndpointError(401, "invalid_token", "Session is no longer active.");
+    }
+
+    if (!consent || consent.revoked_at || consent.pairwise_sub !== tokenRecord.pairwise_sub) {
+      throw new OidcEndpointError(401, "invalid_token", "Consent is no longer active.");
+    }
+
+    const userinfo = buildUserInfo(tokenRecord, session, consent);
+
+    await insertAuditEvent(supabase, {
+      clientId: tokenRecord.client_id,
+      sessionId: tokenRecord.session_id,
+      eventType: "userinfo.returned",
+      requestId,
+      outcome: "success",
+      actorType: "client",
+      actorIdentifier: tokenRecord.client_id,
+      details: {
+        access_token_jti: jti,
+        claims: Object.keys(userinfo),
+      },
+    });
+
+    return userinfo;
+  } catch (error) {
+    await tryInsertAuditEvent(supabase, {
+      clientId: failureClientId,
+      sessionId: failureSessionId,
+      eventType: "userinfo.failed",
+      requestId,
+      outcome: "failure",
+      actorType: failureClientId ? "client" : "unknown",
+      actorIdentifier: failureClientId ?? "unknown",
+      details: {
+        access_token_jti: failureJti,
+        error: error instanceof OidcEndpointError ? error.error : "server_error",
+        error_description: error instanceof Error ? error.message : "Unable to return userinfo.",
+      },
+    });
+
+    throw error;
   }
-
-  const verified = await verifyOidcJwt(accessToken, `${getOidcRuntimeConfig().issuer}/userinfo`);
-  const jti = verified.payload.jti;
-
-  if (!jti) {
-    throw new OidcEndpointError(401, "invalid_token", "Access token is missing a token id.");
-  }
-
-  const tokenRecord = await getAccessTokenRecord(supabase, jti);
-  if (!tokenRecord || tokenRecord.revoked_at || isExpired(tokenRecord.expires_at)) {
-    throw new OidcEndpointError(401, "invalid_token", "Access token is not active.");
-  }
-
-  const [client, session, consent] = await Promise.all([
-    getClient(supabase, tokenRecord.client_id),
-    getSession(supabase, tokenRecord.session_id),
-    tokenRecord.consent_id ? getConsent(supabase, tokenRecord.consent_id) : Promise.resolve(null),
-  ]);
-
-  if (!client || client.status !== "active") {
-    throw new OidcEndpointError(401, "invalid_token", "Client is no longer active.");
-  }
-
-  if (!session || session.revoked_at || isExpired(session.expires_at)) {
-    throw new OidcEndpointError(401, "invalid_token", "Session is no longer active.");
-  }
-
-  if (!consent || consent.revoked_at || consent.pairwise_sub !== tokenRecord.pairwise_sub) {
-    throw new OidcEndpointError(401, "invalid_token", "Consent is no longer active.");
-  }
-
-  const userinfo = buildUserInfo(tokenRecord, session, consent);
-
-  await insertAuditEvent(supabase, {
-    clientId: tokenRecord.client_id,
-    sessionId: tokenRecord.session_id,
-    eventType: "userinfo.returned",
-    requestId,
-    outcome: "success",
-    actorType: "client",
-    actorIdentifier: tokenRecord.client_id,
-    details: {
-      access_token_jti: jti,
-      claims: Object.keys(userinfo),
-    },
-  });
-
-  return userinfo;
 }
 
 export async function revokeToken(

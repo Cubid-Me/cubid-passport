@@ -102,6 +102,55 @@ export interface OidcAdminMetadataPayload {
   policies: IdentityDepthThresholdPolicy[];
 }
 
+export interface OidcOpsAuditEvent {
+  actorType: string;
+  clientId: string | null;
+  createdAt: string;
+  details: Record<string, unknown>;
+  eventType: string;
+  outcome: string;
+  requestId: string | null;
+}
+
+export interface OidcOpsClientSummary {
+  activeConsentCount: number;
+  activeTokenCount: number;
+  allowedScopes: string[];
+  bindings: Array<{
+    claimName: string;
+    enabled: boolean;
+    policyId: string | null;
+    policyName: string | null;
+  }>;
+  clientId: string;
+  clientName: string;
+  clientType: string;
+  createdAt: string;
+  defaultScopes: string[];
+  grantTypes: string[];
+  metrics7d: {
+    tokenFailures: number;
+    tokenSuccesses: number;
+    userinfoFailures: number;
+    userinfoSuccesses: number;
+  };
+  postLogoutRedirectUris: string[];
+  rateLimitTier: 'starter' | 'trusted' | 'internal';
+  recentAuditEvents: OidcOpsAuditEvent[];
+  redirectUris: string[];
+  status: string;
+  suspendedAt: string | null;
+  tokenEndpointAuthMethod: string;
+  updatedAt: string;
+  verificationStatus: string;
+}
+
+export interface OidcOpsOverviewPayload {
+  clients: OidcOpsClientSummary[];
+  generatedAt: string;
+  recentAuditEvents: OidcOpsAuditEvent[];
+}
+
 export type RequestedInfoMap = Record<string, RequestedInfoItem>;
 export type RequestedInfoByIndex = Record<number, RequestedInfoMap>;
 
