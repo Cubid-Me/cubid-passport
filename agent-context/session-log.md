@@ -1212,6 +1212,32 @@ Address the PR 146 Vercel deployment failures where legacy Vercel projects still
 
 - push the compatibility shim and re-check Vercel preview statuses after deployment reruns
 
+### session: v46
+
+- timestamp: 2026-04-20T03:22:59-0400
+- agent: **OpenAI Codex**
+- branch: **codex/b02-relying-party-completion**
+- head: **`02dfd5a`**
+- session name: **Allow Vercel preview public env placeholders**
+
+#### Objective
+
+Address the PR 146 Vercel deployment failures where Passport preview deployments do not have public Firebase and Supabase build environment configured, causing prerender to fail before previews can be created.
+
+#### Actions Taken
+
+- updated Passport Firebase initialization to allow non-secret placeholder public config only in CI or non-production Vercel preview builds
+- updated Passport Supabase initialization to allow non-secret placeholder URL/key config only in CI or non-production Vercel preview builds
+- preserved production fail-fast behavior when required Firebase or Supabase configuration is absent
+
+#### Verification
+
+- pending before commit: `pnpm --filter @cubid/passport build`
+
+#### Follow-up
+
+- push the preview-env fallback and re-check Vercel preview statuses after deployment reruns
+
 ### session: v44
 
 - timestamp: 2026-04-20T03:06:41-0400
