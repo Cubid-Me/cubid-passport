@@ -2,15 +2,8 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { Metadata } from "next"
-import Image from "next/image"
 import { useSearchParams } from "next/navigation"
 import { OwnID } from "@ownid/react"
-import {
-  browserSupportsWebAuthn,
-  startAuthentication,
-  startRegistration,
-} from "@simplewebauthn/browser"
 import axios from "axios"
 import { Guest } from "components/auth/guest"
 import firebase from "lib/firebase"
@@ -21,30 +14,19 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
 import "react-phone-input-2/lib/style.css"
-import { insertStamp } from "@/lib/stampInsertion"
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet"
-
-function debounce(func: any, delay: any) {
-  let timeoutId: any
-  return (...args: any) => {
-    clearTimeout(timeoutId as any)
-    timeoutId = setTimeout(() => {
-      func.apply(this as any, args)
-    }, delay)
-  }
-}
+  authenticateLoginChallengeWithPasskey,
+  browserSupportsWebAuthn,
+  registerOidcPasskey,
+} from "@/lib/oidcPasskeys"
+import { insertStamp } from "@/lib/stampInsertion"
 
 export default function AuthenticationPage() {
   const searchParams = useSearchParams()
   const emailField = useRef(null)
   const [emailVal, setEmailVal] = useState("")
   const passwordField = useRef(null)
-  const [isEnabled, setIsEnabled] = useState(true)
+  const [isEnabled] = useState(true)
   const [loading, setLoading] = useState(false)
   const [oidcChallenge, setOidcChallenge] = useState<any>(null)
   const [oidcLoading, setOidcLoading] = useState(false)
@@ -118,9 +100,14 @@ export default function AuthenticationPage() {
         )
       }
 
+      if (!data?.session_id) {
+        window.location.href = redirectTo
+        return true
+      }
+
       setPendingOidcRedirect({
         redirectTo,
-        sessionId: data?.session_id,
+        sessionId: data.session_id,
         next: data?.next,
         clientName: oidcChallenge?.client?.client_name,
       })
@@ -138,28 +125,16 @@ export default function AuthenticationPage() {
   const registerPasskey = useCallback(async () => {
     setPasskeyRegistrationLoading(true)
     try {
-      const { data: optionsEnvelope } = await axios.post(
-        "/api/oidc/passkeys/registration/options"
-      )
-      const credential = await startRegistration({
-        optionsJSON: optionsEnvelope.publicKey,
-      })
-
-      await axios.post("/api/oidc/passkeys/registration/complete", {
-        challengeId: optionsEnvelope.challengeId,
-        sessionId: optionsEnvelope.sessionId,
-        credentialLabel: passkeyLabel,
-        credential,
-      })
-
+      await registerOidcPasskey({ credentialLabel: passkeyLabel })
       toast.success("Passkey added to your Cubid account")
+      continueOidcRedirect()
     } catch (error) {
       console.error(error)
       toast.error(getOidcErrorMessage(error, "Unable to register a passkey"))
     } finally {
       setPasskeyRegistrationLoading(false)
     }
-  }, [passkeyLabel])
+  }, [continueOidcRedirect, passkeyLabel])
 
   const signInWithPasskey = useCallback(async () => {
     if (!loginChallengeId) {
@@ -170,32 +145,20 @@ export default function AuthenticationPage() {
     setPasskeyLoading(true)
     try {
       const loginHint =
-        emailVal ||
-        phoneNumber ||
-        oidcChallenge?.authorizationRequest?.loginHint
-      const { data: optionsEnvelope } = await axios.post(
-        `/api/oidc/interactions/login/${loginChallengeId}/passkeys/authentication/options`,
-        { login_hint: loginHint }
-      )
-      const credential = await startAuthentication({
-        optionsJSON: optionsEnvelope.publicKey,
+        emailVal || oidcChallenge?.authorizationRequest?.loginHint
+      const data = await authenticateLoginChallengeWithPasskey({
+        loginChallengeId,
+        loginHint,
       })
-      const { data } = await axios.post(
-        `/api/oidc/interactions/login/${loginChallengeId}/passkeys/authentication/complete`,
-        {
-          challengeId: optionsEnvelope.challengeId,
-          loginChallengeId,
-          credential,
-        }
-      )
 
-      setPendingOidcRedirect({
-        redirectTo: data?.redirect_to,
-        sessionId: data?.session_id,
-        next: data?.next,
-        clientName: oidcChallenge?.client?.client_name,
-      })
+      if (!data?.redirect_to) {
+        throw new Error(
+          "Passkey authentication did not return a redirect target"
+        )
+      }
+
       toast.success("Passkey verified")
+      window.location.href = data.redirect_to
     } catch (error) {
       console.error(error)
       toast.error(
@@ -204,12 +167,11 @@ export default function AuthenticationPage() {
     } finally {
       setPasskeyLoading(false)
     }
-  }, [emailVal, loginChallengeId, oidcChallenge, phoneNumber])
+  }, [emailVal, loginChallengeId, oidcChallenge])
 
   const submit = async (values: any) => {
     try {
-      const email = emailField.current.value
-      localStorage.setItem("email", email)
+      const email = emailField.current?.value ?? emailVal
       const {
         data: { data },
       } = await axios.post("/api/supabase/select", {
@@ -228,7 +190,7 @@ export default function AuthenticationPage() {
       if (!data?.[0]) {
         await axios.post(`/api/supabase/insert`, {
           table: "users",
-          body: { email: localStorage.getItem("email") },
+          body: { email },
         })
         const {
           data: { data: newData },
@@ -240,8 +202,8 @@ export default function AuthenticationPage() {
           stamp_type: "email",
           user_data: { user_id: newData?.[0]?.id, uuid: "" },
           stampData: {
-            identity: localStorage.getItem("email"),
-            uniquevalue: localStorage.getItem("email"),
+            identity: email,
+            uniquevalue: email,
           },
           app_id: parseInt(process.env.NEXT_PUBLIC_DAPP_ID ?? "0"),
           is_auth: true,
@@ -431,7 +393,7 @@ export default function AuthenticationPage() {
                       : "Create passkey"}
                   </Button>
                   <Button variant="outline" onClick={continueOidcRedirect}>
-                    Continue without passkey
+                    Skip for now
                   </Button>
                 </div>
                 {!passkeySupported && (
@@ -499,7 +461,7 @@ export default function AuthenticationPage() {
                     >
                       {passkeyLoading
                         ? "Checking passkey..."
-                        : "Sign in with passkey"}
+                        : "Continue with passkey"}
                     </Button>
                   </div>
                 )}

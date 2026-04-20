@@ -1,3 +1,38 @@
+### session: v57
+
+- timestamp: 2026-04-20T17:16:15-0400
+- agent: **OpenAI Codex**
+- branch: **codex/b04-3-passkey-ux-otp-recovery**
+- head: **`53253be`**
+- session name: **Integrate B04.3 passkey UX with current dev**
+
+#### Objective
+
+Bring the B04.3 Passport passkey UX branch forward onto current `dev`, preserving the newer OIDC Ops/Profile consent work while finishing the user-facing passkey and OTP recovery behavior.
+
+#### Actions Taken
+
+- resolved the `dev` merge conflicts in Passport Profile and package dependencies by keeping both passkey support and OIDC consent-management support
+- added a shared Passport browser helper for WebAuthn/OIDC passkey authentication and registration ceremonies
+- adjusted Login with Cubid behavior so passkey authentication redirects immediately, while OwnID email or Firebase phone OTP fallback login shows a skippable passkey setup prompt when an issuer session is returned
+- removed the login flow's localStorage-backed email identity dependency and kept phone OTP positioned as the explicit recovery fallback
+- retained Passport server proxy routes for OIDC passkey ceremonies so browser code stays same-origin and the issuer session ID stays in an HTTP-only Passport cookie
+
+#### Verification
+
+- `NODE20_BIN=$(npx -y -p node@20 node -p 'require("path").dirname(process.execPath)') && PATH="$NODE20_BIN:$PATH" pnpm --filter @cubid/passport typecheck`
+- `NODE20_BIN=$(npx -y -p node@20 node -p 'require("path").dirname(process.execPath)') && PATH="$NODE20_BIN:$PATH" pnpm --filter @cubid/oidc typecheck`
+- `NODE20_BIN=$(npx -y -p node@20 node -p 'require("path").dirname(process.execPath)') && PATH="$NODE20_BIN:$PATH" pnpm --filter @cubid/oidc test`
+- `NODE20_BIN=$(npx -y -p node@20 node -p 'require("path").dirname(process.execPath)') && PATH="$NODE20_BIN:$PATH" pnpm --filter @cubid/passport build`
+- `NODE20_BIN=$(npx -y -p node@20 node -p 'require("path").dirname(process.execPath)') && PATH="$NODE20_BIN:$PATH" pnpm exec turbo run lint --force`
+- `NODE20_BIN=$(npx -y -p node@20 node -p 'require("path").dirname(process.execPath)') && PATH="$NODE20_BIN:$PATH" pnpm exec turbo run typecheck --force`
+- `NODE20_BIN=$(npx -y -p node@20 node -p 'require("path").dirname(process.execPath)') && PATH="$NODE20_BIN:$PATH" pnpm exec turbo run test --force`
+- `NODE20_BIN=$(npx -y -p node@20 node -p 'require("path").dirname(process.execPath)') && PATH="$NODE20_BIN:$PATH" pnpm exec turbo run build --force`
+
+#### Follow-up
+
+- commit the integrated implementation, then record the final B04.3 completion metadata against the resulting feature head
+
 ### session: v54
 
 - timestamp: 2026-04-20T16:20:18-0400
@@ -1297,6 +1332,135 @@ Address the PR 146 Vercel deployment failures where Passport preview deployments
 #### Follow-up
 
 - push the preview-env fallback and re-check Vercel preview statuses after deployment reruns
+
+### session: v52
+
+- timestamp: 2026-04-20T13:52:22-0400
+- agent: **OpenAI Codex**
+- branch: **codex/b02-5-1-oidc-ops**
+- head: **`230a203`**
+- session name: **Complete B02.5.1 metadata**
+
+#### Objective
+
+Mark B02.5.1 completed after the implementation commit and record the resulting task head in the roadmap metadata.
+
+#### Actions Taken
+
+- updated B02.5.1 status, completion timestamp, head, and session-log references in `agent-context/todo.md`
+
+#### Verification
+
+- metadata-only update following the validated implementation commit
+
+#### Follow-up
+
+- open a PR for `codex/b02-5-1-oidc-ops` when ready
+
+### session: v55
+
+- timestamp: 2026-04-20T16:37:55-0400
+- agent: **OpenAI Codex**
+- branch: **codex/b02-5-1-oidc-ops**
+- head: **`d327279`**
+- session name: **Address PR 147 review comments**
+
+#### Objective
+
+Address PR 147 Copilot review comments around Passport consent revocation audit correlation, scalable Admin OIDC Ops aggregate counts, and Admin operator error visibility, while also fixing the suppressed Profile email/phone loading bug.
+
+#### Actions Taken
+
+- added Passport request ID generation from `x-request-id` or a `passport_` UUID fallback, returned it as `X-Request-Id`, and persisted it on `consent.revoked` audit rows
+- added a Supabase `get_oidc_ops_client_counts` RPC migration and switched Admin Ops active consent/token counts to the aggregate RPC instead of full-row scans
+- updated Admin OIDC Ops to surface API-provided Axios `error` or `message` payloads before falling back to generic toast text
+- fixed the Profile comma-operator guard and wallet lookup call so email-only users can load wallet profile data correctly
+
+#### Verification
+
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/admin typecheck`
+- `pnpm --filter @cubid/admin test`
+- `pnpm --filter @cubid/admin build`
+- `pnpm lint`
+- `pnpm typecheck`
+- `pnpm test`
+- `pnpm build`
+
+#### Follow-up
+
+- push the review-response commit, comment with the solutions, resolve the Copilot threads, and continue the requested Codex review loop on PR 147
+
+### session: v56
+
+- timestamp: 2026-04-20T16:50:11-0400
+- agent: **OpenAI Codex**
+- branch: **codex/b02-5-1-oidc-ops**
+- head: **`5c57dd6`**
+- session name: **Address Codex connector review comments**
+
+#### Objective
+
+Address the Codex connector review comments on PR 147 covering capped OIDC Ops metrics and duplicate consent revocation audit events.
+
+#### Actions Taken
+
+- moved Admin OIDC Ops 7-day token/userinfo metrics to a dedicated `get_oidc_ops_client_metrics` aggregate RPC so counters are no longer derived from the 200-row recent audit display query
+- added a supporting audit-log index and Admin unit coverage for metric row normalization
+- changed Passport consent revocation to return the existing revoked timestamp without revoking tokens or writing a new `consent.revoked` audit event when the consent is already revoked
+
+#### Verification
+
+- `pnpm --filter @cubid/admin typecheck`
+- `pnpm --filter @cubid/admin test`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm lint`
+- `pnpm typecheck`
+- `pnpm test`
+- `pnpm build`
+
+#### Follow-up
+
+- push the Codex review-response commit, reply to and resolve the Codex connector threads, and re-check PR 147 CI
+
+### session: v51
+
+- timestamp: 2026-04-20T13:50:52-0400
+- agent: **OpenAI Codex**
+- branch: **codex/b02-5-1-oidc-ops**
+- head: **`bd828d4`**
+- session name: **Implement B02.5.1 OIDC consent and ops surfaces**
+
+#### Objective
+
+Implement the B02.5.1 Ops v1 slice with authenticated Passport consent management, Admin OIDC operations visibility and controls, and issuer userinfo failure audit logging.
+
+#### Actions Taken
+
+- added Passport server-only Firebase/Supabase helpers plus consent list and revoke API routes
+- added a Login with Cubid access panel to the Passport Profile screen
+- added Admin OIDC Ops overview and update APIs for client visibility, rate-limit tier changes, and suspend/reactivate controls
+- added an Admin OIDC Ops tab with client metrics, redirect URI visibility, bindings, and recent audit events
+- added `userinfo.failed` audit logging in the OIDC issuer without changing external error responses
+- updated OIDC readiness and architecture docs for the new Passport/Admin operations surfaces
+
+#### Verification
+
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+- `pnpm --filter @cubid/admin typecheck`
+- `pnpm --filter @cubid/admin test`
+- `pnpm --filter @cubid/admin build`
+- `pnpm --filter @cubid/oidc typecheck`
+- `pnpm --filter @cubid/oidc test`
+- `pnpm lint`
+- `pnpm test`
+- `pnpm build`
+- `pnpm typecheck` rerun after the parallel build/typecheck race completed
+
+#### Follow-up
+
+- commit the implementation, then update B02.5.1 completion metadata with the resulting head
 
 ### session: v50
 

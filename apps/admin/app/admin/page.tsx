@@ -5,11 +5,12 @@ import { Header } from 'components/header';
 import React, { useState } from 'react';
 
 import AppList from './appList';
+import OidcOps from './oidcOps';
 import OidcRegistry from './oidcRegistry';
 import Webhooks from './webhook';
 
 // Define the type for the tab state
-type Tab = 'apps' | 'oidc' | 'webhooks';
+type Tab = 'apps' | 'oidc' | 'oidc-ops' | 'webhooks';
 
 export default function Admin() {
   const [activeTab, setActiveTab] = useState<Tab>('apps'); // Define state with Tab type
@@ -33,6 +34,12 @@ export default function Admin() {
               Claims & Policies
             </button>
             <button
+              onClick={() => setActiveTab('oidc-ops')}
+              className={`pb-2 ${activeTab === 'oidc-ops' ? 'border-b-2 border-blue-500 text-blue-500' : ''}`}
+            >
+              OIDC Ops
+            </button>
+            <button
               onClick={() => setActiveTab('webhooks')}
               className={`pb-2 ${activeTab === 'webhooks' ? 'border-b-2 border-blue-500 text-blue-500' : ''}`}
             >
@@ -42,6 +49,7 @@ export default function Admin() {
           <div className="pt-4">
             {activeTab === 'apps' && <AppList />}
             {activeTab === 'oidc' && <OidcRegistry />}
+            {activeTab === 'oidc-ops' && <OidcOps />}
             {activeTab === 'webhooks' && <Webhooks />}
           </div>
         </div>
