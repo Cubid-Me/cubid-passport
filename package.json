@@ -22,6 +22,9 @@
     "format:write": "turbo run format:write"
   },
   "devDependencies": {
+    "next": "14.2.15",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
     "turbo": "^2.5.8",
     "typescript": "5.2.2"
   }

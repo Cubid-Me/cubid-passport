@@ -1185,6 +1185,33 @@ Address the PR 146 `validate` CI failure where `@cubid/oidc` tests failed becaus
 
 - push the fix and re-check PR 146 CI after the required polling interval
 
+### session: v45
+
+- timestamp: 2026-04-20T03:16:27-0400
+- agent: **OpenAI Codex**
+- branch: **codex/b02-relying-party-completion**
+- head: **`99c7326`**
+- session name: **Fix Vercel monorepo Next autodetection**
+
+#### Objective
+
+Address the PR 146 Vercel deployment failures where legacy Vercel projects still build from the monorepo root and fail before running the configured Passport build command because the root package does not expose a Next.js dependency.
+
+#### Actions Taken
+
+- added root-level Next/React dev dependencies as a Vercel compatibility shim while the preferred long-term Vercel monorepo configuration remains setting each project Root Directory to `apps/passport`
+- refreshed the lockfile through `pnpm`
+
+#### Verification
+
+- `npx --yes vercel inspect dpl_E2aQ5C8LpVoCEPnB9kdgYvd6Hzs3 --logs`
+- `npx --yes vercel inspect dpl_AFJoKb93KERz8FZPqP2LHLZ4FhfJ --logs`
+- `npx --yes vercel build --yes` progressed past Next autodetection and reached the Passport app build
+
+#### Follow-up
+
+- push the compatibility shim and re-check Vercel preview statuses after deployment reruns
+
 ### session: v44
 
 - timestamp: 2026-04-20T03:06:41-0400

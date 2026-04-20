@@ -8,6 +8,15 @@ importers:
 
   .:
     devDependencies:
+      next:
+        specifier: 14.2.15
+        version: 14.2.15(@babel/core@7.26.0)(@opentelemetry/api@1.9.1)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      react:
+        specifier: 18.3.1
+        version: 18.3.1
+      react-dom:
+        specifier: 18.3.1
+        version: 18.3.1(react@18.3.1)
       turbo:
         specifier: ^2.5.8
         version: 2.9.6
@@ -14830,26 +14839,26 @@ snapshots:
       '@amplitude/analytics-connector': 1.5.0
       '@amplitude/analytics-core': 0.11.4
       '@amplitude/analytics-types': 0.16.0
-      tslib: 2.7.0
+      tslib: 2.8.1
 
   '@amplitude/analytics-client-common@1.2.2':
     dependencies:
       '@amplitude/analytics-connector': 1.5.0
       '@amplitude/analytics-core': 1.2.5
       '@amplitude/analytics-types': 1.3.4
-      tslib: 2.7.0
+      tslib: 2.8.1
 
   '@amplitude/analytics-connector@1.5.0': {}
 
   '@amplitude/analytics-core@0.11.4':
     dependencies:
       '@amplitude/analytics-types': 0.16.0
-      tslib: 2.7.0
+      tslib: 2.8.1
 
   '@amplitude/analytics-core@1.2.5':
     dependencies:
       '@amplitude/analytics-types': 1.3.4
-      tslib: 2.7.0
+      tslib: 2.8.1
 
   '@amplitude/analytics-react-native@0.7.2(react-native@0.85.1(@babel/core@7.26.0)(@types/react@18.2.48)(bufferutil@4.0.8)(react@18.3.1)(utf-8-validate@5.0.10))(react@18.3.1)':
     dependencies:
@@ -14872,14 +14881,14 @@ snapshots:
     dependencies:
       '@amplitude/analytics-client-common': 1.2.2
       '@amplitude/analytics-types': 1.3.4
-      tslib: 2.7.0
+      tslib: 2.8.1
 
   '@amplitude/plugin-web-attribution-browser@1.0.12':
     dependencies:
       '@amplitude/analytics-client-common': 1.2.2
       '@amplitude/analytics-core': 1.2.5
       '@amplitude/analytics-types': 1.3.4
-      tslib: 2.7.0
+      tslib: 2.8.1
 
   '@amplitude/ua-parser-js@0.7.33': {}
 
@@ -14903,7 +14912,7 @@ snapshots:
       response-iterator: 0.2.6
       symbol-observable: 4.0.0
       ts-invariant: 0.10.3
-      tslib: 2.7.0
+      tslib: 2.8.1
       zen-observable-ts: 1.2.5
     optionalDependencies:
       react: 18.3.1
@@ -17370,7 +17379,7 @@ snapshots:
   '@firebase/component@0.6.4':
     dependencies:
       '@firebase/util': 1.9.3
-      tslib: 2.7.0
+      tslib: 2.8.1
 
   '@firebase/component@0.6.9':
     dependencies:
@@ -17380,7 +17389,7 @@ snapshots:
   '@firebase/component@0.7.2':
     dependencies:
       '@firebase/util': 1.15.0
-      tslib: 2.7.0
+      tslib: 2.8.1
 
   '@firebase/data-connect@0.1.0(@firebase/app@0.10.12)':
     dependencies:
@@ -17460,7 +17469,7 @@ snapshots:
       '@firebase/logger': 0.5.0
       '@firebase/util': 1.15.0
       faye-websocket: 0.11.4
-      tslib: 2.7.0
+      tslib: 2.8.1
 
   '@firebase/firestore-compat@0.3.21(@firebase/app-compat@0.2.22)(@firebase/app-types@0.9.0)(@firebase/app@0.9.22)(encoding@0.1.13)':
     dependencies:
@@ -17624,7 +17633,7 @@ snapshots:
 
   '@firebase/logger@0.4.0':
     dependencies:
-      tslib: 2.7.0
+      tslib: 2.8.1
 
   '@firebase/logger@0.4.2':
     dependencies:
@@ -17632,7 +17641,7 @@ snapshots:
 
   '@firebase/logger@0.5.0':
     dependencies:
-      tslib: 2.7.0
+      tslib: 2.8.1
 
   '@firebase/messaging-compat@0.2.11(@firebase/app-compat@0.2.42)(@firebase/app@0.10.12)':
     dependencies:
@@ -17829,7 +17838,7 @@ snapshots:
 
   '@firebase/util@1.15.0':
     dependencies:
-      tslib: 2.7.0
+      tslib: 2.8.1
 
   '@firebase/util@1.9.3':
     dependencies:
@@ -17874,26 +17883,26 @@ snapshots:
   '@formatjs/ecma402-abstract@1.11.4':
     dependencies:
       '@formatjs/intl-localematcher': 0.2.25
-      tslib: 2.7.0
+      tslib: 2.8.1
 
   '@formatjs/fast-memoize@1.2.1':
     dependencies:
-      tslib: 2.7.0
+      tslib: 2.8.1
 
   '@formatjs/icu-messageformat-parser@2.1.0':
     dependencies:
       '@formatjs/ecma402-abstract': 1.11.4
       '@formatjs/icu-skeleton-parser': 1.3.6
-      tslib: 2.7.0
+      tslib: 2.8.1
 
   '@formatjs/icu-skeleton-parser@1.3.6':
     dependencies:
       '@formatjs/ecma402-abstract': 1.11.4
-      tslib: 2.7.0
+      tslib: 2.8.1
 
   '@formatjs/intl-localematcher@0.2.25':
     dependencies:
-      tslib: 2.7.0
+      tslib: 2.8.1
 
   '@fractalwagmi/popup-connection@1.1.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
@@ -18496,7 +18505,7 @@ snapshots:
     dependencies:
       '@ngraveio/bc-ur': 1.1.13
       bs58check: 2.1.2
-      tslib: 2.7.0
+      tslib: 2.8.1
 
   '@keystonehq/sdk@0.13.1':
     dependencies:
@@ -18554,7 +18563,7 @@ snapshots:
       graphql: 16.9.0
       graphql-tag: 2.12.6(graphql@16.9.0)
       react: 18.3.1
-      tslib: 2.7.0
+      tslib: 2.8.1
     transitivePeerDependencies:
       - '@jest/globals'
       - jest-when
@@ -18569,7 +18578,7 @@ snapshots:
       '@lens-protocol/domain': 0.12.0
       '@lens-protocol/shared-kernel': 0.12.0
       ethers: 5.7.2(bufferutil@4.0.8)(utf-8-validate@5.0.10)
-      tslib: 2.7.0
+      tslib: 2.8.1
     transitivePeerDependencies:
       - '@faker-js/faker'
       - '@jest/globals'
@@ -18702,7 +18711,7 @@ snapshots:
       lit-siwe: 1.1.8(@ethersproject/contracts@5.7.0)(@ethersproject/hash@5.7.0)(@ethersproject/providers@5.7.2(bufferutil@4.0.8)(utf-8-validate@5.0.10))(@ethersproject/wallet@5.7.0)
       node-fetch: 3.3.2
       pako: 2.1.0
-      tslib: 2.7.0
+      tslib: 2.8.1
       tweetnacl: 1.0.3
       tweetnacl-util: 0.15.1
       utf-8-validate: 5.0.10
@@ -18933,7 +18942,7 @@ snapshots:
       '@motionone/easing': 10.17.0
       '@motionone/types': 10.17.0
       '@motionone/utils': 10.17.0
-      tslib: 2.7.0
+      tslib: 2.8.1
 
   '@motionone/dom@10.17.0':
     dependencies:
@@ -18942,23 +18951,23 @@ snapshots:
       '@motionone/types': 10.17.0
       '@motionone/utils': 10.17.0
       hey-listen: 1.0.8
-      tslib: 2.7.0
+      tslib: 2.8.1
 
   '@motionone/easing@10.17.0':
     dependencies:
       '@motionone/utils': 10.17.0
-      tslib: 2.7.0
+      tslib: 2.8.1
 
   '@motionone/generators@10.17.0':
     dependencies:
       '@motionone/types': 10.17.0
       '@motionone/utils': 10.17.0
-      tslib: 2.7.0
+      tslib: 2.8.1
 
   '@motionone/svelte@10.16.4':
     dependencies:
       '@motionone/dom': 10.17.0
-      tslib: 2.7.0
+      tslib: 2.8.1
 
   '@motionone/types@10.17.0': {}
 
@@ -18966,12 +18975,12 @@ snapshots:
     dependencies:
       '@motionone/types': 10.17.0
       hey-listen: 1.0.8
-      tslib: 2.7.0
+      tslib: 2.8.1
 
   '@motionone/vue@10.16.4':
     dependencies:
       '@motionone/dom': 10.17.0
-      tslib: 2.7.0
+      tslib: 2.8.1
 
   '@multiformats/base-x@4.0.1': {}
 
@@ -21457,12 +21466,12 @@ snapshots:
 
   '@swc/helpers@0.5.13':
     dependencies:
-      tslib: 2.7.0
+      tslib: 2.8.1
 
   '@swc/helpers@0.5.5':
     dependencies:
       '@swc/counter': 0.1.3
-      tslib: 2.7.0
+      tslib: 2.8.1
 
   '@szmarczak/http-timer@1.1.2':
     dependencies:
@@ -23855,23 +23864,23 @@ snapshots:
 
   '@wry/caches@1.0.1':
     dependencies:
-      tslib: 2.7.0
+      tslib: 2.8.1
 
   '@wry/context@0.7.4':
     dependencies:
-      tslib: 2.7.0
+      tslib: 2.8.1
 
   '@wry/equality@0.5.7':
     dependencies:
-      tslib: 2.7.0
+      tslib: 2.8.1
 
   '@wry/trie@0.4.3':
     dependencies:
-      tslib: 2.7.0
+      tslib: 2.8.1
 
   '@wry/trie@0.5.0':
     dependencies:
-      tslib: 2.7.0
+      tslib: 2.8.1
 
   '@xmldom/xmldom@0.7.13': {}
 
@@ -24244,7 +24253,7 @@ snapshots:
 
   async-mutex@0.4.1:
     dependencies:
-      tslib: 2.7.0
+      tslib: 2.8.1
 
   async-promise-pool@1.0.6:
     dependencies:
@@ -25942,7 +25951,7 @@ snapshots:
   dot-case@3.0.4:
     dependencies:
       no-case: 3.0.4
-      tslib: 2.7.0
+      tslib: 2.8.1
 
   dot-prop@6.0.1:
     dependencies:
@@ -27882,7 +27891,7 @@ snapshots:
   graphql-tag@2.12.6(graphql@16.9.0):
     dependencies:
       graphql: 16.9.0
-      tslib: 2.7.0
+      tslib: 2.8.1
 
   graphql@16.9.0: {}
 
@@ -28289,7 +28298,7 @@ snapshots:
       '@formatjs/ecma402-abstract': 1.11.4
       '@formatjs/fast-memoize': 1.2.1
       '@formatjs/icu-messageformat-parser': 2.1.0
-      tslib: 2.7.0
+      tslib: 2.8.1
 
   invariant@2.2.4:
     dependencies:
@@ -29786,7 +29795,7 @@ snapshots:
 
   lower-case@2.0.2:
     dependencies:
-      tslib: 2.7.0
+      tslib: 2.8.1
 
   lowercase-keys@1.0.1: {}
 
@@ -30536,7 +30545,7 @@ snapshots:
   no-case@3.0.4:
     dependencies:
       lower-case: 2.0.2
-      tslib: 2.7.0
+      tslib: 2.8.1
 
   node-abi@3.54.0:
     dependencies:
@@ -30810,7 +30819,7 @@ snapshots:
       '@wry/caches': 1.0.1
       '@wry/context': 0.7.4
       '@wry/trie': 0.4.3
-      tslib: 2.7.0
+      tslib: 2.8.1
 
   optionator@0.9.3:
     dependencies:
@@ -31700,7 +31709,7 @@ snapshots:
     dependencies:
       react: 18.3.1
       react-style-singleton: 2.2.1(@types/react@18.2.48)(react@18.3.1)
-      tslib: 2.7.0
+      tslib: 2.8.1
     optionalDependencies:
       '@types/react': 18.2.48
 
@@ -31748,7 +31757,7 @@ snapshots:
       get-nonce: 1.0.1
       invariant: 2.2.4
       react: 18.3.1
-      tslib: 2.7.0
+      tslib: 2.8.1
     optionalDependencies:
       '@types/react': 18.2.48
 
@@ -32487,7 +32496,7 @@ snapshots:
   snake-case@3.0.4:
     dependencies:
       dot-case: 3.0.4
-      tslib: 2.7.0
+      tslib: 2.8.1
 
   socket.io-client@4.7.4(bufferutil@4.0.8)(utf-8-validate@5.0.10):
     dependencies:
@@ -33261,7 +33270,7 @@ snapshots:
 
   ts-invariant@0.10.3:
     dependencies:
-      tslib: 2.7.0
+      tslib: 2.8.1
 
   ts-mixer@6.0.4: {}
 
@@ -33617,7 +33626,7 @@ snapshots:
   use-callback-ref@1.3.1(@types/react@18.2.48)(react@18.3.1):
     dependencies:
       react: 18.3.1
-      tslib: 2.7.0
+      tslib: 2.8.1
     optionalDependencies:
       '@types/react': 18.2.48
 
@@ -33631,7 +33640,7 @@ snapshots:
     dependencies:
       detect-node-es: 1.1.0
       react: 18.3.1
-      tslib: 2.7.0
+      tslib: 2.8.1
     optionalDependencies:
       '@types/react': 18.2.48
 
