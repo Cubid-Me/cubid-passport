@@ -3,6 +3,7 @@
   "framework": "nextjs",
   "installCommand": "pnpm install --frozen-lockfile",
   "buildCommand": "pnpm --dir apps/passport build",
+  "outputDirectory": "apps/passport/.next",
   "devCommand": "pnpm --dir apps/passport dev",
   "crons": [
     {

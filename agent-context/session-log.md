@@ -1238,6 +1238,31 @@ Address the PR 146 Vercel deployment failures where Passport preview deployments
 
 - push the preview-env fallback and re-check Vercel preview statuses after deployment reruns
 
+### session: v47
+
+- timestamp: 2026-04-20T03:27:31-0400
+- agent: **OpenAI Codex**
+- branch: **codex/b02-relying-party-completion**
+- head: **`a398130`**
+- session name: **Fix Vercel Passport output directory**
+
+#### Objective
+
+Address the PR 146 Vercel deployment failures where Passport now builds successfully from `apps/passport`, but legacy root-based Vercel project settings still look for the Next.js output at the monorepo root `.next` directory.
+
+#### Actions Taken
+
+- updated the root Vercel configuration to set `outputDirectory` to `apps/passport/.next`, matching the existing root `buildCommand`
+
+#### Verification
+
+- `npx --yes vercel inspect dpl_HVAqoTyR4RPjNF3XY34qA9ExYETe --logs`
+- `npx --yes vercel build --yes` was attempted locally and progressed through Vercel install/detection, but failed during prerender on a local pulled preview-env `Invalid URL`; the remote Vercel log for `a398130` already showed Passport build completion and failure only on root `.next` output discovery
+
+#### Follow-up
+
+- push the output-directory fix and re-check Vercel preview statuses after deployment reruns
+
 ### session: v44
 
 - timestamp: 2026-04-20T03:06:41-0400
