@@ -1185,6 +1185,30 @@ Address the PR 146 `validate` CI failure where `@cubid/oidc` tests failed becaus
 
 - push the fix and re-check PR 146 CI after the required polling interval
 
+### session: v44
+
+- timestamp: 2026-04-20T03:06:41-0400
+- agent: **OpenAI Codex**
+- branch: **codex/b02-relying-party-completion**
+- head: **`bf6a72a`**
+- session name: **Fix Passport CI Supabase build env**
+
+#### Objective
+
+Address the PR 146 `validate` CI failure where `@cubid/passport` could not prerender because the CI environment did not provide required Supabase build variables.
+
+#### Actions Taken
+
+- added non-secret placeholder Supabase values to the CI validation job so Passport can build in GitHub Actions without relying on local `.env.local`
+
+#### Verification
+
+- pending before commit: `pnpm --filter @cubid/passport build`
+
+#### Follow-up
+
+- push the fix and re-check PR 146 CI after the required polling interval
+
 ### session: v43
 
 - timestamp: 2026-04-20T02:59:55-0400
