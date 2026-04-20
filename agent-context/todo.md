@@ -249,11 +249,11 @@ Add OIDC-service-owned endpoints and repositories for passkey registration and a
 
 ### B04.3 Add Passport passkey UX and OTP recovery
 
-- Status: Not started
-- Timestamp started: TBD
+- Status: Started
+- Timestamp started: 2026-04-20T16:12:17-0400
 - Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
+- Feature branch: codex/b04-3-passkey-ux-otp-recovery
+- Head: bd828d4
 - Session-log reference(s): TBD
 
 Refactor Passport login so returning users can sign in with a passkey, verified users can register passkeys, and OTP bootstrap or recovery remains available without relying on localStorage as the hidden source of truth.

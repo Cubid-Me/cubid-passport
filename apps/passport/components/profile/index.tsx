@@ -1,6 +1,10 @@
 // @ts-nocheck
 /* eslint-disable @next/next/no-img-element */
 import React, { useCallback, useEffect, useState } from "react"
+import {
+  browserSupportsWebAuthn,
+  startRegistration,
+} from "@simplewebauthn/browser"
 import axios from "axios"
 import { useDispatch, useSelector } from "react-redux"
 import { toast } from "react-toastify"
@@ -15,6 +19,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 import {
   Select,
   SelectContent,
@@ -37,6 +42,9 @@ export const Profile = () => {
   const [userState, setUserState] = useState<any>({})
   const [walletState, setWalletState] = useState<any>({})
   const [exportPrivateKey, setExportPrivateKey] = useState(undefined)
+  const [passkeySupported, setPasskeySupported] = useState(false)
+  const [passkeyLabel, setPasskeyLabel] = useState("My passkey")
+  const [passkeyLoading, setPasskeyLoading] = useState(false)
 
   const fetchStamps = useCallback(async () => {
     if (email) {
@@ -89,7 +97,7 @@ export const Profile = () => {
   }, [])
 
   useEffect(() => {
-    if (email, phone) {
+    if ((email, phone)) {
       fetchStamps()
       fetchWalletDetails(email, phone)
     }
@@ -99,6 +107,10 @@ export const Profile = () => {
   const [allNearData, setAllNearData] = useState([])
   const [allEvmData, setAllEvmData] = useState([])
   const { supabaseUser } = useAuth({})
+
+  useEffect(() => {
+    setPasskeySupported(browserSupportsWebAuthn())
+  }, [])
 
   const fetchWallets = useCallback(async () => {
     if (supabaseUser?.id) {
@@ -138,10 +150,39 @@ export const Profile = () => {
     fetchWallets()
   }, [fetchWallets])
 
+  const registerPasskey = useCallback(async () => {
+    setPasskeyLoading(true)
+    try {
+      const { data: optionsEnvelope } = await axios.post(
+        "/api/oidc/passkeys/registration/options"
+      )
+      const credential = await startRegistration({
+        optionsJSON: optionsEnvelope.publicKey,
+      })
+
+      await axios.post("/api/oidc/passkeys/registration/complete", {
+        challengeId: optionsEnvelope.challengeId,
+        sessionId: optionsEnvelope.sessionId,
+        credentialLabel: passkeyLabel,
+        credential,
+      })
+
+      toast.success("Passkey added to your Cubid account")
+    } catch (error: any) {
+      console.error(error)
+      toast.error(
+        error?.response?.data?.error_description ??
+          "Unable to add a passkey. Sign in through Login with Cubid first, then try again."
+      )
+    } finally {
+      setPasskeyLoading(false)
+    }
+  }, [passkeyLabel])
+
   return (
     <div className="p-3">
       <h1 className="mb-2 text-3xl font-semibold">Profile</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <Card style={{ height: "auto" }}>
           <CardHeader>
             <CardTitle>My Trust Score</CardTitle>
@@ -178,7 +219,7 @@ export const Profile = () => {
                 </Button>
               ))}
               {nearAcc.map((item) => (
-                <div className="flex justify-between items-center">
+                <div className="flex items-center justify-between">
                   <Button className="block" key={item} variant="outline">
                     {item}
                   </Button>
@@ -189,15 +230,15 @@ export const Profile = () => {
                       ) as any
                     )?.stamp_json?.transaction?.signature
                   ) && (
-                      <button
-                        onClick={() => {
-                          fetchPrivateKeyWithAddress(item)
-                        }}
-                        className="text-white rounded-md bg-blue-600 text-xs p-2 py-1"
-                      >
-                        Export Private Key
-                      </button>
-                    )}
+                    <button
+                      onClick={() => {
+                        fetchPrivateKeyWithAddress(item)
+                      }}
+                      className="rounded-md bg-blue-600 p-2 py-1 text-xs text-white"
+                    >
+                      Export Private Key
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
@@ -230,10 +271,37 @@ export const Profile = () => {
             <div>
               <p>Email : {email} </p>
               <p>Phone : {phone} </p>
+              <div className="mt-4 rounded-lg border p-3">
+                <p className="text-sm font-semibold">Passkeys</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Add a phishing-resistant passkey after a Login with Cubid
+                  verification. Email and phone OTP stay available for bootstrap
+                  and recovery.
+                </p>
+                <Input
+                  className="mt-3"
+                  value={passkeyLabel}
+                  onChange={(event) => setPasskeyLabel(event.target.value)}
+                  placeholder="Passkey label"
+                />
+                <Button
+                  className="mt-3"
+                  variant="outline"
+                  onClick={registerPasskey}
+                  disabled={!passkeySupported || passkeyLoading}
+                >
+                  {passkeyLoading ? "Creating passkey..." : "Create passkey"}
+                </Button>
+                {!passkeySupported && (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    This browser does not support passkeys.
+                  </p>
+                )}
+              </div>
               <div className="mt-2 flex items-center gap-2">
                 <img
                   alt="image"
-                  className="h-20 w-20 rounded"
+                  className="size-20 rounded"
                   src="https://media.licdn.com/dms/image/C4D0BAQF0BbRWBLibVQ/company-logo_200_200/0/1622628086077?e=2147483647&v=beta&t=z_LYy9iZWArzniYy0I2aWqRgyK6kMTLcRsSuW7dZfq0"
                 />
                 <p>Enabled Login</p>

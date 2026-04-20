@@ -1,6 +1,6 @@
 # Login with Cubid OIDC and Trust Architecture
 
-Last updated: 2026-04-15
+Last updated: 2026-04-20
 Status: Accepted in B01
 Primary follow-up todos: B02, B03, B04, D01, E01
 
@@ -89,6 +89,16 @@ Core WebAuthn delivery for B04 follows the same trust split as the rest of the O
 - Passport hosts the browser ceremony UX, so the WebAuthn RP ID and expected origins are derived from the Passport host rather than the issuer host.
 - Login-challenge passkey authentication is exposed from the issuer under interaction-scoped routes, while passkey registration is exposed from session-scoped routes after the user already has an active issuer session.
 - Full device lifecycle management, richer support tooling, and ACR-driven step-up remain deferred follow-up work under later B04 slices.
+
+### Passport passkey UX and recovery
+
+The B04.3 Passport slice hosts the browser WebAuthn ceremonies but keeps protocol state in the issuer.
+
+- Returning users can use a passkey from the Passport login screen when a `login_challenge` is present.
+- Email and phone OTP remain visible recovery/bootstrap paths; the passkey UI must not hide recovery behind browser storage assumptions.
+- After an OTP or OwnID-backed login challenge is completed, Passport receives the issuer `session_id` through its server proxy and stores it in an HTTP-only, SameSite cookie.
+- Passkey registration in Login and Profile uses Passport server routes that read the HTTP-only issuer-session cookie, then proxy registration options and completion to `services/oidc`.
+- Browser state may hold transient WebAuthn options and UI labels, but it must not become the source of truth for issuer session identity.
 
 ### Admin
 

@@ -1,3 +1,38 @@
+### session: v53
+
+- timestamp: 2026-04-20T16:19:51-0400
+- agent: **OpenAI Codex**
+- branch: **codex/b04-3-passkey-ux-otp-recovery**
+- head: **`bd828d4`**
+- session name: **Implement Passport passkey UX and OTP recovery**
+
+#### Objective
+
+Add the Passport-facing passkey experience for Login with Cubid while keeping OIDC passkey challenge and session truth in `services/oidc`.
+
+#### Actions Taken
+
+- added Passport server proxy routes for OIDC login challenge reads, login completion, passkey authentication options/completion, and passkey registration options/completion
+- set the issuer session ID in an HTTP-only Passport cookie after OIDC login completion instead of storing it in browser state
+- added passkey sign-in and post-login passkey registration prompts to the Passport login screen, with email/phone recovery paths still visible
+- added Profile passkey registration using the same HTTP-only issuer-session proxy path
+- added `@simplewebauthn/browser` to Passport and documented the B04.3 ceremony/session boundary
+
+#### Verification
+
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport lint`
+- `pnpm --filter @cubid/passport test`
+- `pnpm --filter @cubid/passport build`
+- `pnpm typecheck`
+- `pnpm test`
+- `pnpm lint`
+- `pnpm build`
+
+#### Follow-up
+
+- complete B04.3 roadmap metadata after this implementation commit records the feature head
+
 ### session: v0
 
 - timestamp: 2026-04-15T12:04:00-0400
