@@ -161,11 +161,11 @@ Add the issuer-side production controls that should exist before broad rollout e
 
 ### B02.5.1 Add Passport consent revocation and Admin issuer operations views
 
-- Status: Not started
-- Timestamp started: TBD
+- Status: Started
+- Timestamp started: 2026-04-20T13:43:19-0400
 - Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
+- Feature branch: codex/b02-5-1-oidc-ops
+- Head: bd828d4
 - Session-log reference(s): TBD
 
 Build the user-facing and operator-facing surfaces that sit on top of the issuer controls added in `B02.5`. Passport should let authenticated users review active OIDC consents by client, scope, claim set, grant time, and policy version, then revoke a consent without exposing raw human subject keys or Cubid user IDs to browser state. Admin should expose richer visibility for TCOIN and other OIDC clients: redirect URIs, allowed scopes, claim policy, client status, rate-limit tier, recent audit events, token/userinfo failure counts, and suspension controls. This follow-up must use authenticated server routes rather than the existing generic Supabase proxy helpers, because consent revocation and client operations are security-sensitive account-management actions.

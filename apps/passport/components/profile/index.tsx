@@ -2,16 +2,17 @@
 /* eslint-disable @next/next/no-img-element */
 import React, { useCallback, useEffect, useState } from "react"
 import axios from "axios"
+import dayjs from "dayjs"
 import { useDispatch, useSelector } from "react-redux"
 import { toast } from "react-toastify"
 
 import useAuth from "@/hooks/useAuth"
-import { Button, buttonVariants } from "@/components/ui/button"
+import firebase from "@/lib/firebase"
+import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
@@ -31,12 +32,40 @@ import {
 
 import { logout } from "../../redux/userSlice"
 
+type OidcConsentSummary = {
+  claimClassificationSummary: Array<{
+    claim: string
+    dataClass: string
+  }>
+  clientId: string
+  clientName: string
+  consentId: string
+  consentVersion: number
+  grantedAt: string
+  grantedClaims: string[]
+  grantedScopes: string[]
+  policyVersion: string
+  revokedAt: string | null
+  revokedBy: "user" | "operator" | null
+}
+
+const formatList = (values: string[]) => {
+  if (!values.length) {
+    return "None"
+  }
+
+  return values.join(", ")
+}
+
 export const Profile = () => {
   const { email = "", phone } = useSelector((state: any) => state?.user) ?? {}
   const dispatch = useDispatch()
   const [userState, setUserState] = useState<any>({})
   const [walletState, setWalletState] = useState<any>({})
   const [exportPrivateKey, setExportPrivateKey] = useState(undefined)
+  const [oidcConsents, setOidcConsents] = useState<OidcConsentSummary[]>([])
+  const [oidcConsentsLoading, setOidcConsentsLoading] = useState(false)
+  const [revokingConsentId, setRevokingConsentId] = useState<string | null>(null)
 
   const fetchStamps = useCallback(async () => {
     if (email) {
@@ -57,7 +86,7 @@ export const Profile = () => {
       })
       setUserState(userData?.[0])
     }
-  }, [email])
+  }, [email, phone])
 
   const fetchWalletDetails = useCallback(async (email: string) => {
     const {
@@ -86,7 +115,7 @@ export const Profile = () => {
     } else {
       setWalletState(null)
     }
-  }, [])
+  }, [phone])
 
   useEffect(() => {
     if (email, phone) {
@@ -137,6 +166,70 @@ export const Profile = () => {
   useEffect(() => {
     fetchWallets()
   }, [fetchWallets])
+
+  const getOidcAuthHeaders = useCallback(async () => {
+    const currentUser = firebase.auth().currentUser
+
+    if (!currentUser) {
+      throw new Error("You must be signed in to manage Login with Cubid access")
+    }
+
+    const token = await currentUser.getIdToken()
+
+    return {
+      Authorization: `Bearer ${token}`,
+    }
+  }, [])
+
+  const fetchOidcConsents = useCallback(async () => {
+    if (!email && !phone) {
+      setOidcConsents([])
+      return
+    }
+
+    setOidcConsentsLoading(true)
+    try {
+      const headers = await getOidcAuthHeaders()
+      const { data } = await axios.post<{ data: OidcConsentSummary[] }>(
+        "/api/oidc/consents/list",
+        {},
+        { headers }
+      )
+      setOidcConsents(data.data ?? [])
+    } catch (error) {
+      console.error(error)
+      toast.error("Failed to load Login with Cubid access")
+    } finally {
+      setOidcConsentsLoading(false)
+    }
+  }, [email, phone, getOidcAuthHeaders])
+
+  useEffect(() => {
+    fetchOidcConsents()
+  }, [fetchOidcConsents])
+
+  const revokeOidcConsent = useCallback(async (consent: OidcConsentSummary) => {
+    if (!window.confirm(`Revoke Login with Cubid access for ${consent.clientName}?`)) {
+      return
+    }
+
+    setRevokingConsentId(consent.consentId)
+    try {
+      const headers = await getOidcAuthHeaders()
+      await axios.post(
+        "/api/oidc/consents/revoke",
+        { consentId: consent.consentId },
+        { headers }
+      )
+      toast.success("Login with Cubid access revoked")
+      await fetchOidcConsents()
+    } catch (error) {
+      console.error(error)
+      toast.error("Failed to revoke Login with Cubid access")
+    } finally {
+      setRevokingConsentId(null)
+    }
+  }, [fetchOidcConsents, getOidcAuthHeaders])
 
   return (
     <div className="p-3">
@@ -251,6 +344,123 @@ export const Profile = () => {
             >
               Logout
             </Button>
+          </CardContent>
+        </Card>
+        <Card className="md:col-span-2">
+          <CardHeader>
+            <CardTitle>Login with Cubid access</CardTitle>
+            <CardDescription>
+              Manage apps that can use your Cubid identity through OIDC sign-in.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="mb-4 flex justify-end">
+              <Button
+                disabled={oidcConsentsLoading}
+                onClick={fetchOidcConsents}
+                variant="outline"
+              >
+                {oidcConsentsLoading ? "Refreshing..." : "Refresh"}
+              </Button>
+            </div>
+            {oidcConsentsLoading && oidcConsents.length === 0 && (
+              <p className="text-sm text-muted-foreground">Loading connected apps...</p>
+            )}
+            {!oidcConsentsLoading && oidcConsents.length === 0 && (
+              <p className="text-sm text-muted-foreground">
+                No apps currently have Login with Cubid access.
+              </p>
+            )}
+            <div className="space-y-3">
+              {oidcConsents.map((consent) => {
+                const isRevoked = Boolean(consent.revokedAt)
+
+                return (
+                  <div
+                    key={consent.consentId}
+                    className="rounded-lg border bg-background p-4"
+                  >
+                    <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="font-semibold">{consent.clientName}</h3>
+                          <span
+                            className={`rounded-full px-2 py-1 text-xs ${
+                              isRevoked
+                                ? "bg-red-100 text-red-700"
+                                : "bg-emerald-100 text-emerald-700"
+                            }`}
+                          >
+                            {isRevoked ? "Revoked" : "Active"}
+                          </span>
+                        </div>
+                        <p className="mt-1 break-all text-xs text-muted-foreground">
+                          {consent.clientId}
+                        </p>
+                      </div>
+                      {!isRevoked && (
+                        <Button
+                          disabled={revokingConsentId === consent.consentId}
+                          onClick={() => revokeOidcConsent(consent)}
+                          variant="outline"
+                        >
+                          {revokingConsentId === consent.consentId
+                            ? "Revoking..."
+                            : "Revoke access"}
+                        </Button>
+                      )}
+                    </div>
+
+                    <div className="mt-4 grid gap-3 text-sm md:grid-cols-2">
+                      <p>
+                        <span className="text-muted-foreground">Scopes:</span>{" "}
+                        {formatList(consent.grantedScopes)}
+                      </p>
+                      <p>
+                        <span className="text-muted-foreground">Claims:</span>{" "}
+                        {formatList(consent.grantedClaims)}
+                      </p>
+                      <p>
+                        <span className="text-muted-foreground">Policy:</span>{" "}
+                        {consent.policyVersion}
+                      </p>
+                      <p>
+                        <span className="text-muted-foreground">Version:</span>{" "}
+                        {consent.consentVersion}
+                      </p>
+                      <p>
+                        <span className="text-muted-foreground">Granted:</span>{" "}
+                        {dayjs(consent.grantedAt).format("YYYY-MM-DD HH:mm")}
+                      </p>
+                      <p>
+                        <span className="text-muted-foreground">Revoked:</span>{" "}
+                        {consent.revokedAt
+                          ? `${dayjs(consent.revokedAt).format("YYYY-MM-DD HH:mm")} by ${consent.revokedBy}`
+                          : "No"}
+                      </p>
+                    </div>
+
+                    {consent.claimClassificationSummary.length > 0 && (
+                      <div className="mt-4">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                          Data classifications
+                        </p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {consent.claimClassificationSummary.map((entry) => (
+                            <span
+                              key={`${consent.consentId}-${entry.claim}`}
+                              className="rounded-full bg-muted px-3 py-1 text-xs"
+                            >
+                              {entry.claim}: {entry.dataClass}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
           </CardContent>
         </Card>
         <Sheet

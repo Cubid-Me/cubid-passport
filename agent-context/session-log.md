@@ -1238,6 +1238,45 @@ Address the PR 146 Vercel deployment failures where Passport preview deployments
 
 - push the preview-env fallback and re-check Vercel preview statuses after deployment reruns
 
+### session: v51
+
+- timestamp: 2026-04-20T13:50:52-0400
+- agent: **OpenAI Codex**
+- branch: **codex/b02-5-1-oidc-ops**
+- head: **`bd828d4`**
+- session name: **Implement B02.5.1 OIDC consent and ops surfaces**
+
+#### Objective
+
+Implement the B02.5.1 Ops v1 slice with authenticated Passport consent management, Admin OIDC operations visibility and controls, and issuer userinfo failure audit logging.
+
+#### Actions Taken
+
+- added Passport server-only Firebase/Supabase helpers plus consent list and revoke API routes
+- added a Login with Cubid access panel to the Passport Profile screen
+- added Admin OIDC Ops overview and update APIs for client visibility, rate-limit tier changes, and suspend/reactivate controls
+- added an Admin OIDC Ops tab with client metrics, redirect URI visibility, bindings, and recent audit events
+- added `userinfo.failed` audit logging in the OIDC issuer without changing external error responses
+- updated OIDC readiness and architecture docs for the new Passport/Admin operations surfaces
+
+#### Verification
+
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+- `pnpm --filter @cubid/admin typecheck`
+- `pnpm --filter @cubid/admin test`
+- `pnpm --filter @cubid/admin build`
+- `pnpm --filter @cubid/oidc typecheck`
+- `pnpm --filter @cubid/oidc test`
+- `pnpm lint`
+- `pnpm test`
+- `pnpm build`
+- `pnpm typecheck` rerun after the parallel build/typecheck race completed
+
+#### Follow-up
+
+- commit the implementation, then update B02.5.1 completion metadata with the resulting head
+
 ### session: v50
 
 - timestamp: 2026-04-20T03:53:28-0400

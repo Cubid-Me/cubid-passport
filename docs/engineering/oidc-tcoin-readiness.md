@@ -75,6 +75,9 @@ Before TCOIN treats Cubid as a usable issuer:
 - `/userinfo` returns a pairwise `sub` and only consented `email`/`profile` claims.
 - `/revoke` prevents subsequent `/userinfo` use for the revoked access token.
 - `/logout` accepts only exact registered post-logout redirect URIs.
+- Passport Profile shows the user's Login with Cubid client consents and can revoke a consent without exposing human subject keys, Cubid user IDs, token hashes, or session IDs to the browser.
+- Admin OIDC Ops shows client status, redirect URI visibility, scope visibility, rate-limit tier, claim policy bindings, recent audit events, active consent/token counts, and token/userinfo success/failure counters.
+- Admin OIDC Ops can suspend/reactivate a client and update its rate-limit tier; redirect URI, scope, secret, and metadata editing remain separate Admin workflows.
 
 ## Explicit Non-Deployment
 
