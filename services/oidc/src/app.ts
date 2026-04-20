@@ -32,6 +32,7 @@ import {
   getUserInfo,
   logout,
   OidcEndpointError,
+  parseRevocationEndpointInput,
   parseTokenEndpointInput,
   revokeToken,
 } from "./tokens";
@@ -542,7 +543,7 @@ export async function handleOidcRequest(request: Request): Promise<Response> {
 
   if (method === "POST" && pathname === "/revoke") {
     try {
-      await revokeToken(getOidcSupabase(), await request.formData(), requestId);
+      await revokeToken(getOidcSupabase(), await parseRevocationEndpointInput(request), requestId);
       return new Response(null, { status: 200 });
     } catch (error) {
       return oidcErrorResponse(error);

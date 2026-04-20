@@ -4,7 +4,13 @@ import test from "node:test";
 import { exportJWK, generateKeyPair } from "jose";
 
 import { createOidcJwks, signOidcJwt, verifyOidcJwt } from "./signing";
-import { buildUserInfo, parseTokenEndpointInput } from "./tokens";
+import {
+  buildUserInfo,
+  logout,
+  OidcEndpointError,
+  parseRevocationEndpointInput,
+  parseTokenEndpointInput,
+} from "./tokens";
 
 test("parseTokenEndpointInput accepts form fields and HTTP Basic client auth", async () => {
   const credentials = Buffer.from("client%201:secret%202").toString("base64");
@@ -28,6 +34,37 @@ test("parseTokenEndpointInput accepts form fields and HTTP Basic client auth", a
   assert.equal(input.code, "code_123");
   assert.equal(input.basicClientId, "client 1");
   assert.equal(input.basicClientSecret, "secret 2");
+});
+
+test("parseRevocationEndpointInput requires client identity alongside token", async () => {
+  const credentials = Buffer.from("client%201:secret%202").toString("base64");
+  const request = new Request("https://id.cubid.me/revoke", {
+    method: "POST",
+    headers: {
+      authorization: `Basic ${credentials}`,
+      "content-type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams({
+      token: "token_123",
+      token_type_hint: "access_token",
+    }),
+  });
+
+  const input = await parseRevocationEndpointInput(request);
+
+  assert.equal(input.token, "token_123");
+  assert.equal(input.tokenTypeHint, "access_token");
+  assert.equal(input.basicClientId, "client 1");
+  assert.equal(input.basicClientSecret, "secret 2");
+});
+
+test("logout returns invalid_request for malformed id_token_hint", async () => {
+  await assert.rejects(
+    () => logout({} as never, new Request("https://id.cubid.me/logout?id_token_hint=not-a-jwt"), "request_1"),
+    (error) => error instanceof OidcEndpointError
+      && error.statusCode === 400
+      && error.error === "invalid_request",
+  );
 });
 
 test("signing exposes a public JWKS and verifies issued JWTs", async () => {

@@ -88,6 +88,7 @@ const CLIENT_TYPES: readonly CubidClientType[] = [
 ] as const;
 
 const PUBLIC_CLIENT_TYPES = new Set<CubidClientType>(["public_web", "native", "device"]);
+const IMPLEMENTED_REGISTRATION_GRANT_TYPES = new Set<OidcGrantType>(["authorization_code"]);
 
 type PersistedClientRow = {
   client_id: string;
@@ -211,9 +212,9 @@ function defaultGrantTypesForClientType(clientType: CubidClientType): OidcGrantT
     case "public_web":
       return ["authorization_code"];
     case "confidential_web":
-      return ["authorization_code", "refresh_token"];
+      return ["authorization_code"];
     case "native":
-      return ["authorization_code", "refresh_token"];
+      return ["authorization_code"];
     case "device":
       return ["urn:ietf:params:oauth:grant-type:device_code"];
     case "backend_service":
@@ -221,11 +222,15 @@ function defaultGrantTypesForClientType(clientType: CubidClientType): OidcGrantT
   }
 }
 
-function normalizeGrantTypes(clientType: CubidClientType, value: unknown): OidcGrantType[] {
+export function normalizeRegisteredGrantTypes(clientType: CubidClientType, value: unknown): OidcGrantType[] {
   const fallback = defaultGrantTypesForClientType(clientType);
   const grantTypes = parseStringArray(value)
     .filter((entry): entry is OidcGrantType => (OIDC_GRANT_TYPES as readonly string[]).includes(entry)) as OidcGrantType[];
   const nextGrantTypes = [...new Set(grantTypes.length > 0 ? grantTypes : fallback)];
+
+  if (nextGrantTypes.some((entry) => !IMPLEMENTED_REGISTRATION_GRANT_TYPES.has(entry))) {
+    throw new Error("This grant type is not implemented by the token endpoint yet.");
+  }
 
   if (clientType === "backend_service" && nextGrantTypes.some((entry) => entry !== "client_credentials")) {
     throw new Error("Backend service clients may only use client_credentials.");
@@ -339,7 +344,7 @@ export async function createDynamicClientRegistration(
   const clientType = parseClientType(requestBody.client_type);
   const redirectUris = normalizeRedirectUris(clientType, requestBody.redirect_uris);
   const postLogoutRedirectUris = normalizePostLogoutRedirectUris(clientType, requestBody.post_logout_redirect_uris);
-  const grantTypes = normalizeGrantTypes(clientType, requestBody.grant_types);
+  const grantTypes = normalizeRegisteredGrantTypes(clientType, requestBody.grant_types);
 
   const defaultScopeFallback: OidcScope[] = clientType === "backend_service" ? [] : ["openid", "profile", "email"];
   const defaultScopes = normalizeScopes(requestBody.default_scopes, defaultScopeFallback);

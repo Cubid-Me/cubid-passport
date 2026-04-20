@@ -106,6 +106,11 @@ export type TokenEndpointInput = {
   basicClientSecret: string | null;
 };
 
+export type RevocationEndpointInput = TokenEndpointInput & {
+  token: string | null;
+  tokenTypeHint: string | null;
+};
+
 export class OidcEndpointError extends Error {
   statusCode: number;
   error: string;
@@ -182,6 +187,24 @@ export async function parseTokenEndpointInput(request: Request): Promise<TokenEn
     clientSecret: normalizeString(form.get("client_secret")),
     basicClientId: basic.clientId,
     basicClientSecret: basic.clientSecret,
+  };
+}
+
+export async function parseRevocationEndpointInput(request: Request): Promise<RevocationEndpointInput> {
+  const basic = parseBasicAuth(request);
+  const form = await request.formData();
+
+  return {
+    grantType: null,
+    code: null,
+    redirectUri: null,
+    clientId: normalizeString(form.get("client_id")),
+    codeVerifier: null,
+    clientSecret: normalizeString(form.get("client_secret")),
+    basicClientId: basic.clientId,
+    basicClientSecret: basic.clientSecret,
+    token: normalizeString(form.get("token")),
+    tokenTypeHint: normalizeString(form.get("token_type_hint")),
   };
 }
 
@@ -662,30 +685,44 @@ export async function getUserInfo(
 
 export async function revokeToken(
   supabase: SupabaseClient,
-  form: FormData,
+  input: RevocationEndpointInput,
   requestId: string,
 ): Promise<void> {
-  const token = normalizeString(form.get("token"));
+  const clientId = resolveTokenClientId(input);
+  const client = await getClient(supabase, clientId);
+
+  if (!client || client.status !== "active") {
+    throw new OidcEndpointError(401, "invalid_client", "Client authentication failed.");
+  }
+
+  validateClientAuthentication(client, input);
+
+  const token = input.token;
 
   if (!token) {
     throw new OidcEndpointError(400, "invalid_request", "token is required.");
   }
 
   let jti: string | null = null;
-  let clientId: string | null = null;
+  let tokenClientId: string | null = null;
   try {
     const decoded = decodeJwt(token);
     jti = typeof decoded.jti === "string" ? decoded.jti : null;
-    clientId = typeof decoded.client_id === "string" ? decoded.client_id : null;
+    tokenClientId = typeof decoded.client_id === "string" ? decoded.client_id : null;
   } catch {
     jti = null;
   }
 
   if (jti) {
+    if (tokenClientId !== clientId) {
+      throw new OidcEndpointError(400, "invalid_request", "token was not issued to the authenticated client.");
+    }
+
     const { error } = await supabase
       .from("oidc_access_tokens")
       .update({ revoked_at: nowIso() })
       .eq("access_token_jti", jti)
+      .eq("client_id", clientId)
       .is("revoked_at", null);
 
     if (error) {
@@ -696,6 +733,7 @@ export async function revokeToken(
       .from("oidc_refresh_tokens")
       .update({ revoked_at: nowIso() })
       .eq("refresh_token_hash", hashToken(token))
+      .eq("client_id", clientId)
       .is("revoked_at", null);
 
     if (error) {
@@ -729,8 +767,12 @@ export async function logout(
 
   const idTokenHint = url.searchParams.get("id_token_hint");
   if (idTokenHint && !sid) {
-    const decoded = decodeJwt(idTokenHint);
-    sid = typeof decoded.sid === "string" ? decoded.sid : null;
+    try {
+      const decoded = decodeJwt(idTokenHint);
+      sid = typeof decoded.sid === "string" ? decoded.sid : null;
+    } catch {
+      throw new OidcEndpointError(400, "invalid_request", "id_token_hint must be a well-formed JWT.");
+    }
   }
 
   if (sid) {

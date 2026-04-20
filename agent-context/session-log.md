@@ -1238,6 +1238,39 @@ Address the PR 146 Vercel deployment failures where Passport preview deployments
 
 - push the preview-env fallback and re-check Vercel preview statuses after deployment reruns
 
+### session: v50
+
+- timestamp: 2026-04-20T03:53:28-0400
+- agent: **OpenAI Codex**
+- branch: **codex/b02-relying-party-completion**
+- head: **`0429043`**
+- session name: **Address Codex connector protocol hardening review**
+
+#### Objective
+
+Address the latest Codex connector review comments on PR 146 covering token revocation client ownership, malformed logout token hints, and dynamic registration grant alignment with the implemented token endpoint.
+
+#### Actions Taken
+
+- required `/revoke` requests to authenticate the OAuth client before revoking access or refresh tokens
+- constrained token revocation to tokens owned by the authenticated client
+- returned a controlled `invalid_request` response for malformed logout `id_token_hint` values
+- aligned dynamic client registration defaults and validation with the currently implemented `authorization_code` token grant
+- added OIDC unit coverage for revocation input parsing, malformed logout hints, and unsupported registration grants
+
+#### Verification
+
+- `pnpm --filter @cubid/oidc typecheck`
+- `pnpm --filter @cubid/oidc test`
+- `pnpm lint`
+- `pnpm typecheck`
+- `pnpm test`
+- `pnpm build`
+
+#### Follow-up
+
+- push the review-response commit, comment with the solution, resolve the Codex connector threads, and re-check PR CI
+
 ### session: v49
 
 - timestamp: 2026-04-20T03:45:49-0400
