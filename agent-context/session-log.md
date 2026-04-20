@@ -1184,3 +1184,27 @@ Address the PR 146 `validate` CI failure where `@cubid/oidc` tests failed becaus
 #### Follow-up
 
 - push the fix and re-check PR 146 CI after the required polling interval
+
+### session: v43
+
+- timestamp: 2026-04-20T02:59:55-0400
+- agent: **OpenAI Codex**
+- branch: **codex/b02-relying-party-completion**
+- head: **`5a62361`**
+- session name: **Fix Admin CI Firebase build env**
+
+#### Objective
+
+Address the PR 146 `validate` CI failure where `@cubid/admin` could not prerender because the CI environment did not provide required public Firebase build variables.
+
+#### Actions Taken
+
+- added non-secret placeholder `NEXT_PUBLIC_FIREBASE_*` values to the CI validation job so Admin can build in GitHub Actions without relying on local `.env.local`
+
+#### Verification
+
+- `pnpm --filter @cubid/admin build`
+
+#### Follow-up
+
+- push the fix and re-check PR 146 CI after the required polling interval
