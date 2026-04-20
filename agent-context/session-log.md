@@ -1262,6 +1262,40 @@ Mark B02.5.1 completed after the implementation commit and record the resulting 
 
 - open a PR for `codex/b02-5-1-oidc-ops` when ready
 
+### session: v55
+
+- timestamp: 2026-04-20T16:37:55-0400
+- agent: **OpenAI Codex**
+- branch: **codex/b02-5-1-oidc-ops**
+- head: **`d327279`**
+- session name: **Address PR 147 review comments**
+
+#### Objective
+
+Address PR 147 Copilot review comments around Passport consent revocation audit correlation, scalable Admin OIDC Ops aggregate counts, and Admin operator error visibility, while also fixing the suppressed Profile email/phone loading bug.
+
+#### Actions Taken
+
+- added Passport request ID generation from `x-request-id` or a `passport_` UUID fallback, returned it as `X-Request-Id`, and persisted it on `consent.revoked` audit rows
+- added a Supabase `get_oidc_ops_client_counts` RPC migration and switched Admin Ops active consent/token counts to the aggregate RPC instead of full-row scans
+- updated Admin OIDC Ops to surface API-provided Axios `error` or `message` payloads before falling back to generic toast text
+- fixed the Profile comma-operator guard and wallet lookup call so email-only users can load wallet profile data correctly
+
+#### Verification
+
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/admin typecheck`
+- `pnpm --filter @cubid/admin test`
+- `pnpm --filter @cubid/admin build`
+- `pnpm lint`
+- `pnpm typecheck`
+- `pnpm test`
+- `pnpm build`
+
+#### Follow-up
+
+- push the review-response commit, comment with the solutions, resolve the Copilot threads, and continue the requested Codex review loop on PR 147
+
 ### session: v51
 
 - timestamp: 2026-04-20T13:50:52-0400

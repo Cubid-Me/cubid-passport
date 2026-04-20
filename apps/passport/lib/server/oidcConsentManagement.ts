@@ -1,8 +1,7 @@
 import { randomUUID } from "node:crypto"
-
-import type { DecodedIdToken } from "firebase-admin/auth"
 import type { NextApiRequest, NextApiResponse } from "next"
 import { createClient, type SupabaseClient } from "@supabase/supabase-js"
+import type { DecodedIdToken } from "firebase-admin/auth"
 
 import { getPassportFirebaseAdminAuth } from "./firebaseAdmin"
 
@@ -125,6 +124,17 @@ const getBearerToken = (req: NextApiRequest) => {
   return authorizationHeader.slice("Bearer ".length).trim()
 }
 
+export const getPassportRequestId = (req: NextApiRequest) => {
+  const headerValue = req.headers["x-request-id"]
+  const candidate = Array.isArray(headerValue) ? headerValue[0] : headerValue
+
+  if (candidate?.trim()) {
+    return candidate.trim()
+  }
+
+  return `passport_${randomUUID()}`
+}
+
 const requirePassportFirebaseUser = async (req: NextApiRequest) => {
   const bearerToken = getBearerToken(req)
 
@@ -133,10 +143,15 @@ const requirePassportFirebaseUser = async (req: NextApiRequest) => {
   }
 
   try {
-    const token = await getPassportFirebaseAdminAuth().verifyIdToken(bearerToken)
+    const token = await getPassportFirebaseAdminAuth().verifyIdToken(
+      bearerToken
+    )
 
     if (!token.email && !token.phone_number) {
-      throw new PassportApiError(401, "Firebase token is missing email or phone identity")
+      throw new PassportApiError(
+        401,
+        "Firebase token is missing email or phone identity"
+      )
     }
 
     return token
@@ -281,7 +296,9 @@ export const listPassportOidcConsents = async (req: NextApiRequest) => {
   }
 
   const clientIds = [
-    ...new Set(((consentRows ?? []) as ConsentRow[]).map((row) => row.client_id)),
+    ...new Set(
+      ((consentRows ?? []) as ConsentRow[]).map((row) => row.client_id)
+    ),
   ]
   const clientsById = new Map<string, ClientRow>()
 
@@ -307,7 +324,8 @@ export const listPassportOidcConsents = async (req: NextApiRequest) => {
 
 export const revokePassportOidcConsent = async (
   req: NextApiRequest,
-  consentId: string
+  consentId: string,
+  requestId: string
 ) => {
   if (!consentId) {
     throw new PassportApiError(400, "consentId is required")
@@ -379,6 +397,7 @@ export const revokePassportOidcConsent = async (
     event_type: "consent.revoked",
     actor_type: "user",
     actor_identifier: consent.human_subject_key,
+    request_id: requestId,
     outcome: "success",
     details: {
       consent_id: consentId,

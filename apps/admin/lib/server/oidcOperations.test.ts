@@ -1,4 +1,5 @@
 import {
+  normalizeClientCountRows,
   normalizeClientOpsUpdateInput,
 } from './oidcOperations';
 
@@ -9,7 +10,7 @@ describe('OIDC operations helpers', () => {
         clientId: 'client_123',
         status: 'suspended',
         rateLimitTier: 'trusted',
-      }),
+      })
     ).toEqual({
       clientId: 'client_123',
       status: 'suspended',
@@ -22,7 +23,7 @@ describe('OIDC operations helpers', () => {
       normalizeClientOpsUpdateInput({
         clientId: 'client_123',
         status: 'revoked',
-      }),
+      })
     ).toThrow(/active or suspended/);
   });
 
@@ -30,7 +31,31 @@ describe('OIDC operations helpers', () => {
     expect(() =>
       normalizeClientOpsUpdateInput({
         clientId: 'client_123',
-      }),
+      })
     ).toThrow(/status or rateLimitTier/);
+  });
+
+  it('normalizes aggregate count rows returned from Supabase RPCs', () => {
+    const counts = normalizeClientCountRows([
+      {
+        active_consent_count: '2',
+        active_token_count: 5,
+        client_id: 'client_123',
+      },
+      {
+        active_consent_count: null,
+        active_token_count: 'not-a-count',
+        client_id: 'client_456',
+      },
+    ]);
+
+    expect(counts.get('client_123')).toEqual({
+      activeConsentCount: 2,
+      activeTokenCount: 5,
+    });
+    expect(counts.get('client_456')).toEqual({
+      activeConsentCount: 0,
+      activeTokenCount: 0,
+    });
   });
 });

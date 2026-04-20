@@ -54,6 +54,12 @@ interface PolicyRow {
   policy_name: string;
 }
 
+interface ClientCountRow {
+  active_consent_count: number | string | null;
+  active_token_count: number | string | null;
+  client_id: string;
+}
+
 export interface OidcOpsAuditEvent {
   actorType: string;
   clientId: string | null;
@@ -138,16 +144,28 @@ const mapAuditEvent = (row: AuditLogRow): OidcOpsAuditEvent => ({
 });
 
 const isClientOpsStatus = (value: unknown): value is ClientOpsStatus => {
-  return typeof value === 'string' && CLIENT_OPS_STATUSES.includes(value as ClientOpsStatus);
+  return (
+    typeof value === 'string' &&
+    CLIENT_OPS_STATUSES.includes(value as ClientOpsStatus)
+  );
 };
 
 const isRateLimitTier = (value: unknown): value is RateLimitTier => {
-  return typeof value === 'string' && RATE_LIMIT_TIERS.includes(value as RateLimitTier);
+  return (
+    typeof value === 'string' &&
+    RATE_LIMIT_TIERS.includes(value as RateLimitTier)
+  );
 };
 
-export const normalizeClientOpsUpdateInput = (body: unknown): ClientOpsUpdateInput => {
-  const input = typeof body === 'object' && body !== null ? body as Record<string, unknown> : {};
-  const clientId = typeof input.clientId === 'string' ? input.clientId.trim() : '';
+export const normalizeClientOpsUpdateInput = (
+  body: unknown
+): ClientOpsUpdateInput => {
+  const input =
+    typeof body === 'object' && body !== null
+      ? (body as Record<string, unknown>)
+      : {};
+  const clientId =
+    typeof input.clientId === 'string' ? input.clientId.trim() : '';
   const status = input.status;
   const rateLimitTier = input.rateLimitTier;
 
@@ -160,7 +178,9 @@ export const normalizeClientOpsUpdateInput = (body: unknown): ClientOpsUpdateInp
   }
 
   if (rateLimitTier !== undefined && !isRateLimitTier(rateLimitTier)) {
-    throw new OidcOpsInputError('rateLimitTier must be starter, trusted, or internal');
+    throw new OidcOpsInputError(
+      'rateLimitTier must be starter, trusted, or internal'
+    );
   }
 
   if (status === undefined && rateLimitTier === undefined) {
@@ -181,9 +201,38 @@ const makeEmptyMetrics = () => ({
   userinfoSuccesses: 0,
 });
 
+const normalizeCount = (value: number | string | null | undefined) => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const parsed = Number.parseInt(value, 10);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  return 0;
+};
+
+export const normalizeClientCountRows = (rows: ClientCountRow[] = []) => {
+  const countsByClient = new Map<
+    string,
+    { activeConsentCount: number; activeTokenCount: number }
+  >();
+
+  for (const row of rows) {
+    countsByClient.set(row.client_id, {
+      activeConsentCount: normalizeCount(row.active_consent_count),
+      activeTokenCount: normalizeCount(row.active_token_count),
+    });
+  }
+
+  return countsByClient;
+};
+
 const addAuditMetric = (
   metricsByClient: Map<string, ReturnType<typeof makeEmptyMetrics>>,
-  row: AuditLogRow,
+  row: AuditLogRow
 ) => {
   if (!row.client_id) {
     return;
@@ -211,7 +260,7 @@ const addAuditMetric = (
 };
 
 export const loadOidcOpsOverview = async (
-  supabase: AdminSupabaseClient,
+  supabase: AdminSupabaseClient
 ): Promise<OidcOpsOverview> => {
   const now = new Date();
   const generatedAt = now.toISOString();
@@ -220,28 +269,24 @@ export const loadOidcOpsOverview = async (
   const [
     clientsResponse,
     auditResponse,
-    consentsResponse,
-    accessTokensResponse,
+    countsResponse,
     bindingsResponse,
     policiesResponse,
   ] = await Promise.all([
     supabase
       .from('oidc_clients')
       .select(
-        'client_id,client_name,client_type,status,verification_status,token_endpoint_auth_method,redirect_uris,post_logout_redirect_uris,grant_types,default_scopes,allowed_scopes,rate_limit_tier,created_at,updated_at,suspended_at',
+        'client_id,client_name,client_type,status,verification_status,token_endpoint_auth_method,redirect_uris,post_logout_redirect_uris,grant_types,default_scopes,allowed_scopes,rate_limit_tier,created_at,updated_at,suspended_at'
       )
       .order('client_name', { ascending: true }),
     supabase
       .from('oidc_audit_logs')
-      .select('client_id,event_type,actor_type,actor_identifier,request_id,outcome,details,created_at')
+      .select(
+        'client_id,event_type,actor_type,actor_identifier,request_id,outcome,details,created_at'
+      )
       .order('created_at', { ascending: false })
       .limit(200),
-    supabase
-      .from('oidc_consents')
-      .select('client_id,revoked_at'),
-    supabase
-      .from('oidc_access_tokens')
-      .select('client_id,expires_at,revoked_at'),
+    supabase.rpc('get_oidc_ops_client_counts', { p_now: generatedAt }),
     supabase
       .from('oidc_client_claim_policy_bindings')
       .select('client_id,claim_name,policy_id,enabled,archived_at')
@@ -254,8 +299,7 @@ export const loadOidcOpsOverview = async (
   for (const response of [
     clientsResponse,
     auditResponse,
-    consentsResponse,
-    accessTokensResponse,
+    countsResponse,
     bindingsResponse,
     policiesResponse,
   ]) {
@@ -266,10 +310,14 @@ export const loadOidcOpsOverview = async (
 
   const recentAuditRows = (auditResponse.data ?? []) as AuditLogRow[];
   const recentAuditEvents = recentAuditRows.map(mapAuditEvent);
-  const metricsByClient = new Map<string, ReturnType<typeof makeEmptyMetrics>>();
+  const metricsByClient = new Map<
+    string,
+    ReturnType<typeof makeEmptyMetrics>
+  >();
   const recentEventsByClient = new Map<string, OidcOpsAuditEvent[]>();
-  const activeConsentCounts = new Map<string, number>();
-  const activeTokenCounts = new Map<string, number>();
+  const countsByClient = normalizeClientCountRows(
+    (countsResponse.data ?? []) as ClientCountRow[]
+  );
   const bindingsByClient = new Map<string, BindingRow[]>();
   const policyNamesById = new Map<string, string>();
 
@@ -287,22 +335,6 @@ export const loadOidcOpsOverview = async (
     }
   }
 
-  for (const row of (consentsResponse.data ?? []) as Array<{ client_id: string; revoked_at: string | null }>) {
-    if (!row.revoked_at) {
-      activeConsentCounts.set(row.client_id, (activeConsentCounts.get(row.client_id) ?? 0) + 1);
-    }
-  }
-
-  for (const row of (accessTokensResponse.data ?? []) as Array<{
-    client_id: string;
-    expires_at: string;
-    revoked_at: string | null;
-  }>) {
-    if (!row.revoked_at && row.expires_at > generatedAt) {
-      activeTokenCounts.set(row.client_id, (activeTokenCounts.get(row.client_id) ?? 0) + 1);
-    }
-  }
-
   for (const binding of (bindingsResponse.data ?? []) as BindingRow[]) {
     const bindings = bindingsByClient.get(binding.client_id) ?? [];
     bindings.push(binding);
@@ -313,33 +345,43 @@ export const loadOidcOpsOverview = async (
     policyNamesById.set(policy.policy_id, policy.policy_name);
   }
 
-  const clients = ((clientsResponse.data ?? []) as ClientOpsRow[]).map((client) => ({
-    activeConsentCount: activeConsentCounts.get(client.client_id) ?? 0,
-    activeTokenCount: activeTokenCounts.get(client.client_id) ?? 0,
-    allowedScopes: normalizeStringArray(client.allowed_scopes),
-    bindings: (bindingsByClient.get(client.client_id) ?? []).map((binding) => ({
-      claimName: binding.claim_name,
-      enabled: binding.enabled,
-      policyId: binding.policy_id,
-      policyName: binding.policy_id ? policyNamesById.get(binding.policy_id) ?? binding.policy_id : null,
-    })),
-    clientId: client.client_id,
-    clientName: client.client_name,
-    clientType: client.client_type,
-    createdAt: client.created_at,
-    defaultScopes: normalizeStringArray(client.default_scopes),
-    grantTypes: normalizeStringArray(client.grant_types),
-    metrics7d: metricsByClient.get(client.client_id) ?? makeEmptyMetrics(),
-    postLogoutRedirectUris: normalizeStringArray(client.post_logout_redirect_uris),
-    rateLimitTier: client.rate_limit_tier,
-    recentAuditEvents: recentEventsByClient.get(client.client_id) ?? [],
-    redirectUris: normalizeStringArray(client.redirect_uris),
-    status: client.status,
-    suspendedAt: client.suspended_at,
-    tokenEndpointAuthMethod: client.token_endpoint_auth_method,
-    updatedAt: client.updated_at,
-    verificationStatus: client.verification_status,
-  }));
+  const clients = ((clientsResponse.data ?? []) as ClientOpsRow[]).map(
+    (client) => ({
+      activeConsentCount:
+        countsByClient.get(client.client_id)?.activeConsentCount ?? 0,
+      activeTokenCount:
+        countsByClient.get(client.client_id)?.activeTokenCount ?? 0,
+      allowedScopes: normalizeStringArray(client.allowed_scopes),
+      bindings: (bindingsByClient.get(client.client_id) ?? []).map(
+        (binding) => ({
+          claimName: binding.claim_name,
+          enabled: binding.enabled,
+          policyId: binding.policy_id,
+          policyName: binding.policy_id
+            ? policyNamesById.get(binding.policy_id) ?? binding.policy_id
+            : null,
+        })
+      ),
+      clientId: client.client_id,
+      clientName: client.client_name,
+      clientType: client.client_type,
+      createdAt: client.created_at,
+      defaultScopes: normalizeStringArray(client.default_scopes),
+      grantTypes: normalizeStringArray(client.grant_types),
+      metrics7d: metricsByClient.get(client.client_id) ?? makeEmptyMetrics(),
+      postLogoutRedirectUris: normalizeStringArray(
+        client.post_logout_redirect_uris
+      ),
+      rateLimitTier: client.rate_limit_tier,
+      recentAuditEvents: recentEventsByClient.get(client.client_id) ?? [],
+      redirectUris: normalizeStringArray(client.redirect_uris),
+      status: client.status,
+      suspendedAt: client.suspended_at,
+      tokenEndpointAuthMethod: client.token_endpoint_auth_method,
+      updatedAt: client.updated_at,
+      verificationStatus: client.verification_status,
+    })
+  );
 
   return {
     clients,
@@ -350,7 +392,7 @@ export const loadOidcOpsOverview = async (
 
 export const updateOidcClientOps = async (
   context: AdminRequestContext,
-  input: ClientOpsUpdateInput,
+  input: ClientOpsUpdateInput
 ) => {
   const { supabase } = context;
   const { data: client, error: lookupError } = await supabase
@@ -390,7 +432,7 @@ export const updateOidcClientOps = async (
     .update(patch)
     .eq('client_id', input.clientId)
     .select(
-      'client_id,client_name,client_type,status,verification_status,token_endpoint_auth_method,redirect_uris,post_logout_redirect_uris,grant_types,default_scopes,allowed_scopes,rate_limit_tier,created_at,updated_at,suspended_at',
+      'client_id,client_name,client_type,status,verification_status,token_endpoint_auth_method,redirect_uris,post_logout_redirect_uris,grant_types,default_scopes,allowed_scopes,rate_limit_tier,created_at,updated_at,suspended_at'
     )
     .single();
 
@@ -420,6 +462,8 @@ export const updateOidcClientOps = async (
   return updatedClient as ClientOpsRow;
 };
 
-export const isOidcOpsInputError = (error: unknown): error is OidcOpsInputError => {
+export const isOidcOpsInputError = (
+  error: unknown
+): error is OidcOpsInputError => {
   return error instanceof OidcOpsInputError;
 };

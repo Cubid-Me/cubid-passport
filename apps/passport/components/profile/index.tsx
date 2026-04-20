@@ -6,8 +6,8 @@ import dayjs from "dayjs"
 import { useDispatch, useSelector } from "react-redux"
 import { toast } from "react-toastify"
 
-import useAuth from "@/hooks/useAuth"
 import firebase from "@/lib/firebase"
+import useAuth from "@/hooks/useAuth"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -65,7 +65,9 @@ export const Profile = () => {
   const [exportPrivateKey, setExportPrivateKey] = useState(undefined)
   const [oidcConsents, setOidcConsents] = useState<OidcConsentSummary[]>([])
   const [oidcConsentsLoading, setOidcConsentsLoading] = useState(false)
-  const [revokingConsentId, setRevokingConsentId] = useState<string | null>(null)
+  const [revokingConsentId, setRevokingConsentId] = useState<string | null>(
+    null
+  )
 
   const fetchStamps = useCallback(async () => {
     if (email) {
@@ -88,39 +90,49 @@ export const Profile = () => {
     }
   }, [email, phone])
 
-  const fetchWalletDetails = useCallback(async (email: string) => {
-    const {
-      data: { data: wallet_details },
-    } = await axios.post(`/api/supabase/select`, {
-      match: {
-        email,
-      },
-      table: "wallet_details",
-    })
-    if (wallet_details?.[0]) {
-      setWalletState(wallet_details?.[0])
-    } else {
+  const fetchWalletDetails = useCallback(
+    async (emailValue: string) => {
+      if (emailValue) {
+        const {
+          data: { data: wallet_details },
+        } = await axios.post(`/api/supabase/select`, {
+          match: {
+            email: emailValue,
+          },
+          table: "wallet_details",
+        })
+
+        if (wallet_details?.[0]) {
+          setWalletState(wallet_details?.[0])
+          return
+        }
+      }
+
+      if (phone) {
+        const {
+          data: { data: wallet_details_phone },
+        } = await axios.post(`/api/supabase/select`, {
+          match: {
+            phone,
+          },
+          table: "wallet_details",
+        })
+
+        if (wallet_details_phone?.[0]) {
+          setWalletState(wallet_details_phone?.[0])
+          return
+        }
+      }
+
       setWalletState(null)
-    }
-    const {
-      data: { data: wallet_details_phone },
-    } = await axios.post(`/api/supabase/select`, {
-      match: {
-        phone,
-      },
-      table: "wallet_details",
-    })
-    if (wallet_details_phone?.[0]) {
-      setWalletState(wallet_details_phone?.[0])
-    } else {
-      setWalletState(null)
-    }
-  }, [phone])
+    },
+    [phone]
+  )
 
   useEffect(() => {
-    if (email, phone) {
+    if (email || phone) {
       fetchStamps()
-      fetchWalletDetails(email, phone)
+      fetchWalletDetails(email)
     }
   }, [fetchStamps, fetchWalletDetails, email, phone])
 
@@ -208,28 +220,35 @@ export const Profile = () => {
     fetchOidcConsents()
   }, [fetchOidcConsents])
 
-  const revokeOidcConsent = useCallback(async (consent: OidcConsentSummary) => {
-    if (!window.confirm(`Revoke Login with Cubid access for ${consent.clientName}?`)) {
-      return
-    }
+  const revokeOidcConsent = useCallback(
+    async (consent: OidcConsentSummary) => {
+      if (
+        !window.confirm(
+          `Revoke Login with Cubid access for ${consent.clientName}?`
+        )
+      ) {
+        return
+      }
 
-    setRevokingConsentId(consent.consentId)
-    try {
-      const headers = await getOidcAuthHeaders()
-      await axios.post(
-        "/api/oidc/consents/revoke",
-        { consentId: consent.consentId },
-        { headers }
-      )
-      toast.success("Login with Cubid access revoked")
-      await fetchOidcConsents()
-    } catch (error) {
-      console.error(error)
-      toast.error("Failed to revoke Login with Cubid access")
-    } finally {
-      setRevokingConsentId(null)
-    }
-  }, [fetchOidcConsents, getOidcAuthHeaders])
+      setRevokingConsentId(consent.consentId)
+      try {
+        const headers = await getOidcAuthHeaders()
+        await axios.post(
+          "/api/oidc/consents/revoke",
+          { consentId: consent.consentId },
+          { headers }
+        )
+        toast.success("Login with Cubid access revoked")
+        await fetchOidcConsents()
+      } catch (error) {
+        console.error(error)
+        toast.error("Failed to revoke Login with Cubid access")
+      } finally {
+        setRevokingConsentId(null)
+      }
+    },
+    [fetchOidcConsents, getOidcAuthHeaders]
+  )
 
   return (
     <div className="p-3">
@@ -282,15 +301,15 @@ export const Profile = () => {
                       ) as any
                     )?.stamp_json?.transaction?.signature
                   ) && (
-                      <button
-                        onClick={() => {
-                          fetchPrivateKeyWithAddress(item)
-                        }}
-                        className="text-white rounded-md bg-blue-600 text-xs p-2 py-1"
-                      >
-                        Export Private Key
-                      </button>
-                    )}
+                    <button
+                      onClick={() => {
+                        fetchPrivateKeyWithAddress(item)
+                      }}
+                      className="text-white rounded-md bg-blue-600 text-xs p-2 py-1"
+                    >
+                      Export Private Key
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
@@ -364,7 +383,9 @@ export const Profile = () => {
               </Button>
             </div>
             {oidcConsentsLoading && oidcConsents.length === 0 && (
-              <p className="text-sm text-muted-foreground">Loading connected apps...</p>
+              <p className="text-sm text-muted-foreground">
+                Loading connected apps...
+              </p>
             )}
             {!oidcConsentsLoading && oidcConsents.length === 0 && (
               <p className="text-sm text-muted-foreground">
@@ -383,7 +404,9 @@ export const Profile = () => {
                     <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="font-semibold">{consent.clientName}</h3>
+                          <h3 className="font-semibold">
+                            {consent.clientName}
+                          </h3>
                           <span
                             className={`rounded-full px-2 py-1 text-xs ${
                               isRevoked
@@ -435,7 +458,9 @@ export const Profile = () => {
                       <p>
                         <span className="text-muted-foreground">Revoked:</span>{" "}
                         {consent.revokedAt
-                          ? `${dayjs(consent.revokedAt).format("YYYY-MM-DD HH:mm")} by ${consent.revokedBy}`
+                          ? `${dayjs(consent.revokedAt).format(
+                              "YYYY-MM-DD HH:mm"
+                            )} by ${consent.revokedBy}`
                           : "No"}
                       </p>
                     </div>
