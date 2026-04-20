@@ -98,7 +98,13 @@ export default function AuthenticationPage() {
         match: { email: emailField.current.value },
         table: "users",
       })
-      await firebase.auth().signInWithCustomToken(values.idToken)
+      const credential = await firebase.auth().signInWithCustomToken(values.idToken)
+      const firebaseIdToken = await credential.user?.getIdToken()
+
+      if (!firebaseIdToken) {
+        throw new Error("Unable to create a Firebase login assertion")
+      }
+
       if (!data?.[0]) {
         await axios.post(`/api/supabase/insert`, {
           table: "users",
@@ -121,6 +127,7 @@ export default function AuthenticationPage() {
       }
 
       if (await completeOidcLogin({
+        firebase_id_token: firebaseIdToken,
         verified_email: localStorage.getItem("email") ?? emailField.current.value,
         authentication_methods: ["email_ownid"],
       })) {
@@ -194,9 +201,15 @@ export default function AuthenticationPage() {
     if (verificationId && otp) {
       const credential = firebase.auth.PhoneAuthProvider.credential(verificationId, otp)
       try {
-        await firebase.auth().signInWithCredential(credential)
+        const result = await firebase.auth().signInWithCredential(credential)
+        const firebaseIdToken = await result.user?.getIdToken()
+
+        if (!firebaseIdToken) {
+          throw new Error("Unable to create a Firebase login assertion")
+        }
 
         if (await completeOidcLogin({
+          firebase_id_token: firebaseIdToken,
           verified_phone: phoneNumber,
           authentication_methods: ["phone_otp", "firebase_phone"],
         })) {

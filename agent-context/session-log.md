@@ -1238,6 +1238,40 @@ Address the PR 146 Vercel deployment failures where Passport preview deployments
 
 - push the preview-env fallback and re-check Vercel preview statuses after deployment reruns
 
+### session: v49
+
+- timestamp: 2026-04-20T03:45:49-0400
+- agent: **OpenAI Codex**
+- branch: **codex/b02-relying-party-completion**
+- head: **`ded1a13`**
+- session name: **Address Codex connector OIDC review**
+
+#### Objective
+
+Address Codex connector review comments on PR 146 covering login-completion trust boundaries and optional post-logout redirect URI registration.
+
+#### Actions Taken
+
+- required Passport hosted login completion to send a Firebase ID token after email or phone authentication
+- added OIDC service Firebase SecureToken verification before accepting email or phone identity claims
+- rejected request-body Cubid user IDs on login completion so the service no longer trusts caller-supplied internal user identity
+- allowed dynamic client registration to omit `post_logout_redirect_uris` while continuing to validate any supplied logout redirect URIs
+- added OIDC unit tests for Firebase claim matching and optional post-logout redirect behavior
+
+#### Verification
+
+- `pnpm --filter @cubid/oidc typecheck`
+- `pnpm --filter @cubid/oidc test`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm test`
+- `pnpm build`
+- `pnpm typecheck` rerun serially after build completed
+- `pnpm lint`
+
+#### Follow-up
+
+- push the Codex-review fix, comment with the solution, resolve Codex connector threads, and re-check PR CI
+
 ### session: v48
 
 - timestamp: 2026-04-20T03:41:07-0400

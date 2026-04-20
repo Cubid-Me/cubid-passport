@@ -176,10 +176,15 @@ function validateRedirectUri(clientType: CubidClientType, value: string): string
   return parsed.toString();
 }
 
-function normalizeRedirectUris(clientType: CubidClientType, value: unknown): string[] {
+function normalizeRedirectUris(
+  clientType: CubidClientType,
+  value: unknown,
+  options: { requireForInteractiveClients?: boolean } = {},
+): string[] {
+  const requireForInteractiveClients = options.requireForInteractiveClients ?? true;
   const uris = parseStringArray(value).map((entry) => validateRedirectUri(clientType, entry));
 
-  if (["public_web", "confidential_web", "native"].includes(clientType) && uris.length === 0) {
+  if (requireForInteractiveClients && ["public_web", "confidential_web", "native"].includes(clientType) && uris.length === 0) {
     throw new Error("This client type requires at least one redirect URI.");
   }
 
@@ -188,6 +193,12 @@ function normalizeRedirectUris(clientType: CubidClientType, value: unknown): str
   }
 
   return [...new Set(uris)];
+}
+
+export function normalizePostLogoutRedirectUris(clientType: CubidClientType, value: unknown): string[] {
+  return normalizeRedirectUris(clientType, value, {
+    requireForInteractiveClients: false,
+  });
 }
 
 function normalizeScopes(value: unknown, fallback: OidcScope[] = []): OidcScope[] {
@@ -327,7 +338,7 @@ export async function createDynamicClientRegistration(
 
   const clientType = parseClientType(requestBody.client_type);
   const redirectUris = normalizeRedirectUris(clientType, requestBody.redirect_uris);
-  const postLogoutRedirectUris = normalizeRedirectUris(clientType, requestBody.post_logout_redirect_uris);
+  const postLogoutRedirectUris = normalizePostLogoutRedirectUris(clientType, requestBody.post_logout_redirect_uris);
   const grantTypes = normalizeGrantTypes(clientType, requestBody.grant_types);
 
   const defaultScopeFallback: OidcScope[] = clientType === "backend_service" ? [] : ["openid", "profile", "email"];

@@ -10,6 +10,8 @@ export interface OidcRuntimeConfig {
   passkeyRpId: string;
   passkeyExpectedOrigins: string[];
   passkeyRpName: string;
+  firebaseProjectId: string | null;
+  firebaseJwksUrl: string;
   signingPrivateJwk: Record<string, unknown> | null;
   activeSigningKid: string | null;
   jwks: { keys: unknown[] };
@@ -94,6 +96,8 @@ export function buildOidcRuntimeConfig(env: NodeJS.ProcessEnv): OidcRuntimeConfi
     passkeyRpId: getOptionalEnv(env, "OIDC_PASSKEY_RP_ID") ?? new URL(passportPublicOrigin).hostname,
     passkeyExpectedOrigins: passkeyExpectedOrigins.length > 0 ? passkeyExpectedOrigins : [passportPublicOrigin],
     passkeyRpName: getOptionalEnv(env, "OIDC_PASSKEY_RP_NAME") ?? "Cubid Passport",
+    firebaseProjectId: getOptionalEnv(env, "OIDC_FIREBASE_PROJECT_ID") ?? getOptionalEnv(env, "FIREBASE_PROJECT_ID"),
+    firebaseJwksUrl: getOptionalEnv(env, "OIDC_FIREBASE_JWKS_URL") ?? "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com",
     signingPrivateJwk: parseJsonObject(getOptionalEnv(env, "OIDC_SIGNING_PRIVATE_JWK_JSON"), "OIDC_SIGNING_PRIVATE_JWK_JSON"),
     activeSigningKid: getOptionalEnv(env, "OIDC_ACTIVE_SIGNING_KID"),
     jwks: parseJwks(getOptionalEnv(env, "OIDC_JWKS_JSON")),

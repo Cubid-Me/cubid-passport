@@ -17,6 +17,7 @@ import {
   derivePairwiseSubject,
 } from "@cubid/identity";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { createRemoteJWKSet, jwtVerify, type JWTPayload } from "jose";
 
 import { getOidcRuntimeConfig } from "./config";
 import type { CubidClientRecord, CubidClientType } from "./registration";
@@ -155,6 +156,10 @@ type LoginCompletionInput = {
   authenticationMethods: string[];
 };
 
+export type ParsedLoginCompletionInput = LoginCompletionInput & {
+  firebaseIdToken: string;
+};
+
 export type OidcAuthenticatedLoginSubject = {
   cubidUserId: number | null;
   humanSubjectKey: string;
@@ -182,6 +187,9 @@ type ConsentGrantResult = {
   consentVersion: number;
   pairwiseSub: string;
 };
+
+let firebaseJwks: ReturnType<typeof createRemoteJWKSet> | null = null;
+let firebaseJwksUrl: string | null = null;
 
 export class AuthorizationRequestError extends Error {
   error: string;
@@ -491,10 +499,25 @@ async function updateSession(
   }
 }
 
-function parseLoginCompletionInput(payload: Record<string, unknown>): LoginCompletionInput {
+function parseLoginCompletionInput(payload: Record<string, unknown>): ParsedLoginCompletionInput {
+  const firebaseIdToken = normalizeOptionalString(payload.firebase_id_token) ?? normalizeOptionalString(payload.firebaseIdToken);
   const verifiedEmail = normalizeOptionalString(payload.verified_email) ?? normalizeOptionalString(payload.verifiedEmail);
   const verifiedPhone = normalizeOptionalString(payload.verified_phone) ?? normalizeOptionalString(payload.verifiedPhone);
   const cubidUserId = normalizeOptionalNumber(payload.cubid_user_id) ?? normalizeOptionalNumber(payload.cubidUserId);
+
+  if (!firebaseIdToken) {
+    throw new AuthorizationRequestError(
+      "invalid_request",
+      "Login completion requires a Firebase ID token issued after Passport authentication.",
+    );
+  }
+
+  if (cubidUserId !== null) {
+    throw new AuthorizationRequestError(
+      "invalid_request",
+      "Login completion cannot accept a Cubid user id from the request body.",
+    );
+  }
 
   const authenticationMethods = [
     ...new Set([
@@ -502,13 +525,6 @@ function parseLoginCompletionInput(payload: Record<string, unknown>): LoginCompl
       ...ensureArrayOfStrings(payload.authenticationMethods),
     ]),
   ];
-
-  if (!verifiedEmail && !verifiedPhone && cubidUserId === null) {
-    throw new AuthorizationRequestError(
-      "invalid_request",
-      "Login completion requires a verified email, a verified phone number, or an existing Cubid user id.",
-    );
-  }
 
   if (authenticationMethods.length === 0) {
     if (verifiedEmail) {
@@ -522,7 +538,113 @@ function parseLoginCompletionInput(payload: Record<string, unknown>): LoginCompl
   return {
     verifiedEmail,
     verifiedPhone,
-    cubidUserId,
+    cubidUserId: null,
+    authenticationMethods,
+    firebaseIdToken,
+  };
+}
+
+function getFirebaseJwks(url: string): ReturnType<typeof createRemoteJWKSet> {
+  if (!firebaseJwks || firebaseJwksUrl !== url) {
+    firebaseJwks = createRemoteJWKSet(new URL(url));
+    firebaseJwksUrl = url;
+  }
+
+  return firebaseJwks;
+}
+
+async function verifyFirebaseIdToken(idToken: string): Promise<JWTPayload> {
+  const config = getOidcRuntimeConfig();
+
+  if (!config.firebaseProjectId) {
+    throw new AuthorizationRequestError(
+      "server_error",
+      "OIDC_FIREBASE_PROJECT_ID or FIREBASE_PROJECT_ID must be configured before hosted login completion can be used.",
+      { statusCode: 500 },
+    );
+  }
+
+  try {
+    const { payload } = await jwtVerify(idToken, getFirebaseJwks(config.firebaseJwksUrl), {
+      audience: config.firebaseProjectId,
+      issuer: `https://securetoken.google.com/${config.firebaseProjectId}`,
+    });
+
+    return payload;
+  } catch {
+    throw new AuthorizationRequestError(
+      "invalid_request",
+      "Login completion requires a valid Firebase ID token for the authenticated Passport user.",
+      { statusCode: 401 },
+    );
+  }
+}
+
+function normalizeTokenStringClaim(claim: unknown): string | null {
+  return typeof claim === "string" && claim.trim().length > 0 ? claim.trim() : null;
+}
+
+function assertMatchingEmail(requestEmail: string | null, tokenEmail: string | null): string | null {
+  if (!requestEmail) {
+    return tokenEmail;
+  }
+
+  if (!tokenEmail || tokenEmail.toLowerCase() !== requestEmail.toLowerCase()) {
+    throw new AuthorizationRequestError(
+      "invalid_request",
+      "verified_email must match the authenticated Firebase ID token.",
+      { statusCode: 401 },
+    );
+  }
+
+  return tokenEmail;
+}
+
+function assertMatchingPhone(requestPhone: string | null, tokenPhone: string | null): string | null {
+  if (!requestPhone) {
+    return tokenPhone;
+  }
+
+  if (!tokenPhone || tokenPhone !== requestPhone) {
+    throw new AuthorizationRequestError(
+      "invalid_request",
+      "verified_phone must match the authenticated Firebase ID token.",
+      { statusCode: 401 },
+    );
+  }
+
+  return tokenPhone;
+}
+
+export function buildVerifiedLoginCompletionInput(
+  input: ParsedLoginCompletionInput,
+  firebaseClaims: JWTPayload,
+): LoginCompletionInput {
+  const verifiedEmail = assertMatchingEmail(input.verifiedEmail, normalizeTokenStringClaim(firebaseClaims.email));
+  const verifiedPhone = assertMatchingPhone(input.verifiedPhone, normalizeTokenStringClaim(firebaseClaims.phone_number));
+  const authenticationMethods = [...input.authenticationMethods];
+
+  if (!verifiedEmail && !verifiedPhone) {
+    throw new AuthorizationRequestError(
+      "invalid_request",
+      "The Firebase ID token must contain a verified email or phone number for OIDC login completion.",
+      { statusCode: 401 },
+    );
+  }
+
+  if (authenticationMethods.length === 0) {
+    if (verifiedEmail) {
+      authenticationMethods.push("email_ownid");
+    }
+    if (verifiedPhone) {
+      authenticationMethods.push("firebase_phone");
+    }
+  }
+
+  return {
+    verifiedEmail,
+    verifiedPhone,
+    cubidUserId: null,
     authenticationMethods,
   };
 }
@@ -1161,7 +1283,8 @@ export async function completeLoginChallenge(
   payload: Record<string, unknown>,
   requestId: string,
 ): Promise<CompleteLoginChallengeResult> {
-  const input = parseLoginCompletionInput(payload);
+  const parsedInput = parseLoginCompletionInput(payload);
+  const input = buildVerifiedLoginCompletionInput(parsedInput, await verifyFirebaseIdToken(parsedInput.firebaseIdToken));
   const user = await resolveUserByIdentifiers(supabase, input);
   const humanSubject = await resolveHumanSubject(supabase, user);
   return completeLoginChallengeForSubject(

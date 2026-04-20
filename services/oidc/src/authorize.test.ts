@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  AuthorizationRequestError,
+  buildVerifiedLoginCompletionInput,
   buildAuthorizationErrorRedirect,
   buildAuthorizationSuccessRedirect,
   parsePromptSet,
@@ -37,4 +39,46 @@ test("buildAuthorizationErrorRedirect appends standard error fields", () => {
   assert.equal(url.searchParams.get("error"), "login_required");
   assert.equal(url.searchParams.get("error_description"), "session missing");
   assert.equal(url.searchParams.get("state"), "state_456");
+});
+
+test("buildVerifiedLoginCompletionInput accepts matching Firebase email claims only", () => {
+  const input = buildVerifiedLoginCompletionInput(
+    {
+      firebaseIdToken: "firebase-token",
+      verifiedEmail: "alice@example.com",
+      verifiedPhone: null,
+      cubidUserId: null,
+      authenticationMethods: [],
+    },
+    {
+      email: "Alice@example.com",
+      sub: "firebase-user",
+    },
+  );
+
+  assert.deepEqual(input, {
+    verifiedEmail: "Alice@example.com",
+    verifiedPhone: null,
+    cubidUserId: null,
+    authenticationMethods: ["email_ownid"],
+  });
+});
+
+test("buildVerifiedLoginCompletionInput rejects mismatched Firebase identity claims", () => {
+  assert.throws(
+    () => buildVerifiedLoginCompletionInput(
+      {
+        firebaseIdToken: "firebase-token",
+        verifiedEmail: "alice@example.com",
+        verifiedPhone: null,
+        cubidUserId: null,
+        authenticationMethods: ["email_ownid"],
+      },
+      {
+        email: "mallory@example.com",
+        sub: "firebase-user",
+      },
+    ),
+    AuthorizationRequestError,
+  );
 });
