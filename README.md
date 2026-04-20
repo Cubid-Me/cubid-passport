@@ -47,9 +47,9 @@ pnpm --filter @cubid/admin dev
 
 ## Environment Notes
 
-Passport runtime env files now belong under `apps/passport/`. Use [apps/passport/.env.example](/Users/botmaster/src/cubid/cubid-passport/apps/passport/.env.example) as the workspace-local baseline.
+Passport runtime env files now belong under `apps/passport/`. Use [apps/passport/.env.example](apps/passport/.env.example) as the workspace-local baseline.
 
-Admin runtime env files belong under [apps/admin/.env.example](/Users/botmaster/src/cubid/cubid-passport/apps/admin/.env.example).
+Admin runtime env files belong under [apps/admin/.env.example](apps/admin/.env.example).
 
 Known Passport env variables include:
 

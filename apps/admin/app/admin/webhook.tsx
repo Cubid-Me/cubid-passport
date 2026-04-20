@@ -104,7 +104,7 @@ export default function Webhooks() {
       </div>
       <WebhookDetailsSidePanel
         isOpen={Boolean(webhookSidePanelDetails)}
-        setIsOpen={setWebhookSidePanelDetails}
+        onClose={() => setWebhookSidePanelDetails(null)}
         webhookDetails={webhookSidePanelDetails}
       />
     </div>

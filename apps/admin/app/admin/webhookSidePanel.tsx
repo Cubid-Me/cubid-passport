@@ -20,20 +20,20 @@ interface DeliveryAttempt {
 
 interface WebhookDetailsSidePanelProps {
   isOpen: boolean;
-  setIsOpen: (value: null) => void;
+  onClose: () => void;
   webhookDetails: WebhookDetails | null;
 }
 
 export const WebhookDetailsSidePanel = ({
   isOpen,
-  setIsOpen,
+  onClose,
   webhookDetails,
 }: WebhookDetailsSidePanelProps) => {
   const [allApiCalls, setAllApiCalls] = useState<DeliveryAttempt[]>([]);
   const [loading, setLoading] = useState(false);
 
   const closePanel = () => {
-    setIsOpen(null);
+    onClose();
     setAllApiCalls([]);
   };
 

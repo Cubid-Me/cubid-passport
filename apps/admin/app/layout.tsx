@@ -22,9 +22,6 @@ export default function RootLayout({
 }) {
   return (
     <html>
-      <head>
-        <script async src='https://cdn.tailwindcss.com' />
-      </head>
       <body>
         <OwnIDInit
           config={{

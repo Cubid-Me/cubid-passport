@@ -18,24 +18,35 @@ import { Button } from "../ui/button"
 import { insertStamp } from "@/lib/stampInsertion"
 
 const redirectUri = process.env.NEXT_PUBLIC_INSTAGRAM_REDIRECT_URI ?? ""
+const instagramClientId = process.env.NEXT_PUBLIC_INSTAGRAM_CLIENT_ID ?? ""
 
 const InstagramAuth = ({ allowPage }: any) => {
+  const isConfigured = Boolean(instagramClientId && redirectUri)
+
   const handleLogin = () => {
-    const clientId = process.env.NEXT_PUBLIC_INSTAGRAM_CLIENT_ID ?? ""
+    if (!isConfigured) {
+      return
+    }
+
     if (allowPage) {
       localStorage.setItem(
         "allow_url",
         window.location.href.replace(`${window.location.origin}/allow?`, "")
       )
     }
-    window.location.href = `https://api.instagram.com/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=user_profile&response_type=code`
+    window.location.href = `https://api.instagram.com/oauth/authorize?client_id=${instagramClientId}&redirect_uri=${redirectUri}&scope=user_profile&response_type=code`
   }
 
   return (
     <div className="py-2">
-      <Button variant="default" onClick={handleLogin}>
+      <Button variant="default" onClick={handleLogin} disabled={!isConfigured}>
         Login with Instagram
       </Button>
+      {!isConfigured && (
+        <p className="mt-2 text-sm text-muted-foreground">
+          Instagram login is not configured for this environment.
+        </p>
+      )}
     </div>
   )
 }

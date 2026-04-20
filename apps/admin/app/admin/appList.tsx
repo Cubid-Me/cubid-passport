@@ -7,7 +7,7 @@ import Tooltip from 'rc-tooltip';
 import React, { useCallback, useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 
-import { RoateApiKeyModal } from './rotateKeyModal';
+import { RotateApiKeyModal } from './rotateKeyModal';
 
 interface SuperApp {
   uid: string;
@@ -177,7 +177,7 @@ export default function AppList() {
             </tbody>
           </table>
         )}
-        <RoateApiKeyModal
+        <RotateApiKeyModal
           openModal={Boolean(apiKeyToRotate)}
           closeModal={() => setApiKeyToRotate(null)}
           rotate={async () => {

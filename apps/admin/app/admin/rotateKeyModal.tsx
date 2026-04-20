@@ -7,7 +7,7 @@ interface RotateApiKeyModalProps {
   rotate: () => void | Promise<void>;
 }
 
-export function RoateApiKeyModal({
+export function RotateApiKeyModal({
   openModal,
   closeModal,
   rotate,

@@ -1238,6 +1238,43 @@ Address the PR 146 Vercel deployment failures where Passport preview deployments
 
 - push the preview-env fallback and re-check Vercel preview statuses after deployment reruns
 
+### session: v48
+
+- timestamp: 2026-04-20T03:41:07-0400
+- agent: **OpenAI Codex**
+- branch: **codex/b02-relying-party-completion**
+- head: **`0cbf209`**
+- session name: **Address Copilot PR review**
+
+#### Objective
+
+Address Copilot review comments on PR 146 after the branch was marked ready for review and all CI checks were green.
+
+#### Actions Taken
+
+- renamed the Admin rotate-key modal export/import and changed the webhook details side panel close prop to an explicit callback
+- fixed Admin JSX SVG attributes and removed the Tailwind CDN script from the Next layout
+- added Passport Google Maps and Instagram OAuth configuration guards to avoid silent invalid requests
+- replaced absolute README links with repository-relative links
+- split `@cubid/auth` contracts into a browser-safe `@cubid/auth/client` subpath while keeping Node-only helpers in the server entrypoint
+
+#### Verification
+
+- `pnpm --filter @cubid/admin typecheck`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/auth typecheck`
+- `pnpm --filter @cubid/auth test`
+- `pnpm --filter @cubid/oidc typecheck`
+- `pnpm --filter @cubid/oidc test`
+- `pnpm lint`
+- `pnpm typecheck`
+- `pnpm test`
+- `pnpm build`
+
+#### Follow-up
+
+- push the review-response commit, comment with the solution, resolve Copilot threads, and continue the requested Codex review loop
+
 ### session: v47
 
 - timestamp: 2026-04-20T03:27:31-0400

@@ -2,6 +2,14 @@ import axios from "axios"
 
 const apiKeyForGoogle = process.env.GOOGLE_MAPS_API_KEY
 
+function getGoogleMapsApiKey() {
+  if (!apiKeyForGoogle) {
+    throw new Error("GOOGLE_MAPS_API_KEY is required for Google location lookups")
+  }
+
+  return apiKeyForGoogle
+}
+
 export const getCountryFromPlusCode = async (plusCode: any) => {
   try {
     // Make request to Google Geocoding API with the Plus Code
@@ -10,7 +18,7 @@ export const getCountryFromPlusCode = async (plusCode: any) => {
       {
         params: {
           address: plusCode,
-          key: apiKeyForGoogle,
+          key: getGoogleMapsApiKey(),
         },
       }
     )
@@ -39,7 +47,7 @@ export const getLocationDetailsFromPlusCode = async (plusCode: any) => {
       {
         params: {
           address: plusCode,
-          key: apiKeyForGoogle,
+          key: getGoogleMapsApiKey(),
         },
       }
     )
