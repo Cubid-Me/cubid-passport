@@ -353,21 +353,26 @@ export const revokePassportOidcConsent = async (
     throw new PassportApiError(404, "Consent not found")
   }
 
-  const revokedAt = consent.revoked_at ?? new Date().toISOString()
-
-  if (!consent.revoked_at) {
-    const { error: revokeError } = await supabase
-      .from("oidc_consents")
-      .update({
-        revoked_at: revokedAt,
-        revoked_by: "user",
-      })
-      .eq("consent_id", consentId)
-      .is("revoked_at", null)
-
-    if (revokeError) {
-      throw revokeError
+  if (consent.revoked_at) {
+    return {
+      consentId,
+      revokedAt: consent.revoked_at,
     }
+  }
+
+  const revokedAt = new Date().toISOString()
+
+  const { error: revokeError } = await supabase
+    .from("oidc_consents")
+    .update({
+      revoked_at: revokedAt,
+      revoked_by: "user",
+    })
+    .eq("consent_id", consentId)
+    .is("revoked_at", null)
+
+  if (revokeError) {
+    throw revokeError
   }
 
   const [accessTokenResponse, refreshTokenResponse] = await Promise.all([

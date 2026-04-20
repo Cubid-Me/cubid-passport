@@ -60,6 +60,14 @@ interface ClientCountRow {
   client_id: string;
 }
 
+interface ClientMetricRow {
+  client_id: string;
+  token_failures: number | string | null;
+  token_successes: number | string | null;
+  userinfo_failures: number | string | null;
+  userinfo_successes: number | string | null;
+}
+
 export interface OidcOpsAuditEvent {
   actorType: string;
   clientId: string | null;
@@ -230,33 +238,19 @@ export const normalizeClientCountRows = (rows: ClientCountRow[] = []) => {
   return countsByClient;
 };
 
-const addAuditMetric = (
-  metricsByClient: Map<string, ReturnType<typeof makeEmptyMetrics>>,
-  row: AuditLogRow
-) => {
-  if (!row.client_id) {
-    return;
+export const normalizeClientMetricRows = (rows: ClientMetricRow[] = []) => {
+  const metricsByClient = new Map<string, ReturnType<typeof makeEmptyMetrics>>();
+
+  for (const row of rows) {
+    metricsByClient.set(row.client_id, {
+      tokenFailures: normalizeCount(row.token_failures),
+      tokenSuccesses: normalizeCount(row.token_successes),
+      userinfoFailures: normalizeCount(row.userinfo_failures),
+      userinfoSuccesses: normalizeCount(row.userinfo_successes),
+    });
   }
 
-  const metrics = metricsByClient.get(row.client_id) ?? makeEmptyMetrics();
-
-  if (row.event_type === 'token.issued' && row.outcome === 'success') {
-    metrics.tokenSuccesses += 1;
-  }
-
-  if (row.event_type === 'token.exchange_failed') {
-    metrics.tokenFailures += 1;
-  }
-
-  if (row.event_type === 'userinfo.returned' && row.outcome === 'success') {
-    metrics.userinfoSuccesses += 1;
-  }
-
-  if (row.event_type === 'userinfo.failed') {
-    metrics.userinfoFailures += 1;
-  }
-
-  metricsByClient.set(row.client_id, metrics);
+  return metricsByClient;
 };
 
 export const loadOidcOpsOverview = async (
@@ -270,6 +264,7 @@ export const loadOidcOpsOverview = async (
     clientsResponse,
     auditResponse,
     countsResponse,
+    metricsResponse,
     bindingsResponse,
     policiesResponse,
   ] = await Promise.all([
@@ -287,6 +282,7 @@ export const loadOidcOpsOverview = async (
       .order('created_at', { ascending: false })
       .limit(200),
     supabase.rpc('get_oidc_ops_client_counts', { p_now: generatedAt }),
+    supabase.rpc('get_oidc_ops_client_metrics', { p_since: since }),
     supabase
       .from('oidc_client_claim_policy_bindings')
       .select('client_id,claim_name,policy_id,enabled,archived_at')
@@ -300,6 +296,7 @@ export const loadOidcOpsOverview = async (
     clientsResponse,
     auditResponse,
     countsResponse,
+    metricsResponse,
     bindingsResponse,
     policiesResponse,
   ]) {
@@ -310,10 +307,9 @@ export const loadOidcOpsOverview = async (
 
   const recentAuditRows = (auditResponse.data ?? []) as AuditLogRow[];
   const recentAuditEvents = recentAuditRows.map(mapAuditEvent);
-  const metricsByClient = new Map<
-    string,
-    ReturnType<typeof makeEmptyMetrics>
-  >();
+  const metricsByClient = normalizeClientMetricRows(
+    (metricsResponse.data ?? []) as ClientMetricRow[]
+  );
   const recentEventsByClient = new Map<string, OidcOpsAuditEvent[]>();
   const countsByClient = normalizeClientCountRows(
     (countsResponse.data ?? []) as ClientCountRow[]
@@ -322,10 +318,6 @@ export const loadOidcOpsOverview = async (
   const policyNamesById = new Map<string, string>();
 
   for (const row of recentAuditRows) {
-    if (row.created_at >= since) {
-      addAuditMetric(metricsByClient, row);
-    }
-
     if (row.client_id) {
       const events = recentEventsByClient.get(row.client_id) ?? [];
       if (events.length < 10) {

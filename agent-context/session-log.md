@@ -1296,6 +1296,38 @@ Address PR 147 Copilot review comments around Passport consent revocation audit 
 
 - push the review-response commit, comment with the solutions, resolve the Copilot threads, and continue the requested Codex review loop on PR 147
 
+### session: v56
+
+- timestamp: 2026-04-20T16:50:11-0400
+- agent: **OpenAI Codex**
+- branch: **codex/b02-5-1-oidc-ops**
+- head: **`5c57dd6`**
+- session name: **Address Codex connector review comments**
+
+#### Objective
+
+Address the Codex connector review comments on PR 147 covering capped OIDC Ops metrics and duplicate consent revocation audit events.
+
+#### Actions Taken
+
+- moved Admin OIDC Ops 7-day token/userinfo metrics to a dedicated `get_oidc_ops_client_metrics` aggregate RPC so counters are no longer derived from the 200-row recent audit display query
+- added a supporting audit-log index and Admin unit coverage for metric row normalization
+- changed Passport consent revocation to return the existing revoked timestamp without revoking tokens or writing a new `consent.revoked` audit event when the consent is already revoked
+
+#### Verification
+
+- `pnpm --filter @cubid/admin typecheck`
+- `pnpm --filter @cubid/admin test`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm lint`
+- `pnpm typecheck`
+- `pnpm test`
+- `pnpm build`
+
+#### Follow-up
+
+- push the Codex review-response commit, reply to and resolve the Codex connector threads, and re-check PR 147 CI
+
 ### session: v51
 
 - timestamp: 2026-04-20T13:50:52-0400
