@@ -260,12 +260,12 @@ Refactor Passport login so returning users can sign in with a passkey, verified 
 
 ### B04.4 Add device lifecycle and step-up follow-ups
 
-- Status: Not started
-- Timestamp started: TBD
-- Timestamp completed: TBD
-- Feature branch: TBD
+- Status: Completed
+- Timestamp started: 2026-04-21T03:20:33-0400
+- Timestamp completed: 2026-04-21T03:33:11-0400
+- Feature branch: codex/b04-4-passkey-lifecycle-stepup
 - Head: TBD
-- Session-log reference(s): TBD
+- Session-log reference(s): session: v59
 
 Build the deferred follow-up capabilities for richer credential lifecycle management, device naming or revocation, and risk-aware step-up or ACR-driven passkey requirements after the core passkey delivery is stable.
 

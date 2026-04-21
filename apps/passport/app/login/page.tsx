@@ -45,6 +45,10 @@ export default function AuthenticationPage() {
   const recaptchaVerifier = useRef(null)
   const [isPhoneOpen, setIsPhoneOpen] = useState(false)
   const loginChallengeId = searchParams.get("login_challenge")
+  const requiresPasskeyAcr =
+    oidcChallenge?.authorizationRequest?.acrValues?.includes(
+      "urn:cubid:acr:passkey"
+    ) ?? false
 
   useEffect(() => {
     setPasskeySupported(browserSupportsWebAuthn())
@@ -223,7 +227,9 @@ export default function AuthenticationPage() {
       toast.success("Successfully logged into cubid")
     } catch (err) {
       console.error(err)
-      toast.error("An error occurred while authenticating user")
+      toast.error(
+        getOidcErrorMessage(err, "An error occurred while authenticating user")
+      )
     }
   }
 
@@ -310,7 +316,7 @@ export default function AuthenticationPage() {
         toast.success("Successfully logged into cubid")
       } catch (err) {
         console.error(err)
-        toast.error("Invalid OTP")
+        toast.error(getOidcErrorMessage(err, "Invalid OTP"))
       }
     }
   }
@@ -365,6 +371,14 @@ export default function AuthenticationPage() {
               {oidcLoading && (
                 <p className="text-xs text-muted-foreground">
                   Loading sign-in challenge...
+                </p>
+              )}
+              {requiresPasskeyAcr && (
+                <p className="rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-800">
+                  This app requires passkey assurance for this sign-in. Email
+                  and phone OTP can still bootstrap or recover your Cubid
+                  account, but they cannot complete this request without a
+                  passkey.
                 </p>
               )}
             </div>
@@ -451,7 +465,10 @@ export default function AuthenticationPage() {
                     </p>
                     <p className="mt-1 text-xs text-muted-foreground">
                       Use your passkey first. Email or phone OTP remains
-                      available for bootstrap and recovery.
+                      available for bootstrap and recovery
+                      {requiresPasskeyAcr
+                        ? ", but this app requires passkey assurance."
+                        : "."}
                     </p>
                     <Button
                       className="mt-3 w-full"

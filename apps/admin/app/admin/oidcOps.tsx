@@ -97,6 +97,53 @@ const AuditEventList = ({ events }: { events: OidcOpsAuditEvent[] }) => {
   );
 };
 
+const PasskeyOpsPanel = ({
+  passkeys,
+}: {
+  passkeys: OidcOpsOverviewPayload['passkeys'];
+}) => (
+  <section className='rounded-xl border border-gray-800 bg-gray-900/70 p-5 shadow-lg'>
+    <div className='flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between'>
+      <div>
+        <h2 className='text-lg font-semibold text-white'>Passkey Operations</h2>
+        <p className='mt-1 max-w-3xl text-sm text-gray-400'>
+          Read-only lifecycle and step-up visibility. Raw credential IDs, user
+          handles, public keys, and human subject keys stay redacted.
+        </p>
+      </div>
+      <div className='rounded-lg border border-gray-800 bg-gray-950/50 px-3 py-2 text-xs text-gray-300'>
+        <span className='text-gray-500'>Supported ACR:</span>{' '}
+        {formatList(passkeys.supportedAcrValues)}
+      </div>
+    </div>
+
+    <div className='mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-7'>
+      <MetricCard label='Active passkeys' value={passkeys.activeCount} />
+      <MetricCard label='Revoked passkeys' value={passkeys.revokedCount} />
+      <MetricCard label='Registrations' value={passkeys.registrations7d} />
+      <MetricCard
+        label='Auth success'
+        value={passkeys.authenticationSuccesses7d}
+      />
+      <MetricCard
+        label='Auth failures'
+        value={passkeys.authenticationFailures7d}
+      />
+      <MetricCard label='Revocations' value={passkeys.revocations7d} />
+      <MetricCard label='Step-up failures' value={passkeys.stepUpFailures7d} />
+    </div>
+
+    <div className='mt-5'>
+      <h3 className='text-sm font-semibold uppercase tracking-wide text-gray-400'>
+        Recent passkey audit events
+      </h3>
+      <div className='mt-2'>
+        <AuditEventList events={passkeys.recentAuditEvents} />
+      </div>
+    </div>
+  </section>
+);
+
 const ClientOpsCard = ({
   client,
   onUpdate,
@@ -411,6 +458,8 @@ export default function OidcOps() {
           {refreshing ? 'Refreshing...' : 'Refresh'}
         </button>
       </div>
+
+      <PasskeyOpsPanel passkeys={overview.passkeys} />
 
       <div className='space-y-5'>
         {overview.clients.length === 0 && (

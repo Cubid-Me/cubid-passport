@@ -51,15 +51,26 @@ export const CUBID_WEBAUTHN_RESIDENT_KEY_REQUIREMENTS = [
   "discouraged",
 ] as const;
 
-export type OidcGrantType = typeof OIDC_GRANT_TYPES[number];
-export type OidcCodeChallengeMethod = typeof OIDC_CODE_CHALLENGE_METHODS[number];
-export type OidcTokenEndpointAuthMethod = typeof OIDC_TOKEN_ENDPOINT_AUTH_METHODS[number];
-export type CubidAuthenticationMethod = typeof CUBID_AUTHENTICATION_METHODS[number];
-export type CubidWebAuthnChallengeType = typeof CUBID_WEBAUTHN_CHALLENGE_TYPES[number];
-export type CubidWebAuthnAuthenticatorAttachment = typeof CUBID_WEBAUTHN_AUTHENTICATOR_ATTACHMENTS[number];
-export type CubidWebAuthnAttestationPreference = typeof CUBID_WEBAUTHN_ATTESTATION_PREFERENCES[number];
-export type CubidWebAuthnUserVerificationRequirement = typeof CUBID_WEBAUTHN_USER_VERIFICATION_REQUIREMENTS[number];
-export type CubidWebAuthnResidentKeyRequirement = typeof CUBID_WEBAUTHN_RESIDENT_KEY_REQUIREMENTS[number];
+export const CUBID_ACR_VALUES = ["urn:cubid:acr:passkey"] as const;
+
+export type OidcGrantType = (typeof OIDC_GRANT_TYPES)[number];
+export type OidcCodeChallengeMethod =
+  (typeof OIDC_CODE_CHALLENGE_METHODS)[number];
+export type OidcTokenEndpointAuthMethod =
+  (typeof OIDC_TOKEN_ENDPOINT_AUTH_METHODS)[number];
+export type CubidAuthenticationMethod =
+  (typeof CUBID_AUTHENTICATION_METHODS)[number];
+export type CubidWebAuthnChallengeType =
+  (typeof CUBID_WEBAUTHN_CHALLENGE_TYPES)[number];
+export type CubidWebAuthnAuthenticatorAttachment =
+  (typeof CUBID_WEBAUTHN_AUTHENTICATOR_ATTACHMENTS)[number];
+export type CubidWebAuthnAttestationPreference =
+  (typeof CUBID_WEBAUTHN_ATTESTATION_PREFERENCES)[number];
+export type CubidWebAuthnUserVerificationRequirement =
+  (typeof CUBID_WEBAUTHN_USER_VERIFICATION_REQUIREMENTS)[number];
+export type CubidWebAuthnResidentKeyRequirement =
+  (typeof CUBID_WEBAUTHN_RESIDENT_KEY_REQUIREMENTS)[number];
+export type CubidAcrValue = (typeof CUBID_ACR_VALUES)[number];
 
 export type OidcChallengeType = "login" | "consent";
 
@@ -70,6 +81,7 @@ export interface CubidWebAuthnUserHandlePayload {
 
 export interface CubidWebAuthnCredentialRecord {
   credentialId: string;
+  deviceId: string;
   userHandle: string;
   humanSubjectKey: string;
   cubidUserId: number | null;
@@ -86,6 +98,8 @@ export interface CubidWebAuthnCredentialRecord {
   updatedAt: string;
   lastAuthenticatedAt: string | null;
   revokedAt: string | null;
+  revokedBy: "user" | "operator" | "system" | null;
+  revokedReason: string | null;
   metadata: Readonly<Record<string, unknown>>;
 }
 
@@ -110,7 +124,8 @@ export interface CubidWebAuthnCredentialDescriptor {
   transports: readonly string[];
 }
 
-export interface CubidWebAuthnRegistrationChallenge extends CubidWebAuthnChallengeRecord {
+export interface CubidWebAuthnRegistrationChallenge
+  extends CubidWebAuthnChallengeRecord {
   challengeType: "registration";
   rpName: string;
   user: {
@@ -124,7 +139,8 @@ export interface CubidWebAuthnRegistrationChallenge extends CubidWebAuthnChallen
   attestation: CubidWebAuthnAttestationPreference;
 }
 
-export interface CubidWebAuthnAuthenticationChallenge extends CubidWebAuthnChallengeRecord {
+export interface CubidWebAuthnAuthenticationChallenge
+  extends CubidWebAuthnChallengeRecord {
   challengeType: "authentication";
   allowCredentials: readonly CubidWebAuthnCredentialDescriptor[];
 }
@@ -160,6 +176,7 @@ export interface OidcAuthorizationRequestContext {
   nonce: string | null;
   codeChallenge: string;
   codeChallengeMethod: OidcCodeChallengeMethod;
+  acrValues: CubidAcrValue[];
   loginHint: string | null;
   prompt: string | null;
   createdAt: string;

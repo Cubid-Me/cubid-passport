@@ -1,41 +1,14 @@
-import {
-  OIDC_CODE_CHALLENGE_METHODS,
-} from "@cubid/auth";
+import { CUBID_ACR_VALUES, OIDC_CODE_CHALLENGE_METHODS } from "@cubid/auth";
 import { ALL_OIDC_SCOPES } from "@cubid/claims";
 
-import {
-  AuthorizationRequestError,
-  approveConsentChallenge,
-  completeLoginChallenge,
-  createLoginChallengeFromAuthorizationRequest,
-  getConsentChallenge,
-  getLoginChallenge,
-  rejectConsentChallenge,
-} from "./authorize";
+import { AuthorizationRequestError, approveConsentChallenge, completeLoginChallenge, createLoginChallengeFromAuthorizationRequest, getConsentChallenge, getLoginChallenge, rejectConsentChallenge } from "./authorize";
 import { getOidcRuntimeConfig } from "./config";
-import {
-  completePasskeyAuthentication,
-  completePasskeyRegistration,
-  createPasskeyAuthenticationOptions,
-  createPasskeyRegistrationOptions,
-} from "./passkeys";
-import {
-  enforceRateLimit,
-  getRateLimitKey,
-  RateLimitError,
-} from "./rateLimit";
+import { completePasskeyAuthentication, completePasskeyRegistration, createPasskeyAuthenticationOptions, createPasskeyRegistrationOptions } from "./passkeys";
+import { enforceRateLimit, getRateLimitKey, RateLimitError } from "./rateLimit";
 import { createDynamicClientRegistration, getRegisteredClient } from "./registration";
 import { createOidcJwks } from "./signing";
 import { getOidcSupabase } from "./supabase";
-import {
-  exchangeAuthorizationCode,
-  getUserInfo,
-  logout,
-  OidcEndpointError,
-  parseRevocationEndpointInput,
-  parseTokenEndpointInput,
-  revokeToken,
-} from "./tokens";
+import { exchangeAuthorizationCode, getUserInfo, logout, OidcEndpointError, parseRevocationEndpointInput, parseTokenEndpointInput, revokeToken } from "./tokens";
 
 const IMPLEMENTED_GRANT_TYPES = ["authorization_code"] as const;
 const IMPLEMENTED_TOKEN_ENDPOINT_AUTH_METHODS = ["none", "client_secret_basic", "client_secret_post"] as const;
@@ -118,6 +91,7 @@ export function createOpenIdConfiguration() {
     response_types_supported: ["code"],
     scopes_supported: ALL_OIDC_SCOPES,
     subject_types_supported: ["pairwise"],
+    acr_values_supported: CUBID_ACR_VALUES,
     id_token_signing_alg_values_supported: ["RS256"],
     token_endpoint_auth_methods_supported: IMPLEMENTED_TOKEN_ENDPOINT_AUTH_METHODS,
     code_challenge_methods_supported: OIDC_CODE_CHALLENGE_METHODS,
@@ -152,7 +126,9 @@ export async function handleOidcRequest(request: Request): Promise<Response> {
     try {
       const requestBody = (await request.json()) as Record<string, unknown>;
       const responseBody = await createDynamicClientRegistration(getOidcSupabase(), requestBody, requestId);
-      return jsonResponse(201, responseBody, { location: responseBody.registration_client_uri });
+      return jsonResponse(201, responseBody, {
+        location: responseBody.registration_client_uri,
+      });
     } catch (error) {
       return jsonResponse(400, {
         error: "invalid_client_metadata",
@@ -281,15 +257,7 @@ export async function handleOidcRequest(request: Request): Promise<Response> {
     }
   }
 
-  if (
-    pathParts[0] === "interaction"
-    && pathParts[1] === "login"
-    && pathParts.length === 6
-    && pathParts[3] === "passkeys"
-    && pathParts[4] === "authentication"
-    && pathParts[5] === "options"
-    && method === "POST"
-  ) {
+  if (pathParts[0] === "interaction" && pathParts[1] === "login" && pathParts.length === 6 && pathParts[3] === "passkeys" && pathParts[4] === "authentication" && pathParts[5] === "options" && method === "POST") {
     try {
       await enforceRateLimit(getOidcSupabase(), {
         route: "passkey_challenge",
@@ -318,15 +286,7 @@ export async function handleOidcRequest(request: Request): Promise<Response> {
     }
   }
 
-  if (
-    pathParts[0] === "interaction"
-    && pathParts[1] === "login"
-    && pathParts.length === 6
-    && pathParts[3] === "passkeys"
-    && pathParts[4] === "authentication"
-    && pathParts[5] === "complete"
-    && method === "POST"
-  ) {
+  if (pathParts[0] === "interaction" && pathParts[1] === "login" && pathParts.length === 6 && pathParts[3] === "passkeys" && pathParts[4] === "authentication" && pathParts[5] === "complete" && method === "POST") {
     try {
       await enforceRateLimit(getOidcSupabase(), {
         route: "passkey_challenge",
@@ -334,12 +294,7 @@ export async function handleOidcRequest(request: Request): Promise<Response> {
         requestId,
       });
       const requestBody = (await request.json()) as Record<string, unknown>;
-      const result = await completePasskeyAuthentication(
-        getOidcSupabase(),
-        pathParts[2],
-        requestBody as unknown as Parameters<typeof completePasskeyAuthentication>[2],
-        requestId,
-      );
+      const result = await completePasskeyAuthentication(getOidcSupabase(), pathParts[2], requestBody as unknown as Parameters<typeof completePasskeyAuthentication>[2], requestId);
 
       return jsonResponse(200, {
         status: "ok",
@@ -434,14 +389,7 @@ export async function handleOidcRequest(request: Request): Promise<Response> {
     }
   }
 
-  if (
-    pathParts[0] === "sessions"
-    && pathParts.length === 5
-    && pathParts[2] === "passkeys"
-    && pathParts[3] === "registration"
-    && pathParts[4] === "options"
-    && method === "POST"
-  ) {
+  if (pathParts[0] === "sessions" && pathParts.length === 5 && pathParts[2] === "passkeys" && pathParts[3] === "registration" && pathParts[4] === "options" && method === "POST") {
     try {
       await enforceRateLimit(getOidcSupabase(), {
         route: "passkey_challenge",
@@ -469,14 +417,7 @@ export async function handleOidcRequest(request: Request): Promise<Response> {
     }
   }
 
-  if (
-    pathParts[0] === "sessions"
-    && pathParts.length === 5
-    && pathParts[2] === "passkeys"
-    && pathParts[3] === "registration"
-    && pathParts[4] === "complete"
-    && method === "POST"
-  ) {
+  if (pathParts[0] === "sessions" && pathParts.length === 5 && pathParts[2] === "passkeys" && pathParts[3] === "registration" && pathParts[4] === "complete" && method === "POST") {
     try {
       await enforceRateLimit(getOidcSupabase(), {
         route: "passkey_challenge",
@@ -484,12 +425,7 @@ export async function handleOidcRequest(request: Request): Promise<Response> {
         requestId,
       });
       const requestBody = (await request.json()) as Record<string, unknown>;
-      const result = await completePasskeyRegistration(
-        getOidcSupabase(),
-        pathParts[1],
-        requestBody as unknown as Parameters<typeof completePasskeyRegistration>[2],
-        requestId,
-      );
+      const result = await completePasskeyRegistration(getOidcSupabase(), pathParts[1], requestBody as unknown as Parameters<typeof completePasskeyRegistration>[2], requestId);
       return jsonResponse(200, {
         status: "ok",
         credential: result.credential,
@@ -522,7 +458,10 @@ export async function handleOidcRequest(request: Request): Promise<Response> {
       });
       const input = await parseTokenEndpointInput(request);
       const responseBody = await exchangeAuthorizationCode(getOidcSupabase(), input, requestId);
-      return jsonResponse(200, responseBody, { "cache-control": "no-store", pragma: "no-cache" });
+      return jsonResponse(200, responseBody, {
+        "cache-control": "no-store",
+        pragma: "no-cache",
+      });
     } catch (error) {
       return oidcErrorResponse(error);
     }

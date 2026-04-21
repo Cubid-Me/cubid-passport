@@ -1,3 +1,42 @@
+### session: v59
+
+- timestamp: 2026-04-21T03:33:11-0400
+- agent: **OpenAI Codex**
+- branch: **codex/b04-4-passkey-lifecycle-stepup**
+- head: **TBD**
+- session name: **Implement B04.4 passkey lifecycle and ACR step-up**
+
+#### Objective
+
+Complete B04.4 on the stacked passkey branch by adding passkey device lifecycle management, read-only Admin passkey operations visibility, and OIDC ACR semantics for passkey-required Login with Cubid authorization requests.
+
+#### Actions Taken
+
+- added a Supabase migration for opaque passkey `device_id` values, revocation actor/reason metadata, and active-device lookup indexes
+- added Passport Firebase-authenticated passkey management APIs for list, rename, and revoke, with safe browser response shapes and token/session revocation on device revoke
+- expanded Passport Profile Login & Security with passkey device listing, rename controls, revoke confirmation, recovery copy, and refresh behavior
+- added Admin OIDC Ops passkey aggregates, redacted recent passkey audit events, supported ACR visibility, and passkey step-up failure metrics
+- added OIDC `acr_values=urn:cubid:acr:passkey` parsing/persistence, passkey-only login completion enforcement for passkey-required challenges, discovery metadata, and ID-token `amr`/`acr` claims
+- updated OIDC architecture docs for device lifecycle ownership, opaque device IDs, ACR behavior, and deferred Admin-action step-up enforcement
+
+#### Verification
+
+- `NODE20_BIN=$(npx -y -p node@20 node -p 'require("path").dirname(process.execPath)') && PATH="$NODE20_BIN:$PATH" pnpm --filter @cubid/oidc typecheck`
+- `NODE20_BIN=$(npx -y -p node@20 node -p 'require("path").dirname(process.execPath)') && PATH="$NODE20_BIN:$PATH" pnpm --filter @cubid/oidc test`
+- `NODE20_BIN=$(npx -y -p node@20 node -p 'require("path").dirname(process.execPath)') && PATH="$NODE20_BIN:$PATH" pnpm --filter @cubid/admin typecheck`
+- `NODE20_BIN=$(npx -y -p node@20 node -p 'require("path").dirname(process.execPath)') && PATH="$NODE20_BIN:$PATH" pnpm --filter @cubid/admin test`
+- `NODE20_BIN=$(npx -y -p node@20 node -p 'require("path").dirname(process.execPath)') && PATH="$NODE20_BIN:$PATH" pnpm --filter @cubid/admin build`
+- `NODE20_BIN=$(npx -y -p node@20 node -p 'require("path").dirname(process.execPath)') && PATH="$NODE20_BIN:$PATH" pnpm --filter @cubid/passport typecheck`
+- `NODE20_BIN=$(npx -y -p node@20 node -p 'require("path").dirname(process.execPath)') && PATH="$NODE20_BIN:$PATH" pnpm --filter @cubid/passport build`
+- `NODE20_BIN=$(npx -y -p node@20 node -p 'require("path").dirname(process.execPath)') && PATH="$NODE20_BIN:$PATH" pnpm lint`
+- `NODE20_BIN=$(npx -y -p node@20 node -p 'require("path").dirname(process.execPath)') && PATH="$NODE20_BIN:$PATH" pnpm typecheck`
+- `NODE20_BIN=$(npx -y -p node@20 node -p 'require("path").dirname(process.execPath)') && PATH="$NODE20_BIN:$PATH" pnpm test`
+- `NODE20_BIN=$(npx -y -p node@20 node -p 'require("path").dirname(process.execPath)') && PATH="$NODE20_BIN:$PATH" pnpm build`
+
+#### Follow-up
+
+- record the resulting implementation commit hash in the B04.4 todo metadata after the commit lands
+
 ### session: v58
 
 - timestamp: 2026-04-20T17:17:41-0400
