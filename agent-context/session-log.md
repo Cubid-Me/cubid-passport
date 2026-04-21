@@ -1,9 +1,34 @@
+### session: v60
+
+- timestamp: 2026-04-21T03:33:56-0400
+- agent: **OpenAI Codex**
+- branch: **codex/b04-4-passkey-lifecycle-stepup**
+- head: **`94068c1`**
+- session name: **Complete B04.4 roadmap metadata**
+
+#### Objective
+
+Record the completed B04.4 todo state after the passkey lifecycle and OIDC ACR implementation landed on the feature branch.
+
+#### Actions Taken
+
+- set the B04.4 implementation head in [agent-context/todo.md](/Users/botmaster/src/cubid/cubid-passport/agent-context/todo.md)
+- added the metadata closure session reference for the completed todo
+
+#### Verification
+
+- metadata-only change following the B04.4 validation suite recorded in `session: v59`
+
+#### Follow-up
+
+- publish the stacked B04.4 branch for review when ready
+
 ### session: v59
 
 - timestamp: 2026-04-21T03:33:11-0400
 - agent: **OpenAI Codex**
 - branch: **codex/b04-4-passkey-lifecycle-stepup**
-- head: **TBD**
+- head: **`94068c1`**
 - session name: **Implement B04.4 passkey lifecycle and ACR step-up**
 
 #### Objective
