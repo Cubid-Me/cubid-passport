@@ -7,6 +7,10 @@ import { useDispatch, useSelector } from "react-redux"
 import { toast } from "react-toastify"
 
 import firebase from "@/lib/firebase"
+import {
+  browserSupportsWebAuthn,
+  registerOidcPasskey,
+} from "@/lib/oidcPasskeys"
 import useAuth from "@/hooks/useAuth"
 import { Button } from "@/components/ui/button"
 import {
@@ -16,6 +20,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 import {
   Select,
   SelectContent,
@@ -49,6 +54,21 @@ type OidcConsentSummary = {
   revokedBy: "user" | "operator" | null
 }
 
+type PasskeyDeviceSummary = {
+  authenticatorAttachment: string | null
+  backupEligible: boolean
+  backupState: boolean
+  createdAt: string
+  deviceId: string
+  label: string
+  lastAuthenticatedAt: string | null
+  revokedAt: string | null
+  revokedBy: "user" | "operator" | "system" | null
+  signCount: number
+  transports: string[]
+  updatedAt: string
+}
+
 const formatList = (values: string[]) => {
   if (!values.length) {
     return "None"
@@ -63,6 +83,22 @@ export const Profile = () => {
   const [userState, setUserState] = useState<any>({})
   const [walletState, setWalletState] = useState<any>({})
   const [exportPrivateKey, setExportPrivateKey] = useState(undefined)
+  const [passkeySupported, setPasskeySupported] = useState(false)
+  const [passkeyLabel, setPasskeyLabel] = useState("My passkey")
+  const [passkeyLoading, setPasskeyLoading] = useState(false)
+  const [passkeyDevices, setPasskeyDevices] = useState<PasskeyDeviceSummary[]>(
+    []
+  )
+  const [passkeyDevicesLoading, setPasskeyDevicesLoading] = useState(false)
+  const [passkeyRenameLabels, setPasskeyRenameLabels] = useState<
+    Record<string, string>
+  >({})
+  const [renamingPasskeyId, setRenamingPasskeyId] = useState<string | null>(
+    null
+  )
+  const [revokingPasskeyId, setRevokingPasskeyId] = useState<string | null>(
+    null
+  )
   const [oidcConsents, setOidcConsents] = useState<OidcConsentSummary[]>([])
   const [oidcConsentsLoading, setOidcConsentsLoading] = useState(false)
   const [revokingConsentId, setRevokingConsentId] = useState<string | null>(
@@ -141,6 +177,10 @@ export const Profile = () => {
   const [allEvmData, setAllEvmData] = useState([])
   const { supabaseUser } = useAuth({})
 
+  useEffect(() => {
+    setPasskeySupported(browserSupportsWebAuthn())
+  }, [])
+
   const fetchWallets = useCallback(async () => {
     if (supabaseUser?.id) {
       const {
@@ -192,6 +232,120 @@ export const Profile = () => {
       Authorization: `Bearer ${token}`,
     }
   }, [])
+
+  const fetchPasskeyDevices = useCallback(async () => {
+    if (!email && !phone) {
+      setPasskeyDevices([])
+      setPasskeyRenameLabels({})
+      return
+    }
+
+    setPasskeyDevicesLoading(true)
+    try {
+      const headers = await getOidcAuthHeaders()
+      const { data } = await axios.post<{ data: PasskeyDeviceSummary[] }>(
+        "/api/oidc/passkeys/list",
+        {},
+        { headers }
+      )
+      const devices = data.data ?? []
+      setPasskeyDevices(devices)
+      setPasskeyRenameLabels(
+        devices.reduce<Record<string, string>>((labels, device) => {
+          labels[device.deviceId] = device.label
+          return labels
+        }, {})
+      )
+    } catch (error) {
+      console.error(error)
+      toast.error("Failed to load passkey devices")
+    } finally {
+      setPasskeyDevicesLoading(false)
+    }
+  }, [email, phone, getOidcAuthHeaders])
+
+  useEffect(() => {
+    fetchPasskeyDevices()
+  }, [fetchPasskeyDevices])
+
+  const registerPasskey = useCallback(async () => {
+    setPasskeyLoading(true)
+    try {
+      await registerOidcPasskey({ credentialLabel: passkeyLabel })
+      toast.success("Passkey added to your Cubid account")
+      await fetchPasskeyDevices()
+    } catch (error: any) {
+      console.error(error)
+      toast.error(
+        error?.response?.data?.error_description ??
+          "Unable to add a passkey. Sign in through Login with Cubid first, then try again."
+      )
+    } finally {
+      setPasskeyLoading(false)
+    }
+  }, [fetchPasskeyDevices, passkeyLabel])
+
+  const renamePasskey = useCallback(
+    async (device: PasskeyDeviceSummary) => {
+      const label = passkeyRenameLabels[device.deviceId]?.trim()
+      if (!label) {
+        toast.error("Passkey label is required")
+        return
+      }
+
+      setRenamingPasskeyId(device.deviceId)
+      try {
+        const headers = await getOidcAuthHeaders()
+        await axios.post(
+          "/api/oidc/passkeys/rename",
+          { deviceId: device.deviceId, label },
+          { headers }
+        )
+        toast.success("Passkey renamed")
+        await fetchPasskeyDevices()
+      } catch (error) {
+        console.error(error)
+        toast.error("Failed to rename passkey")
+      } finally {
+        setRenamingPasskeyId(null)
+      }
+    },
+    [fetchPasskeyDevices, getOidcAuthHeaders, passkeyRenameLabels]
+  )
+
+  const revokePasskey = useCallback(
+    async (device: PasskeyDeviceSummary) => {
+      const activePasskeyCount = passkeyDevices.filter(
+        (entry) => !entry.revokedAt
+      ).length
+      const warning =
+        activePasskeyCount <= 1
+          ? "This is your last active passkey. Passkey-required Login with Cubid requests will not work until you create another passkey. Revoke it anyway?"
+          : `Revoke ${device.label}?`
+
+      if (!window.confirm(warning)) {
+        return
+      }
+
+      setRevokingPasskeyId(device.deviceId)
+      try {
+        const headers = await getOidcAuthHeaders()
+        await axios.post(
+          "/api/oidc/passkeys/revoke",
+          { deviceId: device.deviceId },
+          { headers }
+        )
+        toast.success("Passkey revoked")
+        await fetchPasskeyDevices()
+      } catch (error) {
+        console.error(error)
+        toast.error("Failed to revoke passkey")
+      } finally {
+        setRevokingPasskeyId(null)
+      }
+    },
+    [fetchPasskeyDevices, getOidcAuthHeaders, passkeyDevices]
+  )
 
   const fetchOidcConsents = useCallback(async () => {
     if (!email && !phone) {
@@ -253,7 +407,7 @@ export const Profile = () => {
   return (
     <div className="p-3">
       <h1 className="mb-2 text-3xl font-semibold">Profile</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <Card style={{ height: "auto" }}>
           <CardHeader>
             <CardTitle>My Trust Score</CardTitle>
@@ -290,7 +444,7 @@ export const Profile = () => {
                 </Button>
               ))}
               {nearAcc.map((item) => (
-                <div className="flex justify-between items-center">
+                <div className="flex items-center justify-between">
                   <Button className="block" key={item} variant="outline">
                     {item}
                   </Button>
@@ -305,7 +459,7 @@ export const Profile = () => {
                       onClick={() => {
                         fetchPrivateKeyWithAddress(item)
                       }}
-                      className="text-white rounded-md bg-blue-600 text-xs p-2 py-1"
+                      className="rounded-md bg-blue-600 p-2 py-1 text-xs text-white"
                     >
                       Export Private Key
                     </button>
@@ -342,10 +496,159 @@ export const Profile = () => {
             <div>
               <p>Email : {email} </p>
               <p>Phone : {phone} </p>
+              <div className="mt-4 rounded-lg border p-3">
+                <p className="text-sm font-semibold">Passkeys</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Manage phishing-resistant passkeys for Login with Cubid. Phone
+                  OTP stays available for recovery, but passkey-required app
+                  sign-ins need one active passkey.
+                </p>
+                <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                  <Input
+                    value={passkeyLabel}
+                    onChange={(event) => setPasskeyLabel(event.target.value)}
+                    placeholder="Passkey label"
+                  />
+                  <Button
+                    variant="outline"
+                    onClick={registerPasskey}
+                    disabled={!passkeySupported || passkeyLoading}
+                  >
+                    {passkeyLoading ? "Creating..." : "Create passkey"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={fetchPasskeyDevices}
+                    disabled={passkeyDevicesLoading}
+                  >
+                    {passkeyDevicesLoading ? "Refreshing..." : "Refresh"}
+                  </Button>
+                </div>
+                {!passkeySupported && (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    This browser does not support passkeys.
+                  </p>
+                )}
+                {passkeyDevicesLoading && passkeyDevices.length === 0 && (
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    Loading passkey devices...
+                  </p>
+                )}
+                {!passkeyDevicesLoading && passkeyDevices.length === 0 && (
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    No passkeys are registered yet.
+                  </p>
+                )}
+                <div className="mt-4 space-y-3">
+                  {passkeyDevices.map((device) => {
+                    const isRevoked = Boolean(device.revokedAt)
+                    const isRenaming = renamingPasskeyId === device.deviceId
+                    const isRevoking = revokingPasskeyId === device.deviceId
+
+                    return (
+                      <div
+                        key={device.deviceId}
+                        className="rounded-lg border bg-background p-3"
+                      >
+                        <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Input
+                                className="max-w-xs"
+                                disabled={isRevoked || isRenaming}
+                                value={
+                                  passkeyRenameLabels[device.deviceId] ??
+                                  device.label
+                                }
+                                onChange={(event) =>
+                                  setPasskeyRenameLabels((current) => ({
+                                    ...current,
+                                    [device.deviceId]: event.target.value,
+                                  }))
+                                }
+                              />
+                              <span
+                                className={`rounded-full px-2 py-1 text-xs ${
+                                  isRevoked
+                                    ? "bg-red-100 text-red-700"
+                                    : "bg-emerald-100 text-emerald-700"
+                                }`}
+                              >
+                                {isRevoked ? "Revoked" : "Active"}
+                              </span>
+                            </div>
+                            <p className="mt-1 break-all text-xs text-muted-foreground">
+                              {device.deviceId}
+                            </p>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            <Button
+                              disabled={isRevoked || isRenaming}
+                              onClick={() => renamePasskey(device)}
+                              variant="outline"
+                            >
+                              {isRenaming ? "Renaming..." : "Rename"}
+                            </Button>
+                            {!isRevoked && (
+                              <Button
+                                disabled={isRevoking}
+                                onClick={() => revokePasskey(device)}
+                                variant="outline"
+                              >
+                                {isRevoking ? "Revoking..." : "Revoke"}
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                        <div className="mt-3 grid gap-2 text-xs text-muted-foreground md:grid-cols-2">
+                          <p>
+                            Attachment:{" "}
+                            {device.authenticatorAttachment ?? "unspecified"}
+                          </p>
+                          <p>Transports: {formatList(device.transports)}</p>
+                          <p>
+                            Backup:{" "}
+                            {device.backupEligible
+                              ? device.backupState
+                                ? "eligible, backed up"
+                                : "eligible, not backed up"
+                              : "not eligible"}
+                          </p>
+                          <p>Sign count: {device.signCount}</p>
+                          <p>
+                            Created:{" "}
+                            {dayjs(device.createdAt).format("YYYY-MM-DD HH:mm")}
+                          </p>
+                          <p>
+                            Last used:{" "}
+                            {device.lastAuthenticatedAt
+                              ? dayjs(device.lastAuthenticatedAt).format(
+                                  "YYYY-MM-DD HH:mm"
+                                )
+                              : "Never"}
+                          </p>
+                          <p>
+                            Updated:{" "}
+                            {dayjs(device.updatedAt).format("YYYY-MM-DD HH:mm")}
+                          </p>
+                          <p>
+                            Revoked:{" "}
+                            {device.revokedAt
+                              ? `${dayjs(device.revokedAt).format(
+                                  "YYYY-MM-DD HH:mm"
+                                )} by ${device.revokedBy ?? "unknown"}`
+                              : "No"}
+                          </p>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
               <div className="mt-2 flex items-center gap-2">
                 <img
                   alt="image"
-                  className="h-20 w-20 rounded"
+                  className="size-20 rounded"
                   src="https://media.licdn.com/dms/image/C4D0BAQF0BbRWBLibVQ/company-logo_200_200/0/1622628086077?e=2147483647&v=beta&t=z_LYy9iZWArzniYy0I2aWqRgyK6kMTLcRsSuW7dZfq0"
                 />
                 <p>Enabled Login</p>

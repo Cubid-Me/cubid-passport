@@ -42,7 +42,7 @@ export type PassportConsentSummary = {
   revokedBy: "user" | "operator" | null
 }
 
-class PassportApiError extends Error {
+export class PassportApiError extends Error {
   statusCode: number
 
   constructor(statusCode: number, message: string) {
@@ -63,7 +63,7 @@ const getRequiredEnv = (name: string) => {
   return value
 }
 
-const getPassportSupabase = () => {
+export const getPassportSupabase = () => {
   if (!supabaseClient) {
     supabaseClient = createClient(
       getRequiredEnv("SUPABASE_URL"),
@@ -80,7 +80,7 @@ const getPassportSupabase = () => {
   return supabaseClient
 }
 
-const normalizeStringArray = (value: unknown): string[] => {
+export const normalizeStringArray = (value: unknown): string[] => {
   if (!Array.isArray(value)) {
     return []
   }
@@ -135,7 +135,7 @@ export const getPassportRequestId = (req: NextApiRequest) => {
   return `passport_${randomUUID()}`
 }
 
-const requirePassportFirebaseUser = async (req: NextApiRequest) => {
+export const requirePassportFirebaseUser = async (req: NextApiRequest) => {
   const bearerToken = getBearerToken(req)
 
   if (!bearerToken) {
@@ -164,7 +164,7 @@ const requirePassportFirebaseUser = async (req: NextApiRequest) => {
   }
 }
 
-const resolveHumanSubjectKeys = async (
+export const resolveHumanSubjectKeys = async (
   supabase: PassportSupabaseClient,
   token: DecodedIdToken
 ) => {

@@ -4,13 +4,7 @@ import test from "node:test";
 import { exportJWK, generateKeyPair } from "jose";
 
 import { createOidcJwks, signOidcJwt, verifyOidcJwt } from "./signing";
-import {
-  buildUserInfo,
-  logout,
-  OidcEndpointError,
-  parseRevocationEndpointInput,
-  parseTokenEndpointInput,
-} from "./tokens";
+import { buildSessionAuthenticationClaims, buildUserInfo, logout, OidcEndpointError, parseRevocationEndpointInput, parseTokenEndpointInput } from "./tokens";
 
 test("parseTokenEndpointInput accepts form fields and HTTP Basic client auth", async () => {
   const credentials = Buffer.from("client%201:secret%202").toString("base64");
@@ -61,9 +55,7 @@ test("parseRevocationEndpointInput requires client identity alongside token", as
 test("logout returns invalid_request for malformed id_token_hint", async () => {
   await assert.rejects(
     () => logout({} as never, new Request("https://id.cubid.me/logout?id_token_hint=not-a-jwt"), "request_1"),
-    (error) => error instanceof OidcEndpointError
-      && error.statusCode === 400
-      && error.error === "invalid_request",
+    (error) => error instanceof OidcEndpointError && error.statusCode === 400 && error.error === "invalid_request",
   );
 });
 
@@ -144,4 +136,45 @@ test("buildUserInfo releases only consented email and profile claims", () => {
     email_verified: true,
     preferred_username: "alice",
   });
+});
+
+test("buildSessionAuthenticationClaims maps AMR and passkey ACR from session metadata", () => {
+  const claims = buildSessionAuthenticationClaims({
+    session_id: "session_1",
+    client_id: "client_1",
+    cubid_user_id: 123,
+    human_subject_key: "internal-subject-key",
+    authentication_methods: ["passkey"],
+    verified_email: "alice@example.com",
+    verified_phone: null,
+    expires_at: new Date(Date.now() + 60_000).toISOString(),
+    revoked_at: null,
+    created_at: "2026-04-19T12:00:00.000Z",
+    metadata: {
+      acr: "urn:cubid:acr:passkey",
+    },
+  });
+
+  assert.deepEqual(claims, {
+    acr: "urn:cubid:acr:passkey",
+    amr: ["passkey"],
+  });
+});
+
+test("buildSessionAuthenticationClaims omits amr when no authentication methods are stored", () => {
+  const claims = buildSessionAuthenticationClaims({
+    session_id: "session_2",
+    client_id: "client_1",
+    cubid_user_id: 123,
+    human_subject_key: "internal-subject-key",
+    authentication_methods: [],
+    verified_email: "alice@example.com",
+    verified_phone: null,
+    expires_at: new Date(Date.now() + 60_000).toISOString(),
+    revoked_at: null,
+    created_at: "2026-04-19T12:00:00.000Z",
+    metadata: {},
+  });
+
+  assert.deepEqual(claims, {});
 });

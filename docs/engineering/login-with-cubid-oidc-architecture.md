@@ -1,6 +1,6 @@
 # Login with Cubid OIDC and Trust Architecture
 
-Last updated: 2026-04-15
+Last updated: 2026-04-20
 Status: Accepted in B01
 Primary follow-up todos: B02, B03, B04, D01, E01
 
@@ -88,7 +88,32 @@ Core WebAuthn delivery for B04 follows the same trust split as the rest of the O
 - `services/oidc` owns passkey challenge issuance, challenge verification, credential persistence, and audit logging.
 - Passport hosts the browser ceremony UX, so the WebAuthn RP ID and expected origins are derived from the Passport host rather than the issuer host.
 - Login-challenge passkey authentication is exposed from the issuer under interaction-scoped routes, while passkey registration is exposed from session-scoped routes after the user already has an active issuer session.
-- Full device lifecycle management, richer support tooling, and ACR-driven step-up remain deferred follow-up work under later B04 slices.
+- Passkey device lifecycle references use an opaque `device_id`; browser and Admin surfaces must never expose raw WebAuthn `credential_id`, `user_handle`, public key material, or human subject keys.
+- Passport owns user-facing passkey lifecycle controls: list, rename, and revoke. Revocation marks the credential revoked, records the actor/reason, terminates issuer sessions bound to the credential, and revokes matching tokens.
+- Admin owns read-only passkey operational visibility in B04.4: active/revoked aggregate counts, recent redacted passkey audit events, and ACR/passkey-required failure metrics. Admin operator revocation and Admin-sensitive-action passkey step-up remain deferred.
+
+### Passport passkey UX and recovery
+
+The B04.3 Passport slice hosts the browser WebAuthn ceremonies but keeps protocol state in the issuer.
+
+- Returning users can use a passkey from the Passport login screen when a `login_challenge` is present.
+- Email and phone OTP remain visible recovery/bootstrap paths; the passkey UI must not hide recovery behind browser storage assumptions.
+- After an OTP or OwnID-backed login challenge is completed, Passport receives the issuer `session_id` through its server proxy and stores it in an HTTP-only, SameSite cookie.
+- Passkey registration in Login and Profile uses Passport server routes that read the HTTP-only issuer-session cookie, then proxy registration options and completion to `services/oidc`.
+- Profile exposes passkey device list, rename, and revoke controls through Firebase-authenticated Passport API routes backed by server-only Supabase access.
+- Last-passkey revocation is allowed, but the UI must warn that passkey-required Login with Cubid requests will fail until another passkey is created.
+- Browser state may hold transient WebAuthn options and UI labels, but it must not become the source of truth for issuer session identity.
+
+### OIDC ACR and passkey step-up
+
+B04.4 introduces ACR-only step-up semantics for relying-party authorization requests.
+
+- Discovery advertises `acr_values_supported: ["urn:cubid:acr:passkey"]`.
+- `/authorize` accepts and persists `acr_values=urn:cubid:acr:passkey` on the authorization request metadata.
+- A login challenge that requests passkey ACR can only be completed by an authentication context whose `authenticationMethods` include `passkey`.
+- OwnID email and Firebase phone OTP remain recovery/bootstrap methods, but they do not satisfy a passkey-required request. They may create or recover an issuer session for future passkey setup.
+- ID tokens include `amr` and, when known, `acr`. Passkey-authenticated sessions use `acr: "urn:cubid:acr:passkey"`.
+- Admin-action step-up enforcement is intentionally deferred until Admin auth is explicitly bound to Cubid passkey credentials.
 
 ### Admin
 
@@ -214,13 +239,13 @@ Cubid uses explicit token audiences to separate relying-party identity from Cubi
 
 ## Client Types
 
-| Client type | Auth profile | Secret rule | Allowed grants in v1 | Refresh token policy | Redirect rules |
-| --- | --- | --- | --- | --- | --- |
-| public web | browser-based app | no client secret | `authorization_code` with PKCE | not issued in v1 | exact HTTPS redirects only, localhost allowed for development |
-| confidential web | server-rendered or backend-assisted web app | required secret or private key auth | `authorization_code`, `refresh_token` | rotating refresh tokens allowed | exact HTTPS redirects only |
-| native/mobile | installed app | no secret | `authorization_code` with PKCE, `refresh_token` | rotating refresh tokens allowed | loopback, claimed HTTPS app links, or approved custom URI schemes |
-| device client | input-constrained device | public by default | `urn:ietf:params:oauth:grant-type:device_code` | not issued in v1 | no redirect URI required |
-| backend service client | machine-to-machine service | required secret or private key auth | `client_credentials` only | not applicable | no redirect URI |
+| Client type            | Auth profile                                | Secret rule                         | Allowed grants in v1                            | Refresh token policy            | Redirect rules                                                    |
+| ---------------------- | ------------------------------------------- | ----------------------------------- | ----------------------------------------------- | ------------------------------- | ----------------------------------------------------------------- |
+| public web             | browser-based app                           | no client secret                    | `authorization_code` with PKCE                  | not issued in v1                | exact HTTPS redirects only, localhost allowed for development     |
+| confidential web       | server-rendered or backend-assisted web app | required secret or private key auth | `authorization_code`, `refresh_token`           | rotating refresh tokens allowed | exact HTTPS redirects only                                        |
+| native/mobile          | installed app                               | no secret                           | `authorization_code` with PKCE, `refresh_token` | rotating refresh tokens allowed | loopback, claimed HTTPS app links, or approved custom URI schemes |
+| device client          | input-constrained device                    | public by default                   | `urn:ietf:params:oauth:grant-type:device_code`  | not issued in v1                | no redirect URI required                                          |
+| backend service client | machine-to-machine service                  | required secret or private key auth | `client_credentials` only                       | not applicable                  | no redirect URI                                                   |
 
 Rules:
 
@@ -396,15 +421,15 @@ Unsupported in v1:
 
 ## Token Lifetimes
 
-| Artifact | Lifetime | Notes |
-| --- | --- | --- |
-| authorization code | 5 minutes | one-time use only |
-| ID token | 15 minutes | audience is client only |
-| user-bound access token | 15 minutes | default audience is `userinfo` |
-| service access token | 10 minutes | client credentials only |
-| refresh token | 30 days idle, 90 days absolute | rotation required on every use |
-| device code | 15 minutes | polling interval enforced |
-| user code | 10 minutes | human enters on Passport device page |
+| Artifact                | Lifetime                       | Notes                                |
+| ----------------------- | ------------------------------ | ------------------------------------ |
+| authorization code      | 5 minutes                      | one-time use only                    |
+| ID token                | 15 minutes                     | audience is client only              |
+| user-bound access token | 15 minutes                     | default audience is `userinfo`       |
+| service access token    | 10 minutes                     | client credentials only              |
+| refresh token           | 30 days idle, 90 days absolute | rotation required on every use       |
+| device code             | 15 minutes                     | polling interval enforced            |
+| user code               | 10 minutes                     | human enters on Passport device page |
 
 ## Logout Contract
 
@@ -440,15 +465,15 @@ Cubid scopes are first-class platform scopes and are governed by claim policy pl
 
 ## Claim taxonomy
 
-| Scope | Claims | Data class | Rules |
-| --- | --- | --- | --- |
-| `openid` | `sub` | identity | mandatory for OIDC |
-| `profile` | standard OIDC profile claims such as `name`, `preferred_username`, `picture`, `locale`, `updated_at` when available | identity | standard claims stay standard |
-| `email` | `email`, `email_verified` | identity | only if the user has and consents to email release |
-| `cubid:score` | `cubid_score`, `cubid_score_band`, `cubid_personhood_level`, `cubid_score_updated_at` | score-derived | no raw scoring inputs in tokens |
-| `cubid:verification` | `cubid_verifications`, `cubid_verification_summary` | boolean or structured JSON | no raw provider subject IDs |
-| `cubid:stamps` | `cubid_stamps` | structured JSON | only policy-approved, user-consented stamp assertions |
-| `cubid:claims` | `cubid_claims` | structured JSON | driven by claim policy and later registry controls |
+| Scope                | Claims                                                                                                              | Data class                 | Rules                                                 |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------- | -------------------------- | ----------------------------------------------------- |
+| `openid`             | `sub`                                                                                                               | identity                   | mandatory for OIDC                                    |
+| `profile`            | standard OIDC profile claims such as `name`, `preferred_username`, `picture`, `locale`, `updated_at` when available | identity                   | standard claims stay standard                         |
+| `email`              | `email`, `email_verified`                                                                                           | identity                   | only if the user has and consents to email release    |
+| `cubid:score`        | `cubid_score`, `cubid_score_band`, `cubid_personhood_level`, `cubid_score_updated_at`                               | score-derived              | no raw scoring inputs in tokens                       |
+| `cubid:verification` | `cubid_verifications`, `cubid_verification_summary`                                                                 | boolean or structured JSON | no raw provider subject IDs                           |
+| `cubid:stamps`       | `cubid_stamps`                                                                                                      | structured JSON            | only policy-approved, user-consented stamp assertions |
+| `cubid:claims`       | `cubid_claims`                                                                                                      | structured JSON            | driven by claim policy and later registry controls    |
 
 ## Cubid claim rules
 
@@ -553,7 +578,11 @@ type CubidClientRecord = {
   clientType: CubidClientType;
   status: "active" | "suspended" | "revoked";
   verificationStatus: "unverified" | "verified_domain" | "internal";
-  tokenEndpointAuthMethod: "none" | "client_secret_basic" | "client_secret_post" | "private_key_jwt";
+  tokenEndpointAuthMethod:
+    | "none"
+    | "client_secret_basic"
+    | "client_secret_post"
+    | "private_key_jwt";
   redirectUris: string[];
   postLogoutRedirectUris: string[];
   grantTypes: string[];

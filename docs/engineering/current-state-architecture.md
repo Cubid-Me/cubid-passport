@@ -1,6 +1,6 @@
 # Cubid Current-State Architecture
 
-Last updated: 2026-04-15
+Last updated: 2026-04-20
 
 ## Purpose
 
@@ -174,6 +174,7 @@ The main login experience in [app/login/page.tsx](/Users/botmaster/src/cubid/cub
 
 - OwnID plus Firebase custom tokens for email login
 - Firebase phone auth for SMS OTP login
+- Passkey sign-in for OIDC `login_challenge` flows, with Passport hosting the browser WebAuthn ceremony and proxying challenge completion to `services/oidc`
 
 After login:
 
@@ -181,6 +182,7 @@ After login:
 - basic user fields are copied into Redux
 - `email`, `phone`, and guest/allow state are also mirrored into `localStorage`
 - the hook looks up the matching `users` row through `/api/supabase/select`
+- OIDC issuer session IDs created during Login with Cubid are stored in an HTTP-only Passport cookie for passkey registration instead of `localStorage`
 
 ### Social / Provider Auth
 

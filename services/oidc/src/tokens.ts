@@ -1,12 +1,6 @@
 import { createHash } from "node:crypto";
 
-import {
-  base64UrlEncode,
-  generateRandomToken,
-  verifyPkceChallenge,
-  type OidcGrantType,
-  type OidcTokenEndpointAuthMethod,
-} from "@cubid/auth";
+import { base64UrlEncode, generateRandomToken, verifyPkceChallenge, type OidcGrantType, type OidcTokenEndpointAuthMethod } from "@cubid/auth";
 import type { OidcScope } from "@cubid/claims";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { decodeJwt } from "jose";
@@ -55,6 +49,19 @@ type PersistedAuthorizationCodeRow = {
   };
   created_at: string;
 };
+
+export function buildSessionAuthenticationClaims(session: PersistedSessionRow): {
+  acr?: string;
+  amr?: string[];
+} {
+  const amr = Array.isArray(session.authentication_methods) ? session.authentication_methods.filter((entry): entry is string => typeof entry === "string" && entry.trim().length > 0) : [];
+  const acr = typeof session.metadata?.acr === "string" && session.metadata.acr.trim().length > 0 ? session.metadata.acr : undefined;
+
+  return {
+    ...(amr.length > 0 ? { amr } : {}),
+    ...(acr ? { acr } : {}),
+  };
+}
 
 export type PersistedSessionRow = {
   session_id: string;
@@ -153,7 +160,10 @@ function normalizeString(value: FormDataEntryValue | null): string | null {
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
-function parseBasicAuth(request: Request): { clientId: string | null; clientSecret: string | null } {
+function parseBasicAuth(request: Request): {
+  clientId: string | null;
+  clientSecret: string | null;
+} {
   const authorization = request.headers.get("authorization") ?? "";
   const [scheme, credentials] = authorization.split(" ");
 
@@ -238,10 +248,7 @@ async function insertAuditEvent(
   }
 }
 
-async function tryInsertAuditEvent(
-  supabase: SupabaseClient,
-  input: Parameters<typeof insertAuditEvent>[1],
-): Promise<void> {
+async function tryInsertAuditEvent(supabase: SupabaseClient, input: Parameters<typeof insertAuditEvent>[1]): Promise<void> {
   try {
     await insertAuditEvent(supabase, input);
   } catch (error) {
@@ -250,11 +257,7 @@ async function tryInsertAuditEvent(
 }
 
 async function getClient(supabase: SupabaseClient, clientId: string): Promise<PersistedClientRow | null> {
-  const { data, error } = await supabase
-    .from("oidc_clients")
-    .select("*")
-    .eq("client_id", clientId)
-    .maybeSingle();
+  const { data, error } = await supabase.from("oidc_clients").select("*").eq("client_id", clientId).maybeSingle();
 
   if (error) {
     throw new Error(`Failed to load OIDC client: ${error.message}`);
@@ -264,11 +267,7 @@ async function getClient(supabase: SupabaseClient, clientId: string): Promise<Pe
 }
 
 async function getAuthorizationCode(supabase: SupabaseClient, code: string): Promise<PersistedAuthorizationCodeRow | null> {
-  const { data, error } = await supabase
-    .from("oidc_authorization_codes")
-    .select("*")
-    .eq("authorization_code", code)
-    .maybeSingle();
+  const { data, error } = await supabase.from("oidc_authorization_codes").select("*").eq("authorization_code", code).maybeSingle();
 
   if (error) {
     throw new Error(`Failed to load authorization code: ${error.message}`);
@@ -278,11 +277,7 @@ async function getAuthorizationCode(supabase: SupabaseClient, code: string): Pro
 }
 
 async function getSession(supabase: SupabaseClient, sessionId: string): Promise<PersistedSessionRow | null> {
-  const { data, error } = await supabase
-    .from("oidc_sessions")
-    .select("*")
-    .eq("session_id", sessionId)
-    .maybeSingle();
+  const { data, error } = await supabase.from("oidc_sessions").select("*").eq("session_id", sessionId).maybeSingle();
 
   if (error) {
     throw new Error(`Failed to load OIDC session: ${error.message}`);
@@ -292,11 +287,7 @@ async function getSession(supabase: SupabaseClient, sessionId: string): Promise<
 }
 
 async function getConsent(supabase: SupabaseClient, consentId: string): Promise<PersistedConsentRow | null> {
-  const { data, error } = await supabase
-    .from("oidc_consents")
-    .select("*")
-    .eq("consent_id", consentId)
-    .maybeSingle();
+  const { data, error } = await supabase.from("oidc_consents").select("*").eq("consent_id", consentId).maybeSingle();
 
   if (error) {
     throw new Error(`Failed to load OIDC consent: ${error.message}`);
@@ -306,12 +297,7 @@ async function getConsent(supabase: SupabaseClient, consentId: string): Promise<
 }
 
 async function markAuthorizationCodeConsumed(supabase: SupabaseClient, codeId: string): Promise<boolean> {
-  const { data, error } = await supabase
-    .from("oidc_authorization_codes")
-    .update({ consumed_at: nowIso() })
-    .eq("code_id", codeId)
-    .is("consumed_at", null)
-    .select("code_id");
+  const { data, error } = await supabase.from("oidc_authorization_codes").update({ consumed_at: nowIso() }).eq("code_id", codeId).is("consumed_at", null).select("code_id");
 
   if (error) {
     throw new Error(`Failed to consume authorization code: ${error.message}`);
@@ -401,11 +387,7 @@ async function persistAccessToken(
   }
 }
 
-export async function exchangeAuthorizationCode(
-  supabase: SupabaseClient,
-  input: TokenEndpointInput,
-  requestId: string,
-): Promise<Record<string, unknown>> {
+export async function exchangeAuthorizationCode(supabase: SupabaseClient, input: TokenEndpointInput, requestId: string): Promise<Record<string, unknown>> {
   if (input.grantType !== "authorization_code") {
     throw new OidcEndpointError(400, "unsupported_grant_type", "Only authorization_code is implemented in this slice.");
   }
@@ -441,12 +423,7 @@ export async function exchangeAuthorizationCode(
     throw new OidcEndpointError(400, "invalid_grant", "Authorization code is invalid.");
   }
 
-  if (
-    codeRow.client_id !== clientId ||
-    codeRow.redirect_uri !== input.redirectUri ||
-    codeRow.consumed_at ||
-    isExpired(codeRow.expires_at)
-  ) {
+  if (codeRow.client_id !== clientId || codeRow.redirect_uri !== input.redirectUri || codeRow.consumed_at || isExpired(codeRow.expires_at)) {
     await insertAuditEvent(supabase, {
       clientId,
       sessionId: codeRow.session_id,
@@ -487,13 +464,7 @@ export async function exchangeAuthorizationCode(
 
   const consentMetadata = getRequiredConsentMetadata(codeRow);
   const consent = await getConsent(supabase, consentMetadata.consentId);
-  if (
-    !consent ||
-    consent.revoked_at ||
-    consent.client_id !== clientId ||
-    consent.human_subject_key !== session.human_subject_key ||
-    consent.pairwise_sub !== consentMetadata.pairwiseSub
-  ) {
+  if (!consent || consent.revoked_at || consent.client_id !== clientId || consent.human_subject_key !== session.human_subject_key || consent.pairwise_sub !== consentMetadata.pairwiseSub) {
     throw new OidcEndpointError(400, "invalid_grant", "Consent grant is no longer valid.");
   }
 
@@ -528,6 +499,7 @@ export async function exchangeAuthorizationCode(
 
   const idToken = await signOidcJwt(
     {
+      ...buildSessionAuthenticationClaims(session),
       auth_time: authTime,
       client_id: clientId,
       nonce: codeRow.nonce ?? undefined,
@@ -582,11 +554,7 @@ export async function exchangeAuthorizationCode(
 }
 
 async function getAccessTokenRecord(supabase: SupabaseClient, jti: string): Promise<PersistedAccessTokenRow | null> {
-  const { data, error } = await supabase
-    .from("oidc_access_tokens")
-    .select("*")
-    .eq("access_token_jti", jti)
-    .maybeSingle();
+  const { data, error } = await supabase.from("oidc_access_tokens").select("*").eq("access_token_jti", jti).maybeSingle();
 
   if (error) {
     throw new Error(`Failed to load access token: ${error.message}`);
@@ -603,11 +571,7 @@ function hasClaim(consent: PersistedConsentRow, claim: string): boolean {
   return consent.granted_claims.includes(claim);
 }
 
-export function buildUserInfo(
-  tokenRecord: PersistedAccessTokenRow,
-  session: PersistedSessionRow,
-  consent: PersistedConsentRow,
-): Record<string, unknown> {
+export function buildUserInfo(tokenRecord: PersistedAccessTokenRow, session: PersistedSessionRow, consent: PersistedConsentRow): Record<string, unknown> {
   const response: Record<string, unknown> = {
     sub: tokenRecord.pairwise_sub,
   };
@@ -636,11 +600,7 @@ export function buildUserInfo(
   return response;
 }
 
-export async function getUserInfo(
-  supabase: SupabaseClient,
-  accessToken: string | null,
-  requestId: string,
-): Promise<Record<string, unknown>> {
+export async function getUserInfo(supabase: SupabaseClient, accessToken: string | null, requestId: string): Promise<Record<string, unknown>> {
   let failureClientId: string | null = null;
   let failureSessionId: string | null = null;
   let failureJti: string | null = null;
@@ -722,11 +682,7 @@ export async function getUserInfo(
   }
 }
 
-export async function revokeToken(
-  supabase: SupabaseClient,
-  input: RevocationEndpointInput,
-  requestId: string,
-): Promise<void> {
+export async function revokeToken(supabase: SupabaseClient, input: RevocationEndpointInput, requestId: string): Promise<void> {
   const clientId = resolveTokenClientId(input);
   const client = await getClient(supabase, clientId);
 
@@ -757,23 +713,13 @@ export async function revokeToken(
       throw new OidcEndpointError(400, "invalid_request", "token was not issued to the authenticated client.");
     }
 
-    const { error } = await supabase
-      .from("oidc_access_tokens")
-      .update({ revoked_at: nowIso() })
-      .eq("access_token_jti", jti)
-      .eq("client_id", clientId)
-      .is("revoked_at", null);
+    const { error } = await supabase.from("oidc_access_tokens").update({ revoked_at: nowIso() }).eq("access_token_jti", jti).eq("client_id", clientId).is("revoked_at", null);
 
     if (error) {
       throw new Error(`Failed to revoke access token: ${error.message}`);
     }
   } else {
-    const { error } = await supabase
-      .from("oidc_refresh_tokens")
-      .update({ revoked_at: nowIso() })
-      .eq("refresh_token_hash", hashToken(token))
-      .eq("client_id", clientId)
-      .is("revoked_at", null);
+    const { error } = await supabase.from("oidc_refresh_tokens").update({ revoked_at: nowIso() }).eq("refresh_token_hash", hashToken(token)).eq("client_id", clientId).is("revoked_at", null);
 
     if (error) {
       throw new Error(`Failed to revoke refresh token: ${error.message}`);
@@ -793,11 +739,7 @@ export async function revokeToken(
   });
 }
 
-export async function logout(
-  supabase: SupabaseClient,
-  request: Request,
-  requestId: string,
-): Promise<{ redirectTo: string | null }> {
+export async function logout(supabase: SupabaseClient, request: Request, requestId: string): Promise<{ redirectTo: string | null }> {
   const url = new URL(request.url);
   const clientId = url.searchParams.get("client_id");
   const postLogoutRedirectUri = url.searchParams.get("post_logout_redirect_uri");
@@ -815,11 +757,7 @@ export async function logout(
   }
 
   if (sid) {
-    const { error } = await supabase
-      .from("oidc_sessions")
-      .update({ revoked_at: nowIso() })
-      .eq("session_id", sid)
-      .is("revoked_at", null);
+    const { error } = await supabase.from("oidc_sessions").update({ revoked_at: nowIso() }).eq("session_id", sid).is("revoked_at", null);
 
     if (error) {
       throw new Error(`Failed to revoke OIDC session: ${error.message}`);

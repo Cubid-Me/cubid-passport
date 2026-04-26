@@ -249,23 +249,23 @@ Add OIDC-service-owned endpoints and repositories for passkey registration and a
 
 ### B04.3 Add Passport passkey UX and OTP recovery
 
-- Status: Not started
-- Timestamp started: TBD
-- Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Status: Completed
+- Timestamp started: 2026-04-20T16:12:17-0400
+- Timestamp completed: 2026-04-20T17:17:41-0400
+- Feature branch: codex/b04-3-passkey-ux-otp-recovery
+- Head: ca28575
+- Session-log reference(s): session: v53, session: v57, session: v58
 
 Refactor Passport login so returning users can sign in with a passkey, verified users can register passkeys, and OTP bootstrap or recovery remains available without relying on localStorage as the hidden source of truth.
 
 ### B04.4 Add device lifecycle and step-up follow-ups
 
-- Status: Not started
-- Timestamp started: TBD
-- Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Status: Completed
+- Timestamp started: 2026-04-21T03:20:33-0400
+- Timestamp completed: 2026-04-21T03:33:11-0400
+- Feature branch: codex/b04-4-passkey-lifecycle-stepup
+- Head: 94068c1
+- Session-log reference(s): session: v59, session: v60
 
 Build the deferred follow-up capabilities for richer credential lifecycle management, device naming or revocation, and risk-aware step-up or ACR-driven passkey requirements after the core passkey delivery is stable.
 

@@ -7,6 +7,7 @@ type AdminSupabaseClient = SupabaseClient;
 
 const CLIENT_OPS_STATUSES = ['active', 'suspended'] as const;
 const RATE_LIMIT_TIERS = ['starter', 'trusted', 'internal'] as const;
+const SUPPORTED_ACR_VALUES = ['urn:cubid:acr:passkey'] as const;
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
 type ClientOpsStatus = (typeof CLIENT_OPS_STATUSES)[number];
@@ -68,6 +69,16 @@ interface ClientMetricRow {
   userinfo_successes: number | string | null;
 }
 
+interface PasskeyCountInput {
+  activeCount: number | string | null | undefined;
+  authenticationFailures7d: number | string | null | undefined;
+  authenticationSuccesses7d: number | string | null | undefined;
+  registrations7d: number | string | null | undefined;
+  revokedCount: number | string | null | undefined;
+  revocations7d: number | string | null | undefined;
+  stepUpFailures7d: number | string | null | undefined;
+}
+
 export interface OidcOpsAuditEvent {
   actorType: string;
   clientId: string | null;
@@ -76,6 +87,18 @@ export interface OidcOpsAuditEvent {
   eventType: string;
   outcome: string;
   requestId: string | null;
+}
+
+export interface OidcPasskeyOpsSummary {
+  activeCount: number;
+  authenticationFailures7d: number;
+  authenticationSuccesses7d: number;
+  recentAuditEvents: OidcOpsAuditEvent[];
+  registrations7d: number;
+  revocations7d: number;
+  revokedCount: number;
+  stepUpFailures7d: number;
+  supportedAcrValues: string[];
 }
 
 export interface OidcOpsClientSummary {
@@ -114,6 +137,7 @@ export interface OidcOpsClientSummary {
 export interface OidcOpsOverview {
   clients: OidcOpsClientSummary[];
   generatedAt: string;
+  passkeys: OidcPasskeyOpsSummary;
   recentAuditEvents: OidcOpsAuditEvent[];
 }
 
@@ -149,6 +173,30 @@ const mapAuditEvent = (row: AuditLogRow): OidcOpsAuditEvent => ({
   eventType: row.event_type,
   outcome: row.outcome,
   requestId: row.request_id,
+});
+
+const REDACTED_AUDIT_DETAIL_KEYS = new Set([
+  'credential_id',
+  'webauthn_credential_id',
+  'human_subject_key',
+  'public_key_cose',
+  'user_handle',
+]);
+
+const redactAuditDetails = (value: unknown): Record<string, unknown> => {
+  const details = normalizeDetails(value);
+  const redacted: Record<string, unknown> = {};
+
+  for (const [key, entry] of Object.entries(details)) {
+    redacted[key] = REDACTED_AUDIT_DETAIL_KEYS.has(key) ? '[redacted]' : entry;
+  }
+
+  return redacted;
+};
+
+const mapRedactedAuditEvent = (row: AuditLogRow): OidcOpsAuditEvent => ({
+  ...mapAuditEvent(row),
+  details: redactAuditDetails(row.details),
 });
 
 const isClientOpsStatus = (value: unknown): value is ClientOpsStatus => {
@@ -239,7 +287,10 @@ export const normalizeClientCountRows = (rows: ClientCountRow[] = []) => {
 };
 
 export const normalizeClientMetricRows = (rows: ClientMetricRow[] = []) => {
-  const metricsByClient = new Map<string, ReturnType<typeof makeEmptyMetrics>>();
+  const metricsByClient = new Map<
+    string,
+    ReturnType<typeof makeEmptyMetrics>
+  >();
 
   for (const row of rows) {
     metricsByClient.set(row.client_id, {
@@ -251,6 +302,27 @@ export const normalizeClientMetricRows = (rows: ClientMetricRow[] = []) => {
   }
 
   return metricsByClient;
+};
+
+export const buildPasskeyOpsSummary = (
+  counts: PasskeyCountInput,
+  passkeyAuditRows: AuditLogRow[],
+): OidcPasskeyOpsSummary => {
+  const passkeyEvents = passkeyAuditRows.map(mapRedactedAuditEvent);
+
+  return {
+    activeCount: normalizeCount(counts.activeCount),
+    authenticationFailures7d: normalizeCount(counts.authenticationFailures7d),
+    authenticationSuccesses7d: normalizeCount(
+      counts.authenticationSuccesses7d
+    ),
+    recentAuditEvents: passkeyEvents.slice(0, 25),
+    registrations7d: normalizeCount(counts.registrations7d),
+    revocations7d: normalizeCount(counts.revocations7d),
+    revokedCount: normalizeCount(counts.revokedCount),
+    stepUpFailures7d: normalizeCount(counts.stepUpFailures7d),
+    supportedAcrValues: [...SUPPORTED_ACR_VALUES],
+  };
 };
 
 export const loadOidcOpsOverview = async (
@@ -267,6 +339,14 @@ export const loadOidcOpsOverview = async (
     metricsResponse,
     bindingsResponse,
     policiesResponse,
+    activePasskeyCountResponse,
+    revokedPasskeyCountResponse,
+    passkeyAuditResponse,
+    passkeyRegistrationCountResponse,
+    passkeyAuthenticationSuccessCountResponse,
+    passkeyAuthenticationFailureCountResponse,
+    passkeyRevocationCountResponse,
+    passkeyStepUpFailureCountResponse,
   ] = await Promise.all([
     supabase
       .from('oidc_clients')
@@ -290,6 +370,54 @@ export const loadOidcOpsOverview = async (
     supabase
       .from('oidc_identity_depth_policies')
       .select('policy_id,policy_name'),
+    supabase
+      .from('oidc_webauthn_credentials')
+      .select('device_id', { count: 'exact', head: true })
+      .is('revoked_at', null),
+    supabase
+      .from('oidc_webauthn_credentials')
+      .select('device_id', { count: 'exact', head: true })
+      .not('revoked_at', 'is', null),
+    supabase
+      .from('oidc_audit_logs')
+      .select(
+        'client_id,event_type,actor_type,actor_identifier,request_id,outcome,details,created_at'
+      )
+      .like('event_type', 'passkey.%')
+      .gte('created_at', since)
+      .order('created_at', { ascending: false })
+      .limit(25),
+    supabase
+      .from('oidc_audit_logs')
+      .select('log_id', { count: 'exact', head: true })
+      .eq('event_type', 'passkey.registration.completed')
+      .eq('outcome', 'success')
+      .gte('created_at', since),
+    supabase
+      .from('oidc_audit_logs')
+      .select('log_id', { count: 'exact', head: true })
+      .eq('event_type', 'passkey.authentication.completed')
+      .eq('outcome', 'success')
+      .gte('created_at', since),
+    supabase
+      .from('oidc_audit_logs')
+      .select('log_id', { count: 'exact', head: true })
+      .eq('event_type', 'passkey.authentication.completed')
+      .neq('outcome', 'success')
+      .gte('created_at', since),
+    supabase
+      .from('oidc_audit_logs')
+      .select('log_id', { count: 'exact', head: true })
+      .eq('event_type', 'passkey.device.revoked')
+      .eq('outcome', 'success')
+      .gte('created_at', since),
+    supabase
+      .from('oidc_audit_logs')
+      .select('log_id', { count: 'exact', head: true })
+      .eq('event_type', 'login_challenge.completed')
+      .eq('outcome', 'failure')
+      .contains('details', { reason: 'acr_not_satisfied' })
+      .gte('created_at', since),
   ]);
 
   for (const response of [
@@ -299,6 +427,14 @@ export const loadOidcOpsOverview = async (
     metricsResponse,
     bindingsResponse,
     policiesResponse,
+    activePasskeyCountResponse,
+    revokedPasskeyCountResponse,
+    passkeyAuditResponse,
+    passkeyRegistrationCountResponse,
+    passkeyAuthenticationSuccessCountResponse,
+    passkeyAuthenticationFailureCountResponse,
+    passkeyRevocationCountResponse,
+    passkeyStepUpFailureCountResponse,
   ]) {
     if (response.error) {
       throw response.error;
@@ -313,6 +449,19 @@ export const loadOidcOpsOverview = async (
   const recentEventsByClient = new Map<string, OidcOpsAuditEvent[]>();
   const countsByClient = normalizeClientCountRows(
     (countsResponse.data ?? []) as ClientCountRow[]
+  );
+  const passkeys = buildPasskeyOpsSummary(
+    {
+      activeCount: activePasskeyCountResponse.count,
+      authenticationFailures7d: passkeyAuthenticationFailureCountResponse.count,
+      authenticationSuccesses7d:
+        passkeyAuthenticationSuccessCountResponse.count,
+      registrations7d: passkeyRegistrationCountResponse.count,
+      revokedCount: revokedPasskeyCountResponse.count,
+      revocations7d: passkeyRevocationCountResponse.count,
+      stepUpFailures7d: passkeyStepUpFailureCountResponse.count,
+    },
+    (passkeyAuditResponse.data ?? []) as AuditLogRow[],
   );
   const bindingsByClient = new Map<string, BindingRow[]>();
   const policyNamesById = new Map<string, string>();
@@ -378,6 +527,7 @@ export const loadOidcOpsOverview = async (
   return {
     clients,
     generatedAt,
+    passkeys,
     recentAuditEvents: recentAuditEvents.slice(0, 50),
   };
 };

@@ -1,3 +1,247 @@
+### session: v62
+
+- timestamp: 2026-04-26T05:20:33-0400
+- agent: **OpenAI Codex**
+- branch: **codex/b04-4-passkey-lifecycle-stepup**
+- head: **`d74488e`**
+- session name: **Address PR #148 Codex review feedback**
+
+#### Objective
+
+Address the `chatgpt-codex-connector` review findings on PR #148 covering passkey ACR trust boundaries and Admin passkey metric accuracy.
+
+#### Actions Taken
+
+- filtered hosted Firebase-backed login completion methods to a server-approved non-passkey set so only the dedicated WebAuthn completion path can satisfy passkey ACR
+- added OIDC regression coverage proving caller-supplied `passkey` is stripped from hosted login completion input
+- moved Admin 7-day passkey counters off the 200-row sampled event lists and onto aggregate count queries, while keeping the recent-event feed capped for display only
+- updated Admin helper coverage to reflect aggregate-driven passkey totals
+
+#### Verification
+
+- `NODE20_BIN=$(npx -y -p node@20 node -p 'require("path").dirname(process.execPath)') && PATH="$NODE20_BIN:$PATH" pnpm --filter @cubid/oidc typecheck`
+- `NODE20_BIN=$(npx -y -p node@20 node -p 'require("path").dirname(process.execPath)') && PATH="$NODE20_BIN:$PATH" pnpm --filter @cubid/oidc test`
+- `NODE20_BIN=$(npx -y -p node@20 node -p 'require("path").dirname(process.execPath)') && PATH="$NODE20_BIN:$PATH" pnpm --filter @cubid/admin typecheck`
+- `NODE20_BIN=$(npx -y -p node@20 node -p 'require("path").dirname(process.execPath)') && PATH="$NODE20_BIN:$PATH" pnpm --filter @cubid/admin test`
+
+#### Follow-up
+
+- push the Codex-review fixes, respond on the two Codex review threads, resolve them, and confirm the rerun checks stay green
+
+### session: v61
+
+- timestamp: 2026-04-26T04:52:25-0400
+- agent: **OpenAI Codex**
+- branch: **codex/b04-4-passkey-lifecycle-stepup**
+- head: **`f6a27ae`**
+- session name: **Address PR #148 Copilot review feedback**
+
+#### Objective
+
+Address the four Copilot review comments on PR #148 covering token claim shape, migration rollout safety, Admin passkey redaction assurances, and Passport cookie parsing hardening.
+
+#### Actions Taken
+
+- updated OIDC session authentication claims to omit `amr` when the normalized method list is empty and added unit coverage for that contract
+- hardened the passkey lifecycle migration with a transitional `device_id` default so rolling writers do not fail before all application nodes are updated
+- added Admin passkey-ops test coverage that locks the current omission of `actorIdentifier` from redacted passkey audit payloads
+- wrapped Passport OIDC session cookie decoding in a safe `try/catch` so malformed cookie values fail closed instead of throwing
+
+#### Verification
+
+- `NODE20_BIN=$(npx -y -p node@20 node -p 'require("path").dirname(process.execPath)') && PATH="$NODE20_BIN:$PATH" pnpm --filter @cubid/oidc typecheck`
+- `NODE20_BIN=$(npx -y -p node@20 node -p 'require("path").dirname(process.execPath)') && PATH="$NODE20_BIN:$PATH" pnpm --filter @cubid/oidc test`
+- `NODE20_BIN=$(npx -y -p node@20 node -p 'require("path").dirname(process.execPath)') && PATH="$NODE20_BIN:$PATH" pnpm --filter @cubid/admin test`
+- `NODE20_BIN=$(npx -y -p node@20 node -p 'require("path").dirname(process.execPath)') && PATH="$NODE20_BIN:$PATH" pnpm --filter @cubid/passport typecheck`
+
+#### Follow-up
+
+- push the PR-review fixes, respond on each Copilot review thread, resolve them, and recheck CI before requesting Codex review
+
+### session: v60
+
+- timestamp: 2026-04-21T03:33:56-0400
+- agent: **OpenAI Codex**
+- branch: **codex/b04-4-passkey-lifecycle-stepup**
+- head: **`94068c1`**
+- session name: **Complete B04.4 roadmap metadata**
+
+#### Objective
+
+Record the completed B04.4 todo state after the passkey lifecycle and OIDC ACR implementation landed on the feature branch.
+
+#### Actions Taken
+
+- set the B04.4 implementation head in [agent-context/todo.md](/Users/botmaster/src/cubid/cubid-passport/agent-context/todo.md)
+- added the metadata closure session reference for the completed todo
+
+#### Verification
+
+- metadata-only change following the B04.4 validation suite recorded in `session: v59`
+
+#### Follow-up
+
+- publish the stacked B04.4 branch for review when ready
+
+### session: v59
+
+- timestamp: 2026-04-21T03:33:11-0400
+- agent: **OpenAI Codex**
+- branch: **codex/b04-4-passkey-lifecycle-stepup**
+- head: **`94068c1`**
+- session name: **Implement B04.4 passkey lifecycle and ACR step-up**
+
+#### Objective
+
+Complete B04.4 on the stacked passkey branch by adding passkey device lifecycle management, read-only Admin passkey operations visibility, and OIDC ACR semantics for passkey-required Login with Cubid authorization requests.
+
+#### Actions Taken
+
+- added a Supabase migration for opaque passkey `device_id` values, revocation actor/reason metadata, and active-device lookup indexes
+- added Passport Firebase-authenticated passkey management APIs for list, rename, and revoke, with safe browser response shapes and token/session revocation on device revoke
+- expanded Passport Profile Login & Security with passkey device listing, rename controls, revoke confirmation, recovery copy, and refresh behavior
+- added Admin OIDC Ops passkey aggregates, redacted recent passkey audit events, supported ACR visibility, and passkey step-up failure metrics
+- added OIDC `acr_values=urn:cubid:acr:passkey` parsing/persistence, passkey-only login completion enforcement for passkey-required challenges, discovery metadata, and ID-token `amr`/`acr` claims
+- updated OIDC architecture docs for device lifecycle ownership, opaque device IDs, ACR behavior, and deferred Admin-action step-up enforcement
+
+#### Verification
+
+- `NODE20_BIN=$(npx -y -p node@20 node -p 'require("path").dirname(process.execPath)') && PATH="$NODE20_BIN:$PATH" pnpm --filter @cubid/oidc typecheck`
+- `NODE20_BIN=$(npx -y -p node@20 node -p 'require("path").dirname(process.execPath)') && PATH="$NODE20_BIN:$PATH" pnpm --filter @cubid/oidc test`
+- `NODE20_BIN=$(npx -y -p node@20 node -p 'require("path").dirname(process.execPath)') && PATH="$NODE20_BIN:$PATH" pnpm --filter @cubid/admin typecheck`
+- `NODE20_BIN=$(npx -y -p node@20 node -p 'require("path").dirname(process.execPath)') && PATH="$NODE20_BIN:$PATH" pnpm --filter @cubid/admin test`
+- `NODE20_BIN=$(npx -y -p node@20 node -p 'require("path").dirname(process.execPath)') && PATH="$NODE20_BIN:$PATH" pnpm --filter @cubid/admin build`
+- `NODE20_BIN=$(npx -y -p node@20 node -p 'require("path").dirname(process.execPath)') && PATH="$NODE20_BIN:$PATH" pnpm --filter @cubid/passport typecheck`
+- `NODE20_BIN=$(npx -y -p node@20 node -p 'require("path").dirname(process.execPath)') && PATH="$NODE20_BIN:$PATH" pnpm --filter @cubid/passport build`
+- `NODE20_BIN=$(npx -y -p node@20 node -p 'require("path").dirname(process.execPath)') && PATH="$NODE20_BIN:$PATH" pnpm lint`
+- `NODE20_BIN=$(npx -y -p node@20 node -p 'require("path").dirname(process.execPath)') && PATH="$NODE20_BIN:$PATH" pnpm typecheck`
+- `NODE20_BIN=$(npx -y -p node@20 node -p 'require("path").dirname(process.execPath)') && PATH="$NODE20_BIN:$PATH" pnpm test`
+- `NODE20_BIN=$(npx -y -p node@20 node -p 'require("path").dirname(process.execPath)') && PATH="$NODE20_BIN:$PATH" pnpm build`
+
+#### Follow-up
+
+- record the resulting implementation commit hash in the B04.4 todo metadata after the commit lands
+
+### session: v58
+
+- timestamp: 2026-04-20T17:17:41-0400
+- agent: **OpenAI Codex**
+- branch: **codex/b04-3-passkey-ux-otp-recovery**
+- head: **`ca28575`**
+- session name: **Complete B04.3 roadmap metadata**
+
+#### Objective
+
+Record the completed B04.3 todo state after the integrated passkey UX implementation landed on the feature branch.
+
+#### Actions Taken
+
+- marked `B04.3` completed in [agent-context/todo.md](/Users/botmaster/src/cubid/cubid-passport/agent-context/todo.md)
+- set the completed timestamp, feature branch, implementation head, and session-log references
+
+#### Verification
+
+- metadata-only change following the B04.3 validation suite recorded in `session: v57`
+
+#### Follow-up
+
+- publish the B04.3 branch for review when ready
+
+### session: v57
+
+- timestamp: 2026-04-20T17:16:15-0400
+- agent: **OpenAI Codex**
+- branch: **codex/b04-3-passkey-ux-otp-recovery**
+- head: **`53253be`**
+- session name: **Integrate B04.3 passkey UX with current dev**
+
+#### Objective
+
+Bring the B04.3 Passport passkey UX branch forward onto current `dev`, preserving the newer OIDC Ops/Profile consent work while finishing the user-facing passkey and OTP recovery behavior.
+
+#### Actions Taken
+
+- resolved the `dev` merge conflicts in Passport Profile and package dependencies by keeping both passkey support and OIDC consent-management support
+- added a shared Passport browser helper for WebAuthn/OIDC passkey authentication and registration ceremonies
+- adjusted Login with Cubid behavior so passkey authentication redirects immediately, while OwnID email or Firebase phone OTP fallback login shows a skippable passkey setup prompt when an issuer session is returned
+- removed the login flow's localStorage-backed email identity dependency and kept phone OTP positioned as the explicit recovery fallback
+- retained Passport server proxy routes for OIDC passkey ceremonies so browser code stays same-origin and the issuer session ID stays in an HTTP-only Passport cookie
+
+#### Verification
+
+- `NODE20_BIN=$(npx -y -p node@20 node -p 'require("path").dirname(process.execPath)') && PATH="$NODE20_BIN:$PATH" pnpm --filter @cubid/passport typecheck`
+- `NODE20_BIN=$(npx -y -p node@20 node -p 'require("path").dirname(process.execPath)') && PATH="$NODE20_BIN:$PATH" pnpm --filter @cubid/oidc typecheck`
+- `NODE20_BIN=$(npx -y -p node@20 node -p 'require("path").dirname(process.execPath)') && PATH="$NODE20_BIN:$PATH" pnpm --filter @cubid/oidc test`
+- `NODE20_BIN=$(npx -y -p node@20 node -p 'require("path").dirname(process.execPath)') && PATH="$NODE20_BIN:$PATH" pnpm --filter @cubid/passport build`
+- `NODE20_BIN=$(npx -y -p node@20 node -p 'require("path").dirname(process.execPath)') && PATH="$NODE20_BIN:$PATH" pnpm exec turbo run lint --force`
+- `NODE20_BIN=$(npx -y -p node@20 node -p 'require("path").dirname(process.execPath)') && PATH="$NODE20_BIN:$PATH" pnpm exec turbo run typecheck --force`
+- `NODE20_BIN=$(npx -y -p node@20 node -p 'require("path").dirname(process.execPath)') && PATH="$NODE20_BIN:$PATH" pnpm exec turbo run test --force`
+- `NODE20_BIN=$(npx -y -p node@20 node -p 'require("path").dirname(process.execPath)') && PATH="$NODE20_BIN:$PATH" pnpm exec turbo run build --force`
+
+#### Follow-up
+
+- commit the integrated implementation, then record the final B04.3 completion metadata against the resulting feature head
+
+### session: v54
+
+- timestamp: 2026-04-20T16:20:18-0400
+- agent: **OpenAI Codex**
+- branch: **codex/b04-3-passkey-ux-otp-recovery**
+- head: **`06e6633`**
+- session name: **Complete B04.3 roadmap metadata**
+
+#### Objective
+
+Record the completed B04.3 todo state after the implementation commit produced the final feature head.
+
+#### Actions Taken
+
+- marked `B04.3` completed in [agent-context/todo.md](/Users/botmaster/src/cubid/cubid-passport/agent-context/todo.md)
+- set the completed timestamp, feature branch, implementation head, and session-log reference
+
+#### Verification
+
+- metadata-only change following the already completed B04.3 validation suite
+
+#### Follow-up
+
+- publish the branch when ready and continue with the next passkey follow-up todo
+
+### session: v53
+
+- timestamp: 2026-04-20T16:19:51-0400
+- agent: **OpenAI Codex**
+- branch: **codex/b04-3-passkey-ux-otp-recovery**
+- head: **`bd828d4`**
+- session name: **Implement Passport passkey UX and OTP recovery**
+
+#### Objective
+
+Add the Passport-facing passkey experience for Login with Cubid while keeping OIDC passkey challenge and session truth in `services/oidc`.
+
+#### Actions Taken
+
+- added Passport server proxy routes for OIDC login challenge reads, login completion, passkey authentication options/completion, and passkey registration options/completion
+- set the issuer session ID in an HTTP-only Passport cookie after OIDC login completion instead of storing it in browser state
+- added passkey sign-in and post-login passkey registration prompts to the Passport login screen, with email/phone recovery paths still visible
+- added Profile passkey registration using the same HTTP-only issuer-session proxy path
+- added `@simplewebauthn/browser` to Passport and documented the B04.3 ceremony/session boundary
+
+#### Verification
+
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport lint`
+- `pnpm --filter @cubid/passport test`
+- `pnpm --filter @cubid/passport build`
+- `pnpm typecheck`
+- `pnpm test`
+- `pnpm lint`
+- `pnpm build`
+
+#### Follow-up
+
+- complete B04.3 roadmap metadata after this implementation commit records the feature head
+
 ### session: v0
 
 - timestamp: 2026-04-15T12:04:00-0400

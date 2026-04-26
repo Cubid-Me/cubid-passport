@@ -23,10 +23,7 @@ import {
 } from "@simplewebauthn/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import {
-  AuthorizationRequestError,
-  completeLoginChallengeForSubject,
-} from "./authorize";
+import { AuthorizationRequestError, completeLoginChallengeForSubject } from "./authorize";
 import { getOidcRuntimeConfig } from "./config";
 
 const PASSKEY_CHALLENGE_LIFETIME_MS = 5 * 60 * 1000;
@@ -59,6 +56,7 @@ type PersistedHumanSubjectRow = {
 
 type PersistedWebAuthnCredentialRow = {
   credential_id: string;
+  device_id: string;
   user_handle: string;
   human_subject_key: string;
   cubid_user_id: number | null;
@@ -74,6 +72,8 @@ type PersistedWebAuthnCredentialRow = {
   sign_count: number;
   last_authenticated_at: string | null;
   revoked_at: string | null;
+  revoked_by: "user" | "operator" | "system" | null;
+  revoked_reason: string | null;
   metadata: Record<string, unknown>;
   created_at: string;
   updated_at: string;
@@ -153,6 +153,7 @@ function serializeCredentialDescriptor(row: PersistedWebAuthnCredentialRow): Cub
 function serializeCredential(row: PersistedWebAuthnCredentialRow): CubidWebAuthnCredentialRecord {
   return {
     credentialId: row.credential_id,
+    deviceId: row.device_id,
     userHandle: row.user_handle,
     humanSubjectKey: row.human_subject_key,
     cubidUserId: row.cubid_user_id,
@@ -169,6 +170,8 @@ function serializeCredential(row: PersistedWebAuthnCredentialRow): CubidWebAuthn
     updatedAt: row.updated_at,
     lastAuthenticatedAt: row.last_authenticated_at,
     revokedAt: row.revoked_at,
+    revokedBy: row.revoked_by,
+    revokedReason: row.revoked_reason,
     metadata: row.metadata ?? {},
   };
 }
@@ -203,15 +206,8 @@ async function insertAuditEvent(
   }
 }
 
-async function getLoginRequestByChallenge(
-  supabase: SupabaseClient,
-  loginChallengeId: string,
-): Promise<PersistedAuthorizationRequestRow | null> {
-  const { data, error } = await supabase
-    .from("oidc_authorization_requests")
-    .select("request_id,client_id,login_challenge_id,login_hint,status,expires_at")
-    .eq("login_challenge_id", loginChallengeId)
-    .maybeSingle();
+async function getLoginRequestByChallenge(supabase: SupabaseClient, loginChallengeId: string): Promise<PersistedAuthorizationRequestRow | null> {
+  const { data, error } = await supabase.from("oidc_authorization_requests").select("request_id,client_id,login_challenge_id,login_hint,status,expires_at").eq("login_challenge_id", loginChallengeId).maybeSingle();
 
   if (error) {
     throw new Error(`Failed to load OIDC login challenge: ${error.message}`);
@@ -220,15 +216,8 @@ async function getLoginRequestByChallenge(
   return (data as PersistedAuthorizationRequestRow | null) ?? null;
 }
 
-async function getActiveSession(
-  supabase: SupabaseClient,
-  sessionId: string,
-): Promise<PersistedSessionRow | null> {
-  const { data, error } = await supabase
-    .from("oidc_sessions")
-    .select("session_id,cubid_user_id,human_subject_key,verified_email,verified_phone,expires_at,revoked_at")
-    .eq("session_id", sessionId)
-    .maybeSingle();
+async function getActiveSession(supabase: SupabaseClient, sessionId: string): Promise<PersistedSessionRow | null> {
+  const { data, error } = await supabase.from("oidc_sessions").select("session_id,cubid_user_id,human_subject_key,verified_email,verified_phone,expires_at,revoked_at").eq("session_id", sessionId).maybeSingle();
 
   if (error) {
     throw new Error(`Failed to load OIDC session: ${error.message}`);
@@ -242,15 +231,8 @@ async function getActiveSession(
   return session;
 }
 
-async function getHumanSubjectByKey(
-  supabase: SupabaseClient,
-  humanSubjectKey: string,
-): Promise<PersistedHumanSubjectRow | null> {
-  const { data, error } = await supabase
-    .from("oidc_human_subjects")
-    .select("human_subject_key,cubid_user_id,primary_email,primary_phone")
-    .eq("human_subject_key", humanSubjectKey)
-    .maybeSingle();
+async function getHumanSubjectByKey(supabase: SupabaseClient, humanSubjectKey: string): Promise<PersistedHumanSubjectRow | null> {
+  const { data, error } = await supabase.from("oidc_human_subjects").select("human_subject_key,cubid_user_id,primary_email,primary_phone").eq("human_subject_key", humanSubjectKey).maybeSingle();
 
   if (error) {
     throw new Error(`Failed to load OIDC human subject: ${error.message}`);
@@ -259,16 +241,9 @@ async function getHumanSubjectByKey(
   return (data as PersistedHumanSubjectRow | null) ?? null;
 }
 
-async function findHumanSubjectByLoginHint(
-  supabase: SupabaseClient,
-  loginHint: string,
-): Promise<PersistedHumanSubjectRow | null> {
+async function findHumanSubjectByLoginHint(supabase: SupabaseClient, loginHint: string): Promise<PersistedHumanSubjectRow | null> {
   const field = loginHint.includes("@") ? "primary_email" : "primary_phone";
-  const { data, error } = await supabase
-    .from("oidc_human_subjects")
-    .select("human_subject_key,cubid_user_id,primary_email,primary_phone")
-    .eq(field, loginHint)
-    .maybeSingle();
+  const { data, error } = await supabase.from("oidc_human_subjects").select("human_subject_key,cubid_user_id,primary_email,primary_phone").eq(field, loginHint).maybeSingle();
 
   if (error) {
     throw new Error(`Failed to resolve passkey login hint: ${error.message}`);
@@ -277,16 +252,8 @@ async function findHumanSubjectByLoginHint(
   return (data as PersistedHumanSubjectRow | null) ?? null;
 }
 
-async function listActiveCredentialsForHumanSubject(
-  supabase: SupabaseClient,
-  humanSubjectKey: string,
-): Promise<PersistedWebAuthnCredentialRow[]> {
-  const { data, error } = await supabase
-    .from("oidc_webauthn_credentials")
-    .select("*")
-    .eq("human_subject_key", humanSubjectKey)
-    .is("revoked_at", null)
-    .order("created_at", { ascending: true });
+async function listActiveCredentialsForHumanSubject(supabase: SupabaseClient, humanSubjectKey: string): Promise<PersistedWebAuthnCredentialRow[]> {
+  const { data, error } = await supabase.from("oidc_webauthn_credentials").select("*").eq("human_subject_key", humanSubjectKey).is("revoked_at", null).order("created_at", { ascending: true });
 
   if (error) {
     throw new Error(`Failed to load WebAuthn credentials: ${error.message}`);
@@ -295,15 +262,8 @@ async function listActiveCredentialsForHumanSubject(
   return (data as PersistedWebAuthnCredentialRow[]) ?? [];
 }
 
-async function getCredentialById(
-  supabase: SupabaseClient,
-  credentialId: string,
-): Promise<PersistedWebAuthnCredentialRow | null> {
-  const { data, error } = await supabase
-    .from("oidc_webauthn_credentials")
-    .select("*")
-    .eq("credential_id", credentialId)
-    .maybeSingle();
+async function getCredentialById(supabase: SupabaseClient, credentialId: string): Promise<PersistedWebAuthnCredentialRow | null> {
+  const { data, error } = await supabase.from("oidc_webauthn_credentials").select("*").eq("credential_id", credentialId).maybeSingle();
 
   if (error) {
     throw new Error(`Failed to load WebAuthn credential: ${error.message}`);
@@ -312,15 +272,8 @@ async function getCredentialById(
   return (data as PersistedWebAuthnCredentialRow | null) ?? null;
 }
 
-async function getChallengeById(
-  supabase: SupabaseClient,
-  challengeId: string,
-): Promise<PersistedWebAuthnChallengeRow | null> {
-  const { data, error } = await supabase
-    .from("oidc_webauthn_challenges")
-    .select("*")
-    .eq("challenge_id", challengeId)
-    .maybeSingle();
+async function getChallengeById(supabase: SupabaseClient, challengeId: string): Promise<PersistedWebAuthnChallengeRow | null> {
+  const { data, error } = await supabase.from("oidc_webauthn_challenges").select("*").eq("challenge_id", challengeId).maybeSingle();
 
   if (error) {
     throw new Error(`Failed to load WebAuthn challenge: ${error.message}`);
@@ -329,11 +282,7 @@ async function getChallengeById(
   return (data as PersistedWebAuthnChallengeRow | null) ?? null;
 }
 
-async function consumeChallenge(
-  supabase: SupabaseClient,
-  challengeId: string,
-  metadataPatch?: Record<string, unknown>,
-): Promise<void> {
+async function consumeChallenge(supabase: SupabaseClient, challengeId: string, metadataPatch?: Record<string, unknown>): Promise<void> {
   const { data, error } = await supabase
     .from("oidc_webauthn_challenges")
     .update({
@@ -350,24 +299,13 @@ async function consumeChallenge(
   }
 
   if (!data) {
-    throw new AuthorizationRequestError(
-      "challenge_not_found",
-      "The requested passkey challenge could not be found or is no longer active.",
-      { statusCode: 404 },
-    );
+    throw new AuthorizationRequestError("challenge_not_found", "The requested passkey challenge could not be found or is no longer active.", { statusCode: 404 });
   }
 }
 
-function ensureChallengeIsActive(
-  challenge: PersistedWebAuthnChallengeRow | null,
-  expectedType: PersistedWebAuthnChallengeRow["challenge_type"],
-): PersistedWebAuthnChallengeRow {
+function ensureChallengeIsActive(challenge: PersistedWebAuthnChallengeRow | null, expectedType: PersistedWebAuthnChallengeRow["challenge_type"]): PersistedWebAuthnChallengeRow {
   if (!challenge || challenge.challenge_type !== expectedType || challenge.consumed_at || isExpired(challenge.expires_at)) {
-    throw new AuthorizationRequestError(
-      "challenge_not_found",
-      "The requested passkey challenge could not be found or is no longer active.",
-      { statusCode: 404 },
-    );
+    throw new AuthorizationRequestError("challenge_not_found", "The requested passkey challenge could not be found or is no longer active.", { statusCode: 404 });
   }
 
   return challenge;
@@ -377,11 +315,7 @@ function requireChallengeUserHandle(challenge: PersistedWebAuthnChallengeRow): s
   const userHandle = normalizeOptionalString(challenge.user_handle);
 
   if (!userHandle) {
-    throw new AuthorizationRequestError(
-      "invalid_request",
-      "The requested passkey challenge is missing the expected Cubid user handle.",
-      { statusCode: 409 },
-    );
+    throw new AuthorizationRequestError("invalid_request", "The requested passkey challenge is missing the expected Cubid user handle.", { statusCode: 409 });
   }
 
   return userHandle;
@@ -448,12 +382,7 @@ function toWebAuthnCredential(row: PersistedWebAuthnCredentialRow): WebAuthnCred
   };
 }
 
-export async function createPasskeyAuthenticationOptions(
-  supabase: SupabaseClient,
-  loginChallengeId: string,
-  payload: Record<string, unknown>,
-  requestId: string,
-): Promise<OidcPasskeyAuthenticationOptions> {
+export async function createPasskeyAuthenticationOptions(supabase: SupabaseClient, loginChallengeId: string, payload: Record<string, unknown>, requestId: string): Promise<OidcPasskeyAuthenticationOptions> {
   const loginRequest = await getLoginRequestByChallenge(supabase, loginChallengeId);
   if (!loginRequest || loginRequest.status !== "pending_login" || isExpired(loginRequest.expires_at)) {
     throw new AuthorizationRequestError("challenge_not_found", "The login challenge could not be found or is no longer active.", { statusCode: 404 });
@@ -461,19 +390,18 @@ export async function createPasskeyAuthenticationOptions(
 
   const loginHint = normalizeOptionalString(payload.login_hint) ?? loginRequest.login_hint;
   const hintedSubject = loginHint ? await findHumanSubjectByLoginHint(supabase, loginHint) : null;
-  const allowedCredentials = hintedSubject
-    ? await listActiveCredentialsForHumanSubject(supabase, hintedSubject.human_subject_key)
-    : [];
+  const allowedCredentials = hintedSubject ? await listActiveCredentialsForHumanSubject(supabase, hintedSubject.human_subject_key) : [];
 
   const config = getOidcRuntimeConfig();
   const publicKey = await generateAuthenticationOptions({
     rpID: config.passkeyRpId,
-    allowCredentials: allowedCredentials.length > 0
-      ? allowedCredentials.map((credential) => ({
-          id: credential.credential_id,
-          transports: ensureStringArray(credential.transports) as NonNullable<WebAuthnCredential["transports"]>,
-        }))
-      : undefined,
+    allowCredentials:
+      allowedCredentials.length > 0
+        ? allowedCredentials.map((credential) => ({
+            id: credential.credential_id,
+            transports: ensureStringArray(credential.transports) as NonNullable<WebAuthnCredential["transports"]>,
+          }))
+        : undefined,
     userVerification: "required",
   });
 
@@ -543,12 +471,7 @@ export async function createPasskeyAuthenticationOptions(
   };
 }
 
-export async function completePasskeyAuthentication(
-  supabase: SupabaseClient,
-  loginChallengeId: string,
-  input: CompleteCubidWebAuthnAuthenticationInput,
-  requestId: string,
-): Promise<CompletePasskeyAuthenticationResult> {
+export async function completePasskeyAuthentication(supabase: SupabaseClient, loginChallengeId: string, input: CompleteCubidWebAuthnAuthenticationInput, requestId: string): Promise<CompletePasskeyAuthenticationResult> {
   if (input.loginChallengeId && input.loginChallengeId !== loginChallengeId) {
     throw new AuthorizationRequestError("invalid_request", "The passkey authentication payload does not match the requested login challenge.");
   }
@@ -582,14 +505,9 @@ export async function completePasskeyAuthentication(
     throw new AuthorizationRequestError("invalid_request", "The passkey assertion could not be verified.", { statusCode: 401 });
   }
 
-  const parsedUserHandle = parseCubidWebAuthnUserHandle(
-    normalizeOptionalString(response.response.userHandle) ?? challenge.user_handle ?? credentialRow.user_handle,
-  );
+  const parsedUserHandle = parseCubidWebAuthnUserHandle(normalizeOptionalString(response.response.userHandle) ?? challenge.user_handle ?? credentialRow.user_handle);
 
-  if (
-    parsedUserHandle.humanSubjectKey !== credentialRow.human_subject_key
-    || parsedUserHandle.cubidUserId !== credentialRow.cubid_user_id
-  ) {
+  if (parsedUserHandle.humanSubjectKey !== credentialRow.human_subject_key || parsedUserHandle.cubidUserId !== credentialRow.cubid_user_id) {
     throw new AuthorizationRequestError("invalid_request", "The verified passkey subject does not match the stored Cubid credential.", { statusCode: 409 });
   }
 
@@ -674,11 +592,7 @@ export async function completePasskeyAuthentication(
   };
 }
 
-export async function createPasskeyRegistrationOptions(
-  supabase: SupabaseClient,
-  sessionId: string,
-  requestId: string,
-): Promise<OidcPasskeyRegistrationOptions> {
+export async function createPasskeyRegistrationOptions(supabase: SupabaseClient, sessionId: string, requestId: string): Promise<OidcPasskeyRegistrationOptions> {
   const session = await getActiveSession(supabase, sessionId);
   if (!session || !session.human_subject_key) {
     throw new AuthorizationRequestError("invalid_request", "An active OIDC session is required before registering a passkey.", { statusCode: 401 });
@@ -779,12 +693,7 @@ export async function createPasskeyRegistrationOptions(
   };
 }
 
-export async function completePasskeyRegistration(
-  supabase: SupabaseClient,
-  sessionId: string,
-  input: CompleteCubidWebAuthnRegistrationInput,
-  requestId: string,
-): Promise<CompletePasskeyRegistrationResult> {
+export async function completePasskeyRegistration(supabase: SupabaseClient, sessionId: string, input: CompleteCubidWebAuthnRegistrationInput, requestId: string): Promise<CompletePasskeyRegistrationResult> {
   if (input.sessionId && input.sessionId !== sessionId) {
     throw new AuthorizationRequestError("invalid_request", "The passkey registration payload does not match the requested session.");
   }
@@ -819,15 +728,13 @@ export async function completePasskeyRegistration(
 
   const challengeUserHandle = requireChallengeUserHandle(challenge);
   const subjectFromHandle = parseCubidWebAuthnUserHandle(challengeUserHandle);
-  if (
-    subjectFromHandle.humanSubjectKey !== session.human_subject_key
-    || subjectFromHandle.cubidUserId !== session.cubid_user_id
-  ) {
+  if (subjectFromHandle.humanSubjectKey !== session.human_subject_key || subjectFromHandle.cubidUserId !== session.cubid_user_id) {
     throw new AuthorizationRequestError("invalid_request", "The passkey registration subject does not match the active Cubid session.", { statusCode: 409 });
   }
 
   const persistedCredential = {
     credential_id: verification.registrationInfo.credential.id,
+    device_id: createOpaqueId("passkey_device"),
     user_handle: challengeUserHandle,
     human_subject_key: session.human_subject_key,
     cubid_user_id: session.cubid_user_id,
@@ -850,11 +757,7 @@ export async function completePasskeyRegistration(
     },
   };
 
-  const { data, error } = await supabase
-    .from("oidc_webauthn_credentials")
-    .insert(persistedCredential)
-    .select("*")
-    .single();
+  const { data, error } = await supabase.from("oidc_webauthn_credentials").insert(persistedCredential).select("*").single();
 
   if (error) {
     throw new Error(`Failed to persist WebAuthn credential: ${error.message}`);

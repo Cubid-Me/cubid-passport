@@ -1,21 +1,6 @@
-import {
-  generateRandomToken,
-  type OidcAuthorizationRequestContext,
-  type OidcConsentChallenge,
-  type OidcLoginChallenge,
-  type OidcTokenEndpointAuthMethod,
-} from "@cubid/auth";
-import {
-  getClaimDefinition,
-  getClaimsForScopes,
-  isSupportedScope,
-  type OidcScope,
-} from "@cubid/claims";
-import {
-  computeConsentFingerprint,
-  createHumanSubjectKey,
-  derivePairwiseSubject,
-} from "@cubid/identity";
+import { CUBID_ACR_VALUES, generateRandomToken, type CubidAcrValue, type OidcAuthorizationRequestContext, type OidcConsentChallenge, type OidcLoginChallenge, type OidcTokenEndpointAuthMethod } from "@cubid/auth";
+import { getClaimDefinition, getClaimsForScopes, isSupportedScope, type OidcScope } from "@cubid/claims";
+import { computeConsentFingerprint, createHumanSubjectKey, derivePairwiseSubject } from "@cubid/identity";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createRemoteJWKSet, jwtVerify, type JWTPayload } from "jose";
 
@@ -26,6 +11,8 @@ const LOGIN_CHALLENGE_LIFETIME_MS = 10 * 60 * 1000;
 const SESSION_LIFETIME_MS = 12 * 60 * 60 * 1000;
 const AUTHORIZATION_CODE_LIFETIME_MS = 5 * 60 * 1000;
 const SUPPORTED_PROMPTS = new Set(["none", "login", "consent", "select_account"]);
+export const PASSKEY_ACR_VALUE = "urn:cubid:acr:passkey" satisfies CubidAcrValue;
+const SUPPORTED_ACR_VALUES = new Set<string>(CUBID_ACR_VALUES);
 
 type AuthorizationRequestStatus = "pending_login" | "pending_consent" | "approved" | "denied" | "expired";
 
@@ -247,7 +234,14 @@ function isExpired(expiresAt: string): boolean {
 }
 
 export function parseScopeSet(scope: string): OidcScope[] {
-  const deduped = [...new Set(scope.split(/\s+/).map((entry) => entry.trim()).filter(Boolean))];
+  const deduped = [
+    ...new Set(
+      scope
+        .split(/\s+/)
+        .map((entry) => entry.trim())
+        .filter(Boolean),
+    ),
+  ];
 
   if (deduped.length === 0) {
     throw new AuthorizationRequestError("invalid_scope", "scope is required.");
@@ -267,7 +261,14 @@ export function parsePromptSet(prompt: string | null): string[] {
     return [];
   }
 
-  const values = [...new Set(prompt.split(/\s+/).map((entry) => entry.trim()).filter(Boolean))];
+  const values = [
+    ...new Set(
+      prompt
+        .split(/\s+/)
+        .map((entry) => entry.trim())
+        .filter(Boolean),
+    ),
+  ];
 
   const unsupported = values.find((entry) => !SUPPORTED_PROMPTS.has(entry));
   if (unsupported) {
@@ -281,6 +282,28 @@ export function parsePromptSet(prompt: string | null): string[] {
   return values;
 }
 
+export function parseAcrValues(acrValues: string | null): CubidAcrValue[] {
+  if (!acrValues) {
+    return [];
+  }
+
+  const values = [
+    ...new Set(
+      acrValues
+        .split(/\s+/)
+        .map((entry) => entry.trim())
+        .filter(Boolean),
+    ),
+  ];
+  const unsupported = values.find((entry) => !SUPPORTED_ACR_VALUES.has(entry));
+
+  if (unsupported) {
+    throw new AuthorizationRequestError("invalid_request", `Unsupported acr_values value: ${unsupported}.`);
+  }
+
+  return values as CubidAcrValue[];
+}
+
 export function buildAuthorizationSuccessRedirect(redirectUri: string, code: string, state: string | null): string {
   const url = new URL(redirectUri);
   url.searchParams.set("code", code);
@@ -292,12 +315,7 @@ export function buildAuthorizationSuccessRedirect(redirectUri: string, code: str
   return url.toString();
 }
 
-export function buildAuthorizationErrorRedirect(
-  redirectUri: string,
-  error: string,
-  errorDescription: string,
-  state: string | null,
-): string {
+export function buildAuthorizationErrorRedirect(redirectUri: string, error: string, errorDescription: string, state: string | null): string {
   const url = new URL(redirectUri);
   url.searchParams.set("error", error);
   url.searchParams.set("error_description", errorDescription);
@@ -360,6 +378,7 @@ function createAuthorizationContext(row: PersistedAuthorizationRequestRow): Oidc
     nonce: row.nonce,
     codeChallenge: row.code_challenge,
     codeChallengeMethod: row.code_challenge_method as OidcAuthorizationRequestContext["codeChallengeMethod"],
+    acrValues: parseAcrValues(typeof row.metadata?.acr_values === "string" ? row.metadata.acr_values : null),
     loginHint: row.login_hint,
     prompt: row.prompt,
     createdAt: row.created_at,
@@ -367,12 +386,20 @@ function createAuthorizationContext(row: PersistedAuthorizationRequestRow): Oidc
   };
 }
 
+function getRequestedAcrValues(row: PersistedAuthorizationRequestRow): CubidAcrValue[] {
+  return parseAcrValues(typeof row.metadata?.acr_values === "string" ? row.metadata.acr_values : null);
+}
+
+function getSatisfiedAcr(authenticationMethods: string[]): CubidAcrValue | null {
+  return authenticationMethods.includes("passkey") ? PASSKEY_ACR_VALUE : null;
+}
+
+export function isPasskeyAcrSatisfied(requestedAcrValues: CubidAcrValue[], authenticationMethods: string[]) {
+  return !requestedAcrValues.includes(PASSKEY_ACR_VALUE) || authenticationMethods.includes("passkey");
+}
+
 async function getClientById(supabase: SupabaseClient, clientId: string): Promise<(CubidClientRecord & { metadata: Record<string, unknown> }) | null> {
-  const { data, error } = await supabase
-    .from("oidc_clients")
-    .select("*")
-    .eq("client_id", clientId)
-    .maybeSingle();
+  const { data, error } = await supabase.from("oidc_clients").select("*").eq("client_id", clientId).maybeSingle();
 
   if (error) {
     throw new Error(`Failed to load OIDC client: ${error.message}`);
@@ -385,15 +412,8 @@ async function getClientById(supabase: SupabaseClient, clientId: string): Promis
   return mapClientRecord(data as PersistedClientRow);
 }
 
-async function getAuthorizationRequestByLoginChallenge(
-  supabase: SupabaseClient,
-  challengeId: string,
-): Promise<PersistedAuthorizationRequestRow | null> {
-  const { data, error } = await supabase
-    .from("oidc_authorization_requests")
-    .select("*")
-    .eq("login_challenge_id", challengeId)
-    .maybeSingle();
+async function getAuthorizationRequestByLoginChallenge(supabase: SupabaseClient, challengeId: string): Promise<PersistedAuthorizationRequestRow | null> {
+  const { data, error } = await supabase.from("oidc_authorization_requests").select("*").eq("login_challenge_id", challengeId).maybeSingle();
 
   if (error) {
     throw new Error(`Failed to load OIDC authorization request: ${error.message}`);
@@ -402,15 +422,8 @@ async function getAuthorizationRequestByLoginChallenge(
   return (data as PersistedAuthorizationRequestRow | null) ?? null;
 }
 
-async function getAuthorizationRequestByConsentChallenge(
-  supabase: SupabaseClient,
-  challengeId: string,
-): Promise<PersistedAuthorizationRequestRow | null> {
-  const { data, error } = await supabase
-    .from("oidc_authorization_requests")
-    .select("*")
-    .eq("consent_challenge_id", challengeId)
-    .maybeSingle();
+async function getAuthorizationRequestByConsentChallenge(supabase: SupabaseClient, challengeId: string): Promise<PersistedAuthorizationRequestRow | null> {
+  const { data, error } = await supabase.from("oidc_authorization_requests").select("*").eq("consent_challenge_id", challengeId).maybeSingle();
 
   if (error) {
     throw new Error(`Failed to load OIDC consent challenge: ${error.message}`);
@@ -420,11 +433,7 @@ async function getAuthorizationRequestByConsentChallenge(
 }
 
 async function getSessionById(supabase: SupabaseClient, sessionId: string): Promise<PersistedSessionRow | null> {
-  const { data, error } = await supabase
-    .from("oidc_sessions")
-    .select("*")
-    .eq("session_id", sessionId)
-    .maybeSingle();
+  const { data, error } = await supabase.from("oidc_sessions").select("*").eq("session_id", sessionId).maybeSingle();
 
   if (error) {
     throw new Error(`Failed to load OIDC session: ${error.message}`);
@@ -463,11 +472,7 @@ async function insertAuditEvent(
   }
 }
 
-async function updateAuthorizationRequest(
-  supabase: SupabaseClient,
-  requestId: string,
-  patch: Record<string, unknown>,
-): Promise<void> {
+async function updateAuthorizationRequest(supabase: SupabaseClient, requestId: string, patch: Record<string, unknown>): Promise<void> {
   const { error } = await supabase
     .from("oidc_authorization_requests")
     .update({
@@ -481,11 +486,7 @@ async function updateAuthorizationRequest(
   }
 }
 
-async function updateSession(
-  supabase: SupabaseClient,
-  sessionId: string,
-  patch: Record<string, unknown>,
-): Promise<void> {
+async function updateSession(supabase: SupabaseClient, sessionId: string, patch: Record<string, unknown>): Promise<void> {
   const { error } = await supabase
     .from("oidc_sessions")
     .update({
@@ -506,25 +507,14 @@ function parseLoginCompletionInput(payload: Record<string, unknown>): ParsedLogi
   const cubidUserId = normalizeOptionalNumber(payload.cubid_user_id) ?? normalizeOptionalNumber(payload.cubidUserId);
 
   if (!firebaseIdToken) {
-    throw new AuthorizationRequestError(
-      "invalid_request",
-      "Login completion requires a Firebase ID token issued after Passport authentication.",
-    );
+    throw new AuthorizationRequestError("invalid_request", "Login completion requires a Firebase ID token issued after Passport authentication.");
   }
 
   if (cubidUserId !== null) {
-    throw new AuthorizationRequestError(
-      "invalid_request",
-      "Login completion cannot accept a Cubid user id from the request body.",
-    );
+    throw new AuthorizationRequestError("invalid_request", "Login completion cannot accept a Cubid user id from the request body.");
   }
 
-  const authenticationMethods = [
-    ...new Set([
-      ...ensureArrayOfStrings(payload.authentication_methods),
-      ...ensureArrayOfStrings(payload.authenticationMethods),
-    ]),
-  ];
+  const authenticationMethods = [...new Set([...ensureArrayOfStrings(payload.authentication_methods), ...ensureArrayOfStrings(payload.authenticationMethods)])];
 
   if (authenticationMethods.length === 0) {
     if (verifiedEmail) {
@@ -557,11 +547,7 @@ async function verifyFirebaseIdToken(idToken: string): Promise<JWTPayload> {
   const config = getOidcRuntimeConfig();
 
   if (!config.firebaseProjectId) {
-    throw new AuthorizationRequestError(
-      "server_error",
-      "OIDC_FIREBASE_PROJECT_ID or FIREBASE_PROJECT_ID must be configured before hosted login completion can be used.",
-      { statusCode: 500 },
-    );
+    throw new AuthorizationRequestError("server_error", "OIDC_FIREBASE_PROJECT_ID or FIREBASE_PROJECT_ID must be configured before hosted login completion can be used.", { statusCode: 500 });
   }
 
   try {
@@ -572,11 +558,7 @@ async function verifyFirebaseIdToken(idToken: string): Promise<JWTPayload> {
 
     return payload;
   } catch {
-    throw new AuthorizationRequestError(
-      "invalid_request",
-      "Login completion requires a valid Firebase ID token for the authenticated Passport user.",
-      { statusCode: 401 },
-    );
+    throw new AuthorizationRequestError("invalid_request", "Login completion requires a valid Firebase ID token for the authenticated Passport user.", { statusCode: 401 });
   }
 }
 
@@ -590,11 +572,7 @@ function assertMatchingEmail(requestEmail: string | null, tokenEmail: string | n
   }
 
   if (!tokenEmail || tokenEmail.toLowerCase() !== requestEmail.toLowerCase()) {
-    throw new AuthorizationRequestError(
-      "invalid_request",
-      "verified_email must match the authenticated Firebase ID token.",
-      { statusCode: 401 },
-    );
+    throw new AuthorizationRequestError("invalid_request", "verified_email must match the authenticated Firebase ID token.", { statusCode: 401 });
   }
 
   return tokenEmail;
@@ -606,30 +584,26 @@ function assertMatchingPhone(requestPhone: string | null, tokenPhone: string | n
   }
 
   if (!tokenPhone || tokenPhone !== requestPhone) {
-    throw new AuthorizationRequestError(
-      "invalid_request",
-      "verified_phone must match the authenticated Firebase ID token.",
-      { statusCode: 401 },
-    );
+    throw new AuthorizationRequestError("invalid_request", "verified_phone must match the authenticated Firebase ID token.", { statusCode: 401 });
   }
 
   return tokenPhone;
 }
 
-export function buildVerifiedLoginCompletionInput(
-  input: ParsedLoginCompletionInput,
-  firebaseClaims: JWTPayload,
-): LoginCompletionInput {
+const HOSTED_LOGIN_AUTHENTICATION_METHODS = new Set<string>([
+  "email_ownid",
+  "email_otp",
+  "phone_otp",
+  "firebase_phone",
+]);
+
+export function buildVerifiedLoginCompletionInput(input: ParsedLoginCompletionInput, firebaseClaims: JWTPayload): LoginCompletionInput {
   const verifiedEmail = assertMatchingEmail(input.verifiedEmail, normalizeTokenStringClaim(firebaseClaims.email));
   const verifiedPhone = assertMatchingPhone(input.verifiedPhone, normalizeTokenStringClaim(firebaseClaims.phone_number));
-  const authenticationMethods = [...input.authenticationMethods];
+  const authenticationMethods = input.authenticationMethods.filter((method) => HOSTED_LOGIN_AUTHENTICATION_METHODS.has(method));
 
   if (!verifiedEmail && !verifiedPhone) {
-    throw new AuthorizationRequestError(
-      "invalid_request",
-      "The Firebase ID token must contain a verified email or phone number for OIDC login completion.",
-      { statusCode: 401 },
-    );
+    throw new AuthorizationRequestError("invalid_request", "The Firebase ID token must contain a verified email or phone number for OIDC login completion.", { statusCode: 401 });
   }
 
   if (authenticationMethods.length === 0) {
@@ -649,20 +623,13 @@ export function buildVerifiedLoginCompletionInput(
   };
 }
 
-async function resolveUserByIdentifiers(
-  supabase: SupabaseClient,
-  input: LoginCompletionInput,
-): Promise<PersistedUserRow> {
+async function resolveUserByIdentifiers(supabase: SupabaseClient, input: LoginCompletionInput): Promise<PersistedUserRow> {
   let userById: PersistedUserRow | null = null;
   let userByEmail: PersistedUserRow | null = null;
   let userByPhone: PersistedUserRow | null = null;
 
   if (input.cubidUserId !== null) {
-    const { data, error } = await supabase
-      .from("users")
-      .select("id,email,phone")
-      .eq("id", input.cubidUserId)
-      .maybeSingle();
+    const { data, error } = await supabase.from("users").select("id,email,phone").eq("id", input.cubidUserId).maybeSingle();
 
     if (error) {
       throw new Error(`Failed to load Cubid user by id: ${error.message}`);
@@ -672,11 +639,7 @@ async function resolveUserByIdentifiers(
   }
 
   if (input.verifiedEmail) {
-    const { data, error } = await supabase
-      .from("users")
-      .select("id,email,phone")
-      .eq("email", input.verifiedEmail)
-      .maybeSingle();
+    const { data, error } = await supabase.from("users").select("id,email,phone").eq("email", input.verifiedEmail).maybeSingle();
 
     if (error) {
       throw new Error(`Failed to load Cubid user by email: ${error.message}`);
@@ -686,11 +649,7 @@ async function resolveUserByIdentifiers(
   }
 
   if (input.verifiedPhone) {
-    const { data, error } = await supabase
-      .from("users")
-      .select("id,email,phone")
-      .eq("phone", input.verifiedPhone)
-      .maybeSingle();
+    const { data, error } = await supabase.from("users").select("id,email,phone").eq("phone", input.verifiedPhone).maybeSingle();
 
     if (error) {
       throw new Error(`Failed to load Cubid user by phone: ${error.message}`);
@@ -703,11 +662,7 @@ async function resolveUserByIdentifiers(
   const distinctIds = [...new Set(resolvedUsers.map((entry) => entry.id))];
 
   if (distinctIds.length > 1) {
-    throw new AuthorizationRequestError(
-      "invalid_request",
-      "The verified login identifiers map to different Cubid users and cannot be merged automatically.",
-      { statusCode: 409 },
-    );
+    throw new AuthorizationRequestError("invalid_request", "The verified login identifiers map to different Cubid users and cannot be merged automatically.", { statusCode: 409 });
   }
 
   if (resolvedUsers[0]) {
@@ -723,12 +678,7 @@ async function resolveUserByIdentifiers(
     }
 
     if (Object.keys(patch).length > 0) {
-      const { data, error } = await supabase
-        .from("users")
-        .update(patch)
-        .eq("id", targetUser.id)
-        .select("id,email,phone")
-        .single();
+      const { data, error } = await supabase.from("users").update(patch).eq("id", targetUser.id).select("id,email,phone").single();
 
       if (error) {
         throw new Error(`Failed to update Cubid user identifiers: ${error.message}`);
@@ -757,15 +707,8 @@ async function resolveUserByIdentifiers(
   return data as PersistedUserRow;
 }
 
-async function resolveHumanSubject(
-  supabase: SupabaseClient,
-  user: PersistedUserRow,
-): Promise<PersistedHumanSubjectRow> {
-  const { data: existing, error: lookupError } = await supabase
-    .from("oidc_human_subjects")
-    .select("*")
-    .eq("cubid_user_id", user.id)
-    .maybeSingle();
+async function resolveHumanSubject(supabase: SupabaseClient, user: PersistedUserRow): Promise<PersistedHumanSubjectRow> {
+  const { data: existing, error: lookupError } = await supabase.from("oidc_human_subjects").select("*").eq("cubid_user_id", user.id).maybeSingle();
 
   if (lookupError) {
     throw new Error(`Failed to load OIDC human subject: ${lookupError.message}`);
@@ -825,20 +768,8 @@ function buildRequestedClaims(row: PersistedAuthorizationRequestRow): string[] {
   return row.requested_claims?.length > 0 ? row.requested_claims : getClaimsForScopes(parseScopeSet(row.scope));
 }
 
-async function findMatchingConsent(
-  supabase: SupabaseClient,
-  humanSubjectKey: string,
-  clientId: string,
-  requestedScopes: OidcScope[],
-  requestedClaims: string[],
-): Promise<PersistedConsentRow | null> {
-  const { data, error } = await supabase
-    .from("oidc_consents")
-    .select("*")
-    .eq("human_subject_key", humanSubjectKey)
-    .eq("client_id", clientId)
-    .is("revoked_at", null)
-    .order("consent_version", { ascending: false });
+async function findMatchingConsent(supabase: SupabaseClient, humanSubjectKey: string, clientId: string, requestedScopes: OidcScope[], requestedClaims: string[]): Promise<PersistedConsentRow | null> {
+  const { data, error } = await supabase.from("oidc_consents").select("*").eq("human_subject_key", humanSubjectKey).eq("client_id", clientId).is("revoked_at", null).order("consent_version", { ascending: false });
 
   if (error) {
     throw new Error(`Failed to load existing OIDC consents: ${error.message}`);
@@ -852,24 +783,14 @@ async function findMatchingConsent(
   return matching ?? null;
 }
 
-async function createOrReuseConsentGrant(
-  supabase: SupabaseClient,
-  requestRow: PersistedAuthorizationRequestRow,
-  sessionRow: PersistedSessionRow,
-): Promise<ConsentGrantResult> {
+async function createOrReuseConsentGrant(supabase: SupabaseClient, requestRow: PersistedAuthorizationRequestRow, sessionRow: PersistedSessionRow): Promise<ConsentGrantResult> {
   if (!sessionRow.human_subject_key) {
     throw new Error("OIDC session is missing a human subject key.");
   }
 
   const requestedScopes = parseScopeSet(requestRow.scope);
   const requestedClaims = buildRequestedClaims(requestRow);
-  const existingConsent = await findMatchingConsent(
-    supabase,
-    sessionRow.human_subject_key,
-    requestRow.client_id,
-    requestedScopes,
-    requestedClaims,
-  );
+  const existingConsent = await findMatchingConsent(supabase, sessionRow.human_subject_key, requestRow.client_id, requestedScopes, requestedClaims);
 
   const pairwise = derivePairwiseSubject(
     {
@@ -900,7 +821,7 @@ async function createOrReuseConsentGrant(
     throw new Error(`Failed to load OIDC consent versions: ${consentsError.message}`);
   }
 
-  const nextVersion = Math.max(0, ...((existingConsents ?? []).map((entry) => entry.consent_version ?? 0))) + 1;
+  const nextVersion = Math.max(0, ...(existingConsents ?? []).map((entry) => entry.consent_version ?? 0)) + 1;
   const claimClassificationSummary = requestedClaims.map((claim) => ({
     claim,
     dataClass: getClaimDefinition(claim)?.classification ?? "json",
@@ -931,13 +852,7 @@ async function createOrReuseConsentGrant(
   };
 }
 
-async function issueAuthorizationCode(
-  supabase: SupabaseClient,
-  requestRow: PersistedAuthorizationRequestRow,
-  sessionRow: PersistedSessionRow,
-  consentGrant: ConsentGrantResult,
-  requestId: string,
-): Promise<ConsentApprovalResult> {
+async function issueAuthorizationCode(supabase: SupabaseClient, requestRow: PersistedAuthorizationRequestRow, sessionRow: PersistedSessionRow, consentGrant: ConsentGrantResult, requestId: string): Promise<ConsentApprovalResult> {
   const authorizationCode = createOpaqueId("code");
 
   const { error } = await supabase.from("oidc_authorization_codes").insert({
@@ -992,25 +907,14 @@ async function issueAuthorizationCode(
   };
 }
 
-async function maybeReuseExistingConsentAndRedirect(
-  supabase: SupabaseClient,
-  requestRow: PersistedAuthorizationRequestRow,
-  sessionRow: PersistedSessionRow,
-  requestId: string,
-): Promise<ConsentApprovalResult | null> {
+async function maybeReuseExistingConsentAndRedirect(supabase: SupabaseClient, requestRow: PersistedAuthorizationRequestRow, sessionRow: PersistedSessionRow, requestId: string): Promise<ConsentApprovalResult | null> {
   if (!sessionRow.human_subject_key) {
     return null;
   }
 
   const requestedScopes = parseScopeSet(requestRow.scope);
   const requestedClaims = buildRequestedClaims(requestRow);
-  const existingConsent = await findMatchingConsent(
-    supabase,
-    sessionRow.human_subject_key,
-    requestRow.client_id,
-    requestedScopes,
-    requestedClaims,
-  );
+  const existingConsent = await findMatchingConsent(supabase, sessionRow.human_subject_key, requestRow.client_id, requestedScopes, requestedClaims);
 
   if (!existingConsent) {
     return null;
@@ -1048,6 +952,7 @@ export async function createLoginChallengeFromAuthorizationRequest(
   const codeChallengeMethod = normalizeOptionalString(url.searchParams.get("code_challenge_method"));
   const loginHint = normalizeOptionalString(url.searchParams.get("login_hint"));
   const prompt = normalizeOptionalString(url.searchParams.get("prompt"));
+  const acrValues = parseAcrValues(normalizeOptionalString(url.searchParams.get("acr_values")));
 
   if (!clientId) {
     throw new AuthorizationRequestError("invalid_request", "client_id is required.");
@@ -1072,115 +977,55 @@ export async function createLoginChallengeFromAuthorizationRequest(
   }
 
   if (responseType !== "code") {
-    throw new AuthorizationRequestError(
-      "unsupported_response_type",
-      'Only response_type="code" is supported.',
-      {
-        redirectTo: buildAuthorizationErrorRedirect(
-          redirectUri,
-          "unsupported_response_type",
-          'Only response_type="code" is supported.',
-          state,
-        ),
-      },
-    );
+    throw new AuthorizationRequestError("unsupported_response_type", 'Only response_type="code" is supported.', {
+      redirectTo: buildAuthorizationErrorRedirect(redirectUri, "unsupported_response_type", 'Only response_type="code" is supported.', state),
+    });
   }
 
   if (!client.grantTypes.includes("authorization_code")) {
-    throw new AuthorizationRequestError(
-      "unauthorized_client",
-      "This OIDC client is not allowed to use the authorization_code grant.",
-      {
-        statusCode: 403,
-        redirectTo: buildAuthorizationErrorRedirect(
-          redirectUri,
-          "unauthorized_client",
-          "This OIDC client is not allowed to use the authorization_code grant.",
-          state,
-        ),
-      },
-    );
+    throw new AuthorizationRequestError("unauthorized_client", "This OIDC client is not allowed to use the authorization_code grant.", {
+      statusCode: 403,
+      redirectTo: buildAuthorizationErrorRedirect(redirectUri, "unauthorized_client", "This OIDC client is not allowed to use the authorization_code grant.", state),
+    });
   }
 
   if (!scope) {
-    throw new AuthorizationRequestError(
-      "invalid_scope",
-      "scope is required.",
-      { redirectTo: buildAuthorizationErrorRedirect(redirectUri, "invalid_scope", "scope is required.", state) },
-    );
+    throw new AuthorizationRequestError("invalid_scope", "scope is required.", {
+      redirectTo: buildAuthorizationErrorRedirect(redirectUri, "invalid_scope", "scope is required.", state),
+    });
   }
 
   const requestedScopes = parseScopeSet(scope);
   if (!requestedScopes.includes("openid")) {
-    throw new AuthorizationRequestError(
-      "invalid_scope",
-      'OIDC authorization requests must include the "openid" scope.',
-      {
-        redirectTo: buildAuthorizationErrorRedirect(
-          redirectUri,
-          "invalid_scope",
-          'OIDC authorization requests must include the "openid" scope.',
-          state,
-        ),
-      },
-    );
+    throw new AuthorizationRequestError("invalid_scope", 'OIDC authorization requests must include the "openid" scope.', {
+      redirectTo: buildAuthorizationErrorRedirect(redirectUri, "invalid_scope", 'OIDC authorization requests must include the "openid" scope.', state),
+    });
   }
 
   const disallowedScope = requestedScopes.find((entry) => !client.allowedScopes.includes(entry));
   if (disallowedScope) {
-    throw new AuthorizationRequestError(
-      "invalid_scope",
-      `Requested scope is not allowed for this client: ${disallowedScope}.`,
-      {
-        redirectTo: buildAuthorizationErrorRedirect(
-          redirectUri,
-          "invalid_scope",
-          `Requested scope is not allowed for this client: ${disallowedScope}.`,
-          state,
-        ),
-      },
-    );
+    throw new AuthorizationRequestError("invalid_scope", `Requested scope is not allowed for this client: ${disallowedScope}.`, {
+      redirectTo: buildAuthorizationErrorRedirect(redirectUri, "invalid_scope", `Requested scope is not allowed for this client: ${disallowedScope}.`, state),
+    });
   }
 
   if (!codeChallenge) {
-    throw new AuthorizationRequestError(
-      "invalid_request",
-      "code_challenge is required.",
-      {
-        redirectTo: buildAuthorizationErrorRedirect(redirectUri, "invalid_request", "code_challenge is required.", state),
-      },
-    );
+    throw new AuthorizationRequestError("invalid_request", "code_challenge is required.", {
+      redirectTo: buildAuthorizationErrorRedirect(redirectUri, "invalid_request", "code_challenge is required.", state),
+    });
   }
 
   if (codeChallengeMethod !== "S256") {
-    throw new AuthorizationRequestError(
-      "invalid_request",
-      'code_challenge_method must be "S256".',
-      {
-        redirectTo: buildAuthorizationErrorRedirect(
-          redirectUri,
-          "invalid_request",
-          'code_challenge_method must be "S256".',
-          state,
-        ),
-      },
-    );
+    throw new AuthorizationRequestError("invalid_request", 'code_challenge_method must be "S256".', {
+      redirectTo: buildAuthorizationErrorRedirect(redirectUri, "invalid_request", 'code_challenge_method must be "S256".', state),
+    });
   }
 
   const promptValues = parsePromptSet(prompt);
   if (promptValues.includes("none")) {
-    throw new AuthorizationRequestError(
-      "login_required",
-      "prompt=none cannot be satisfied until issuer-side session reuse is implemented.",
-      {
-        redirectTo: buildAuthorizationErrorRedirect(
-          redirectUri,
-          "login_required",
-          "prompt=none cannot be satisfied until issuer-side session reuse is implemented.",
-          state,
-        ),
-      },
-    );
+    throw new AuthorizationRequestError("login_required", "prompt=none cannot be satisfied until issuer-side session reuse is implemented.", {
+      redirectTo: buildAuthorizationErrorRedirect(redirectUri, "login_required", "prompt=none cannot be satisfied until issuer-side session reuse is implemented.", state),
+    });
   }
 
   const createdAt = nowIso();
@@ -1208,6 +1053,7 @@ export async function createLoginChallengeFromAuthorizationRequest(
     approved_at: null,
     denied_at: null,
     metadata: {
+      acr_values: acrValues.join(" "),
       request_id: requestId,
     },
     created_at: createdAt,
@@ -1228,6 +1074,7 @@ export async function createLoginChallengeFromAuthorizationRequest(
     actorIdentifier: "browser",
     details: {
       login_challenge_id: loginChallengeId,
+      acr_values: acrValues,
       scope: requestedScopes,
       redirect_uri: redirectUri,
     },
@@ -1251,10 +1098,7 @@ export async function createLoginChallengeFromAuthorizationRequest(
   };
 }
 
-export async function getLoginChallenge(
-  supabase: SupabaseClient,
-  challengeId: string,
-): Promise<OidcLoginChallengeView | null> {
+export async function getLoginChallenge(supabase: SupabaseClient, challengeId: string): Promise<OidcLoginChallengeView | null> {
   const requestRow = await getAuthorizationRequestByLoginChallenge(supabase, challengeId);
   if (!requestRow || requestRow.status !== "pending_login" || isExpired(requestRow.expires_at)) {
     return null;
@@ -1277,12 +1121,7 @@ export async function getLoginChallenge(
   };
 }
 
-export async function completeLoginChallenge(
-  supabase: SupabaseClient,
-  challengeId: string,
-  payload: Record<string, unknown>,
-  requestId: string,
-): Promise<CompleteLoginChallengeResult> {
+export async function completeLoginChallenge(supabase: SupabaseClient, challengeId: string, payload: Record<string, unknown>, requestId: string): Promise<CompleteLoginChallengeResult> {
   const parsedInput = parseLoginCompletionInput(payload);
   const input = buildVerifiedLoginCompletionInput(parsedInput, await verifyFirebaseIdToken(parsedInput.firebaseIdToken));
   const user = await resolveUserByIdentifiers(supabase, input);
@@ -1304,12 +1143,7 @@ export async function completeLoginChallenge(
   );
 }
 
-export async function completeLoginChallengeForSubject(
-  supabase: SupabaseClient,
-  challengeId: string,
-  subject: OidcAuthenticatedLoginSubject,
-  requestId: string,
-): Promise<CompleteLoginChallengeResult> {
+export async function completeLoginChallengeForSubject(supabase: SupabaseClient, challengeId: string, subject: OidcAuthenticatedLoginSubject, requestId: string): Promise<CompleteLoginChallengeResult> {
   const requestRow = await getAuthorizationRequestByLoginChallenge(supabase, challengeId);
   if (!requestRow || requestRow.status !== "pending_login" || isExpired(requestRow.expires_at)) {
     throw new AuthorizationRequestError("challenge_not_found", "The login challenge could not be found or is no longer active.", { statusCode: 404 });
@@ -1320,8 +1154,28 @@ export async function completeLoginChallengeForSubject(
     throw new AuthorizationRequestError("unauthorized_client", "The OIDC client is not available for login completion.", { statusCode: 403 });
   }
 
+  const requestedAcrValues = getRequestedAcrValues(requestRow);
+  if (!isPasskeyAcrSatisfied(requestedAcrValues, subject.authenticationMethods)) {
+    await insertAuditEvent(supabase, {
+      clientId: requestRow.client_id,
+      eventType: "login_challenge.completed",
+      requestId,
+      outcome: "failure",
+      actorType: "user",
+      actorIdentifier: subject.humanSubjectKey,
+      details: {
+        reason: "acr_not_satisfied",
+        requested_acr_values: requestedAcrValues,
+        authentication_methods: subject.authenticationMethods,
+      },
+    });
+
+    throw new AuthorizationRequestError("login_required", "This Login with Cubid request requires passkey authentication.", { statusCode: 403 });
+  }
+
   const sessionId = createOpaqueId("session");
   const sessionExpiresAt = plusMs(SESSION_LIFETIME_MS);
+  const satisfiedAcr = getSatisfiedAcr(subject.authenticationMethods);
 
   const { error } = await supabase.from("oidc_sessions").insert({
     session_id: sessionId,
@@ -1335,6 +1189,8 @@ export async function completeLoginChallengeForSubject(
     verified_phone: subject.verifiedPhone,
     expires_at: sessionExpiresAt,
     metadata: {
+      acr: satisfiedAcr,
+      requested_acr_values: requestedAcrValues,
       request_id: requestId,
       ...(subject.metadata ?? {}),
     },
@@ -1362,6 +1218,8 @@ export async function completeLoginChallengeForSubject(
       verified_email: subject.verifiedEmail,
       verified_phone: subject.verifiedPhone,
       authentication_methods: subject.authenticationMethods,
+      acr: satisfiedAcr,
+      requested_acr_values: requestedAcrValues,
       webauthn_credential_id: subject.webAuthnCredentialId ?? null,
       ...(subject.auditDetails ?? {}),
     },
@@ -1401,10 +1259,7 @@ export async function completeLoginChallengeForSubject(
   };
 }
 
-export async function getConsentChallenge(
-  supabase: SupabaseClient,
-  challengeId: string,
-): Promise<OidcConsentChallengeView | null> {
+export async function getConsentChallenge(supabase: SupabaseClient, challengeId: string): Promise<OidcConsentChallengeView | null> {
   const requestRow = await getAuthorizationRequestByConsentChallenge(supabase, challengeId);
   if (!requestRow || requestRow.status !== "pending_consent" || isExpired(requestRow.expires_at) || !requestRow.session_id) {
     return null;
@@ -1432,11 +1287,7 @@ export async function getConsentChallenge(
   };
 }
 
-export async function approveConsentChallenge(
-  supabase: SupabaseClient,
-  challengeId: string,
-  requestId: string,
-): Promise<ConsentApprovalResult> {
+export async function approveConsentChallenge(supabase: SupabaseClient, challengeId: string, requestId: string): Promise<ConsentApprovalResult> {
   const requestRow = await getAuthorizationRequestByConsentChallenge(supabase, challengeId);
   if (!requestRow || requestRow.status !== "pending_consent" || isExpired(requestRow.expires_at) || !requestRow.session_id) {
     throw new AuthorizationRequestError("challenge_not_found", "The consent challenge could not be found or is no longer active.", { statusCode: 404 });
@@ -1467,11 +1318,7 @@ export async function approveConsentChallenge(
   return issueAuthorizationCode(supabase, requestRow, sessionRow, consentGrant, requestId);
 }
 
-export async function rejectConsentChallenge(
-  supabase: SupabaseClient,
-  challengeId: string,
-  requestId: string,
-): Promise<{ redirectTo: string }> {
+export async function rejectConsentChallenge(supabase: SupabaseClient, challengeId: string, requestId: string): Promise<{ redirectTo: string }> {
   const requestRow = await getAuthorizationRequestByConsentChallenge(supabase, challengeId);
   if (!requestRow) {
     throw new AuthorizationRequestError("challenge_not_found", "The consent challenge could not be found.", { statusCode: 404 });
@@ -1496,11 +1343,6 @@ export async function rejectConsentChallenge(
   });
 
   return {
-    redirectTo: buildAuthorizationErrorRedirect(
-      requestRow.redirect_uri,
-      "access_denied",
-      "The user denied the requested access.",
-      requestRow.state,
-    ),
+    redirectTo: buildAuthorizationErrorRedirect(requestRow.redirect_uri, "access_denied", "The user denied the requested access.", requestRow.state),
   };
 }

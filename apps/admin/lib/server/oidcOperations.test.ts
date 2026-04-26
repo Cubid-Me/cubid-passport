@@ -1,4 +1,5 @@
 import {
+  buildPasskeyOpsSummary,
   normalizeClientCountRows,
   normalizeClientMetricRows,
   normalizeClientOpsUpdateInput,
@@ -90,5 +91,72 @@ describe('OIDC operations helpers', () => {
       userinfoFailures: 2,
       userinfoSuccesses: 3,
     });
+  });
+
+  it('builds redacted passkey ops metrics and ACR failure counts', () => {
+    const summary = buildPasskeyOpsSummary(
+      {
+        activeCount: '3',
+        authenticationFailures7d: 2,
+        authenticationSuccesses7d: 5,
+        registrations7d: 4,
+        revokedCount: 1,
+        revocations7d: 6,
+        stepUpFailures7d: 7,
+      },
+      [
+        {
+          actor_identifier: 'subject_should_not_surface',
+          actor_type: 'user',
+          client_id: 'client_123',
+          created_at: '2026-04-21T00:00:00.000Z',
+          details: {
+            credential_id: 'raw_credential',
+            human_subject_key: 'human_subject_key',
+            safe: 'visible',
+          },
+          event_type: 'passkey.registration.completed',
+          outcome: 'success',
+          request_id: 'request_1',
+        },
+        {
+          actor_identifier: 'subject_should_not_surface',
+          actor_type: 'user',
+          client_id: 'client_123',
+          created_at: '2026-04-21T00:01:00.000Z',
+          details: {},
+          event_type: 'passkey.authentication.completed',
+          outcome: 'success',
+          request_id: 'request_2',
+        },
+        {
+          actor_identifier: 'subject_should_not_surface',
+          actor_type: 'user',
+          client_id: 'client_123',
+          created_at: '2026-04-21T00:02:00.000Z',
+          details: {},
+          event_type: 'passkey.device.revoked',
+          outcome: 'success',
+          request_id: 'request_3',
+        },
+      ]
+    );
+
+    expect(summary).toMatchObject({
+      activeCount: 3,
+      authenticationFailures7d: 2,
+      authenticationSuccesses7d: 5,
+      registrations7d: 4,
+      revokedCount: 1,
+      revocations7d: 6,
+      stepUpFailures7d: 7,
+      supportedAcrValues: ['urn:cubid:acr:passkey'],
+    });
+    expect(summary.recentAuditEvents[0].details).toEqual({
+      credential_id: '[redacted]',
+      human_subject_key: '[redacted]',
+      safe: 'visible',
+    });
+    expect('actorIdentifier' in summary.recentAuditEvents[0]).toBe(false);
   });
 });

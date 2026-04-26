@@ -145,9 +145,22 @@ export interface OidcOpsClientSummary {
   verificationStatus: string;
 }
 
+export interface OidcPasskeyOpsSummary {
+  activeCount: number;
+  authenticationFailures7d: number;
+  authenticationSuccesses7d: number;
+  recentAuditEvents: OidcOpsAuditEvent[];
+  registrations7d: number;
+  revocations7d: number;
+  revokedCount: number;
+  stepUpFailures7d: number;
+  supportedAcrValues: string[];
+}
+
 export interface OidcOpsOverviewPayload {
   clients: OidcOpsClientSummary[];
   generatedAt: string;
+  passkeys: OidcPasskeyOpsSummary;
   recentAuditEvents: OidcOpsAuditEvent[];
 }
 
@@ -166,9 +179,7 @@ export const INFO_SHARING_OPTIONS: InfoSharingOption[] = [
   { value: 'not', label: 'Not Included', id: 1 },
 ];
 
-export const buildRequestedInfo = (
-  stampNames: string[]
-): RequestedInfoMap => {
+export const buildRequestedInfo = (stampNames: string[]): RequestedInfoMap => {
   const stateObject: RequestedInfoMap = {};
 
   stampNames.forEach((stampName) => {
@@ -185,7 +196,8 @@ export const buildRequestedInfo = (
 
 export const getInfoSharingTypeId = (selectedOption: InfoSharingValue) => {
   return (
-    INFO_SHARING_OPTIONS.find((option) => option.value === selectedOption)?.id ?? 1
+    INFO_SHARING_OPTIONS.find((option) => option.value === selectedOption)
+      ?.id ?? 1
   );
 };
 
