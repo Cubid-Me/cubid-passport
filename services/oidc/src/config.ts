@@ -1,6 +1,9 @@
-import { getRequiredEnv } from "@cubid/config";
+import {
+  parseCsvValue,
+} from "@cubid/config";
 
 export interface OidcRuntimeConfig {
+  corsAllowedOrigins: string[];
   issuer: string;
   publicOrigin: string;
   port: number;
@@ -21,9 +24,28 @@ export interface OidcRuntimeConfig {
 
 let cachedConfig: OidcRuntimeConfig | null = null;
 
-function getOptionalEnv(env: NodeJS.ProcessEnv, name: string): string | null {
+function getOptionalEnvFrom(env: NodeJS.ProcessEnv, name: string): string | null {
   const value = env[name]?.trim();
   return value ? value : null;
+}
+
+function getOptionalNumericEnvFrom(
+  env: NodeJS.ProcessEnv,
+  name: string
+): number | null {
+  const value = getOptionalEnvFrom(env, name);
+
+  if (value === null) {
+    return null;
+  }
+
+  const parsedValue = Number(value);
+
+  if (!Number.isFinite(parsedValue)) {
+    throw new Error(`Environment variable ${name} must be a number`);
+  }
+
+  return parsedValue;
 }
 
 function parseJwks(rawValue: string | null): { keys: unknown[] } {
@@ -51,17 +73,6 @@ function parseJsonObject(rawValue: string | null, envName: string): Record<strin
   return parsed as Record<string, unknown>;
 }
 
-function splitCsv(rawValue: string | null): string[] {
-  if (!rawValue) {
-    return [];
-  }
-
-  return rawValue
-    .split(",")
-    .map((entry) => entry.trim())
-    .filter(Boolean);
-}
-
 function getRequiredEnvFrom(env: NodeJS.ProcessEnv, name: string): string {
   const value = env[name]?.trim();
 
@@ -74,33 +85,34 @@ function getRequiredEnvFrom(env: NodeJS.ProcessEnv, name: string): string {
 
 export function buildOidcRuntimeConfig(env: NodeJS.ProcessEnv): OidcRuntimeConfig {
   const issuer = getRequiredEnvFrom(env, "OIDC_ISSUER_URL");
-  const publicOrigin = getOptionalEnv(env, "OIDC_PUBLIC_ORIGIN") ?? issuer;
-  const port = Number(getOptionalEnv(env, "OIDC_PORT") ?? "4280");
+  const publicOrigin = getOptionalEnvFrom(env, "OIDC_PUBLIC_ORIGIN") ?? issuer;
+  const port = getOptionalNumericEnvFrom(env, "OIDC_PORT") ?? 4280;
 
   if (!Number.isFinite(port) || port <= 0) {
     throw new Error("OIDC_PORT must be a positive number.");
   }
 
-  const passportLoginUrl = getOptionalEnv(env, "PASSPORT_LOGIN_URL") ?? "http://localhost:3000/login";
-  const passportConsentUrl = getOptionalEnv(env, "PASSPORT_CONSENT_URL") ?? "http://localhost:3000/allow";
-  const passportPublicOrigin = getOptionalEnv(env, "PASSPORT_PUBLIC_ORIGIN") ?? new URL(passportLoginUrl).origin;
-  const passkeyExpectedOrigins = splitCsv(getOptionalEnv(env, "OIDC_PASSKEY_EXPECTED_ORIGINS"));
+  const passportLoginUrl = getOptionalEnvFrom(env, "PASSPORT_LOGIN_URL") ?? "http://localhost:3000/login";
+  const passportConsentUrl = getOptionalEnvFrom(env, "PASSPORT_CONSENT_URL") ?? "http://localhost:3000/allow";
+  const passportPublicOrigin = getOptionalEnvFrom(env, "PASSPORT_PUBLIC_ORIGIN") ?? new URL(passportLoginUrl).origin;
+  const passkeyExpectedOrigins = parseCsvValue(getOptionalEnvFrom(env, "OIDC_PASSKEY_EXPECTED_ORIGINS"));
 
   return {
+    corsAllowedOrigins: parseCsvValue(getOptionalEnvFrom(env, "OIDC_CORS_ALLOWED_ORIGINS")),
     issuer,
     publicOrigin,
     port,
     pairwiseSubjectMasterSecret: getRequiredEnvFrom(env, "OIDC_PAIRWISE_SUBJECT_MASTER_SECRET"),
     passportLoginUrl,
     passportConsentUrl,
-    passkeyRpId: getOptionalEnv(env, "OIDC_PASSKEY_RP_ID") ?? new URL(passportPublicOrigin).hostname,
+    passkeyRpId: getOptionalEnvFrom(env, "OIDC_PASSKEY_RP_ID") ?? new URL(passportPublicOrigin).hostname,
     passkeyExpectedOrigins: passkeyExpectedOrigins.length > 0 ? passkeyExpectedOrigins : [passportPublicOrigin],
-    passkeyRpName: getOptionalEnv(env, "OIDC_PASSKEY_RP_NAME") ?? "Cubid Passport",
-    firebaseProjectId: getOptionalEnv(env, "OIDC_FIREBASE_PROJECT_ID") ?? getOptionalEnv(env, "FIREBASE_PROJECT_ID"),
-    firebaseJwksUrl: getOptionalEnv(env, "OIDC_FIREBASE_JWKS_URL") ?? "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com",
-    signingPrivateJwk: parseJsonObject(getOptionalEnv(env, "OIDC_SIGNING_PRIVATE_JWK_JSON"), "OIDC_SIGNING_PRIVATE_JWK_JSON"),
-    activeSigningKid: getOptionalEnv(env, "OIDC_ACTIVE_SIGNING_KID"),
-    jwks: parseJwks(getOptionalEnv(env, "OIDC_JWKS_JSON")),
+    passkeyRpName: getOptionalEnvFrom(env, "OIDC_PASSKEY_RP_NAME") ?? "Cubid Passport",
+    firebaseProjectId: getOptionalEnvFrom(env, "OIDC_FIREBASE_PROJECT_ID") ?? getOptionalEnvFrom(env, "FIREBASE_PROJECT_ID"),
+    firebaseJwksUrl: getOptionalEnvFrom(env, "OIDC_FIREBASE_JWKS_URL") ?? "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com",
+    signingPrivateJwk: parseJsonObject(getOptionalEnvFrom(env, "OIDC_SIGNING_PRIVATE_JWK_JSON"), "OIDC_SIGNING_PRIVATE_JWK_JSON"),
+    activeSigningKid: getOptionalEnvFrom(env, "OIDC_ACTIVE_SIGNING_KID"),
+    jwks: parseJwks(getOptionalEnvFrom(env, "OIDC_JWKS_JSON")),
     supabaseUrl: getRequiredEnvFrom(env, "SUPABASE_URL"),
     supabaseServiceRoleKey: getRequiredEnvFrom(env, "SUPABASE_SERVICE_ROLE_KEY"),
   };

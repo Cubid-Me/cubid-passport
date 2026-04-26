@@ -1,3 +1,4 @@
+import { ApiRateLimitError } from "@cubid/auth/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 type RateLimitTier = "starter" | "trusted" | "internal";
@@ -6,10 +7,14 @@ const WINDOW_MS = 60 * 1000;
 
 const ROUTE_LIMITS: Record<string, Record<RateLimitTier, number>> = {
   authorize: { starter: 60, trusted: 300, internal: 1200 },
+  consent_complete: { starter: 30, trusted: 120, internal: 600 },
+  logout: { starter: 30, trusted: 120, internal: 600 },
   token: { starter: 60, trusted: 300, internal: 1200 },
   userinfo: { starter: 120, trusted: 600, internal: 2400 },
   login_complete: { starter: 30, trusted: 120, internal: 600 },
   passkey_challenge: { starter: 30, trusted: 120, internal: 600 },
+  register: { starter: 20, trusted: 60, internal: 240 },
+  revoke: { starter: 60, trusted: 300, internal: 1200 },
 };
 
 type BucketRow = {
@@ -18,15 +23,7 @@ type BucketRow = {
   window_start: string;
 };
 
-export class RateLimitError extends Error {
-  retryAfterSeconds: number;
-
-  constructor(retryAfterSeconds: number) {
-    super("Rate limit exceeded.");
-    this.name = "RateLimitError";
-    this.retryAfterSeconds = retryAfterSeconds;
-  }
-}
+export class RateLimitError extends ApiRateLimitError {}
 
 function getLimit(route: string, tier: RateLimitTier): number {
   return ROUTE_LIMITS[route]?.[tier] ?? ROUTE_LIMITS[route]?.starter ?? 60;
@@ -96,7 +93,7 @@ export async function enforceRateLimit(
       },
     });
 
-    throw new RateLimitError(retryAfterSeconds);
+    throw new RateLimitError(retryAfterSeconds, "Too many requests for this OIDC endpoint.");
   }
 
   const { error: upsertError } = await supabase.from("oidc_rate_limit_buckets").upsert({

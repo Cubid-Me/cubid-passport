@@ -1838,3 +1838,34 @@ Address the PR 146 `validate` CI failure where `@cubid/admin` could not prerende
 #### Follow-up
 
 - push the fix and re-check PR 146 CI after the required polling interval
+
+### session: v65
+
+- timestamp: 2026-04-26T18:36:22-0400
+- agent: **OpenAI Codex**
+- branch: **codex/c03-api-security-baseline**
+- head: **`7656e09`**
+- session name: **Adopt shared API security baseline in OIDC**
+
+#### Objective
+
+Move `services/oidc` onto the shared API security baseline by introducing reusable server-side security primitives, adding the generic Admin/Passport security schema, and refitting the OIDC runtime for shared request IDs, shared validation, targeted browser CORS, and normalized rate-limit plumbing without changing OIDC wire semantics.
+
+#### Actions Taken
+
+- added `@cubid/auth/server` helpers for request IDs, CORS decisions, method guards, JSON and `zod` validation, bearer parsing, shared security errors, and a rate-limit adapter interface
+- extended `@cubid/config` with optional env and CSV parsing helpers and added a new Supabase migration for `api_rate_limit_buckets` and `api_security_events`
+- updated the OIDC runtime config, app router, and rate-limit layer to use shared request IDs, explicit browser-callable CORS policies, shared validation for registration and interaction payloads, and additional route-limit coverage for registration, consent completion, revoke, and logout
+- added focused `@cubid/auth` and `@cubid/oidc` tests covering request IDs, error envelopes, CORS allowlists, config parsing, and route-limit denial behavior
+
+#### Verification
+
+- `pnpm install`
+- `pnpm --filter @cubid/auth typecheck`
+- `pnpm --filter @cubid/auth test`
+- `pnpm --filter @cubid/oidc typecheck`
+- `pnpm --filter @cubid/oidc test`
+
+#### Follow-up
+
+- commit the OIDC baseline slice, then migrate Admin routes onto the same shared contract in `C03.3`

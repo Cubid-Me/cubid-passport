@@ -321,12 +321,12 @@ Write the decision-complete target-state contract for Cubid API security before 
 
 ### C03.2 Adopt the shared baseline in OIDC
 
-- Status: Not started
-- Timestamp started: TBD
+- Status: Started
+- Timestamp started: 2026-04-26T18:03:27-0400
 - Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Feature branch: codex/c03-api-security-baseline
+- Head: 7656e09
+- Session-log reference(s): session: v65
 
 Refit `services/oidc` onto the shared API security baseline without breaking OIDC protocol semantics. Keep the issuer’s RFC and OIDC wire formats stable, but make request IDs universal, align error plumbing to the shared helper layer, and move its current rate limiting, validation, and CORS behavior behind shared `@cubid/auth` server-side primitives. Browser-driven login, consent, and passkey flows should receive explicit origin allowlists, while discovery and token-facing endpoints stay spec-driven rather than browser-open APIs. Use this slice to prove the shared security contract works on a non-Next runtime and to lock how OIDC-specific audit logging coexists with the generic baseline. End with OIDC tests covering unchanged protocol errors, request ID propagation, and rate-limit denial behavior.
 
