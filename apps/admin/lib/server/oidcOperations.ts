@@ -71,7 +71,12 @@ interface ClientMetricRow {
 
 interface PasskeyCountInput {
   activeCount: number | string | null | undefined;
+  authenticationFailures7d: number | string | null | undefined;
+  authenticationSuccesses7d: number | string | null | undefined;
+  registrations7d: number | string | null | undefined;
   revokedCount: number | string | null | undefined;
+  revocations7d: number | string | null | undefined;
+  stepUpFailures7d: number | string | null | undefined;
 }
 
 export interface OidcOpsAuditEvent {
@@ -302,38 +307,20 @@ export const normalizeClientMetricRows = (rows: ClientMetricRow[] = []) => {
 export const buildPasskeyOpsSummary = (
   counts: PasskeyCountInput,
   passkeyAuditRows: AuditLogRow[],
-  acrFailureRows: AuditLogRow[]
 ): OidcPasskeyOpsSummary => {
   const passkeyEvents = passkeyAuditRows.map(mapRedactedAuditEvent);
-  const stepUpFailures = acrFailureRows.filter((row) => {
-    const details = normalizeDetails(row.details);
-    return details.reason === 'acr_not_satisfied';
-  });
 
   return {
     activeCount: normalizeCount(counts.activeCount),
-    authenticationFailures7d: passkeyAuditRows.filter(
-      (row) =>
-        row.event_type === 'passkey.authentication.completed' &&
-        row.outcome !== 'success'
-    ).length,
-    authenticationSuccesses7d: passkeyAuditRows.filter(
-      (row) =>
-        row.event_type === 'passkey.authentication.completed' &&
-        row.outcome === 'success'
-    ).length,
+    authenticationFailures7d: normalizeCount(counts.authenticationFailures7d),
+    authenticationSuccesses7d: normalizeCount(
+      counts.authenticationSuccesses7d
+    ),
     recentAuditEvents: passkeyEvents.slice(0, 25),
-    registrations7d: passkeyAuditRows.filter(
-      (row) =>
-        row.event_type === 'passkey.registration.completed' &&
-        row.outcome === 'success'
-    ).length,
-    revocations7d: passkeyAuditRows.filter(
-      (row) =>
-        row.event_type === 'passkey.device.revoked' && row.outcome === 'success'
-    ).length,
+    registrations7d: normalizeCount(counts.registrations7d),
+    revocations7d: normalizeCount(counts.revocations7d),
     revokedCount: normalizeCount(counts.revokedCount),
-    stepUpFailures7d: stepUpFailures.length,
+    stepUpFailures7d: normalizeCount(counts.stepUpFailures7d),
     supportedAcrValues: [...SUPPORTED_ACR_VALUES],
   };
 };
@@ -355,7 +342,11 @@ export const loadOidcOpsOverview = async (
     activePasskeyCountResponse,
     revokedPasskeyCountResponse,
     passkeyAuditResponse,
-    acrFailureResponse,
+    passkeyRegistrationCountResponse,
+    passkeyAuthenticationSuccessCountResponse,
+    passkeyAuthenticationFailureCountResponse,
+    passkeyRevocationCountResponse,
+    passkeyStepUpFailureCountResponse,
   ] = await Promise.all([
     supabase
       .from('oidc_clients')
@@ -395,17 +386,38 @@ export const loadOidcOpsOverview = async (
       .like('event_type', 'passkey.%')
       .gte('created_at', since)
       .order('created_at', { ascending: false })
-      .limit(200),
+      .limit(25),
     supabase
       .from('oidc_audit_logs')
-      .select(
-        'client_id,event_type,actor_type,actor_identifier,request_id,outcome,details,created_at'
-      )
+      .select('log_id', { count: 'exact', head: true })
+      .eq('event_type', 'passkey.registration.completed')
+      .eq('outcome', 'success')
+      .gte('created_at', since),
+    supabase
+      .from('oidc_audit_logs')
+      .select('log_id', { count: 'exact', head: true })
+      .eq('event_type', 'passkey.authentication.completed')
+      .eq('outcome', 'success')
+      .gte('created_at', since),
+    supabase
+      .from('oidc_audit_logs')
+      .select('log_id', { count: 'exact', head: true })
+      .eq('event_type', 'passkey.authentication.completed')
+      .neq('outcome', 'success')
+      .gte('created_at', since),
+    supabase
+      .from('oidc_audit_logs')
+      .select('log_id', { count: 'exact', head: true })
+      .eq('event_type', 'passkey.device.revoked')
+      .eq('outcome', 'success')
+      .gte('created_at', since),
+    supabase
+      .from('oidc_audit_logs')
+      .select('log_id', { count: 'exact', head: true })
       .eq('event_type', 'login_challenge.completed')
       .eq('outcome', 'failure')
-      .gte('created_at', since)
-      .order('created_at', { ascending: false })
-      .limit(200),
+      .contains('details', { reason: 'acr_not_satisfied' })
+      .gte('created_at', since),
   ]);
 
   for (const response of [
@@ -418,7 +430,11 @@ export const loadOidcOpsOverview = async (
     activePasskeyCountResponse,
     revokedPasskeyCountResponse,
     passkeyAuditResponse,
-    acrFailureResponse,
+    passkeyRegistrationCountResponse,
+    passkeyAuthenticationSuccessCountResponse,
+    passkeyAuthenticationFailureCountResponse,
+    passkeyRevocationCountResponse,
+    passkeyStepUpFailureCountResponse,
   ]) {
     if (response.error) {
       throw response.error;
@@ -437,10 +453,15 @@ export const loadOidcOpsOverview = async (
   const passkeys = buildPasskeyOpsSummary(
     {
       activeCount: activePasskeyCountResponse.count,
+      authenticationFailures7d: passkeyAuthenticationFailureCountResponse.count,
+      authenticationSuccesses7d:
+        passkeyAuthenticationSuccessCountResponse.count,
+      registrations7d: passkeyRegistrationCountResponse.count,
       revokedCount: revokedPasskeyCountResponse.count,
+      revocations7d: passkeyRevocationCountResponse.count,
+      stepUpFailures7d: passkeyStepUpFailureCountResponse.count,
     },
     (passkeyAuditResponse.data ?? []) as AuditLogRow[],
-    (acrFailureResponse.data ?? []) as AuditLogRow[]
   );
   const bindingsByClient = new Map<string, BindingRow[]>();
   const policyNamesById = new Map<string, string>();

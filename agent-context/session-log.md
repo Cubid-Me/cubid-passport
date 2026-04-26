@@ -1,3 +1,33 @@
+### session: v62
+
+- timestamp: 2026-04-26T05:20:33-0400
+- agent: **OpenAI Codex**
+- branch: **codex/b04-4-passkey-lifecycle-stepup**
+- head: **`d74488e`**
+- session name: **Address PR #148 Codex review feedback**
+
+#### Objective
+
+Address the `chatgpt-codex-connector` review findings on PR #148 covering passkey ACR trust boundaries and Admin passkey metric accuracy.
+
+#### Actions Taken
+
+- filtered hosted Firebase-backed login completion methods to a server-approved non-passkey set so only the dedicated WebAuthn completion path can satisfy passkey ACR
+- added OIDC regression coverage proving caller-supplied `passkey` is stripped from hosted login completion input
+- moved Admin 7-day passkey counters off the 200-row sampled event lists and onto aggregate count queries, while keeping the recent-event feed capped for display only
+- updated Admin helper coverage to reflect aggregate-driven passkey totals
+
+#### Verification
+
+- `NODE20_BIN=$(npx -y -p node@20 node -p 'require("path").dirname(process.execPath)') && PATH="$NODE20_BIN:$PATH" pnpm --filter @cubid/oidc typecheck`
+- `NODE20_BIN=$(npx -y -p node@20 node -p 'require("path").dirname(process.execPath)') && PATH="$NODE20_BIN:$PATH" pnpm --filter @cubid/oidc test`
+- `NODE20_BIN=$(npx -y -p node@20 node -p 'require("path").dirname(process.execPath)') && PATH="$NODE20_BIN:$PATH" pnpm --filter @cubid/admin typecheck`
+- `NODE20_BIN=$(npx -y -p node@20 node -p 'require("path").dirname(process.execPath)') && PATH="$NODE20_BIN:$PATH" pnpm --filter @cubid/admin test`
+
+#### Follow-up
+
+- push the Codex-review fixes, respond on the two Codex review threads, resolve them, and confirm the rerun checks stay green
+
 ### session: v61
 
 - timestamp: 2026-04-26T04:52:25-0400

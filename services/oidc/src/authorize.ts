@@ -590,10 +590,17 @@ function assertMatchingPhone(requestPhone: string | null, tokenPhone: string | n
   return tokenPhone;
 }
 
+const HOSTED_LOGIN_AUTHENTICATION_METHODS = new Set<string>([
+  "email_ownid",
+  "email_otp",
+  "phone_otp",
+  "firebase_phone",
+]);
+
 export function buildVerifiedLoginCompletionInput(input: ParsedLoginCompletionInput, firebaseClaims: JWTPayload): LoginCompletionInput {
   const verifiedEmail = assertMatchingEmail(input.verifiedEmail, normalizeTokenStringClaim(firebaseClaims.email));
   const verifiedPhone = assertMatchingPhone(input.verifiedPhone, normalizeTokenStringClaim(firebaseClaims.phone_number));
-  const authenticationMethods = [...input.authenticationMethods];
+  const authenticationMethods = input.authenticationMethods.filter((method) => HOSTED_LOGIN_AUTHENTICATION_METHODS.has(method));
 
   if (!verifiedEmail && !verifiedPhone) {
     throw new AuthorizationRequestError("invalid_request", "The Firebase ID token must contain a verified email or phone number for OIDC login completion.", { statusCode: 401 });

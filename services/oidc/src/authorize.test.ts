@@ -85,3 +85,21 @@ test("buildVerifiedLoginCompletionInput rejects mismatched Firebase identity cla
     AuthorizationRequestError,
   );
 });
+
+test("buildVerifiedLoginCompletionInput strips passkey from hosted login completion input", () => {
+  const input = buildVerifiedLoginCompletionInput(
+    {
+      firebaseIdToken: "firebase-token",
+      verifiedEmail: "alice@example.com",
+      verifiedPhone: null,
+      cubidUserId: null,
+      authenticationMethods: ["email_ownid", "passkey"],
+    },
+    {
+      email: "alice@example.com",
+      sub: "firebase-user",
+    },
+  );
+
+  assert.deepEqual(input.authenticationMethods, ["email_ownid"]);
+});

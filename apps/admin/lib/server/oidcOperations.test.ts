@@ -97,7 +97,12 @@ describe('OIDC operations helpers', () => {
     const summary = buildPasskeyOpsSummary(
       {
         activeCount: '3',
+        authenticationFailures7d: 2,
+        authenticationSuccesses7d: 5,
+        registrations7d: 4,
         revokedCount: 1,
+        revocations7d: 6,
+        stepUpFailures7d: 7,
       },
       [
         {
@@ -134,28 +139,17 @@ describe('OIDC operations helpers', () => {
           outcome: 'success',
           request_id: 'request_3',
         },
-      ],
-      [
-        {
-          actor_identifier: 'subject_should_not_surface',
-          actor_type: 'user',
-          client_id: 'client_123',
-          created_at: '2026-04-21T00:03:00.000Z',
-          details: { reason: 'acr_not_satisfied' },
-          event_type: 'login_challenge.completed',
-          outcome: 'failure',
-          request_id: 'request_4',
-        },
       ]
     );
 
     expect(summary).toMatchObject({
       activeCount: 3,
-      authenticationSuccesses7d: 1,
-      registrations7d: 1,
+      authenticationFailures7d: 2,
+      authenticationSuccesses7d: 5,
+      registrations7d: 4,
       revokedCount: 1,
-      revocations7d: 1,
-      stepUpFailures7d: 1,
+      revocations7d: 6,
+      stepUpFailures7d: 7,
       supportedAcrValues: ['urn:cubid:acr:passkey'],
     });
     expect(summary.recentAuditEvents[0].details).toEqual({
