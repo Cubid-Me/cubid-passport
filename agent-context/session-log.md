@@ -1902,3 +1902,29 @@ Move the Admin API surface onto the shared API security baseline by centralizing
 #### Follow-up
 
 - commit the Admin baseline slice, then close `C03.2`/`C03.3` metadata and move to Passport hardening in `C03.4`
+
+### session: v67
+
+- timestamp: 2026-04-26T18:27:42-0400
+- agent: **OpenAI Codex**
+- branch: **codex/c03-api-security-baseline**
+- head: **`c2e078b`**
+- session name: **Close C03.2 and C03.3 roadmap metadata**
+
+#### Objective
+
+Bring the roadmap and session metadata back into sync with the completed C03.2 and C03.3 implementation commits so the next session starts from an accurate security-hardening state.
+
+#### Actions Taken
+
+- marked `C03.2` completed at OIDC commit `d7a1afd`
+- marked `C03.3` completed at Admin commit `c2e078b`
+- left parent `C03` open for the remaining Passport adoption and final cross-repo validation work in `C03.4` and `C03.5`
+
+#### Verification
+
+- confirmed the implementation commits and clean worktree state before metadata closure
+
+#### Follow-up
+
+- continue with `C03.4` to bring Passport APIs onto the same shared request ID, validation, actor-guard, CORS, and rate-limit baseline

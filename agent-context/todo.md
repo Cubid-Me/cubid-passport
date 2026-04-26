@@ -321,23 +321,23 @@ Write the decision-complete target-state contract for Cubid API security before 
 
 ### C03.2 Adopt the shared baseline in OIDC
 
-- Status: Started
+- Status: Completed
 - Timestamp started: 2026-04-26T18:03:27-0400
-- Timestamp completed: TBD
+- Timestamp completed: 2026-04-26T18:27:42-0400
 - Feature branch: codex/c03-api-security-baseline
-- Head: 7656e09
-- Session-log reference(s): session: v65
+- Head: d7a1afd
+- Session-log reference(s): session: v65, session: v67
 
 Refit `services/oidc` onto the shared API security baseline without breaking OIDC protocol semantics. Keep the issuer’s RFC and OIDC wire formats stable, but make request IDs universal, align error plumbing to the shared helper layer, and move its current rate limiting, validation, and CORS behavior behind shared `@cubid/auth` server-side primitives. Browser-driven login, consent, and passkey flows should receive explicit origin allowlists, while discovery and token-facing endpoints stay spec-driven rather than browser-open APIs. Use this slice to prove the shared security contract works on a non-Next runtime and to lock how OIDC-specific audit logging coexists with the generic baseline. End with OIDC tests covering unchanged protocol errors, request ID propagation, and rate-limit denial behavior.
 
 ### C03.3 Adopt the shared baseline in Admin
 
-- Status: Started
+- Status: Completed
 - Timestamp started: 2026-04-26T18:27:09-0400
-- Timestamp completed: TBD
+- Timestamp completed: 2026-04-26T18:27:42-0400
 - Feature branch: codex/c03-api-security-baseline
-- Head: d7a1afd
-- Session-log reference(s): session: v66
+- Head: c2e078b
+- Session-log reference(s): session: v66, session: v67
 
 Apply the shared API baseline to every `apps/admin/pages/api/admin/*` route so Admin stops relying on thin one-off method guards and ad hoc Firebase verification. Introduce shared request-context, validation, and authorization helpers for admin actors, require request IDs on every response, and enforce an explicit Admin CORS allowlist rather than assuming the browser shell is always the caller. Normalize mutation and read routes onto the same structured error contract, then add DB-backed rate limiting for sensitive control-plane operations such as API-key rotation, webhook management, OIDC client operations, and claims or policy mutation. The success condition is that every Admin route consumes the same security primitives, rejects malformed bodies consistently, and logs abuse-relevant denials with enough context for operator debugging and later incident review.
 
