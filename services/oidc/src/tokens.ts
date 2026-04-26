@@ -52,13 +52,13 @@ type PersistedAuthorizationCodeRow = {
 
 export function buildSessionAuthenticationClaims(session: PersistedSessionRow): {
   acr?: string;
-  amr: string[];
+  amr?: string[];
 } {
   const amr = Array.isArray(session.authentication_methods) ? session.authentication_methods.filter((entry): entry is string => typeof entry === "string" && entry.trim().length > 0) : [];
   const acr = typeof session.metadata?.acr === "string" && session.metadata.acr.trim().length > 0 ? session.metadata.acr : undefined;
 
   return {
-    amr,
+    ...(amr.length > 0 ? { amr } : {}),
     ...(acr ? { acr } : {}),
   };
 }

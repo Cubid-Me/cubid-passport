@@ -17,7 +17,11 @@ export function getOidcSessionId(req: NextApiRequest): string | null {
   for (const cookie of cookieHeader.split(";")) {
     const [rawName, ...rawValueParts] = cookie.trim().split("=")
     if (rawName === OIDC_SESSION_COOKIE_NAME) {
-      return decodeURIComponent(rawValueParts.join("="))
+      try {
+        return decodeURIComponent(rawValueParts.join("="))
+      } catch {
+        return null
+      }
     }
   }
 

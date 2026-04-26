@@ -160,3 +160,21 @@ test("buildSessionAuthenticationClaims maps AMR and passkey ACR from session met
     amr: ["passkey"],
   });
 });
+
+test("buildSessionAuthenticationClaims omits amr when no authentication methods are stored", () => {
+  const claims = buildSessionAuthenticationClaims({
+    session_id: "session_2",
+    client_id: "client_1",
+    cubid_user_id: 123,
+    human_subject_key: "internal-subject-key",
+    authentication_methods: [],
+    verified_email: "alice@example.com",
+    verified_phone: null,
+    expires_at: new Date(Date.now() + 60_000).toISOString(),
+    revoked_at: null,
+    created_at: "2026-04-19T12:00:00.000Z",
+    metadata: {},
+  });
+
+  assert.deepEqual(claims, {});
+});

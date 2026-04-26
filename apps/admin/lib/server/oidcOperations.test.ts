@@ -163,5 +163,6 @@ describe('OIDC operations helpers', () => {
       human_subject_key: '[redacted]',
       safe: 'visible',
     });
+    expect('actorIdentifier' in summary.recentAuditEvents[0]).toBe(false);
   });
 });
