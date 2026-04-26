@@ -301,20 +301,20 @@ Remove the current pattern of exposing arbitrary table access through generic AP
 - Timestamp started: 2026-04-26T17:52:11-0400
 - Timestamp completed: TBD
 - Feature branch: codex/c03-api-security-baseline
-- Head: 8f1f43c
-- Session-log reference(s): session: v63
+- Head: 7519f0f
+- Session-log reference(s): session: v63, session: v64
 - Target-state doc(s): [docs/engineering/api-security-baseline.md](/Users/botmaster/src/cubid/cubid-passport/docs/engineering/api-security-baseline.md)
 
 Introduce a shared API security baseline for all public-facing endpoints across Passport, Admin, and the new OIDC service. Add request validation with a single library, structured authorization checks for user, dapp, and admin actors, route-level rate limiting for authentication and verification flows, and explicit CORS allowlists instead of `origin: "*"`. Use this todo to standardize error envelopes, request IDs, audit logs, and abuse monitoring so security controls are visible and operable. Prioritize OTP, email verification, user creation, score lookup, claim issuance, token issuance, and webhook endpoints because they are the most attractive abuse surfaces. The objective is to move from route-by-route improvisation to a shared security contract enforced across the monorepo. This work should ship with automated tests for failure paths, not just happy-path validation.
 
 ### C03.1 Define the shared API security contract
 
-- Status: Started
+- Status: Completed
 - Timestamp started: 2026-04-26T17:52:11-0400
-- Timestamp completed: TBD
+- Timestamp completed: 2026-04-26T17:53:38-0400
 - Feature branch: codex/c03-api-security-baseline
-- Head: 8f1f43c
-- Session-log reference(s): session: v63
+- Head: 7519f0f
+- Session-log reference(s): session: v63, session: v64
 - Target-state doc(s): [docs/engineering/api-security-baseline.md](/Users/botmaster/src/cubid/cubid-passport/docs/engineering/api-security-baseline.md)
 
 Write the decision-complete target-state contract for Cubid API security before changing route code at scale. Define the shared request lifecycle, request ID rules, error-envelope rules, CORS ownership, actor types, validation library, and rate-limit model that Passport, Admin, and OIDC must all adopt. Be explicit about which legacy wire contracts may change, which OIDC contracts must remain RFC-compliant, which routes are public versus internal-only, and where shared primitives will live in the monorepo. This slice should also lock the required environment variables, event logging fields, and adoption order across route families so later implementation work does not fork into competing patterns. The output is the new target-state engineering doc plus roadmap updates that sequence the remaining C03 work.
