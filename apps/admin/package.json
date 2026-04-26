@@ -19,6 +19,7 @@
     "postbuild": "pnpm exec next-sitemap --config next-sitemap.config.js"
   },
   "dependencies": {
+    "@cubid/auth": "workspace:*",
     "@cubid/config": "workspace:*",
     "@cubid/claims": "workspace:*",
     "@cubid/types": "workspace:*",

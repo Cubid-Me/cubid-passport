@@ -1,49 +1,43 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
+import { adminAppsUpdateSchema } from '../../../../lib/server/adminSchemas';
 import {
   getOwnedDapp,
-  requireAdminUser,
-  sendBadRequest,
+  prepareAdminApiRequest,
   sendForbidden,
-  sendMethodNotAllowed,
   sendServerError,
 } from '../../../../lib/server/adminApi';
 
 const updateApp = async (req: NextApiRequest, res: NextApiResponse) => {
-  if (req.method !== 'POST') {
-    return sendMethodNotAllowed(res, ['POST']);
-  }
+  const request = await prepareAdminApiRequest(req, res, {
+    actor: 'admin',
+    bodySchema: adminAppsUpdateSchema,
+    rateLimitGroup: 'admin_mutation',
+    route: 'admin/apps/update',
+  });
 
-  const context = await requireAdminUser(req, res);
-
-  if (!context) {
+  if (!request) {
     return;
   }
 
-  const { appName, dappId, redirectUrl, schemaId, stampConfigs, url } =
-    req.body ?? {};
-  const numericDappId = Number(dappId);
-
-  if (!numericDappId || !appName || !schemaId) {
-    return sendBadRequest(res, 'Missing app update fields');
-  }
-
   try {
-    const ownedDapp = await getOwnedDapp(context, numericDappId);
+    const { appName, dappId, redirectUrl, schemaId, stampConfigs, url } =
+      request.body;
+    const ownedDapp = await getOwnedDapp(request.context, dappId);
 
     if (!ownedDapp) {
       return sendForbidden(res, 'You do not have access to that app');
     }
 
-    const appResponse = await context.supabase
+    const appResponse = await request.context.supabase
       .from('dapps')
       .update({
         appname: appName,
         url,
         redirect_url: redirectUrl,
-        admin_uid: context.adminUser.uid,
+        admin_uid: request.context.adminUser.uid,
       })
-      .match({ id: numericDappId })
+      .match({ id: dappId })
       .select('*')
       .maybeSingle();
 
@@ -51,10 +45,10 @@ const updateApp = async (req: NextApiRequest, res: NextApiResponse) => {
       throw appResponse.error;
     }
 
-    const existingStampScoreResponse = await context.supabase
+    const existingStampScoreResponse = await request.context.supabase
       .from('stampscore_dapps')
       .select('*')
-      .match({ dapp_id: numericDappId })
+      .match({ dapp_id: dappId })
       .maybeSingle();
 
     if (existingStampScoreResponse.error) {
@@ -62,18 +56,18 @@ const updateApp = async (req: NextApiRequest, res: NextApiResponse) => {
     }
 
     if (existingStampScoreResponse.data) {
-      const stampScoreUpdateResponse = await context.supabase
+      const stampScoreUpdateResponse = await request.context.supabase
         .from('stampscore_dapps')
         .update({ schema_id: schemaId })
-        .match({ dapp_id: numericDappId });
+        .match({ dapp_id: dappId });
 
       if (stampScoreUpdateResponse.error) {
         throw stampScoreUpdateResponse.error;
       }
     } else {
-      const stampScoreInsertResponse = await context.supabase
+      const stampScoreInsertResponse = await request.context.supabase
         .from('stampscore_dapps')
-        .insert({ dapp_id: numericDappId, schema_id: schemaId });
+        .insert({ dapp_id: dappId, schema_id: schemaId });
 
       if (stampScoreInsertResponse.error) {
         throw stampScoreInsertResponse.error;
@@ -81,10 +75,10 @@ const updateApp = async (req: NextApiRequest, res: NextApiResponse) => {
     }
 
     for (const stampConfig of Array.isArray(stampConfigs) ? stampConfigs : []) {
-      const stampUpdateResponse = await context.supabase
+      const stampUpdateResponse = await request.context.supabase
         .from('dapp_stamptypes')
         .update({
-          dapp_id: numericDappId,
+          dapp_id: dappId,
           stamptype_id: stampConfig.stampTypeId,
           is_auth_enabled: stampConfig.auth,
           include_in_score: stampConfig.score,
@@ -92,7 +86,7 @@ const updateApp = async (req: NextApiRequest, res: NextApiResponse) => {
           info_sharing_type_id: stampConfig.infoSharingTypeId,
         })
         .match({
-          dapp_id: numericDappId,
+          dapp_id: dappId,
           stamptype_id: stampConfig.stampTypeId,
         });
 

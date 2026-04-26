@@ -1869,3 +1869,36 @@ Move `services/oidc` onto the shared API security baseline by introducing reusab
 #### Follow-up
 
 - commit the OIDC baseline slice, then migrate Admin routes onto the same shared contract in `C03.3`
+
+### session: v66
+
+- timestamp: 2026-04-26T18:27:09-0400
+- agent: **OpenAI Codex**
+- branch: **codex/c03-api-security-baseline**
+- head: **`d7a1afd`**
+- session name: **Adopt shared API security baseline in Admin**
+
+#### Objective
+
+Move the Admin API surface onto the shared API security baseline by centralizing request IDs, CORS allowlists, Firebase-backed actor guards, structured error envelopes, route-level rate limiting, and schema-based request validation across all `pages/api/admin/*` handlers without changing success payloads.
+
+#### Actions Taken
+
+- rewrote `apps/admin/lib/server/adminApi.ts` around the shared server-security primitives and added Admin-specific rate-limit storage, denial logging, and typed request preparation
+- added route-shape schemas in `apps/admin/lib/server/adminSchemas.ts`, wired all Admin route families through the shared entrypoint, and added `ADMIN_CORS_ALLOWED_ORIGINS` plus the `@cubid/auth` workspace dependency
+- added focused Admin helper and representative route tests covering request ID propagation, CORS rejection, auth failures, schema failures, and route-to-policy wiring
+
+#### Verification
+
+- `pnpm install`
+- `pnpm --filter @cubid/admin typecheck`
+- `pnpm --filter @cubid/admin test`
+- `pnpm --filter @cubid/admin build`
+- `pnpm --filter @cubid/auth typecheck`
+- `pnpm --filter @cubid/auth test`
+- `pnpm --filter @cubid/oidc typecheck`
+- `pnpm --filter @cubid/oidc test`
+
+#### Follow-up
+
+- commit the Admin baseline slice, then close `C03.2`/`C03.3` metadata and move to Passport hardening in `C03.4`

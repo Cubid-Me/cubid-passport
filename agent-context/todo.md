@@ -332,12 +332,12 @@ Refit `services/oidc` onto the shared API security baseline without breaking OID
 
 ### C03.3 Adopt the shared baseline in Admin
 
-- Status: Not started
-- Timestamp started: TBD
+- Status: Started
+- Timestamp started: 2026-04-26T18:27:09-0400
 - Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Feature branch: codex/c03-api-security-baseline
+- Head: d7a1afd
+- Session-log reference(s): session: v66
 
 Apply the shared API baseline to every `apps/admin/pages/api/admin/*` route so Admin stops relying on thin one-off method guards and ad hoc Firebase verification. Introduce shared request-context, validation, and authorization helpers for admin actors, require request IDs on every response, and enforce an explicit Admin CORS allowlist rather than assuming the browser shell is always the caller. Normalize mutation and read routes onto the same structured error contract, then add DB-backed rate limiting for sensitive control-plane operations such as API-key rotation, webhook management, OIDC client operations, and claims or policy mutation. The success condition is that every Admin route consumes the same security primitives, rejects malformed bodies consistently, and logs abuse-relevant denials with enough context for operator debugging and later incident review.
 

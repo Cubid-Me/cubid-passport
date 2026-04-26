@@ -1,7 +1,9 @@
+import { randomUUID } from "node:crypto";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { z, type ZodTypeAny } from "zod";
 
 export { z };
+export type { ZodTypeAny };
 
 export type ApiActorType =
   | "anonymous"
@@ -103,7 +105,7 @@ export function createRequestId(prefix: string, candidate?: string | null) {
     return trimmedCandidate;
   }
 
-  return `${prefix}_${crypto.randomUUID()}`;
+  return `${prefix}_${randomUUID()}`;
 }
 
 export function getRequestIdFromNextRequest(

@@ -1,52 +1,41 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
+import { adminPagesUpdateSchema } from '../../../../lib/server/adminSchemas';
 import {
   getOwnedDapp,
-  requireAdminUser,
-  sendBadRequest,
+  prepareAdminApiRequest,
   sendForbidden,
-  sendMethodNotAllowed,
   sendServerError,
 } from '../../../../lib/server/adminApi';
 
 const updatePages = async (req: NextApiRequest, res: NextApiResponse) => {
-  if (req.method !== 'POST') {
-    return sendMethodNotAllowed(res, ['POST']);
-  }
+  const request = await prepareAdminApiRequest(req, res, {
+    actor: 'admin',
+    bodySchema: adminPagesUpdateSchema,
+    rateLimitGroup: 'admin_mutation',
+    route: 'admin/pages/update',
+  });
 
-  const context = await requireAdminUser(req, res);
-
-  if (!context) {
+  if (!request) {
     return;
   }
 
-  const numericDappId = Number(req.body?.dappId);
-  const pages = req.body?.pages;
-
-  if (!numericDappId || !Array.isArray(pages) || pages.length === 0) {
-    return sendBadRequest(res, 'Missing page update fields');
-  }
-
   try {
-    const ownedDapp = await getOwnedDapp(context, numericDappId);
+    const { dappId, pages } = request.body;
+    const ownedDapp = await getOwnedDapp(request.context, dappId);
 
     if (!ownedDapp) {
       return sendForbidden(res, 'You do not have access to that app');
     }
 
     for (const page of pages) {
-      const numericPageId = Number(page.pageId);
-
-      if (!numericPageId) {
-        throw new Error('Missing page id in update payload');
-      }
-
-      const pageUpdateResponse = await context.supabase
+      const numericPageId = page.pageId;
+      const pageUpdateResponse = await request.context.supabase
         .from('dapp_pages')
         .update({
           page_name: page.pageName,
           redirect_url: page.redirectUrl,
-          dapp_id: numericDappId,
+          dapp_id: dappId,
         })
         .match({ id: numericPageId });
 
@@ -61,10 +50,10 @@ const updatePages = async (req: NextApiRequest, res: NextApiResponse) => {
           continue;
         }
 
-        const updateResponse = await context.supabase
+        const updateResponse = await request.context.supabase
           .from('dapp_stamptypes')
           .update({
-            dapp_id: numericDappId,
+            dapp_id: dappId,
             page_id: numericPageId,
             stamptype_id: stampConfig.stampTypeId,
             is_auth_enabled: stampConfig.auth,
@@ -83,10 +72,10 @@ const updatePages = async (req: NextApiRequest, res: NextApiResponse) => {
         }
 
         if ((updateResponse.data ?? []).length === 0) {
-          const insertResponse = await context.supabase
+          const insertResponse = await request.context.supabase
             .from('dapp_stamptypes')
             .insert({
-              dapp_id: numericDappId,
+              dapp_id: dappId,
               page_id: numericPageId,
               stamptype_id: stampConfig.stampTypeId,
               is_auth_enabled: stampConfig.auth,

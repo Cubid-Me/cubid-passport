@@ -1,48 +1,42 @@
 import { randomBytes } from 'crypto';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
+import { adminWebhookCreateSchema } from '../../../../lib/server/adminSchemas';
 import {
   getOwnedDapp,
   getPlatformUserByEmail,
-  requireAdminUser,
+  prepareAdminApiRequest,
   sendBadRequest,
   sendForbidden,
-  sendMethodNotAllowed,
   sendServerError,
 } from '../../../../lib/server/adminApi';
 
 const createWebhook = async (req: NextApiRequest, res: NextApiResponse) => {
-  if (req.method !== 'POST') {
-    return sendMethodNotAllowed(res, ['POST']);
-  }
+  const request = await prepareAdminApiRequest(req, res, {
+    actor: 'admin',
+    bodySchema: adminWebhookCreateSchema,
+    rateLimitGroup: 'admin_sensitive',
+    route: 'admin/webhooks/create',
+  });
 
-  const context = await requireAdminUser(req, res);
-
-  if (!context) {
+  if (!request) {
     return;
   }
 
-  const numericDappId = Number(req.body?.dappId);
-  const numericWebhookTypeId = Number(req.body?.webhookTypeId);
-  const webhookUrl = req.body?.webhookUrl;
-
-  if (!numericDappId || !numericWebhookTypeId || !webhookUrl) {
-    return sendBadRequest(res, 'Missing webhook creation fields');
-  }
-
   try {
-    const ownedDapp = await getOwnedDapp(context, numericDappId);
+    const { dappId, webhookTypeId, webhookUrl } = request.body;
+    const ownedDapp = await getOwnedDapp(request.context, dappId);
 
     if (!ownedDapp) {
       return sendForbidden(res, 'You do not have access to that app');
     }
 
     const [platformUser, webhookTypeResponse] = await Promise.all([
-      getPlatformUserByEmail(context),
-      context.supabase
+      getPlatformUserByEmail(request.context),
+      request.context.supabase
         .from('webhook_types')
         .select('*')
-        .match({ id: numericWebhookTypeId })
+        .match({ id: webhookTypeId })
         .maybeSingle(),
     ]);
 
@@ -61,10 +55,10 @@ const createWebhook = async (req: NextApiRequest, res: NextApiResponse) => {
       return sendBadRequest(res, 'Invalid webhook type');
     }
 
-    const response = await context.supabase
+    const response = await request.context.supabase
       .from('dapp_webhook_subscriptions')
       .insert({
-        dapp: numericDappId,
+        dapp: dappId,
         webhook_url: webhookUrl,
         webhook: webhookTypeResponse.data.name,
         created_by_user: platformUser.id,

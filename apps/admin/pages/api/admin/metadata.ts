@@ -1,28 +1,29 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
+import { adminNoBodySchema } from '../../../lib/server/adminSchemas';
 import {
-  requireAdminUser,
-  sendMethodNotAllowed,
+  prepareAdminApiRequest,
   sendServerError,
 } from '../../../lib/server/adminApi';
 
 const metadata = async (req: NextApiRequest, res: NextApiResponse) => {
-  if (req.method !== 'POST') {
-    return sendMethodNotAllowed(res, ['POST']);
-  }
+  const request = await prepareAdminApiRequest(req, res, {
+    actor: 'admin',
+    bodySchema: adminNoBodySchema,
+    rateLimitGroup: 'admin_read',
+    route: 'admin/metadata',
+  });
 
-  const context = await requireAdminUser(req, res);
-
-  if (!context) {
+  if (!request) {
     return;
   }
 
   try {
     const [schemasResponse, stampTypesResponse, webhookTypesResponse] =
       await Promise.all([
-        context.supabase.from('stampscore_schemas').select('*'),
-        context.supabase.from('stamptypes').select('*'),
-        context.supabase.from('webhook_types').select('*'),
+        request.context.supabase.from('stampscore_schemas').select('*'),
+        request.context.supabase.from('stamptypes').select('*'),
+        request.context.supabase.from('webhook_types').select('*'),
       ]);
 
     const responseError =

@@ -1,9 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
+import { adminOidcBindingUpsertSchema } from '../../../../../lib/server/adminSchemas';
 import {
-  requireAdminUser,
+  prepareAdminApiRequest,
   sendBadRequest,
-  sendMethodNotAllowed,
   sendServerError,
 } from '../../../../../lib/server/adminApi';
 import {
@@ -12,18 +12,22 @@ import {
 } from '../../../../../lib/server/oidcPolicyRegistry';
 
 const upsertBinding = async (req: NextApiRequest, res: NextApiResponse) => {
-  if (req.method !== 'POST') {
-    return sendMethodNotAllowed(res, ['POST']);
-  }
+  const request = await prepareAdminApiRequest(req, res, {
+    actor: 'admin',
+    bodySchema: adminOidcBindingUpsertSchema,
+    rateLimitGroup: 'admin_mutation',
+    route: 'admin/oidc/bindings/upsert',
+  });
 
-  const context = await requireAdminUser(req, res);
-
-  if (!context) {
+  if (!request) {
     return;
   }
 
   try {
-    const data = await upsertClientClaimPolicyBinding(context, req.body ?? {});
+    const data = await upsertClientClaimPolicyBinding(
+      request.context,
+      request.body as Parameters<typeof upsertClientClaimPolicyBinding>[1]
+    );
 
     return res.status(200).json({ data });
   } catch (error) {

@@ -1,8 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
+import { adminNoBodySchema } from '../../../../lib/server/adminSchemas';
 import {
-  requireAdminUser,
-  sendMethodNotAllowed,
+  prepareAdminApiRequest,
   sendServerError,
 } from '../../../../lib/server/adminApi';
 import {
@@ -13,21 +13,22 @@ import {
 } from '../../../../lib/server/oidcPolicyRegistry';
 
 const oidcMetadata = async (req: NextApiRequest, res: NextApiResponse) => {
-  if (req.method !== 'POST') {
-    return sendMethodNotAllowed(res, ['POST']);
-  }
+  const request = await prepareAdminApiRequest(req, res, {
+    actor: 'admin',
+    bodySchema: adminNoBodySchema,
+    rateLimitGroup: 'admin_read',
+    route: 'admin/oidc/metadata',
+  });
 
-  const context = await requireAdminUser(req, res);
-
-  if (!context) {
+  if (!request) {
     return;
   }
 
   try {
     const [clients, claims, policies] = await Promise.all([
-      listOidcClients(context.supabase),
-      listClaimRegistry(context.supabase),
-      listIdentityDepthPolicies(context.supabase),
+      listOidcClients(request.context.supabase),
+      listClaimRegistry(request.context.supabase),
+      listIdentityDepthPolicies(request.context.supabase),
     ]);
 
     return res.status(200).json({

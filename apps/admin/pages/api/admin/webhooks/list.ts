@@ -1,33 +1,37 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
+import { adminNoBodySchema } from '../../../../lib/server/adminSchemas';
 import {
   getOwnedDappIds,
-  requireAdminUser,
-  sendMethodNotAllowed,
+  prepareAdminApiRequest,
   sendServerError,
 } from '../../../../lib/server/adminApi';
 
 const listWebhooks = async (req: NextApiRequest, res: NextApiResponse) => {
-  if (req.method !== 'POST') {
-    return sendMethodNotAllowed(res, ['POST']);
-  }
+  const request = await prepareAdminApiRequest(req, res, {
+    actor: 'admin',
+    bodySchema: adminNoBodySchema,
+    rateLimitGroup: 'admin_read',
+    route: 'admin/webhooks/list',
+  });
 
-  const context = await requireAdminUser(req, res);
-
-  if (!context) {
+  if (!request) {
     return;
   }
 
   try {
-    const ownedDappIds = await getOwnedDappIds(context);
+    const ownedDappIds = await getOwnedDappIds(request.context);
 
     if (ownedDappIds.length === 0) {
       return res.status(200).json({ data: [] });
     }
 
     const [dappsResponse, webhookSubscriptionsResponse] = await Promise.all([
-      context.supabase.from('dapps').select('id, appname').in('id', ownedDappIds),
-      context.supabase
+      request.context.supabase
+        .from('dapps')
+        .select('id, appname')
+        .in('id', ownedDappIds),
+      request.context.supabase
         .from('dapp_webhook_subscriptions')
         .select('*')
         .in('dapp', ownedDappIds),

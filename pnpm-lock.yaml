@@ -26,6 +26,9 @@ importers:
 
   apps/admin:
     dependencies:
+      '@cubid/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
       '@cubid/claims':
         specifier: workspace:*
         version: link:../../packages/claims

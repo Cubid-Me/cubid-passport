@@ -1,26 +1,28 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
+import { adminIncludeArchivedSchema } from '../../../../../lib/server/adminSchemas';
 import {
-  requireAdminUser,
-  sendMethodNotAllowed,
+  prepareAdminApiRequest,
   sendServerError,
 } from '../../../../../lib/server/adminApi';
 import { listClaimRegistry } from '../../../../../lib/server/oidcPolicyRegistry';
 
 const listClaims = async (req: NextApiRequest, res: NextApiResponse) => {
-  if (req.method !== 'POST') {
-    return sendMethodNotAllowed(res, ['POST']);
-  }
+  const request = await prepareAdminApiRequest(req, res, {
+    actor: 'admin',
+    bodySchema: adminIncludeArchivedSchema,
+    rateLimitGroup: 'admin_read',
+    route: 'admin/oidc/claims/list',
+  });
 
-  const context = await requireAdminUser(req, res);
-
-  if (!context) {
+  if (!request) {
     return;
   }
 
   try {
-    const includeArchived = req.body?.includeArchived === true;
-    const data = await listClaimRegistry(context.supabase, { includeArchived });
+    const data = await listClaimRegistry(request.context.supabase, {
+      includeArchived: request.body.includeArchived === true,
+    });
 
     return res.status(200).json({ data });
   } catch (error) {
