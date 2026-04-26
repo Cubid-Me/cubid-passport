@@ -297,6 +297,30 @@ Remove the current pattern of exposing arbitrary table access through generic AP
 
 ### C03. Add consistent validation, authorization, rate limits, and CORS policy
 
+- Status: Started
+- Timestamp started: 2026-04-26T17:52:11-0400
+- Timestamp completed: TBD
+- Feature branch: codex/c03-api-security-baseline
+- Head: 8f1f43c
+- Session-log reference(s): session: v63
+- Target-state doc(s): [docs/engineering/api-security-baseline.md](/Users/botmaster/src/cubid/cubid-passport/docs/engineering/api-security-baseline.md)
+
+Introduce a shared API security baseline for all public-facing endpoints across Passport, Admin, and the new OIDC service. Add request validation with a single library, structured authorization checks for user, dapp, and admin actors, route-level rate limiting for authentication and verification flows, and explicit CORS allowlists instead of `origin: "*"`. Use this todo to standardize error envelopes, request IDs, audit logs, and abuse monitoring so security controls are visible and operable. Prioritize OTP, email verification, user creation, score lookup, claim issuance, token issuance, and webhook endpoints because they are the most attractive abuse surfaces. The objective is to move from route-by-route improvisation to a shared security contract enforced across the monorepo. This work should ship with automated tests for failure paths, not just happy-path validation.
+
+### C03.1 Define the shared API security contract
+
+- Status: Started
+- Timestamp started: 2026-04-26T17:52:11-0400
+- Timestamp completed: TBD
+- Feature branch: codex/c03-api-security-baseline
+- Head: 8f1f43c
+- Session-log reference(s): session: v63
+- Target-state doc(s): [docs/engineering/api-security-baseline.md](/Users/botmaster/src/cubid/cubid-passport/docs/engineering/api-security-baseline.md)
+
+Write the decision-complete target-state contract for Cubid API security before changing route code at scale. Define the shared request lifecycle, request ID rules, error-envelope rules, CORS ownership, actor types, validation library, and rate-limit model that Passport, Admin, and OIDC must all adopt. Be explicit about which legacy wire contracts may change, which OIDC contracts must remain RFC-compliant, which routes are public versus internal-only, and where shared primitives will live in the monorepo. This slice should also lock the required environment variables, event logging fields, and adoption order across route families so later implementation work does not fork into competing patterns. The output is the new target-state engineering doc plus roadmap updates that sequence the remaining C03 work.
+
+### C03.2 Adopt the shared baseline in OIDC
+
 - Status: Not started
 - Timestamp started: TBD
 - Timestamp completed: TBD
@@ -304,7 +328,40 @@ Remove the current pattern of exposing arbitrary table access through generic AP
 - Head: TBD
 - Session-log reference(s): TBD
 
-Introduce a shared API security baseline for all public-facing endpoints across Passport, Admin, and the new OIDC service. Add request validation with a single library, structured authorization checks for user, dapp, and admin actors, route-level rate limiting for authentication and verification flows, and explicit CORS allowlists instead of `origin: "*"`. Use this todo to standardize error envelopes, request IDs, audit logs, and abuse monitoring so security controls are visible and operable. Prioritize OTP, email verification, user creation, score lookup, claim issuance, token issuance, and webhook endpoints because they are the most attractive abuse surfaces. The objective is to move from route-by-route improvisation to a shared security contract enforced across the monorepo. This work should ship with automated tests for failure paths, not just happy-path validation.
+Refit `services/oidc` onto the shared API security baseline without breaking OIDC protocol semantics. Keep the issuer’s RFC and OIDC wire formats stable, but make request IDs universal, align error plumbing to the shared helper layer, and move its current rate limiting, validation, and CORS behavior behind shared `@cubid/auth` server-side primitives. Browser-driven login, consent, and passkey flows should receive explicit origin allowlists, while discovery and token-facing endpoints stay spec-driven rather than browser-open APIs. Use this slice to prove the shared security contract works on a non-Next runtime and to lock how OIDC-specific audit logging coexists with the generic baseline. End with OIDC tests covering unchanged protocol errors, request ID propagation, and rate-limit denial behavior.
+
+### C03.3 Adopt the shared baseline in Admin
+
+- Status: Not started
+- Timestamp started: TBD
+- Timestamp completed: TBD
+- Feature branch: TBD
+- Head: TBD
+- Session-log reference(s): TBD
+
+Apply the shared API baseline to every `apps/admin/pages/api/admin/*` route so Admin stops relying on thin one-off method guards and ad hoc Firebase verification. Introduce shared request-context, validation, and authorization helpers for admin actors, require request IDs on every response, and enforce an explicit Admin CORS allowlist rather than assuming the browser shell is always the caller. Normalize mutation and read routes onto the same structured error contract, then add DB-backed rate limiting for sensitive control-plane operations such as API-key rotation, webhook management, OIDC client operations, and claims or policy mutation. The success condition is that every Admin route consumes the same security primitives, rejects malformed bodies consistently, and logs abuse-relevant denials with enough context for operator debugging and later incident review.
+
+### C03.4 Normalize and harden Passport public APIs
+
+- Status: Not started
+- Timestamp started: TBD
+- Timestamp completed: TBD
+- Feature branch: TBD
+- Head: TBD
+- Session-log reference(s): TBD
+
+Bring the sprawling Passport API surface under the shared security baseline, including `/api/oidc/*`, `/api/dapp/*`, `/api/v2/*`, `/api/verify/*`, `/api/allow/*`, `/api/wallet/*`, `/api/cubid-webhook/*`, cron-style routes, and `/api/supabase/*`. Remove wildcard CORS, add structured validation for body, query, and header inputs, and replace route-by-route authorization with shared `user`, `dapp`, and `internal` actor guards. Internal job endpoints should reject browser CORS entirely and require a server-to-server bearer token. Legacy generic Supabase routes should be locked down immediately with auth, request IDs, method restrictions, and validation, even though `C02` still owns their deeper replacement. End with focused tests around OTP, dapp identity, webhook, and arbitrary CRUD abuse paths.
+
+### C03.5 Close with tests, CI, and observability updates
+
+- Status: Not started
+- Timestamp started: TBD
+- Timestamp completed: TBD
+- Feature branch: TBD
+- Head: TBD
+- Session-log reference(s): TBD
+
+Finish C03 by validating the shared baseline as a platform-wide contract rather than a set of local refactors. Add unit tests in `@cubid/auth` for request ID handling, validation wrappers, actor guards, CORS decisions, and shared error serialization. Extend workspace test coverage so OIDC, Admin, and Passport all prove failure-path behavior, not just happy paths. Update CI expectations where needed so the route families touched by C03 are exercised in the normal monorepo validation graph. Document the new environment variables, security event fields, and monitoring expectations in long-lived engineering docs so operators know what signals now exist and how to use them. Close the parent todo only after the docs, tests, and validation story match the implemented baseline.
 
 ### C04. Redesign custody for generated wallets, private keys, and sensitive disclosures
 

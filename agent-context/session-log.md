@@ -1,3 +1,29 @@
+### session: v63
+
+- timestamp: 2026-04-26T17:52:11-0400
+- agent: **OpenAI Codex**
+- branch: **codex/c03-api-security-baseline**
+- head: **`8f1f43c`**
+- session name: **Start C03 and define the API security baseline**
+
+#### Objective
+
+Start `C03` as a repo-wide hardening stream by splitting it into sequential subtodos and writing the dedicated target-state API security contract for Passport, Admin, and OIDC.
+
+#### Actions Taken
+
+- updated [agent-context/todo.md](/Users/botmaster/src/cubid/cubid-passport/agent-context/todo.md) to mark the parent `C03` workstream started on `codex/c03-api-security-baseline`
+- split `C03` into `C03.1` through `C03.5` with ordered descriptions covering contract definition, OIDC adoption, Admin adoption, Passport adoption, and closeout validation
+- added [docs/engineering/api-security-baseline.md](/Users/botmaster/src/cubid/cubid-passport/docs/engineering/api-security-baseline.md) as the target-state source of truth for shared request IDs, `zod` validation, actor guards, CORS allowlists, error envelopes, rate-limit storage, internal-only route rules, and migration order
+
+#### Verification
+
+- reviewed the new roadmap and engineering doc content locally to confirm the C03 sequencing, metadata, and target-state rules are internally consistent
+
+#### Follow-up
+
+- commit the C03 kickoff artifacts, then record the C03.1 completion metadata once the target-state doc lands on the branch
+
 ### session: v62
 
 - timestamp: 2026-04-26T05:20:33-0400
