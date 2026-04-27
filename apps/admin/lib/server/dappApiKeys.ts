@@ -42,6 +42,7 @@ export const rotateDappApiKey = async (
   dappId: number
 ) => {
   const now = new Date().toISOString();
+  const replacement = await createDappApiKey(supabase, dappId);
   const revokeResponse = await supabase
     .from('dapp_api_keys')
     .update({
@@ -49,13 +50,24 @@ export const rotateDappApiKey = async (
       status: 'revoked',
     })
     .eq('dapp_id', dappId)
-    .eq('status', 'active');
+    .eq('status', 'active')
+    .neq('key_prefix', replacement.keyRecord.key_prefix);
 
   if (revokeResponse.error) {
+    await supabase
+      .from('dapp_api_keys')
+      .update({
+        revoked_at: now,
+        status: 'revoked',
+      })
+      .eq('dapp_id', dappId)
+      .eq('status', 'active')
+      .eq('key_prefix', replacement.keyRecord.key_prefix);
+
     throw revokeResponse.error;
   }
 
-  return createDappApiKey(supabase, dappId);
+  return replacement;
 };
 
 export const mapDappApiKeySummary = (

@@ -37,6 +37,9 @@ create table if not exists private.dapp_user_secrets (
 create index if not exists private_dapp_user_secrets_dapp_user_uuid_idx
   on private.dapp_user_secrets(dapp_user_uuid);
 
+create unique index if not exists private_dapp_user_secrets_dapp_user_sequence_idx
+  on private.dapp_user_secrets(dapp_user_uuid, secret_sequential_id);
+
 create unique index if not exists private_dapp_user_secrets_legacy_public_id_idx
   on private.dapp_user_secrets(legacy_public_secret_id)
   where legacy_public_secret_id is not null;

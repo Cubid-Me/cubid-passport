@@ -423,7 +423,10 @@ test("Passport v3 save_secret stores only encrypted dapp user secrets", async ()
     false
   )
   assert.equal(storedSecret.encryption_algorithm, "aes-256-gcm-envelope")
-  assert.equal(storedSecret.encryption_key_id, "passport_dapp_user_secret_wrapping_key_v1")
+  assert.equal(
+    storedSecret.encryption_key_id,
+    "passport_dapp_user_secret_wrapping_key_v1"
+  )
 
   const decrypted = decryptDappUserSecretWithKey(
     storedSecret as never,
@@ -440,6 +443,25 @@ test("Passport v3 save_secret stores only encrypted dapp user secrets", async ()
     ),
     true
   )
+
+  const secondReq = createApiRequest({
+    body: {
+      api_key: apiKey,
+      secret: "second raw dapp user secret",
+      user_id: userId,
+    },
+    headers: {
+      origin: "https://passport.cubid.me",
+    },
+    url: "/api/v3/save_secret",
+  })
+  const secondRes = createApiResponse()
+
+  await saveSecretV3Handler(secondReq, secondRes)
+
+  assert.equal(secondRes.statusCode, 200)
+  assert.equal(supabase.privateDappUserSecrets.length, 2)
+  assert.equal(supabase.privateDappUserSecrets[1].secret_sequential_id, 2)
 })
 
 test("Passport v3 save_secret rejects dapp users outside the authenticated app", async () => {

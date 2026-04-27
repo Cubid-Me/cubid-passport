@@ -2613,3 +2613,29 @@ Mark C06 complete after committing the validated env-backed operational-secret h
 #### Follow-up
 
 - continue with a C05/C06 follow-up or publish the current branch for review
+
+### session: v90
+
+- timestamp: 2026-04-27T23:27:28Z
+- agent: **OpenAI Codex**
+- branch: **codex/c04-c06-secrets-hardening-split**
+- head: **`fc00d0d`**
+- session name: **Address PR 149 Codex review feedback**
+
+#### Objective
+
+Address actionable Codex review comments on PR #149 after retargeting the branch to `dev`.
+
+#### Actions Taken
+
+- changed Admin dapp API-key rotation to create the replacement key before revoking older active keys, with cleanup of the replacement if old-key revocation fails
+- added compensating cleanup for v3 blockchain account creation so partial private-key or dapp-user-account failures do not leave orphaned custodial account rows
+- changed v3 dapp user secret sequencing from row-count assignment to max-plus-one with a unique per-user sequence index and duplicate-key retry
+
+#### Verification
+
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/passport test && pnpm --filter @cubid/passport typecheck && pnpm --filter @cubid/admin test && pnpm --filter @cubid/admin typecheck'`
+
+#### Follow-up
+
+- push review fixes, reply to and resolve the Codex review threads, then re-check CI

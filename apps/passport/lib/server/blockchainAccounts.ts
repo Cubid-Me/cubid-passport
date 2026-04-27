@@ -273,79 +273,112 @@ export async function createGeneratedBlockchainAccount(input: {
   }
 
   const userAccountId = String(userAccount.id)
-  const encryptedPrivateKey = await encryptBlockchainPrivateKey(
-    input.supabase,
-    generatedAccount.privateKey,
-    {
-      chainKey,
-      publicAddressNormalized,
-      userAccountId,
-      userId: dappUser.user_id,
+  let privateKeyStored = false
+  let dappUserAccountLinked = false
+
+  try {
+    const encryptedPrivateKey = await encryptBlockchainPrivateKey(
+      input.supabase,
+      generatedAccount.privateKey,
+      {
+        chainKey,
+        publicAddressNormalized,
+        userAccountId,
+        userId: dappUser.user_id,
+      }
+    )
+
+    const { error: privateKeyError } = await input.supabase
+      .schema("private")
+      .from("private_keys")
+      .insert({
+        ...encryptedPrivateKey,
+        chain_key: chainKey,
+        metadata: {
+          createdBy: "api_v3.accounts.generate",
+          requestId: input.requestId,
+        },
+        status: "active",
+        user_account_id: userAccountId,
+      })
+
+    if (privateKeyError) {
+      throw privateKeyError
     }
-  )
 
-  const { error: privateKeyError } = await input.supabase
-    .schema("private")
-    .from("private_keys")
-    .insert({
-      ...encryptedPrivateKey,
-      chain_key: chainKey,
-      metadata: {
-        createdBy: "api_v3.accounts.generate",
-        requestId: input.requestId,
+    privateKeyStored = true
+
+    const { data: link, error: linkError } = await input.supabase
+      .from("dapp_user_accounts")
+      .insert({
+        dapp_id: input.dappId,
+        dapp_user_uuid: input.dappUserUuid,
+        metadata: {
+          createdBy: "api_v3.accounts.generate",
+          requestId: input.requestId,
+        },
+        status: "active",
+        user_account_id: userAccountId,
+      })
+      .select("*")
+      .single()
+
+    if (linkError) {
+      throw linkError
+    }
+
+    dappUserAccountLinked = true
+
+    await input.supabase.from("api_security_events").insert({
+      actor_identifier: String(input.dappId),
+      actor_type: "dapp",
+      details: {
+        chainKey,
+        dappId: String(input.dappId),
+        dappUserUuid: input.dappUserUuid,
+        userAccountId,
       },
-      status: "active",
-      user_account_id: userAccountId,
+      event_id: `api_event_${randomUUID().replace(/-/g, "")}`,
+      event_type: "blockchain_account.generated",
+      outcome: "success",
+      request_id: input.requestId,
+      route: "v3.accounts.generate",
     })
 
-  if (privateKeyError) {
-    throw privateKeyError
-  }
-
-  const { data: link, error: linkError } = await input.supabase
-    .from("dapp_user_accounts")
-    .insert({
-      dapp_id: input.dappId,
-      dapp_user_uuid: input.dappUserUuid,
-      metadata: {
-        createdBy: "api_v3.accounts.generate",
-        requestId: input.requestId,
-      },
-      status: "active",
-      user_account_id: userAccountId,
-    })
-    .select("*")
-    .single()
-
-  if (linkError) {
-    throw linkError
-  }
-
-  await input.supabase.from("api_security_events").insert({
-    actor_identifier: String(input.dappId),
-    actor_type: "dapp",
-    details: {
-      chainKey,
-      dappId: String(input.dappId),
+    return {
+      accountId: userAccountId,
+      chain: chainKey,
+      createdAt: String(userAccount.created_at),
+      custodyStatus: String(userAccount.custody_status),
+      dappUserAccountId: String(link.id),
       dappUserUuid: input.dappUserUuid,
-      userAccountId,
-    },
-    event_id: `api_event_${randomUUID().replace(/-/g, "")}`,
-    event_type: "blockchain_account.generated",
-    outcome: "success",
-    request_id: input.requestId,
-    route: "v3.accounts.generate",
-  })
+      label: userAccount.account_label
+        ? String(userAccount.account_label)
+        : null,
+      publicAddress: String(userAccount.public_address),
+    }
+  } catch (error) {
+    if (dappUserAccountLinked) {
+      await input.supabase
+        .from("dapp_user_accounts")
+        .delete()
+        .eq("user_account_id", userAccountId)
+    }
 
-  return {
-    accountId: userAccountId,
-    chain: chainKey,
-    createdAt: String(userAccount.created_at),
-    custodyStatus: String(userAccount.custody_status),
-    dappUserAccountId: String(link.id),
-    dappUserUuid: input.dappUserUuid,
-    label: userAccount.account_label ? String(userAccount.account_label) : null,
-    publicAddress: String(userAccount.public_address),
+    if (privateKeyStored) {
+      await input.supabase
+        .schema("private")
+        .from("private_keys")
+        .delete()
+        .eq("user_account_id", userAccountId)
+    }
+
+    await input.supabase
+      .from("user_accounts")
+      .delete()
+      .eq("id", userAccountId)
+
+    throw error
   }
 }
 

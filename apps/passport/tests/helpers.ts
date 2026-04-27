@@ -361,6 +361,17 @@ export class MockPassportSupabase {
 
     if (table === "user_accounts") {
       return {
+        delete: () => ({
+          eq: (column: string, value: unknown) => {
+            const index = this.userAccounts.findIndex(
+              (row) => String(row[column]) === String(value)
+            )
+            if (index >= 0) {
+              this.userAccounts.splice(index, 1)
+            }
+            return { error: null }
+          },
+        }),
         insert: (row: Record<string, unknown>) => {
           const inserted = {
             created_at: new Date().toISOString(),
@@ -411,6 +422,17 @@ export class MockPassportSupabase {
 
     if (table === "private.private_keys") {
       return {
+        delete: () => ({
+          eq: (column: string, value: unknown) => {
+            const index = this.privateKeys.findIndex(
+              (row) => String(row[column]) === String(value)
+            )
+            if (index >= 0) {
+              this.privateKeys.splice(index, 1)
+            }
+            return { error: null }
+          },
+        }),
         insert: async (row: Record<string, unknown>) => {
           this.privateKeys.push({
             created_at: new Date().toISOString(),
@@ -424,6 +446,23 @@ export class MockPassportSupabase {
 
     if (table === "dapp_user_accounts") {
       return {
+        delete: () => ({
+          eq: (column: string, value: unknown) => {
+            for (
+              let index = this.dappUserAccounts.length - 1;
+              index >= 0;
+              index -= 1
+            ) {
+              if (
+                String(this.dappUserAccounts[index]?.[column]) ===
+                String(value)
+              ) {
+                this.dappUserAccounts.splice(index, 1)
+              }
+            }
+            return { error: null }
+          },
+        }),
         insert: (row: Record<string, unknown>) => {
           const inserted = {
             created_at: new Date().toISOString(),

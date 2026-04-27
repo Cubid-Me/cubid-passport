@@ -12,6 +12,55 @@ import {
 } from "@/lib/server/dappUserSecrets"
 import { getPassportSupabase } from "@/lib/server/supabase"
 
+const isUniqueConstraintError = (error: unknown) => {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: unknown }).code === "23505"
+  )
+}
+
+const insertEncryptedSecretWithSequence = async (
+  supabase: ReturnType<typeof getPassportSupabase>,
+  row: Record<string, unknown>,
+  dappUserUuid: string
+) => {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const { data: existingRows, error: existingError } = await supabase
+      .schema("private")
+      .from("dapp_user_secrets")
+      .select("secret_sequential_id")
+      .eq("dapp_user_uuid", dappUserUuid)
+
+    if (existingError) {
+      throw existingError
+    }
+
+    const nextSequence =
+      (existingRows ?? []).reduce((max, existingRow) => {
+        const value = Number(existingRow.secret_sequential_id ?? 0)
+        return Number.isFinite(value) && value > max ? value : max
+      }, 0) + 1
+
+    const { error } = await supabase
+      .schema("private")
+      .from("dapp_user_secrets")
+      .insert({
+        ...row,
+        secret_sequential_id: nextSequence,
+      })
+
+    if (!error) {
+      return
+    }
+
+    if (!isUniqueConstraintError(error) || attempt === 2) {
+      throw error
+    }
+  }
+}
+
 const schema = passportSchemas.z.object({
   api_key: passportSchemas.z.string().min(1).optional(),
   apikey: passportSchemas.z.string().min(1).optional(),
@@ -69,29 +118,15 @@ export default async function handler(
         }
       )
 
-      const { data: existingRows, error: existingError } = await supabase
-        .schema("private")
-        .from("dapp_user_secrets")
-        .select("id")
-        .eq("dapp_user_uuid", body.user_id)
-
-      if (existingError) {
-        throw existingError
-      }
-
-      const { error } = await supabase
-        .schema("private")
-        .from("dapp_user_secrets")
-        .insert({
+      await insertEncryptedSecretWithSequence(
+        supabase,
+        {
           ...encryptedSecret,
           dapp_user_uuid: body.user_id,
           secret: DAPP_USER_SECRET_LEGACY_SENTINEL,
-          secret_sequential_id: (existingRows ?? []).length + 1,
-        })
-
-      if (error) {
-        throw error
-      }
+        },
+        body.user_id
+      )
 
       const { error: auditError } = await supabase
         .from("api_security_events")
