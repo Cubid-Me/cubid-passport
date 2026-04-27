@@ -2416,3 +2416,38 @@ Mark `C05.3` complete after the webhook signing-secret envelope-encryption imple
 #### Follow-up
 
 - continue C05 with `C05.2` blockchain private-key custody, or add a narrow post-deployment cleanup todo for physically removing legacy webhook plaintext after production backfill verification
+
+### session: v83
+
+- timestamp: 2026-04-27T22:07:15Z
+- agent: **OpenAI Codex**
+- branch: **codex/c04-c06-secrets-hardening-split**
+- head: **`36f1618`**
+- session name: **Implement C05.2 encrypted blockchain account custody**
+
+#### Objective
+
+Add a new v3 blockchain account custody surface that stores generated account metadata separately from Vault-backed encrypted private-key envelopes while leaving legacy v2 wallet and private-key routes unchanged.
+
+#### Actions Taken
+
+- added a Supabase migration creating the `private` schema, `public.ref_chains`, `public.user_accounts`, `public.dapp_user_accounts`, and service-role-only `private.private_keys`
+- added the Vault-backed `passport_blockchain_private_key_wrapping_key_v1` helper function for private-key envelope wrapping
+- added Passport server helpers for EVM, NEAR, and Solana account generation plus AES-256-GCM envelope encryption bound to account context
+- added `/api/v3/accounts/generate` and `/api/v3/accounts/list` as dapp-authenticated v3 routes that never return raw private keys or encrypted key material
+- added a `C05.2.1` follow-up for Sui support after selecting a Sui SDK and address-normalization contract
+- updated encrypted-secret and API-security operations docs with the blockchain custody contract
+- added helper and route tests covering encryption, wrong-context rejection, dapp ownership checks, Sui rejection, no key leakage, and dapp-user account linking
+
+#### Verification
+
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/passport test'`
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/passport typecheck && pnpm --filter @cubid/passport build'`
+- `npx -p node@24 -c 'node --version && pnpm test && pnpm typecheck'`
+- `npx -p node@24 -c 'node --version && pnpm lint && pnpm build'`
+
+#### Follow-up
+
+- update the `C05.2` todo head after this implementation commit lands
+- provision `passport_blockchain_private_key_wrapping_key_v1` in Supabase Vault before enabling v3 account generation outside local/test environments
+- implement `C05.2.1` for Sui once the SDK dependency and address format are locked

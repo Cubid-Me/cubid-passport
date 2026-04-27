@@ -8,9 +8,12 @@ import supabaseSelectHandler from "../pages/api/supabase/select"
 import sendOtpHandler from "../pages/api/twillio/send-otp"
 import sendEmailOtpHandler from "../pages/api/v2/email/send_otp"
 import verifyEmailOtpHandler from "../pages/api/v2/email/verify_otp"
+import generateAccountV3Handler from "../pages/api/v3/accounts/generate"
+import listAccountsV3Handler from "../pages/api/v3/accounts/list"
 import saveSecretV3Handler from "../pages/api/v3/save_secret"
 import webhookTriggerHandler from "../pages/api/cubid-webhook/trigger-url"
 import createUserHandler from "../pages/api/v2/create_user"
+import { decryptBlockchainPrivateKeyWithKey } from "../lib/server/blockchainAccounts"
 import {
   DAPP_USER_SECRET_LEGACY_SENTINEL,
   decryptDappUserSecretWithKey,
@@ -438,6 +441,167 @@ test("Passport v3 save_secret rejects dapp users outside the authenticated app",
       requestId: res.headers["x-request-id"],
     },
   })
+})
+
+test("Passport v3 account generation encrypts private keys and links only the triggering dapp user", async () => {
+  const supabase = new MockPassportSupabase()
+  const apiKey = addDappAuth(supabase)
+  const dappUserUuid = "00000000-0000-4000-8000-000000000052"
+  supabase.setDappUser({ dapp_id: 42, user_id: 1234, uuid: dappUserUuid })
+  setPassportSupabaseForTests(supabase as never)
+
+  const req = createApiRequest({
+    body: {
+      api_key: apiKey,
+      chain: "evm",
+      dapp_user_uuid: dappUserUuid,
+      label: "Primary EVM",
+    },
+    headers: {
+      origin: "https://passport.cubid.me",
+    },
+    url: "/api/v3/accounts/generate",
+  })
+  const res = createApiResponse()
+
+  await generateAccountV3Handler(req, res)
+
+  assert.equal(res.statusCode, 200)
+  const data = (res.body as DataResponse<Record<string, unknown>>).data
+  assert.equal(data.chain, "evm")
+  assert.equal(data.dappUserUuid, dappUserUuid)
+  assert.equal(data.label, "Primary EVM")
+  assert.equal(String(data.publicAddress).startsWith("0x"), true)
+  assert.equal(JSON.stringify(res.body).includes("privateKey"), false)
+  assert.equal(JSON.stringify(res.body).includes("private_key"), false)
+  assert.equal(supabase.userAccounts.length, 1)
+  assert.equal(supabase.privateKeys.length, 1)
+  assert.equal(supabase.dappUserAccounts.length, 1)
+  assert.equal(supabase.dappUserAccounts[0].dapp_user_uuid, dappUserUuid)
+
+  const storedPrivateKey = supabase.privateKeys[0]
+  assert.equal(
+    storedPrivateKey.encryption_key_id,
+    "passport_blockchain_private_key_wrapping_key_v1"
+  )
+  assert.equal(storedPrivateKey.encryption_algorithm, "aes-256-gcm-envelope")
+  assert.notEqual(storedPrivateKey.private_key_ciphertext, "")
+  assert.equal(
+    String(storedPrivateKey.private_key_ciphertext).startsWith("0x"),
+    false
+  )
+
+  const decrypted = decryptBlockchainPrivateKeyWithKey(
+    storedPrivateKey,
+    Buffer.from("fedcba9876543210fedcba9876543210"),
+    {
+      chainKey: "evm",
+      publicAddressNormalized: String(
+        supabase.userAccounts[0].public_address_normalized
+      ),
+      userAccountId: String(supabase.userAccounts[0].id),
+      userId: 1234,
+    }
+  )
+  assert.equal(decrypted.startsWith("0x"), true)
+})
+
+test("Passport v3 account generation rejects dapp users outside the authenticated app", async () => {
+  const supabase = new MockPassportSupabase()
+  const apiKey = addDappAuth(supabase)
+  const dappUserUuid = "00000000-0000-4000-8000-000000000053"
+  supabase.setDappUser({ dapp_id: 99, user_id: 1234, uuid: dappUserUuid })
+  setPassportSupabaseForTests(supabase as never)
+
+  const req = createApiRequest({
+    body: {
+      apikey: apiKey,
+      chain: "solana",
+      dapp_user_uuid: dappUserUuid,
+    },
+    headers: {
+      origin: "https://passport.cubid.me",
+    },
+    url: "/api/v3/accounts/generate",
+  })
+  const res = createApiResponse()
+
+  await generateAccountV3Handler(req, res)
+
+  assert.equal(res.statusCode, 404)
+  assert.equal(supabase.userAccounts.length, 0)
+  assert.equal(supabase.privateKeys.length, 0)
+  assert.equal(supabase.dappUserAccounts.length, 0)
+})
+
+test("Passport v3 account generation rejects unsupported Sui requests", async () => {
+  const supabase = new MockPassportSupabase()
+  const apiKey = addDappAuth(supabase)
+  const dappUserUuid = "00000000-0000-4000-8000-000000000054"
+  supabase.setDappUser({ dapp_id: 42, user_id: 1234, uuid: dappUserUuid })
+  setPassportSupabaseForTests(supabase as never)
+
+  const req = createApiRequest({
+    body: {
+      api_key: apiKey,
+      chain: "sui",
+      dapp_user_uuid: dappUserUuid,
+    },
+    headers: {
+      origin: "https://passport.cubid.me",
+    },
+    url: "/api/v3/accounts/generate",
+  })
+  const res = createApiResponse()
+
+  await generateAccountV3Handler(req, res)
+
+  assert.equal(res.statusCode, 400)
+  assert.equal((res.body as { error: { code: string } }).error.code, "invalid_request")
+  assert.equal(supabase.userAccounts.length, 0)
+})
+
+test("Passport v3 account list returns dapp-user-visible metadata without secret material", async () => {
+  const supabase = new MockPassportSupabase()
+  const apiKey = addDappAuth(supabase)
+  const dappUserUuid = "00000000-0000-4000-8000-000000000055"
+  supabase.setDappUser({ dapp_id: 42, user_id: 1234, uuid: dappUserUuid })
+  setPassportSupabaseForTests(supabase as never)
+
+  const generateReq = createApiRequest({
+    body: {
+      api_key: apiKey,
+      chain: "solana",
+      dapp_user_uuid: dappUserUuid,
+    },
+    headers: {
+      origin: "https://passport.cubid.me",
+    },
+    url: "/api/v3/accounts/generate",
+  })
+  await generateAccountV3Handler(generateReq, createApiResponse())
+
+  const listReq = createApiRequest({
+    body: {
+      api_key: apiKey,
+      dapp_user_uuid: dappUserUuid,
+    },
+    headers: {
+      origin: "https://passport.cubid.me",
+    },
+    url: "/api/v3/accounts/list",
+  })
+  const listRes = createApiResponse()
+
+  await listAccountsV3Handler(listReq, listRes)
+
+  assert.equal(listRes.statusCode, 200)
+  const accounts = (listRes.body as DataResponse<Array<Record<string, unknown>>>).data
+  assert.equal(accounts.length, 1)
+  assert.equal(accounts[0].chain, "solana")
+  assert.equal(accounts[0].dappUserUuid, dappUserUuid)
+  assert.equal(JSON.stringify(listRes.body).includes("ciphertext"), false)
+  assert.equal(JSON.stringify(listRes.body).includes("private"), false)
 })
 
 test("Passport internal webhook trigger rejects missing internal bearer tokens", async () => {

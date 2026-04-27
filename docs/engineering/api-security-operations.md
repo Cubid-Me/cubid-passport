@@ -234,6 +234,15 @@ views. Provision the Supabase Vault secret
 `passport_webhook_signing_secret_wrapping_key_v1` before creating encrypted
 webhook subscriptions or running the legacy webhook backfill script.
 
+Blockchain private keys use the C05 envelope model in the v3 account custody
+surface. `/api/v3/accounts/generate` creates EVM, NEAR, or Solana accounts for
+an authenticated dapp user, stores public metadata in `user_accounts`, stores
+the encrypted key envelope in `private.private_keys`, and links visibility
+through `dapp_user_accounts`. Provision the Supabase Vault secret
+`passport_blockchain_private_key_wrapping_key_v1` before enabling v3 account
+generation. V3 responses never return raw private keys or encrypted key
+material.
+
 ### Admin
 
 - `ADMIN_CORS_ALLOWED_ORIGINS`

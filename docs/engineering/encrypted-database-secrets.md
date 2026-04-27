@@ -31,8 +31,15 @@ For webhook signing secrets, the context includes:
 - `secretReferenceId`
 - `webhook`
 
+For blockchain private keys, the context includes:
+
+- `chainKey`
+- `publicAddressNormalized`
+- `userAccountId`
+- `userId`
+
 Decrypting with the wrong dapp, user UUID, webhook subscription reference,
-purpose, or key fails.
+blockchain account, purpose, or key fails.
 
 ## Dapp User Secrets
 
@@ -98,3 +105,28 @@ pnpm --filter @cubid/passport exec tsx scripts/encrypt-webhook-signing-secrets.t
 The delivery path temporarily accepts legacy plaintext rows so existing
 subscriptions can keep working during the migration window. New Admin-created
 subscriptions use encrypted storage immediately.
+
+## Blockchain Private Keys
+
+`/api/v3/accounts/generate` and `/api/v3/accounts/list` are the new v3
+custodial account surface for dapp-authenticated callers. The legacy v2 wallet
+and private-key paths remain untouched during C05.2, but v3 stores public
+account metadata separately from encrypted private-key material:
+
+- `public.ref_chains` stores supported chain metadata.
+- `public.user_accounts` stores user-owned public account metadata.
+- `public.dapp_user_accounts` links an account to the dapp user that triggered
+  generation.
+- `private.private_keys` stores encrypted private-key envelopes only.
+
+The `private` schema is service-role-only. Browser, Admin list, and dapp
+responses must never return raw private keys, ciphertext, wrapped data keys,
+IVs, authentication tags, or Vault material. V3 account generation currently
+supports EVM, NEAR, and Solana. Sui is deferred until a Sui SDK and address
+normalization contract are selected.
+
+The required Vault secret is
+`passport_blockchain_private_key_wrapping_key_v1`. It must be a base64 or
+base64url encoded 32-byte value. No public decrypt, reveal, export, or signing
+endpoint exists in C05.2; decrypt helpers are server-only for future explicit
+custody workflows.

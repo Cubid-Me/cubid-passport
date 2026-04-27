@@ -27,18 +27,22 @@ type EmailOtpRow = Record<string, unknown> & {
 
 type DappUserRow = {
   dapp_id: number
+  user_id?: number
   uuid: string
 }
 
 export class MockPassportSupabase {
   readonly buckets = new Map<string, BucketRow>()
   readonly dappApiKeys = new Map<string, DappApiKeyRow>()
+  readonly dappUserAccounts: Array<Record<string, unknown>> = []
   readonly dappUserSecrets: Array<Record<string, unknown>> = []
   readonly dappUsers = new Map<string, DappUserRow>()
   readonly dapps = new Map<number, Record<string, unknown>>()
   readonly emailOtps = new Map<string, EmailOtpRow[]>()
   readonly eventInserts: Array<Record<string, unknown>> = []
   readonly lastUsedUpdates: number[] = []
+  readonly privateKeys: Array<Record<string, unknown>> = []
+  readonly userAccounts: Array<Record<string, unknown>> = []
   private nextEmailOtpId = 1
 
   rpc(name: string, params: Record<string, unknown>) {
@@ -76,6 +80,15 @@ export class MockPassportSupabase {
       })
     }
 
+    if (name === "get_blockchain_private_key_wrapping_key_v1") {
+      return Promise.resolve({
+        data: Buffer.from(
+          "fedcba9876543210fedcba9876543210"
+        ).toString("base64"),
+        error: null,
+      })
+    }
+
     throw new Error(`Unexpected RPC ${name}`)
   }
 
@@ -107,6 +120,12 @@ export class MockPassportSupabase {
       id: row.id ?? this.nextEmailOtpId++,
     })
     this.emailOtps.set(row.email, rows)
+  }
+
+  schema(name: string) {
+    return {
+      from: (table: string) => this.from(`${name}.${table}`),
+    }
   }
 
   from(table: string) {
@@ -167,7 +186,7 @@ export class MockPassportSupabase {
               if (!row || String(row.dapp_id) !== String(filters.dapp_id)) {
                 return { data: null, error: null }
               }
-              return { data: row, error: null }
+              return { data: { user_id: 1234, ...row }, error: null }
             },
           }
           return query
@@ -292,6 +311,112 @@ export class MockPassportSupabase {
             return { error: null }
           },
         }),
+      }
+    }
+
+    if (table === "user_accounts") {
+      return {
+        insert: (row: Record<string, unknown>) => {
+          const inserted = {
+            created_at: new Date().toISOString(),
+            id: `account_${this.userAccounts.length + 1}`,
+            updated_at: new Date().toISOString(),
+            ...row,
+          }
+          this.userAccounts.push(inserted)
+          return {
+            select: () => ({
+              single: async () => ({ data: inserted, error: null }),
+            }),
+          }
+        },
+        select: () => {
+          const filters: Record<string, unknown> = {}
+          let idFilter: string[] | null = null
+          const resolve = () => {
+            let rows = [...this.userAccounts]
+            if (idFilter) {
+              rows = rows.filter((row) => idFilter?.includes(String(row.id)))
+            }
+            for (const [column, value] of Object.entries(filters)) {
+              rows = rows.filter((row) => String(row[column]) === String(value))
+            }
+            return { data: rows, error: null }
+          }
+          const query = {
+            eq: (column: string, value: unknown) => {
+              filters[column] = value
+              return query
+            },
+            in: (_column: string, values: string[]) => {
+              idFilter = values
+              return query
+            },
+            then: (
+              resolveThen: (value: {
+                data: Record<string, unknown>[]
+                error: null
+              }) => unknown
+            ) => Promise.resolve(resolve()).then(resolveThen),
+          }
+          return query
+        },
+      }
+    }
+
+    if (table === "private.private_keys") {
+      return {
+        insert: async (row: Record<string, unknown>) => {
+          this.privateKeys.push({
+            created_at: new Date().toISOString(),
+            id: `private_key_${this.privateKeys.length + 1}`,
+            ...row,
+          })
+          return { error: null }
+        },
+      }
+    }
+
+    if (table === "dapp_user_accounts") {
+      return {
+        insert: (row: Record<string, unknown>) => {
+          const inserted = {
+            created_at: new Date().toISOString(),
+            id: `dapp_user_account_${this.dappUserAccounts.length + 1}`,
+            updated_at: new Date().toISOString(),
+            ...row,
+          }
+          this.dappUserAccounts.push(inserted)
+          return {
+            select: () => ({
+              single: async () => ({ data: inserted, error: null }),
+            }),
+          }
+        },
+        select: () => {
+          const filters: Record<string, unknown> = {}
+          const resolve = () => {
+            const rows = this.dappUserAccounts.filter((row) => {
+              return Object.entries(filters).every(
+                ([column, value]) => String(row[column]) === String(value)
+              )
+            })
+            return { data: rows, error: null }
+          }
+          const query = {
+            eq: (column: string, value: unknown) => {
+              filters[column] = value
+              return query
+            },
+            then: (
+              resolveThen: (value: {
+                data: Record<string, unknown>[]
+                error: null
+              }) => unknown
+            ) => Promise.resolve(resolve()).then(resolveThen),
+          }
+          return query
+        },
       }
     }
 

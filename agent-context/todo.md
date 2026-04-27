@@ -443,6 +443,17 @@ After C05.1 is deployed, Supabase Vault is provisioned, and the backfill script 
 
 ### C05.2 Redesign blockchain private-key custody
 
+- Status: Completed
+- Timestamp started: 2026-04-27T21:59:47Z
+- Timestamp completed: 2026-04-27T22:07:15Z
+- Feature branch: codex/c04-c06-secrets-hardening-split
+- Head: TBD
+- Session-log reference(s): session: v83
+
+Remove ambiguous plaintext custody for blockchain private keys across EVM, NEAR, SUI, and legacy generated-wallet tables. Start by inventorying all `private_key` columns, wallet-generation routes, minting routes, UI disclosure paths, and server signing paths. Lock the preferred posture for user wallet keys as no-custody unless an explicit product requirement proves otherwise: Cubid should store public addresses, stamp metadata, and transaction references, not exportable user private keys. For any remaining operational signing keys or unavoidable retrievable private keys, require C05 envelope encryption, server-only access, and audit events. Add migrations that quarantine or null legacy plaintext fields where safe, update generated-wallet routes so they no longer insert recoverable private keys as ordinary data, and add regression checks preventing “private key” export copy from returning to Profile or wallet flows.
+
+### C05.2.1 Add Sui support to v3 blockchain account custody
+
 - Status: Not started
 - Timestamp started: TBD
 - Timestamp completed: TBD
@@ -450,7 +461,7 @@ After C05.1 is deployed, Supabase Vault is provisioned, and the backfill script 
 - Head: TBD
 - Session-log reference(s): TBD
 
-Remove ambiguous plaintext custody for blockchain private keys across EVM, NEAR, SUI, and legacy generated-wallet tables. Start by inventorying all `private_key` columns, wallet-generation routes, minting routes, UI disclosure paths, and server signing paths. Lock the preferred posture for user wallet keys as no-custody unless an explicit product requirement proves otherwise: Cubid should store public addresses, stamp metadata, and transaction references, not exportable user private keys. For any remaining operational signing keys or unavoidable retrievable private keys, require C05 envelope encryption, server-only access, and audit events. Add migrations that quarantine or null legacy plaintext fields where safe, update generated-wallet routes so they no longer insert recoverable private keys as ordinary data, and add regression checks preventing “private key” export copy from returning to Profile or wallet flows.
+Add Sui to the v3 blockchain account custody surface after selecting and validating the repo-supported Sui SDK. Extend `public.ref_chains` with Sui metadata, add the Sui keypair generator, normalize Sui public-address handling, and add route/helper tests proving `/api/v3/accounts/generate` and `/api/v3/accounts/list` work without returning private-key material. Keep the same C05 Vault envelope-encryption model and `private.private_keys` storage contract used for EVM, NEAR, and Solana. This follow-up should not alter legacy v2 wallet APIs; it should only expand the v3 route surface once the Sui dependency and address format are intentionally locked.
 
 ### C05.3 Envelope-encrypt webhook signing secrets
 
