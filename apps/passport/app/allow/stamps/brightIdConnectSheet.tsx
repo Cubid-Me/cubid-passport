@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react"
-import axios from "axios"
 
 import useAuth from "@/hooks/useAuth"
+import { listPassportStampsByUser } from "@/lib/passportDataApi"
 import {
   Sheet,
   SheetContent,
@@ -26,11 +26,9 @@ export const BrightIdConnectSheet = ({
   const fetchUserData = useCallback(async () => {
     const user = supabaseUser
     if (user?.id) {
-      const {
-        data: { data },
-      } = await axios.post("/api/supabase/select", {
-        match: { created_by_user_id: user.id, stamptype: 8 },
-        table: "stamps",
+      const data = await listPassportStampsByUser({
+        stampTypeIds: [8],
+        userId: user.id,
       })
       if (data?.[0]) {
         setBrightIdData?.(data[0])

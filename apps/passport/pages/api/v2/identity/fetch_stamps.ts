@@ -1,81 +1,89 @@
-// @ts-nocheck
-import NextCors from "nextjs-cors"
-import { stampsWithId } from "../../utils/stampKey"
-import { supabase } from "../../utils/supabase"
+import type { NextApiRequest, NextApiResponse } from "next"
 
-const log = (message: any, lineNumber: any) => {
-    console.log(`Line ${lineNumber}: ${message}`)
+import {
+  handlePassportRoute,
+  passportSchemas,
+} from "@/lib/server/passportApi"
+import { getPassportSupabase } from "@/lib/server/supabase"
+
+import { stampsWithId } from "../../utils/stampKey"
+
+const schema = passportSchemas.z.object({
+  apikey: passportSchemas.z.string().min(1),
+  user_id: passportSchemas.z.string().min(1),
+})
+
+const swapKeyValue = (input: Record<string, number>) => {
+  return Object.fromEntries(
+    Object.entries(input).map(([key, value]) => [value, key])
+  ) as Record<number, string>
 }
 
-export default async function handler(req: any, res: any) {
-    await NextCors(req, res, {
-        methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-        origin: "*", // Allow all origins
-        optionsSuccessStatus: 200,
-    })
-
-    const { apikey, user_id } = typeof req.body === "string" ? JSON.parse(req.body) : req.body
-
-    const { data: dataForApp } = await supabase
-        .from("dapps")
-        .select("*")
-        .match({ apikey: apikey })
-
-    const dappId = dataForApp?.find((item) => item.apikey === apikey)?.id
-    if (!dappId) {
-        log("Invalid API key or dapp_id", 50)
-        return res.status(400).json({ error: "Invalid API key" })
-    }
-
-    const { data: dapp_users } = await supabase
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  return handlePassportRoute(
+    req,
+    res,
+    {
+      actor: "dapp",
+      bodySchema: schema,
+      rateLimitGroup: "passport_dapp_read",
+      route: "v2.identity.fetch_stamps",
+    },
+    async ({ body }) => {
+      const supabase = getPassportSupabase()
+      const { data: dappUsers, error: dappUsersError } = await supabase
         .from("dapp_users")
         .select("*,users:user_id(*),dapps:dapp_id(*)")
-        .match({ uuid: user_id })
+        .eq("uuid", body.user_id)
 
-    if (!dapp_users?.length) {
+      if (dappUsersError) {
+        throw dappUsersError
+      }
+
+      if (!dappUsers?.length) {
         return res.status(404).json({ error: "User not found" })
-    }
+      }
 
-    const { error, data: stampData } = await supabase
+      const { data: stampData, error: stampError } = await supabase
         .from("stamps")
         .select("*")
-        .match({ created_by_user_id: dapp_users[0]?.users.id })
+        .eq("created_by_user_id", dappUsers[0]?.users.id)
 
-    if (error) {
-        return res.status(500).json({ error: "Error fetching stamps" })
-    }
+      if (stampError) {
+        throw stampError
+      }
 
-    // Using Promise.all to handle concurrent stamp permission checks
-    const stampPromises = stampData.map(async (item) => {
-        const { data: permissionData } = await supabase
+      const swapped = swapKeyValue(stampsWithId)
+      const allStamps = await Promise.all(
+        (stampData ?? []).map(async (item: any) => {
+          const { data: permissionData, error } = await supabase
             .from("stamp_dappuser_permissions")
             .select("*")
             .match({
-                dappuser_id: user_id,
-                stamp_id: item.id,
+              dappuser_id: body.user_id,
+              stamp_id: item.id,
             })
 
-        function swapKeyValue(obj) {
-            return Object.fromEntries(Object.entries(obj).map(([key, value]) => [value, key]));
-        }
+          if (error) {
+            throw error
+          }
 
-        return {
+          return {
             ...item,
-            stamptype_string: swapKeyValue(stampsWithId)[item.stamptype],
-            emailForVerification: dapp_users[0]?.users.email,
+            emailForVerification: dappUsers[0]?.users.email,
             permAvailable: Boolean(permissionData?.[0]),
-        }
-
-    })
-
-    try {
-        const stampDataToSend = await Promise.all(stampPromises)
-        res.status(200).json({
-            all_stamps: stampDataToSend,
-            email: dapp_users[0]?.users.email
+            stamptype_string: swapped[item.stamptype],
+          }
         })
-    } catch (err) {
-        log("Error processing stamps", 80)
-        res.status(500).json({ error: "Error processing stamps" })
+      )
+
+      return res.status(200).json({
+        all_stamps: allStamps,
+        email: dappUsers[0]?.users.email,
+      })
     }
+  )
 }

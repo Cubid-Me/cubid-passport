@@ -1,7 +1,7 @@
 # Cubid API Security Baseline
 
-Last updated: 2026-04-26
-Status: Accepted target-state contract for C03.1
+Last updated: 2026-04-27
+Status: Accepted contract implemented across OIDC, Admin, and Passport route baselines through C03.4
 
 ## Purpose
 
@@ -167,6 +167,8 @@ Minimum route families that must be rate limited in C03:
 - `/api/oidc/*` routes use the shared baseline immediately and continue using Passport Firebase user auth where required.
 - `/api/dapp/*`, `/api/v2/*`, `/api/verify/*`, `/api/allow/*`, and `/api/wallet/*` lose wildcard CORS and must declare actor, validation, method, and rate-limit contracts.
 - Legacy success payloads may change during C03 if needed to align with the normalized security baseline. OIDC payloads remain the compatibility exception.
+- Passport now routes first-party data access through a Passport-owned typed API surface under `/api/passport/data/*` and no longer keeps `/api/supabase/*` as a live arbitrary CRUD interface.
+- OTP, dapp identity, score, location, verification, wallet, webhook-trigger, and cron routes are all expected to return `X-Request-Id` and use the shared Passport security envelope on failures.
 
 ### Passport internal-only routes
 
@@ -188,6 +190,18 @@ Rules:
 - `/api/supabase/*` must be locked down under the shared baseline during C03.
 - They are no longer allowed to behave as unauthenticated arbitrary CRUD endpoints.
 - C02 still owns their final replacement with typed domain services.
+
+## C03.4 Implementation Notes
+
+The Passport slice completed the following architectural moves:
+
+- introduced a shared Passport API entrypoint in `apps/passport/lib/server/passportApi.ts` for request IDs, validation, actor guards, CORS handling, rate limits, and structured errors
+- added server-only Passport helpers for Supabase access, Twilio Verify, SMTP-backed email OTP, and Gitcoin scorer access so secrets no longer live inline in route handlers
+- converted internal webhook and cron routes to bearer-token-protected internal surfaces
+- replaced generic first-party `/api/supabase/*` application usage with typed Passport data routes and hard-disabled the old CRUD endpoints
+- moved legacy Passport API families off wildcard CORS and onto explicit `anonymous`, `dapp`, or `internal` route contracts
+
+Remaining closeout work for `C03.5` is focused on broader observability, CI, and any additional targeted test coverage rather than on changing the baseline contract itself.
 
 ## Shared Package Boundaries
 

@@ -1,74 +1,52 @@
-import { supabase } from "@/lib/supabase";
-import NextCors from "nextjs-cors";
+import type { NextApiRequest, NextApiResponse } from "next"
 
-const nodemailer = require('nodemailer');
+import {
+  handlePassportRoute,
+  passportSchemas,
+} from "@/lib/server/passportApi"
+import { sendOtpEmail, generateOtp } from "@/lib/server/emailOtp"
+import { getPassportSupabase } from "@/lib/server/supabase"
 
-// Set up Nodemailer transporter
-const transporter = nodemailer.createTransport({
-  host: 'smtp-pulse.com',
-  port: 587, // Default port
-  secure: false, // true for 465, false for other ports
-  auth: {
-      user: 'noak@chaincrew.xyz',
-      pass: 'HKgCdfG5atGsj' // Replace with actual password
-  }
-});
+const schema = passportSchemas.z.object({
+  apikey: passportSchemas.z.string().min(1),
+  email: passportSchemas.z.string().email(),
+})
 
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  return handlePassportRoute(
+    req,
+    res,
+    {
+      actor: "dapp",
+      bodySchema: schema,
+      rateLimitGroup: "passport_otp",
+      route: "v2.email.send_otp",
+    },
+    async ({ body, context }) => {
+      await getPassportSupabase().from("email_otp").delete().eq("email", body.email)
 
-async function sendVerificationEmail(toEmail: string, verificationCode: number): Promise<void> {
-  const mailOptions = {
-    from: 'login@chaincrew.xyz',
-    to: toEmail,
-    subject: 'Email Verification Code',
-    text: `Your verification code is: ${verificationCode}`,
-  };
+      const otp = generateOtp()
+      const { error } = await getPassportSupabase().from("email_otp").insert({
+        email: body.email,
+        otp,
+      })
 
-  return new Promise<void>((resolve, reject) => {
-    transporter.sendMail(mailOptions, (err: any, info: any) => {
-      if (err) {
-        reject(new Error('Error sending email: ' + err));
-      } else {
-        resolve();
-        console.log('Email sent:', info.response);
+      if (error) {
+        throw error
       }
-    });
-  });
+
+      await sendOtpEmail(body.email, otp)
+
+      return res.status(200).json({
+        data: {
+          dappId: context.dapp.id,
+          email: body.email,
+          sent: true,
+        },
+      })
+    }
+  )
 }
-
-const sendOtp = async (req: any, res: any) => {
-  await NextCors(req, res, {
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-    origin: "*", // Allow all origins
-    optionsSuccessStatus: 200,
-  })
-  console.log(req.body)
-  const { apikey, email } = typeof req.body === "string" ? JSON.parse(req.body) : req.body
-
-  const { data: dataForApp } = await supabase
-    .from("dapps")
-    .select("*")
-    .match({ apikey })
-
-  const dappId = dataForApp?.find((item: any) => item.apikey === apikey)?.id
-  if (!dappId) {
-    return res.status(400).json({ error: "Invalid API key or dapp_id" })
-  }
-  await supabase.from("email_otp").delete().match({ email })
-
-  function generateOTP() {
-    return Math.floor(1000 + Math.random() * 9000);
-  }
-
-  const otp = generateOTP()
-
-  await supabase.from("email_otp").insert({
-    email,
-    otp: otp
-  })
-
-  await sendVerificationEmail(email, otp)
-
-  res.send({ otp });
-};
-export default sendOtp;
-

@@ -1,91 +1,89 @@
-import NextCors from "nextjs-cors"
+import type { NextApiRequest, NextApiResponse } from "next"
 
-import { supabase } from "../utils/supabase"
+import {
+  handlePassportRoute,
+  passportSchemas,
+} from "@/lib/server/passportApi"
+import { getPassportSupabase } from "@/lib/server/supabase"
 
-const fetch_score = async (req: any, res: any) => {
-  // Log the incoming request
-  console.log("Incoming request:", { method: req.method, body: req.body })
+const schema = passportSchemas.z.object({
+  apikey: passportSchemas.z.string().min(1),
+  uid: passportSchemas.z.string().min(1),
+})
 
-  await NextCors(req, res, {
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-    origin: "*", // Allow all origins
-    optionsSuccessStatus: 200, // Some legacy browsers choke on 204
-  })
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  return handlePassportRoute(
+    req,
+    res,
+    {
+      actor: "dapp",
+      bodySchema: schema,
+      rateLimitGroup: "passport_dapp_read",
+      route: "dapp.fetch_score",
+    },
+    async ({ body }) => {
+      const supabase = getPassportSupabase()
+      const { data: dappUsers, error: dappUsersError } = await supabase
+        .from("dapp_users")
+        .select("*,users:user_id(*),dapps:dapp_id(*)")
+        .eq("uuid", body.uid)
 
-  const { uid, apikey } = req.body
+      if (dappUsersError) {
+        throw dappUsersError
+      }
 
-  // Log API key and user ID
-  console.log("Fetching data for API Key:", apikey, "and UID:", uid)
+      const dappId = dappUsers?.[0]?.dapp_id
+      const userId = dappUsers?.[0]?.user_id
+      const [stampDataResponse, scoreDataResponse, stampsListResponse] =
+        await Promise.all([
+          supabase
+            .from("dapp_stamptypes")
+            .select("*,stamptypes:stamptype_id(*)")
+            .eq("dapp_id", dappId),
+          supabase
+            .from("stampscore_dapps")
+            .select("*,stampscore_schemas:schema_id(*)")
+            .eq("dapp_id", dappId),
+          supabase.from("stamps").select("*").eq("created_by_user_id", userId),
+        ])
 
-  const { data } = await supabase.from("dapps").select("*").match({ apikey })
+      if (stampDataResponse.error) {
+        throw stampDataResponse.error
+      }
+      if (scoreDataResponse.error) {
+        throw scoreDataResponse.error
+      }
+      if (stampsListResponse.error) {
+        throw stampsListResponse.error
+      }
 
-  // Log the response from the "dapps" table
-  console.log("Dapps Data:", { apikey, length: data?.length, data })
+      const schemaId = scoreDataResponse.data?.[0]?.schema_id
+      const { data: stampScores, error: stampScoresError } = await supabase
+        .from("stampscores_available")
+        .select("*")
+        .eq("schema_id", schemaId)
 
-  if (data?.[0] && apikey) {
-    const { data: dapp_users } = await supabase
-      .from("dapp_users")
-      .select("*,users:user_id(*),dapps:dapp_id(*)")
-      .match({ uuid: uid })
+      if (stampScoresError) {
+        throw stampScoresError
+      }
 
-    // Log dapp_users data
-    console.log("Dapp Users Data:", dapp_users)
-
-    const { error, data: stampData } = await supabase
-      .from("dapp_stamptypes")
-      .select("*,stamptypes:stamptype_id(*)")
-      .match({ dapp_id: dapp_users?.[0]?.dapp_id })
-
-    // Log stampData and any errors
-    console.log("Stamp Data:", { error, stampData })
-
-    const { data: scoreData } = await supabase
-      .from("stampscore_dapps")
-      .select("*,stampscore_schemas:schema_id(*)")
-      .match({ dapp_id: dapp_users?.[0]?.dapp_id })
-
-    // Log scoreData
-    console.log("Score Data:", scoreData)
-
-    const { data: stampScores } = await supabase
-      .from("stampscores_available")
-      .select("*")
-      .match({ schema_id: scoreData?.[0]?.schema_id })
-
-    // Log stampScores
-    console.log("Stamp Scores:", stampScores)
-
-    const { data: stampsList } = await supabase
-      .from("stamps")
-      .select("*")
-      .match({ created_by_user_id: dapp_users?.[0]?.user_id })
-
-    // Log stampsList
-    console.log("Stamps List:", stampsList)
-
-    const stampsToSend = stampData ?? []
-    const allStampIds = (stampsList ?? []).map((item: any) => item.stamptype)
-
-    // Calculate the score
-    const stampScore = [
-      ...stampsToSend.filter((item) =>
-        allStampIds?.includes(item?.stamptypes?.id)
-      ),
-    ].reduce((curr, item) => {
-      const scoreData = (stampScores ?? []).find(
-        (_) => _.stamptype_id === item.stamptype_id
+      const allStampIds = (stampsListResponse.data ?? []).map(
+        (item: any) => item.stamptype
       )
-      return (scoreData?.score ?? 0) + curr
-    }, 0)
+      const stampScore = (stampDataResponse.data ?? [])
+        .filter((item: any) => allStampIds.includes(item?.stamptypes?.id))
+        .reduce((currentScore: number, item: any) => {
+          const scoreRow = (stampScores ?? []).find(
+            (score: any) => score.stamptype_id === item.stamptype_id
+          )
 
-    // Log the final score and response
-    console.log("Calculated Stamp Score:", stampScore)
-    res.send({ score: stampScore })
-  } else {
-    // Log error for invalid API key
-    console.log("Error: Invalid APIKEY provided:", apikey)
-    res.send({ error: "Please provide a valid APIKEY" })
-  }
+          return currentScore + (scoreRow?.score ?? 0)
+        }, 0)
+
+      return res.status(200).json({ score: stampScore })
+    }
+  )
 }
-
-export default fetch_score

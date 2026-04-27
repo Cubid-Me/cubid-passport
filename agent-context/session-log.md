@@ -1955,3 +1955,37 @@ Capture the newly identified downstream SDK, package publishing, JSR, Deno, and 
 #### Follow-up
 
 - continue `C03.4` on the current branch, then return to the new `E02.*` items after the shared Passport API hardening is complete
+
+### session: v69
+
+- timestamp: 2026-04-27T16:55:00-0400
+- agent: **OpenAI Codex**
+- branch: **codex/c03-api-security-baseline**
+- head: **`5eede7b`**
+- session name: **Implement Passport API security baseline**
+
+#### Objective
+
+Complete the Passport-side C03.4 hardening slice by moving the legacy Passport API surface onto the shared security baseline, removing wildcard CORS, eliminating committed route secrets, locking internal routes behind bearer auth, and replacing the production app's dependency on generic `/api/supabase/*` CRUD endpoints.
+
+#### Actions Taken
+
+- added shared Passport server helpers for request IDs, CORS, actor guards, rate limiting, Supabase access, Twilio Verify, SMTP-backed email OTP, and Gitcoin scorer access
+- replaced first-party `/api/supabase/*` usage with typed `/api/passport/data/*` query and command routes, then hard-disabled the old generic Supabase CRUD handlers
+- migrated Passport `/api/allow/*`, `/api/dapp/*`, `/api/v2/*`, `/api/verify/*`, `/api/wallet/*`, webhook, and cron endpoints onto explicit validation and actor contracts
+- converted internal webhook and cron routes to require `PASSPORT_INTERNAL_API_TOKEN` and moved route-owned secrets to env-backed config
+- updated Passport env examples and the API security baseline engineering doc to reflect the landed Passport contract
+
+#### Verification
+
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+- `pnpm test`
+- `pnpm typecheck`
+- `pnpm build`
+- `pnpm lint`
+
+#### Follow-up
+
+- close `C03.4` metadata in `agent-context/todo.md`
+- move to `C03.5` for final observability and any remaining targeted API test harness cleanup

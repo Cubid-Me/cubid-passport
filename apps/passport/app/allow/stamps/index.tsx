@@ -20,6 +20,15 @@ import { useSearchParams } from "next/navigation"
 import { insertStampPerm } from "@/lib/insert_stamp_perm"
 import useAuth from "@/hooks/useAuth"
 import { useCreatedByAppId } from "@/hooks/useCreatedByApp"
+import {
+  createPassportEvmAccount,
+  deletePassportStamp,
+  findPassportBrightIdDataByEmail,
+  findPassportUserByIdentity,
+  listPassportStampsByUser,
+  listPassportStampTypes,
+  updatePassportUserProfile,
+} from "@/lib/passportDataApi"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -144,7 +153,7 @@ export const Stamps = ({
 
   const [brightIdData, setBrightIdData] = useState(null)
   const [brightIdSheetOpen, setBrightIdSheetOpen] = useState(false)
-  const [userState, setUserState] = useState({})
+  const [userState, setUserState] = useState<any>({})
   const [stampVerified, setStampVerified] = useState<any>(null)
   const [phonenumber, setPhonenumber] = useState<any>(false)
   const [gitcoinStamps, setGitcoinStamps] = useState(false)
@@ -159,21 +168,12 @@ export const Stamps = ({
   const [emailPanel, setEmailPanel] = useState(false)
 
   const fetchStampData = useCallback(async () => {
-    const {
-      data: { data },
-    } = await axios.post("/api/supabase/select", {
-      table: "stamptypes",
-    })
+    const data = await listPassportStampTypes()
     setStampCategories(data)
     if (supabaseUser) {
       setStampLoading(true)
-      const {
-        data: { data: dbData },
-      } = await axios.post(`/api/supabase/select`, {
-        table: "stamps",
-        match: {
-          created_by_user_id: supabaseUser?.id,
-        },
+      const dbData = await listPassportStampsByUser({
+        userId: supabaseUser?.id,
       })
       setAllStamps(dbData)
       setStampLoading(false)
@@ -186,28 +186,17 @@ export const Stamps = ({
 
   const fetchUserData = useCallback(async () => {
     if (email) {
-      const {
-        data: { data: userData },
-      } = await axios.post("/api/supabase/select", {
-        match: { email },
-        table: "users",
-      })
-      setUserState(userData?.[0])
+      setUserState(await findPassportUserByIdentity({ email }))
     }
   }, [email])
 
   const fetchBrightIdData = useCallback(async () => {
     if (email) {
-      const {
-        data: { data },
-      } = await axios.post("/api/supabase/select", {
-        match: { email },
-        table: "brightid-data",
-      })
-      if (data?.[0]) {
-        setBrightIdData(data[0])
+      const data = await findPassportBrightIdDataByEmail(email)
+      if (data) {
+        setBrightIdData(data)
       }
-      return data?.[0]
+      return data
     }
   }, [email])
 
@@ -332,13 +321,14 @@ export const Stamps = ({
           .call()
           .then(async (result: any) => {
             if (result) {
-              await axios.post("/api/supabase/update", {
-                match: { email },
-                table: "users",
-                body: {
-                  poh_IsRegistered: true,
-                },
-              })
+              if (userState?.id) {
+                await updatePassportUserProfile({
+                  patch: {
+                    poh_IsRegistered: true,
+                  },
+                  userId: userState.id,
+                })
+              }
               fetchUserData()
               setIsPohVerified(true)
             } else {
@@ -519,20 +509,10 @@ export const Stamps = ({
   }, [fetchNearWallet])
 
   const deleteStamp = async (stamp_type: number) => {
-    const { unique_hash, id } = allStamps.filter(
-      (item: any) => item.stamptype === stamp_type
-    )[0]
-    await axios.post("/api/supabase/delete", {
-      match: { dapp_id: process.env.NEXT_PUBLIC_DAPP_ID, stamp_id: id },
-      table: "authorized_dapps",
-    })
-    await axios.post("/api/supabase/delete", {
-      match: { stamptype: stamp_type, created_by_user_id: supabaseUser?.id },
-      table: "stamps",
-    })
-    await axios.post("/api/supabase/delete", {
-      match: { uniquehash: unique_hash },
-      table: "uniquestamps",
+    await deletePassportStamp({
+      dappId: parseInt(process.env.NEXT_PUBLIC_DAPP_ID ?? "0"),
+      stampType: stamp_type,
+      userId: supabaseUser?.id,
     })
 
     toast.success("Stamp removed successfully")
@@ -924,17 +904,11 @@ export const Stamps = ({
                       const newAccount = web3.eth.accounts.create()
                       mintEVM(newAccount.address)
                       const dbUser = await getUser()
-                      const { data } = await axios.post(
-                        "/api/supabase/insert",
-                        {
-                          table: "evm_accounts",
-                          body: {
-                            private_key: newAccount.privateKey,
-                            address: newAccount.address,
-                            user_id: dbUser.id,
-                          },
-                        }
-                      )
+                      await createPassportEvmAccount({
+                        createdByUserId: dbUser.id,
+                        privateKey: newAccount.privateKey,
+                        publicKey: newAccount.address,
+                      })
                     }}
                     variant="secondary"
                     className="bg-blue-500 text-white"

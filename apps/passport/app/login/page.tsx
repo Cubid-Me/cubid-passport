@@ -19,6 +19,10 @@ import {
   browserSupportsWebAuthn,
   registerOidcPasskey,
 } from "@/lib/oidcPasskeys"
+import {
+  ensurePassportUserByIdentity,
+  findPassportUserByIdentity,
+} from "@/lib/passportDataApi"
 import { insertStamp } from "@/lib/stampInsertion"
 
 export default function AuthenticationPage() {
@@ -176,12 +180,7 @@ export default function AuthenticationPage() {
   const submit = async (values: any) => {
     try {
       const email = emailField.current?.value ?? emailVal
-      const {
-        data: { data },
-      } = await axios.post("/api/supabase/select", {
-        match: { email },
-        table: "users",
-      })
+      const data = await findPassportUserByIdentity({ email })
       const credential = await firebase
         .auth()
         .signInWithCustomToken(values.idToken)
@@ -191,20 +190,13 @@ export default function AuthenticationPage() {
         throw new Error("Unable to create a Firebase login assertion")
       }
 
-      if (!data?.[0]) {
-        await axios.post(`/api/supabase/insert`, {
-          table: "users",
-          body: { email },
-        })
-        const {
-          data: { data: newData },
-        } = await axios.post("/api/supabase/select", {
-          match: { email },
-          table: "users",
+      if (!data?.id) {
+        const newData = await ensurePassportUserByIdentity({
+          email,
         })
         insertStamp({
           stamp_type: "email",
-          user_data: { user_id: newData?.[0]?.id, uuid: "" },
+          user_data: { user_id: newData?.id, uuid: "" },
           stampData: {
             identity: email,
             uniquevalue: email,
@@ -250,26 +242,14 @@ export default function AuthenticationPage() {
       const confirmationResult = await firebase
         .auth()
         .signInWithPhoneNumber(phoneNumber, appVerifier)
-      const {
-        data: { data },
-      } = await axios.post("/api/supabase/select", {
-        match: { phone: phoneNumber },
-        table: "users",
-      })
-      if (!data?.[0]) {
-        await axios.post(`/api/supabase/insert`, {
-          table: "users",
-          body: { phone: phoneNumber },
-        })
-        const {
-          data: { data: newData },
-        } = await axios.post("/api/supabase/select", {
-          match: { phone: phoneNumber },
-          table: "users",
+      const data = await findPassportUserByIdentity({ phone: phoneNumber })
+      if (!data?.id) {
+        const newData = await ensurePassportUserByIdentity({
+          phone: phoneNumber,
         })
         insertStamp({
           stamp_type: "phone",
-          user_data: { user_id: newData?.[0]?.id, uuid: "" },
+          user_data: { user_id: newData?.id, uuid: "" },
           stampData: {
             identity: phoneNumber,
             uniquevalue: phoneNumber,

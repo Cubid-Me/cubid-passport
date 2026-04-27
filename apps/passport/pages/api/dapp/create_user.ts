@@ -1,19 +1,17 @@
-import { NextApiRequest, NextApiResponse } from "next"
-import NextCors from "nextjs-cors"
+import type { NextApiRequest, NextApiResponse } from "next"
 
-import { supabase } from "@/lib/supabase"
+import {
+  handlePassportRoute,
+  passportSchemas,
+} from "@/lib/server/passportApi"
+import { getPassportSupabase } from "@/lib/server/supabase"
 
 import { stampsWithId } from "./../utils/stampKey"
 
-// Simple logging function to include line numbers
-const log = (message: any, lineNumber: any) => {
-  console.log(`Line ${lineNumber}: ${message}`)
-}
-
 const cyrb53 = (str: string, seed = 0) => {
-  let h1 = 0xdeadbeef ^ seed,
-    h2 = 0x41c6ce57 ^ seed
-  for (let i = 0, ch; i < str.length; i++) {
+  let h1 = 0xdeadbeef ^ seed
+  let h2 = 0x41c6ce57 ^ seed
+  for (let i = 0, ch; i < str.length; i += 1) {
     ch = str.charCodeAt(i)
     h1 = Math.imul(h1 ^ ch, 2654435761)
     h2 = Math.imul(h2 ^ ch, 1597334677)
@@ -26,224 +24,201 @@ const cyrb53 = (str: string, seed = 0) => {
   return 4294967296 * (2097151 & h2) + (h1 >>> 0)
 }
 
+const schema = passportSchemas.z.object({
+  dapp_id: passportSchemas.z.string().min(1),
+  email: passportSchemas.z.string().email().optional(),
+  evm: passportSchemas.z.string().min(1).optional(),
+  phone: passportSchemas.z.string().min(1).optional(),
+  stamptype: passportSchemas.z.unknown().optional(),
+})
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  log("Received API request", 27)
+  return handlePassportRoute(
+    req,
+    res,
+    {
+      actor: "anonymous",
+      bodySchema: schema,
+      rateLimitGroup: "passport_dapp_mutation",
+      route: "dapp.create_user",
+    },
+    async ({ body }) => {
+      const supabase = getPassportSupabase()
+      const { data: dappRow, error: dappError } = await supabase
+        .from("dapps")
+        .select("*")
+        .eq("apikey", body.dapp_id)
+        .maybeSingle()
 
-  await NextCors(req, res, {
-    // Options
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-    origin: "*", // Allow all origins
-    optionsSuccessStatus: 200, // Some legacy browsers choke on 204
-  })
-  log("CORS setup completed", 34)
+      if (dappError) {
+        throw dappError
+      }
 
-  const {
-    email,
-    phone,
-    dapp_id: id_to_read_from,
-    stamptype,
-    evm
-  } = req.body
+      if (!dappRow?.id) {
+        return res.status(400).json({ error: "Invalid API key or dapp_id" })
+      }
 
-  const { data: dataForApp } = await supabase.from("dapps").select("*").match({
-    apikey: id_to_read_from,
-  })
-  const dapp_id = dataForApp?.[0]?.id
-  log(`Request body: ${JSON.stringify(req.body)}`, 37)
+      const uniqueValue = body.phone || body.email || body.evm
+      if (!uniqueValue) {
+        return res.status(400).json({ error: "No valid identifier provided" })
+      }
 
-  let uniqueValue = phone || email || evm
-  if (!uniqueValue) {
-    log("No valid identifier provided", 40)
-    return res.status(400).json({ error: "No valid identifier provided" })
-  }
+      const { data: stampData, error: stampLookupError } = await supabase
+        .from("stamps")
+        .select("*")
+        .eq("uniquevalue", uniqueValue)
 
-  log(`Unique value: ${uniqueValue}`, 45)
+      if (stampLookupError) {
+        throw stampLookupError
+      }
 
-  // Search for the unique value in the stamps table
-  const { data: stampData } = await supabase
-    .from("stamps")
-    .select("*")
-    .eq("uniquevalue", uniqueValue)
-  log(`Stamp data: ${JSON.stringify(stampData)}`, 51)
+      if (stampData?.length) {
+        const user_id = stampData[0].created_by_user_id
+        const { data: dappUsers, error } = await supabase
+          .from("dapp_users")
+          .select("*,users:user_id(*)")
+          .match({ dapp_id: dappRow.id, user_id })
 
-  if (stampData && stampData.length > 0) {
-    const user_id = stampData[0].created_by_user_id
-    log(`Existing stamp found for user_id: ${user_id}`, 55)
+        if (error) {
+          throw error
+        }
 
-    let { data: dappUsers } = await supabase
-      .from("dapp_users")
-      .select("*,users:user_id(*)")
-      .match({ user_id, dapp_id })
-    log(`Dapp users data: ${JSON.stringify(dappUsers)}`, 60)
+        if (!dappUsers?.length) {
+          const { data: newDappUser, error: createError } = await supabase
+            .from("dapp_users")
+            .insert({ dapp_id: dappRow.id, user_id })
+            .select("*")
 
-    if (!dappUsers || dappUsers.length === 0) {
-      // Create a new dapp_user entry if it doesn't exist
-      const { data: newDappUser, error } = await supabase
+          if (createError) {
+            throw createError
+          }
+
+          return res.status(200).json({
+            error: null,
+            newuser: true,
+            uuid: newDappUser?.[0]?.uuid,
+          })
+        }
+
+        return res.status(200).json({
+          newuser: false,
+          user: dappUsers[0],
+          uuid: dappUsers[0]?.uuid,
+        })
+      }
+
+      let user_id: number | null = null
+      for (const identifier of ["email", "phone", "evm"] as const) {
+        const value = body[identifier]
+        if (!value || user_id) {
+          continue
+        }
+
+        const { data: existingUsers, error } = await supabase
+          .from("users")
+          .select("*")
+          .eq(identifier, value)
+
+        if (error) {
+          throw error
+        }
+
+        if (existingUsers?.[0]?.id) {
+          user_id = existingUsers[0].id
+        }
+      }
+
+      if (!user_id) {
+        const insertPayload =
+          body.email
+            ? { email: body.email }
+            : body.phone
+              ? { phone: body.phone }
+              : { evm: body.evm }
+        const { data: newUser, error } = await supabase
+          .from("users")
+          .insert({
+            ...insertPayload,
+            created_by_app: dappRow.id,
+            is_3rd_party: true,
+          })
+          .select("*")
+
+        if (error) {
+          throw error
+        }
+
+        user_id = newUser?.[0]?.id ?? null
+      }
+
+      const stampIdToAssign =
+        (stampsWithId as Record<string, number>)[
+          body.phone ? "phone" : body.evm ? "evm" : "email"
+        ]
+      const { data: newStamp, error: newStampError } = await supabase
+        .from("stamps")
+        .insert({
+          created_by_app: dappRow.id,
+          created_by_user_id: user_id,
+          identity: body.email,
+          is_third_party: true,
+          is_verified: false,
+          stamp_json: {
+            [body.phone ? "phone" : body.evm ? "evm" : "email"]: uniqueValue,
+          },
+          stamptype: stampIdToAssign,
+          type_and_uniquehash: `${stampIdToAssign} ${cyrb53(uniqueValue)}`,
+          unique_hash: cyrb53(uniqueValue),
+          uniquevalue: uniqueValue,
+          user_id_and_uniqueval: `${user_id} ${stampIdToAssign} ${uniqueValue}`,
+        })
+        .select("*")
+
+      if (newStampError) {
+        throw newStampError
+      }
+
+      const { data: newDappUser, error: dappUserError } = await supabase
         .from("dapp_users")
-        .insert({ user_id, dapp_id })
+        .insert({
+          dapp_id: dappRow.id,
+          user_id,
+        })
         .select("*")
-      log(
-        `New dapp user created: ${JSON.stringify(newDappUser)} ${JSON.stringify(
-          { user_id, dapp_id }
-        )}`,
-        66
-      )
 
-      res.status(200).json({
-        uuid: newDappUser?.[0]?.uuid,
+      if (dappUserError) {
+        throw dappUserError
+      }
+
+      const { error } = await supabase.from("stamp_dappuser_permissions").insert({
+        can_delete: true,
+        can_read: true,
+        can_write: true,
+        dappuser_id: newDappUser?.[0]?.uuid,
+        stamp_id: newStamp?.[0]?.id,
+      })
+
+      if (error) {
+        throw error
+      }
+
+      return res.status(200).json({
+        dappUserError: null,
+        error: null,
+        newStampError: null,
         newuser: true,
-        error,
-      })
-    } else {
-      log(`Dapp user already exists: ${JSON.stringify(dappUsers[0])}`, 72)
-
-      res.status(200).json({
-        uuid: dappUsers[0]?.uuid,
-        user: dappUsers[0],
-        newuser: false,
+        uuid:
+          newDappUser?.[0]?.uuid ??
+          (
+            await supabase
+              .from("dapp_users")
+              .select("*")
+              .match({ dapp_id: dappRow.id, user_id })
+          )?.data?.[0]?.uuid,
       })
     }
-  } else {
-    log("No existing stamp found, checking for existing user", 80)
-    let user_id
-    if (email) {
-      const { data: existingUser } = await supabase
-        .from("users")
-        .select("*")
-        .match({ email })
-      log(`Existing user data: ${JSON.stringify(existingUser)}`, 85)
-
-      if (existingUser && existingUser.length > 0) {
-        user_id = existingUser[0].id
-        log(`Existing user found with user_id: ${user_id}`, 90)
-      } else {
-        const { data: newUser } = await supabase
-          .from("users")
-          .insert({
-            email,
-            created_by_app: dapp_id,
-            is_3rd_party: true,
-          })
-          .select("*")
-        log(`New user created: ${JSON.stringify(newUser)}`, 97)
-
-        user_id = newUser?.[0].id
-      }
-    }
-    if (phone) {
-      const { data: existingUser } = await supabase
-        .from("users")
-        .select("*")
-        .match({ phone })
-      log(`Existing user data: ${JSON.stringify(existingUser)}`, 85)
-
-      if (existingUser && existingUser.length > 0) {
-        user_id = existingUser[0].id
-        log(`Existing user found with user_id: ${user_id}`, 90)
-      } else {
-        const { data: newUser } = await supabase
-          .from("users")
-          .insert({
-            phone,
-            created_by_app: dapp_id,
-            is_3rd_party: true,
-          })
-          .select("*")
-        log(`New user created: ${JSON.stringify(newUser)}`, 97)
-
-        user_id = newUser?.[0].id
-      }
-    }
-    if (evm) {
-      const { data: existingUser } = await supabase
-        .from("users")
-        .select("*")
-        .match({ evm })
-      log(`Existing user data: ${JSON.stringify(existingUser)}`, 85)
-
-
-      if (existingUser && existingUser.length > 0) {
-        user_id = existingUser[0].id
-        log(`Existing user found with user_id: ${user_id}`, 90)
-      } else {
-        const { data: newUser } = await supabase
-          .from("users")
-          .insert({
-            evm,
-            created_by_app: dapp_id,
-            is_3rd_party: true,
-          })
-          .select("*")
-        log(`New user created: ${JSON.stringify(newUser)}`, 97)
-
-        user_id = newUser?.[0].id
-      }
-    }
-
-    const stampIdToAssign = stampsWithId?.[phone ? "phone" : evm ? "evm" : "email"]
-    log(`Stamp type to assign: ${stampIdToAssign}`, 102)
-
-    const { data: newStamp, error: newStampError } = await supabase
-      .from("stamps")
-      .insert({
-        created_by_user_id: user_id,
-        created_by_app: dapp_id,
-        stamptype: stampIdToAssign,
-        uniquevalue: uniqueValue,
-        user_id_and_uniqueval: `${user_id} ${stampIdToAssign} ${uniqueValue}`,
-        unique_hash: cyrb53(uniqueValue),
-        stamp_json: { [phone ? "phone" : evm ? "evm" : "email"]: uniqueValue },
-        type_and_uniquehash: `${stampIdToAssign} ${cyrb53(uniqueValue)}`,
-        identity: email,
-        is_verified: false,
-        is_third_party: true
-      })
-      .select("*")
-
-    log(
-      `New stamp created: ${JSON.stringify(newStamp)}, Error: ${newStampError}`,
-      111
-    )
-
-    const { data: newDappUser, error: dappUserError } = await supabase
-      .from("dapp_users")
-      .insert({
-        user_id,
-        dapp_id,
-      })
-      .select("*")
-    log(
-      `New dapp user created: ${JSON.stringify(
-        newDappUser
-      )}, Error: ${dappUserError}`,
-      118
-    )
-
-    const { error } = await supabase.from("stamp_dappuser_permissions").insert({
-      stamp_id: newStamp?.[0]?.id,
-      dappuser_id: newDappUser?.[0]?.uuid,
-      can_write: true,
-      can_delete: true,
-      can_read: true,
-    })
-    log(`Stamp dapp user permissions set: Error: ${error}`, 126)
-
-    res.status(200).json({
-      uuid:
-        newDappUser?.[0]?.uuid ??
-        (
-          await supabase.from("dapp_users").select("*").match({
-            user_id,
-            dapp_id,
-          })
-        )?.data?.[0]?.uuid,
-      newuser: true,
-      dappUserError,
-      newStampError,
-      error,
-    })
-  }
+  )
 }

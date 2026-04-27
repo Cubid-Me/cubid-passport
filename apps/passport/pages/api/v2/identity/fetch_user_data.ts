@@ -1,82 +1,83 @@
-// @ts-nocheck
-import NextCors from "nextjs-cors"
-import { OpenLocationCode } from "open-location-code"
+import type { NextApiRequest, NextApiResponse } from "next"
+
+import {
+  handlePassportRoute,
+  passportSchemas,
+} from "@/lib/server/passportApi"
+import { getPassportSupabase } from "@/lib/server/supabase"
+
+const { OpenLocationCode } = require("open-location-code")
 
 import { getLocationDetailsFromPlusCode } from "../../utils/locationMethods"
-import { stampsWithId } from "../../utils/stampKey"
-import { supabase } from "../../utils/supabase"
 
-const log = (message: any, lineNumber: any) => {
-    console.log(`Line ${lineNumber}: ${message}`)
+const schema = passportSchemas.z.object({
+  apikey: passportSchemas.z.string().min(1),
+  user_id: passportSchemas.z.string().min(1),
+})
+
+const roundToTwoDecimals = (value: number) => Math.round(value * 100) / 100
+
+const removePlusCode = (input: string) => {
+  const plusCodePattern = /^[A-Z0-9]{4}\+[A-Z0-9]{2}\s?/
+  return plusCodePattern.test(input)
+    ? input.replace(plusCodePattern, "").trim()
+    : input
 }
-export default async function handler(req: any, res: any) {
-    await NextCors(req, res, {
-        methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-        origin: "*", // Allow all origins
-        optionsSuccessStatus: 200,
-    })
-    const { apikey, user_id } = typeof req.body === "string" ? JSON.parse(req.body) : req.body
-    const { data: dataForApp } = await supabase
-        .from("dapps")
-        .select("*")
-        .match({ apikey })
-    const dappId = dataForApp?.[0]?.id
-    if (!dappId) {
-        log("Invalid API key or dapp_id", 50)
-        return res.status(400).json({ error: "Invalid API key" })
-    }
-    const { data: dapp_users, error } = await supabase
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  return handlePassportRoute(
+    req,
+    res,
+    {
+      actor: "dapp",
+      bodySchema: schema,
+      rateLimitGroup: "passport_dapp_read",
+      route: "v2.identity.fetch_user_data",
+    },
+    async ({ body }) => {
+      const { data: dappUsers, error } = await getPassportSupabase()
         .from("dapp_users")
         .select("*,users:user_id(*),dapps:dapp_id(*)")
-        .match({
-            uuid: user_id,
-        })
+        .eq("uuid", body.user_id)
 
-    const {
-        users: { address = "", cubid_country = "", cubid_postalcode = "", nickname = "" },
-    } = dapp_users?.[0]
+      if (error) {
+        throw error
+      }
 
-    const roundToTwoDecimals = (number: number) => {
-        return Math.round(number * 100) / 100
-    }
+      const address = dappUsers?.[0]?.users?.address
+      const latitude =
+        address?.locationDetails?.geometry?.location?.lat ??
+        address?.coordinates?.lat
+      const longitude =
+        address?.locationDetails?.geometry?.location?.lng ??
+        address?.coordinates?.lon
 
-    const openLocationCode = new OpenLocationCode()
-    const { country, postalCode, formattedAddress } =
-        await getLocationDetailsFromPlusCode(
-            openLocationCode.encode(
-                address?.locationDetails?.geometry?.location?.lat ??
-                address?.coordinates?.lat,
-                address?.locationDetails?.geometry?.location?.lng ??
-                address?.coordinates?.lon
+      const openLocationCode = new OpenLocationCode()
+      const locationDetails =
+        latitude && longitude
+          ? await getLocationDetailsFromPlusCode(
+              openLocationCode.encode(latitude, longitude)
             )
-        )
+          : null
 
-    function removePlusCode(input) {
-        // Regex pattern for Plus Code (e.g., MPFF+JX)
-        const plusCodePattern = /^[A-Z0-9]{4}\+[A-Z0-9]{2}\s?/
-
-        // Check if the string starts with a Plus Code and remove it
-        if (plusCodePattern.test(input)) {
-            return input.replace(plusCodePattern, "").trim()
-        }
-
-        // If no Plus Code is found, return the original string
-        return input
+      return res.status(200).json({
+        coordinates:
+          latitude && longitude
+            ? {
+                lat: roundToTwoDecimals(latitude),
+                lng: roundToTwoDecimals(longitude),
+              }
+            : null,
+        country: locationDetails?.country ?? null,
+        error: null,
+        name: dappUsers?.[0]?.users?.nickname ?? null,
+        placename: locationDetails?.formattedAddress
+          ? removePlusCode(locationDetails.formattedAddress)
+          : null,
+      })
     }
-    res.send({
-        name: nickname,
-        placename: removePlusCode(formattedAddress),
-        country: country,
-        coordinates: {
-            lat: roundToTwoDecimals(
-                address?.locationDetails?.geometry?.location?.lat ??
-                address?.coordinates?.lat
-            ),
-            lng: roundToTwoDecimals(
-                address?.locationDetails?.geometry?.location?.lng ??
-                address?.coordinates?.lon
-            ),
-        },
-        error,
-    })
+  )
 }

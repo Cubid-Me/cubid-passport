@@ -39,6 +39,11 @@ import {
 } from "@/components/ui/sheet"
 import { useCreatedByAppId } from "@/hooks/useCreatedByApp"
 import { insertStampPerm } from "@/lib/insert_stamp_perm"
+import {
+  findPassportWalletDetailsByIdentity,
+  lookupPassportGoodDollarState,
+  syncPassportGoodDollarWallet,
+} from "@/lib/passportDataApi"
 import { insertStamp } from "@/lib/stampInsertion"
 
 const nodeUrl = "https://forno.celo.org"
@@ -77,39 +82,15 @@ export const GooddollarConnect = ({
             .call()
           setWhitelisted(isWhitelisted)
           if (isWhitelisted) {
-            await axios.post("/api/supabase/insert", {
-              body: {
-                email: authData?.user?.email,
-                "wallet-address": address,
-                wallet_data: {},
-              },
-              table: "wallet_details",
+            await lookupPassportGoodDollarState({
+              email: authData?.user?.email,
+              identifier: address,
             })
-            const {
-              data: { data: supabaseData },
-            } = await axios.post("/api/supabase/select", {
-              match: { email: authData?.user?.email, identifier: address },
-              table: "whitelist",
+            await syncPassportGoodDollarWallet({
+              email: authData?.user?.email,
+              identifier: address,
+              walletData: {},
             })
-            if (!supabaseData[0]) {
-              await axios.post("/api/supabase/insert", {
-                table: "whitelist",
-                body: {
-                  email: authData?.user?.email,
-                  identifier: address,
-                },
-              })
-            } else {
-              if (supabaseData?.[0]?.email !== authData?.user?.email) {
-                await axios.post("/api/supabase/insert", {
-                  table: "blacklist",
-                  body: {
-                    email: authData?.user?.email,
-                    identifier: address,
-                  },
-                })
-              }
-            }
             localStorage.deleteItem("connectGooddollar")
           }
         } catch (err) {
@@ -162,16 +143,11 @@ export const GooddollarConnect = ({
   }, [])
 
   const fetchWalletDetails = useCallback(async (email: string) => {
-    const {
-      data: { data: wallet_details },
-    } = await axios.post(`/api/supabase/select`, {
-      match: {
-        email,
-      },
-      table: "wallet_details",
+    const wallet_details = await findPassportWalletDetailsByIdentity({
+      email,
     })
-    if (wallet_details?.[0]) {
-      setGooddollarConnect(wallet_details?.[0])
+    if (wallet_details) {
+      setGooddollarConnect(wallet_details)
     } else {
       setGooddollarConnect(null)
     }

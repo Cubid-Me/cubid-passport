@@ -1,43 +1,73 @@
-import { supabase } from "../utils/supabase"
-import NextCors from "nextjs-cors"
+import type { NextApiRequest, NextApiResponse } from "next"
 
-const fetchAllowUid = async (req: any, res: any) => {
-  await NextCors(req, res, {
-    // Options
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-    origin: "*", // Allow all origins
-    optionsSuccessStatus: 200, // Some legacy browsers choke on 204
-  })
-  const { uid } = req.body
-  const { data: dapp_users } = await supabase
-    .from("dapp_users")
-    .select("*,users:user_id(*),dapps:dapp_id(*)")
-    .match({
-      uuid: uid,
-    })
-  const { error, data: stampData } = await supabase
-    .from("dapp_stamptypes")
-    .select("*,stamptypes:stamptype_id(*)")
-    .match({
-      dapp_id: dapp_users?.[0]?.dapp_id,
-    })
-  console.log({ stampData }, { dapp_id: dapp_users?.[0]?.dapp_id })
-  const { data: scoreData } = await supabase
-    .from("stampscore_dapps")
-    .select("*,stampscore_schemas:schema_id(*)")
-    .match({
-      dapp_id: dapp_users?.[0]?.dapp_id,
-    })
-  const { data: stampScores } = await supabase
-    .from("stampscores_available")
-    .select("*")
-    .match({
-      schema_id: 2,
-    })
+import {
+  handlePassportRoute,
+  passportSchemas,
+} from "@/lib/server/passportApi"
+import { getPassportSupabase } from "@/lib/server/supabase"
 
-  const stampsToSend = stampData
+const schema = passportSchemas.z.object({
+  uid: passportSchemas.z.string().min(1),
+})
 
-  res.send({ error, dapp_users, stampsToSend, scoreData, stampScores })
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  return handlePassportRoute(
+    req,
+    res,
+    {
+      actor: "anonymous",
+      bodySchema: schema,
+      rateLimitGroup: "passport_user_read",
+      route: "allow.fetch_uid_data",
+    },
+    async ({ body }) => {
+      const supabase = getPassportSupabase()
+      const dappUsersResponse = await supabase
+        .from("dapp_users")
+        .select("*,users:user_id(*),dapps:dapp_id(*)")
+        .eq("uuid", body.uid)
+
+      if (dappUsersResponse.error) {
+        throw dappUsersResponse.error
+      }
+
+      const dappId = dappUsersResponse.data?.[0]?.dapp_id
+      const [stampDataResponse, scoreDataResponse, stampScoresResponse] =
+        await Promise.all([
+          supabase
+            .from("dapp_stamptypes")
+            .select("*,stamptypes:stamptype_id(*)")
+            .eq("dapp_id", dappId),
+          supabase
+            .from("stampscore_dapps")
+            .select("*,stampscore_schemas:schema_id(*)")
+            .eq("dapp_id", dappId),
+          supabase
+            .from("stampscores_available")
+            .select("*")
+            .eq("schema_id", 2),
+        ])
+
+      if (stampDataResponse.error) {
+        throw stampDataResponse.error
+      }
+      if (scoreDataResponse.error) {
+        throw scoreDataResponse.error
+      }
+      if (stampScoresResponse.error) {
+        throw stampScoresResponse.error
+      }
+
+      return res.status(200).json({
+        dapp_users: dappUsersResponse.data ?? [],
+        error: null,
+        scoreData: scoreDataResponse.data ?? [],
+        stampScores: stampScoresResponse.data ?? [],
+        stampsToSend: stampDataResponse.data ?? [],
+      })
+    }
+  )
 }
-
-export default fetchAllowUid

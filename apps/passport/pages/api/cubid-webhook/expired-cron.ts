@@ -1,137 +1,184 @@
-import { supabase } from "@/lib/supabase"
+import crypto from "crypto"
+import type { NextApiRequest, NextApiResponse } from "next"
 import axios from "axios"
-import crypto from 'crypto';
 
+import { handlePassportRoute } from "@/lib/server/passportApi"
+import { getPassportSupabase } from "@/lib/server/supabase"
 
 async function fetchOldStamps() {
-    const oneYearAgo = new Date();
-    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+  const oneYearAgo = new Date()
+  oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1)
 
-    const { data, error } = await supabase
-        .from('stamps')
-        .select('*')
-        .lt('updated_at', oneYearAgo.toISOString());
+  const { data, error } = await getPassportSupabase()
+    .from("stamps")
+    .select("*")
+    .lt("updated_at", oneYearAgo.toISOString())
 
-    if (error) {
-        console.error('Error fetching old stamps:', error);
-    } else {
-        console.log('Old stamps:', data);
-    }
+  if (error) {
+    throw error
+  }
 
-    return data;
+  return data ?? []
 }
 
-function createSignature(payload: string, secret: string): string {
-    return crypto
-        .createHmac('sha256', secret)
-        .update(payload)
-        .digest('hex');
+function createSignature(payload: string, secret: string) {
+  return crypto.createHmac("sha256", secret).update(payload).digest("hex")
 }
 
-export default async function handler(req: any, res: any) {
-    try {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  return handlePassportRoute(
+    req,
+    res,
+    {
+      actor: "internal",
+      allowedMethods: ["POST"],
+      rateLimitGroup: "passport_internal",
+      route: "internal.cubid_webhook.expired_cron",
+    },
+    async () => {
+      const supabase = getPassportSupabase()
+      const allStampsToFetch = await fetchOldStamps()
+      const webhook = "credential_expired"
 
-        const allStampsToFetch: any = await fetchOldStamps()
-        const webhook = 'credential_expired'
+      await Promise.all(
         allStampsToFetch.map(async ({ id: stampid }: any) => {
-            const { data } = await supabase.from("stamps").select("*").match({ id: stampid })
-            const { data: dapp_user_list } = await supabase.from("dapp_users").select("*").match({ user_id: data?.[0]?.created_by_user_id })
-            const dapp_list = dapp_user_list?.map((item) => item.dapp_id)
-            dapp_list?.map(async (item) => {
-                const { data: webhook_data } = await supabase.from("dapp_webhook_subscriptions").select("*").match({
-                    dapp: item.dapp_id,
-                    webhook
+          const { data: stampRows, error: stampError } = await supabase
+            .from("stamps")
+            .select("*")
+            .eq("id", stampid)
+
+          if (stampError) {
+            throw stampError
+          }
+
+          const { data: dappUsers, error: dappUsersError } = await supabase
+            .from("dapp_users")
+            .select("*")
+            .eq("user_id", stampRows?.[0]?.created_by_user_id)
+
+          if (dappUsersError) {
+            throw dappUsersError
+          }
+
+          await Promise.all(
+            (dappUsers ?? []).map(async (dappUser: any) => {
+              const dappId = dappUser?.dapp_id ?? dappUser?.id
+              const { data: webhookRows, error: webhookError } = await supabase
+                .from("dapp_webhook_subscriptions")
+                .select("*")
+                .match({
+                  dapp: dappId,
+                  webhook,
                 })
-                const { secret, url } = webhook_data?.[0];
-                const signature = createSignature(JSON.stringify({ stampid }), secret);
-                let inserted_data;
-                try {
 
-                    const { data: webhook_events_data } = await supabase.from("webhook_events").select("*").match({
-                        event_type: webhook,
-                        payload: {
-                            stampid
-                        },
-                    })
+              if (webhookError) {
+                throw webhookError
+              }
 
-                    if ((webhook_data ?? [])?.length !== 0) {
-                        const { data: inserted_webhook_1 } = await supabase.from("webhook_events").update({
-                            event_type: webhook,
-                            payload: {
-                                stampid
-                            },
-                            retires: (webhook_events_data ?? []).length,
-                        }).match({
-                            id: webhook_events_data?.[0]?.id
-                        }).select("*")
-                        inserted_data = inserted_webhook_1?.[0]
-                    } else {
-                        const { data: inserted_webhook_2 } = await supabase.from("webhook_events").insert({
-                            event_type: webhook,
-                            payload: {
-                                stampid
-                            },
-                            retires: (webhook_events_data ?? []).length,
-                        })
-                        inserted_data = inserted_webhook_2?.[0]
-                    }
+              const target = webhookRows?.[0]
+              if (!target?.secret || !target?.url) {
+                return
+              }
 
-                    const response = await axios.post(url, {
-                        stampid
-                    }, {
-                        headers: {
-                            'X-Cubid-Signature': signature
-                        }
-                    });
-                    await supabase.from("webhook_event_deliveries").insert({
-                        webhook_event_id: inserted_data.id,
-                        dapp_id: item.dapp_id,
-                        attempt_number: inserted_data?.attempt_number,
-                        response_status_code: response.status,
-                        response_body: response.data,
-                        delivery_status: "succeeded"
-                    })
-                    // Log response data
-                    console.log("Response Code:", response.status);
-                    console.log("Response Data:", response.data);
+              const signature = createSignature(
+                JSON.stringify({ stampid }),
+                target.secret
+              )
 
-                    // Return or handle the response data as needed
-                    return response.data;
+              let insertedData: any
+              const { data: existingEvents, error: existingEventsError } =
+                await supabase
+                  .from("webhook_events")
+                  .select("*")
+                  .match({
+                    event_type: webhook,
+                    payload: {
+                      stampid,
+                    },
+                  })
 
-                } catch (error: any) {
+              if (existingEventsError) {
+                throw existingEventsError
+              }
 
-                    // Handle and log API errors
-                    if (error.response) {
+              if ((webhookRows ?? []).length !== 0) {
+                const { data: updatedEvents, error: updateError } = await supabase
+                  .from("webhook_events")
+                  .update({
+                    event_type: webhook,
+                    payload: { stampid },
+                    retires: (existingEvents ?? []).length,
+                  })
+                  .eq("id", existingEvents?.[0]?.id)
+                  .select("*")
 
-                        await supabase.from("webhook_event_deliveries").insert({
-                            webhook_event_id: inserted_data.id,
-                            dapp_id: item.dapp_id,
-                            attempt_number: inserted_data?.attempt_number,
-                            response_status_code: error.response.status,
-                            response_body: error.response.data ?? error,
-                            delivery_status: "failed",
-                            error_category: "client_error"
-                        })
-                        // The request was made and the server responded with a status code
-                        // that falls out of the range of 2xx
-                        console.error("Error Response Code:", error.response.status);
-                        console.error("Error Response Data:", error.response.data);
-                        console.error("Error Response Headers:", error.response.headers);
-                    } else if (error.request) {
-                        // The request was made but no response was received
-                        console.error("No Response Received:", error.request);
-                    } else {
-                        // Something happened in setting up the request that triggered an error
-                        console.error("Error Message:", error.message);
-                    }
-
-                    // You can also log the error configuration if needed
-                    console.error("Error Config:", error.config);
+                if (updateError) {
+                  throw updateError
                 }
+
+                insertedData = updatedEvents?.[0]
+              } else {
+                const { data: insertedEvents, error: insertError } = await supabase
+                  .from("webhook_events")
+                  .insert({
+                    event_type: webhook,
+                    payload: { stampid },
+                    retires: (existingEvents ?? []).length,
+                  })
+                  .select("*")
+
+                if (insertError) {
+                  throw insertError
+                }
+
+                insertedData = insertedEvents?.[0]
+              }
+
+              try {
+                const response = await axios.post(
+                  target.url,
+                  { stampid },
+                  {
+                    headers: {
+                      "X-Cubid-Signature": signature,
+                    },
+                  }
+                )
+
+                const { error: deliveryError } = await supabase
+                  .from("webhook_event_deliveries")
+                  .insert({
+                    attempt_number: insertedData?.attempt_number,
+                    delivery_status: "succeeded",
+                    dapp_id: dappId,
+                    response_body: response.data,
+                    response_status_code: response.status,
+                    webhook_event_id: insertedData.id,
+                  })
+
+                if (deliveryError) {
+                  throw deliveryError
+                }
+              } catch (error: any) {
+                await supabase.from("webhook_event_deliveries").insert({
+                  attempt_number: insertedData?.attempt_number,
+                  delivery_status: "failed",
+                  dapp_id: dappId,
+                  error_category: error?.response ? "client_error" : "request_error",
+                  response_body: error?.response?.data ?? error?.message ?? error,
+                  response_status_code: error?.response?.status ?? null,
+                  webhook_event_id: insertedData.id,
+                })
+              }
             })
+          )
         })
-        res.send(true)
-    } catch (err: any) {
-        res.send({ err })
+      )
+
+      return res.status(200).json({ data: true })
     }
+  )
 }

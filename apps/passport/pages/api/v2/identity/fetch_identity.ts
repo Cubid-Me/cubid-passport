@@ -1,62 +1,83 @@
-// @ts-nocheck
-import NextCors from "nextjs-cors"
+import type { NextApiRequest, NextApiResponse } from "next"
+
+import {
+  handlePassportRoute,
+  passportSchemas,
+} from "@/lib/server/passportApi"
+import { getPassportSupabase } from "@/lib/server/supabase"
 
 import { stampsWithId } from "../../utils/stampKey"
-import { supabase } from "../../utils/supabase"
 
-const log = (message: any, lineNumber: any) => {
-  console.log(`Line ${lineNumber}: ${message}`)
+const schema = passportSchemas.z.object({
+  apikey: passportSchemas.z.string().min(1),
+  user_id: passportSchemas.z.string().min(1),
+})
+
+const switchKeyValue = (input: Record<string, number>) => {
+  const switched: Record<number, string> = {}
+  for (const [key, value] of Object.entries(input)) {
+    switched[value] = key
+  }
+  return switched
 }
-export default async function handler(req: any, res: any) {
-  await NextCors(req, res, {
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-    origin: "*", // Allow all origins
-    optionsSuccessStatus: 200,
-  })
-  const { apikey, user_id } = typeof req.body === "string" ? JSON.parse(req.body) : req.body
-  const { data: dataForApp } = await supabase
-    .from("dapps")
-    .select("*")
-    .match({ apikey: apikey });
 
-  const dappId = dataForApp?.find((item) => item.apikey === apikey)?.id
-  if (!dappId) {
-    log("Invalid API key or dapp_id", 50)
-    return res.status(400).json({ error: "Invalid API key" })
-  }
-  const { data: dapp_users } = await supabase
-    .from("dapp_users")
-    .select("*,users:user_id(*),dapps:dapp_id(*)")
-    .match({
-      uuid: user_id,
-    })
-  const { error, data: stampData } = await supabase
-    .from("stamps")
-    .select("*")
-    .match({
-      created_by_user_id: dapp_users?.[0]?.users.id,
-    })
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  return handlePassportRoute(
+    req,
+    res,
+    {
+      actor: "dapp",
+      bodySchema: schema,
+      rateLimitGroup: "passport_dapp_read",
+      route: "v2.identity.fetch_identity",
+    },
+    async ({ body, context }) => {
+      const supabase = getPassportSupabase()
+      const { data: dappUsers, error: dappUsersError } = await supabase
+        .from("dapp_users")
+        .select("*,users:user_id(*),dapps:dapp_id(*)")
+        .eq("uuid", body.user_id)
 
-  function switchKeyValue(obj: any): any {
-    const switchedObj = {}
-    for (const key in obj) {
-      if (obj.hasOwnProperty(key)) {
-        switchedObj[obj[key]] = key
+      if (dappUsersError) {
+        throw dappUsersError
       }
+
+      const userId = dappUsers?.[0]?.users?.id
+      const [stampDataResponse, stampPermsResponse] = await Promise.all([
+        supabase.from("stamps").select("*").eq("created_by_user_id", userId),
+        supabase
+          .from("dapp_stamptypes")
+          .select("*")
+          .eq("dapp_id", context.dapp.id),
+      ])
+
+      if (stampDataResponse.error) {
+        throw stampDataResponse.error
+      }
+      if (stampPermsResponse.error) {
+        throw stampPermsResponse.error
+      }
+
+      const allowedStampIds = [
+        ...(stampPermsResponse.data ?? []).map((item: any) => item.stamptype_id),
+        13,
+      ]
+      const switched = switchKeyValue(stampsWithId)
+      const stampDetails = (stampDataResponse.data ?? [])
+        .filter((item: any) => allowedStampIds.includes(item.stamptype))
+        .map((item: any) => ({
+          stamp_type: switched[item.stamptype],
+          status: item.is_valid ? "Verified" : "Unverified",
+          value: item?.identity ?? item.uniquevalue,
+        }))
+
+      return res.status(200).json({
+        error: null,
+        stamp_details: stampDetails,
+      })
     }
-    return switchedObj
-  }
-
-  const { data: stamp_perms } = await supabase.from("dapp_stamptypes").select("*").match({ dapp_id: dappId })
-  const allStampIds = [...stamp_perms?.map((item) => item.stamptype_id), 13]
-  const stampsToSend = stampData?.filter((_) => allStampIds?.includes(_.stamptype))
-
-  res.send({
-    error,
-    stamp_details: stampsToSend?.map((item) => ({
-      value: item?.identity ?? item.uniquevalue,
-      stamp_type: switchKeyValue(stampsWithId)[item.stamptype],
-      status: item.is_valid ? "Verified" : "Unverified",
-    })),
-  })
+  )
 }

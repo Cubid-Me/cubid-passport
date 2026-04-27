@@ -1,48 +1,40 @@
-import { NextApiRequest, NextApiResponse } from "next"
-import axios from "axios"
-import NextCors from "nextjs-cors"
+import type { NextApiRequest, NextApiResponse } from "next"
+
+import {
+  handlePassportRoute,
+  passportSchemas,
+} from "@/lib/server/passportApi"
+import {
+  fetchGitcoinPassportScore,
+  fetchGitcoinPassportStamps,
+  submitGitcoinPassport,
+} from "@/lib/server/gitcoinScorer"
+
+const schema = passportSchemas.z.object({
+  address: passportSchemas.z.string().min(1),
+})
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  await NextCors(req, res, {
-    // Options
-    methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],
-    origin: "*",
-    optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204
-  })
-
-  const { address } = req.body
-  const { data: stamps } = await axios.get(
-    `https://api.scorer.gitcoin.co/registry/stamps/${address}?include_metadata=true`,
+  return handlePassportRoute(
+    req,
+    res,
     {
-      headers: {
-        "X-API-KEY": "8Txcnbid.OwEP6pT0ElSptVZZfrEaKhJg8UCroukb",
-      },
-    }
-  )
-  const { data } = await axios.post(
-    "https://api.scorer.gitcoin.co/registry/submit-passport",
-    {
-      address,
-      scorer_id: "6559",
+      actor: "anonymous",
+      bodySchema: schema,
+      rateLimitGroup: "passport_user_read",
+      route: "gitcoin.passport_data",
     },
-    {
-      headers: {
-        "X-API-KEY": "8Txcnbid.OwEP6pT0ElSptVZZfrEaKhJg8UCroukb",
-      },
-    }
-  )
-  const { data: scores } = await axios.get(
-    `https://api.scorer.gitcoin.co/registry/score/6559/${address}`,
-    {
-      headers: {
-        "X-API-KEY": "8Txcnbid.OwEP6pT0ElSptVZZfrEaKhJg8UCroukb",
-      },
-    }
-  )
-  console.log(data,scores)
+    async ({ body }) => {
+      const [{ stamps }, , scores] = await Promise.all([
+        fetchGitcoinPassportStamps(body.address),
+        submitGitcoinPassport(body.address),
+        fetchGitcoinPassportScore(body.address),
+      ])
 
-  res.status(200).json({ stamps, scores })
+      return res.status(200).json({ stamps, scores })
+    }
+  )
 }

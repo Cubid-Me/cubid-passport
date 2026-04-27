@@ -1,50 +1,60 @@
-import { NextApiRequest, NextApiResponse } from "next"
-import axios from "axios"
+import type { NextApiRequest, NextApiResponse } from "next"
 import { ethers } from "ethers"
-import NextCors from "nextjs-cors"
 
-import { encode_data } from "@/lib/encode_data"
-import { insertStampPerm } from "@/lib/insert_stamp_perm"
-
-import { stampsWithId } from "./utils/stampKey"
-import { supabase } from "./utils/supabase"
 import { server_insertStamp } from "@/lib/stampInsertion"
+import {
+  handlePassportRoute,
+  passportSchemas,
+} from "@/lib/server/passportApi"
+import { getPassportSupabase } from "@/lib/server/supabase"
+
+const schema = passportSchemas.z.object({
+  dapp_id: passportSchemas.z.number().int().positive(),
+  user_id: passportSchemas.z.number().int().positive(),
+})
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  // Generate a new Ethereum wallet
-  await NextCors(req, res, {
-    // Options
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-    origin: "*", // Allow all origins
-    optionsSuccessStatus: 200, // Some legacy browsers choke on 204
-  })
-  const wallet = ethers.Wallet.createRandom()
-  const privateKey = wallet.privateKey
-  const address = wallet.address
-
-  const { dapp_id, user_id } = req.body
-
-  // Store the wallet in the Supabase database
-  const { data, error } = await supabase
-    .from("evm_accounts")
-    .insert([{ private_key: privateKey, address: address, dapp_id, user_id }])
-
-  await server_insertStamp({
-    stamp_type: 'evm',
-    user_data: { user_id: user_id, uuid: '' },
-    stampData: {
-      identity: address,
-      uniquevalue: address,
+  return handlePassportRoute(
+    req,
+    res,
+    {
+      actor: "anonymous",
+      bodySchema: schema,
+      rateLimitGroup: "passport_user_mutation",
+      route: "get_app_scoped_evm_public_key",
     },
-    app_id: dapp_id
-  })
-  if (error) {
-    return res.status(500).json({ error: error.message })
-  }
+    async ({ body }) => {
+      const wallet = ethers.Wallet.createRandom()
+      const privateKey = wallet.privateKey
+      const address = wallet.address
 
-  // Return the public key (address) in the response
-  res.status(200).json({ publicKey: address })
+      const { error } = await getPassportSupabase().from("evm_accounts").insert([
+        {
+          address,
+          dapp_id: body.dapp_id,
+          private_key: privateKey,
+          user_id: body.user_id,
+        },
+      ])
+
+      if (error) {
+        throw error
+      }
+
+      await server_insertStamp({
+        app_id: body.dapp_id,
+        stamp_type: "evm",
+        stampData: {
+          identity: address,
+          uniquevalue: address,
+        },
+        user_data: { user_id: body.user_id, uuid: "" },
+      })
+
+      return res.status(200).json({ publicKey: address })
+    }
+  )
 }

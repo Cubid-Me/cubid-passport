@@ -4,6 +4,8 @@ import axios from "axios"
 import firebase from "lib/firebase"
 import { useDispatch } from "react-redux"
 
+import { findPassportUserByIdentity } from "@/lib/passportDataApi"
+
 import { login, logout } from "../redux/userSlice"
 
 type hookProps =
@@ -51,41 +53,28 @@ export const useAuth = (appHookProps: hookProps) => {
   useEffect(() => {
     ; (async () => {
       if (user?.email) {
-        const {
-          data: { data: dbData },
-        } = await axios.post("/api/supabase/select", {
-          table: "users",
-          match: {
-            email: localStorage.getItem("email") ?? user?.email,
-          },
+        const dbData = await findPassportUserByIdentity({
+          email: localStorage.getItem("email") ?? user?.email ?? undefined,
         })
-        setSupabaseUser(dbData?.[0])
+        setSupabaseUser(dbData)
       }
       if (user?.phone) {
-        const {
-          data: { data: dbData },
-        } = await axios.post("/api/supabase/select", {
-          table: "users",
-          match: {
-            phone: localStorage.getItem("phone") ?? user?.phone,
-          },
+        const dbData = await findPassportUserByIdentity({
+          phone: localStorage.getItem("phone") ?? user?.phone ?? undefined,
         })
-        setSupabaseUser({ ...dbData?.[0], phone: user?.phone })
+        setSupabaseUser(dbData ? { ...dbData, phone: user?.phone } : null)
       }
     })()
   }, [user])
 
   const getUser = useCallback(async () => {
     if (!localStorage.getItem("unauthenticated_user")) {
-      const {
-        data: { data: dbData },
-      } = await axios.post("/api/supabase/select", {
-        table: "users",
-        match: {
-          email: localStorage.getItem("email") ?? localStorage.getItem("phone"),
-        },
+      const storedEmail = localStorage.getItem("email") ?? undefined
+      const storedPhone = localStorage.getItem("phone") ?? undefined
+      return findPassportUserByIdentity({
+        email: storedEmail,
+        phone: storedEmail ? undefined : storedPhone,
       })
-      return dbData?.[0]
     } else {
       if (
         typeof localStorage.getItem("unauthenticated_user") === "string" &&

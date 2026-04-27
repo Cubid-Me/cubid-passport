@@ -1,31 +1,46 @@
-import NextCors from "nextjs-cors"
+import type { NextApiRequest, NextApiResponse } from "next"
 
-import { supabase } from "../utils/supabase"
+import {
+  handlePassportRoute,
+  passportSchemas,
+} from "@/lib/server/passportApi"
+import { getPassportSupabase } from "@/lib/server/supabase"
 
-const fetch_blacklisted_creds = async (req: any, res: any) => {
-    await NextCors(req, res, {
-        methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-        origin: "*", // Allow all origins
-        optionsSuccessStatus: 200, // Some legacy browsers choke on 204
-    })
-    const { cred, apikey } = typeof req.body === "string" ? JSON.parse(req.body) : req.body
-    const { data: dataForApp } = await supabase
-        .from("dapps")
+const schema = passportSchemas.z.object({
+  apikey: passportSchemas.z.string().min(1),
+  cred: passportSchemas.z.string().min(1),
+})
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  return handlePassportRoute(
+    req,
+    res,
+    {
+      actor: "dapp",
+      bodySchema: schema,
+      rateLimitGroup: "passport_dapp_read",
+      route: "v2.fetch_blacklisted_creds",
+    },
+    async ({ body, context }) => {
+      const { data, error } = await getPassportSupabase()
+        .from("all_blacklisted_stamps_raw")
         .select("*")
-        .match({ apikey })
-    const dappId = dataForApp?.[0]?.id
-    if (!dappId) {
-        return res.status(400).json({ error: "Invalid API key" })
-    }
+        .match({
+          dapp_id: context.dapp.id,
+          uniquevalue: body.cred,
+        })
 
-    const { data: all_blacklisted_stamps_raw } = await supabase
-        .from('all_blacklisted_stamps_raw')
-        .select("*").match({ uniquevalue: cred, dapp_id: dappId })
+      if (error) {
+        throw error
+      }
 
-    res.send({
+      return res.status(200).json({
+        is_blacklisted: Boolean(data?.[0]),
         success: true,
-        is_blacklisted: Boolean(all_blacklisted_stamps_raw?.[0])
-    })
+      })
+    }
+  )
 }
-
-export default fetch_blacklisted_creds

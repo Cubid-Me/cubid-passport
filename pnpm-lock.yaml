@@ -186,6 +186,12 @@ importers:
       '@celo/contractkit':
         specifier: ^5.0.4
         version: 5.2.1(bufferutil@4.0.8)(encoding@0.1.13)(utf-8-validate@5.0.10)
+      '@cubid/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
+      '@cubid/config':
+        specifier: workspace:*
+        version: link:../../packages/config
       '@cubid/types':
         specifier: workspace:*
         version: link:../../packages/types
