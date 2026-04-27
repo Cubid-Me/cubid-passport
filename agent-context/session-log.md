@@ -2283,3 +2283,40 @@ Move the monorepo from Node 20 to Node 24 LTS for local development and CI while
 
 - keep an eye on the existing Next/security warning for the pinned Next.js 14.2.15 release in a dedicated dependency-hardening slice
 - consider cleaning existing frontend lint warnings separately from the runtime baseline upgrade
+
+### session: v79
+
+- timestamp: 2026-04-27T16:24:22-0400
+- agent: **OpenAI Codex**
+- branch: **codex/c04-c06-secrets-hardening-split**
+- head: **`21c5d7b`**
+- session name: **Implement C05.1 encrypted dapp user secrets on API v3**
+
+#### Objective
+
+Implement the first retrievable-secret custody slice by moving dapp user secret writes to a Vault-backed envelope-encrypted API v3 path while leaving the existing API v2 route behavior unchanged.
+
+#### Actions Taken
+
+- added a Supabase migration for encrypted `dapp_user_secrets` fields, service-role-only Vault key access, and tightened table grants
+- added Passport server helpers for AES-256-GCM envelope encryption/decryption using a per-row data key wrapped by `passport_dapp_user_secret_wrapping_key_v1`
+- introduced `/api/v3/save_secret` with dapp authentication, dapp-user ownership checks, encrypted-only storage, and security-event logging
+- added an idempotent dry-run-capable backfill script for legacy plaintext rows without printing secret material
+- documented the C05.1 custody model and noted that `/api/v2/save_secret` is intentionally preserved while v3 becomes the encrypted path
+- added focused helper and route tests for round-trip encryption, AAD rejection, v3 encrypted storage, and cross-dapp ownership rejection
+
+#### Verification
+
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm --filter @cubid/passport test`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm --filter @cubid/passport typecheck`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm --filter @cubid/passport build`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm typecheck`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm test`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm lint`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm build`
+
+#### Follow-up
+
+- close `C05.1` metadata against this implementation commit
+- run the legacy-row backfill script in dry-run mode before any production migration execution
+- keep `C05.1.1` open for physically dropping or replacing the legacy plaintext `secret` column after production verification

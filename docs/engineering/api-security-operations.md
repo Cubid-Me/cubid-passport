@@ -218,6 +218,14 @@ challenges are marked consumed instead of retaining reusable plaintext codes.
 Provision the Vault secret before enabling email OTP sends in an environment;
 the application intentionally fails closed if the secret is absent.
 
+Dapp user secrets are retrievable server-side secrets and use the C05 envelope
+encryption model. `/api/v3/save_secret` encrypts submissions into
+`dapp_user_secrets` using a per-row data key wrapped by the Supabase Vault
+secret `passport_dapp_user_secret_wrapping_key_v1`. Provision this Vault secret
+before enabling v3 writes or running the legacy backfill script. The legacy
+`/api/v2/save_secret` route is preserved for compatibility, but v3 is the
+encrypted custody contract.
+
 ### Admin
 
 - `ADMIN_CORS_ALLOWED_ORIGINS`

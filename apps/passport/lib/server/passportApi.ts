@@ -416,6 +416,7 @@ const requireUser = async (
 }
 
 const DAPP_CREDENTIAL_SCHEMA = z.object({
+  api_key: z.string().min(1).optional(),
   apikey: z.string().min(1).optional(),
   dapp_id: z.union([z.number(), z.string().min(1)]).optional(),
   id_to_read_from: z.string().min(1).optional(),
@@ -503,6 +504,7 @@ const requireDapp = async (
   const parsedBody = getParsedBody(req)
   const credentials = validateWithSchema(parsedBody, DAPP_CREDENTIAL_SCHEMA)
   const apiKey =
+    credentials.api_key ??
     credentials.apikey ??
     credentials.id_to_read_from ??
     (typeof credentials.dapp_id === "string" ? credentials.dapp_id : null)
@@ -516,7 +518,7 @@ const requireDapp = async (
   }
 
   const expectedDappId =
-    credentials.apikey || credentials.id_to_read_from
+    credentials.api_key || credentials.apikey || credentials.id_to_read_from
       ? credentials.dapp_id
       : undefined
   const data = await resolvePassportDappFromApiKey(apiKey, expectedDappId)

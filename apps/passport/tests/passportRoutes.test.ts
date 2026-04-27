@@ -8,8 +8,13 @@ import supabaseSelectHandler from "../pages/api/supabase/select"
 import sendOtpHandler from "../pages/api/twillio/send-otp"
 import sendEmailOtpHandler from "../pages/api/v2/email/send_otp"
 import verifyEmailOtpHandler from "../pages/api/v2/email/verify_otp"
+import saveSecretV3Handler from "../pages/api/v3/save_secret"
 import webhookTriggerHandler from "../pages/api/cubid-webhook/trigger-url"
 import createUserHandler from "../pages/api/v2/create_user"
+import {
+  DAPP_USER_SECRET_LEGACY_SENTINEL,
+  decryptDappUserSecretWithKey,
+} from "../lib/server/dappUserSecrets"
 import {
   hashEmailOtp,
   setSendOtpEmailForTests,
@@ -348,6 +353,91 @@ test("Passport v2 create_user rejects malformed dapp payloads before execution",
     (res.body as { error: { message: string } }).error.message,
     "Request validation failed."
   )
+})
+
+test("Passport v3 save_secret stores only encrypted dapp user secrets", async () => {
+  const supabase = new MockPassportSupabase()
+  const apiKey = addDappAuth(supabase)
+  const userId = "00000000-0000-4000-8000-000000000042"
+  supabase.setDappUser({ dapp_id: 42, uuid: userId })
+  setPassportSupabaseForTests(supabase as never)
+
+  const req = createApiRequest({
+    body: {
+      api_key: apiKey,
+      secret: "raw dapp user secret",
+      user_id: userId,
+    },
+    headers: {
+      origin: "https://passport.cubid.me",
+    },
+    url: "/api/v3/save_secret",
+  })
+  const res = createApiResponse()
+
+  await saveSecretV3Handler(req, res)
+
+  assert.equal(res.statusCode, 200)
+  assert.deepEqual(res.body, { success: true })
+  assert.equal(supabase.dappUserSecrets.length, 1)
+  const storedSecret = supabase.dappUserSecrets[0]
+  assert.equal(storedSecret.secret, DAPP_USER_SECRET_LEGACY_SENTINEL)
+  assert.notEqual(storedSecret.secret_ciphertext, "raw dapp user secret")
+  assert.equal(
+    String(storedSecret.secret_ciphertext).includes("raw dapp user secret"),
+    false
+  )
+  assert.equal(storedSecret.encryption_algorithm, "aes-256-gcm-envelope")
+  assert.equal(storedSecret.encryption_key_id, "passport_dapp_user_secret_wrapping_key_v1")
+
+  const decrypted = decryptDappUserSecretWithKey(
+    storedSecret as never,
+    Buffer.from("0123456789abcdef0123456789abcdef"),
+    {
+      dappId: 42,
+      dappUserUuid: userId,
+    }
+  )
+  assert.equal(decrypted, "raw dapp user secret")
+  assert.equal(
+    supabase.eventInserts.some(
+      (event) => event.event_type === "dapp_user_secret.encrypted"
+    ),
+    true
+  )
+})
+
+test("Passport v3 save_secret rejects dapp users outside the authenticated app", async () => {
+  const supabase = new MockPassportSupabase()
+  const apiKey = addDappAuth(supabase)
+  const userId = "00000000-0000-4000-8000-000000000043"
+  supabase.setDappUser({ dapp_id: 99, uuid: userId })
+  setPassportSupabaseForTests(supabase as never)
+
+  const req = createApiRequest({
+    body: {
+      apikey: apiKey,
+      secret: "raw dapp user secret",
+      user_id: userId,
+    },
+    headers: {
+      origin: "https://passport.cubid.me",
+    },
+    url: "/api/v3/save_secret",
+  })
+  const res = createApiResponse()
+
+  await saveSecretV3Handler(req, res)
+
+  assert.equal(res.statusCode, 404)
+  assert.equal(supabase.dappUserSecrets.length, 0)
+  assert.deepEqual(res.body, {
+    error: {
+      code: "not_found",
+      message: "Dapp user was not found for the authenticated app.",
+      requestId: res.headers["x-request-id"],
+    },
+  })
 })
 
 test("Passport internal webhook trigger rejects missing internal bearer tokens", async () => {

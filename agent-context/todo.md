@@ -410,17 +410,28 @@ Move email OTP storage from plaintext `email_otp.otp` values to short-lived hash
 
 ### C05. Envelope-encrypt retrievable secrets with Supabase Vault
 
-- Status: Not started
-- Timestamp started: TBD
+- Status: Started
+- Timestamp started: 2026-04-27T15:31:54-0400
 - Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
+- Feature branch: codex/c04-c06-secrets-hardening-split
+- Head: 21c5d7b
 - Session-log reference(s): TBD
 
 Create the retrievable-secret custody track for values Cubid must later recover in order to perform a server-side action. Use envelope encryption with data-key secrets managed in Supabase Vault as the default implementation model. Each encrypted row should carry ciphertext, nonce or IV, authentication tag, algorithm, key identifier, key version, purpose, and enough authenticated context to prevent ciphertext swapping across tenants or users. Decryption must happen only in server-side code after explicit actor authorization, with request IDs and audit/security events for sensitive access, rotation, and failure cases. This track should produce a target-state document for encrypted database secrets, a reusable server helper, migration patterns for legacy plaintext columns, and tests proving decrypted values never appear in generic API responses, Admin lists, logs, or error envelopes.
 
 ### C05.1 Envelope-encrypt dapp user secrets
 
+- Status: Started
+- Timestamp started: 2026-04-27T15:31:54-0400
+- Timestamp completed: TBD
+- Feature branch: codex/c04-c06-secrets-hardening-split
+- Head: 21c5d7b
+- Session-log reference(s): TBD
+
+Migrate dapp user secret custody away from plaintext storage using the C05 Supabase Vault envelope-encryption helper. Preserve the legacy `/api/v2/save_secret` behavior for compatibility and introduce `/api/v3/save_secret` as the encrypted replacement. The v3 route must authenticate the dapp, validate that `user_id` belongs to that dapp, encrypt the submitted secret before writing `dapp_user_secrets`, and store only a non-secret sentinel in the legacy `secret` column. Provide a careful migration path for existing plaintext rows with an idempotent backfill script that never logs raw values. No public decrypt endpoint should be added in this slice; decryption helpers are server-only for future explicit internal workflows. Add audit events, docs, and tests proving ordinary browser, Admin, and dapp surfaces cannot accidentally access raw secrets.
+
+### C05.1.1 Remove legacy dapp user secret plaintext column
+
 - Status: Not started
 - Timestamp started: TBD
 - Timestamp completed: TBD
@@ -428,7 +439,7 @@ Create the retrievable-secret custody track for values Cubid must later recover 
 - Head: TBD
 - Session-log reference(s): TBD
 
-Migrate `dapp_user_secrets.secret` away from plaintext storage using the C05 Supabase Vault envelope-encryption helper. First confirm the product contract for dapp user secrets: who can create them, whether they are ever returned to callers, and which server workflows need recovery. Then add encrypted columns and metadata, write new submissions as ciphertext, and provide a careful migration path for existing plaintext rows without logging or returning the raw values. If retrieval is not actually required for a subset of uses, move those values to a hash-only pattern instead of encrypting them by habit. Update the dapp-facing route to validate purpose and ownership, add audit events for create/decrypt/rotate decisions, and test that browsers, Admin list views, and ordinary dapp APIs cannot access raw secrets accidentally.
+After C05.1 is deployed, Supabase Vault is provisioned, and the backfill script has encrypted all legacy rows in production, remove or permanently quarantine the legacy `dapp_user_secrets.secret` plaintext column. First smoke-test that `/api/v3/save_secret` writes encrypted rows, that the backfill reports zero remaining plaintext rows, and that no application code reads plaintext from the column. Then add the physical cleanup migration, update docs and generated schema expectations, and add a regression check preventing new code from selecting or inserting raw `secret` values on `dapp_user_secrets`. This follow-up must not run before production verification because existing rows need a safe migration window from plaintext into encrypted custody.
 
 ### C05.2 Redesign blockchain private-key custody
 

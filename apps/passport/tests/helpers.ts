@@ -25,9 +25,16 @@ type EmailOtpRow = Record<string, unknown> & {
   otp_hash?: string
 }
 
+type DappUserRow = {
+  dapp_id: number
+  uuid: string
+}
+
 export class MockPassportSupabase {
   readonly buckets = new Map<string, BucketRow>()
   readonly dappApiKeys = new Map<string, DappApiKeyRow>()
+  readonly dappUserSecrets: Array<Record<string, unknown>> = []
+  readonly dappUsers = new Map<string, DappUserRow>()
   readonly dapps = new Map<number, Record<string, unknown>>()
   readonly emailOtps = new Map<string, EmailOtpRow[]>()
   readonly eventInserts: Array<Record<string, unknown>> = []
@@ -51,6 +58,15 @@ export class MockPassportSupabase {
       })
     }
 
+    if (name === "get_dapp_user_secret_wrapping_key_v1") {
+      return Promise.resolve({
+        data: Buffer.from(
+          "0123456789abcdef0123456789abcdef"
+        ).toString("base64"),
+        error: null,
+      })
+    }
+
     throw new Error(`Unexpected RPC ${name}`)
   }
 
@@ -68,6 +84,10 @@ export class MockPassportSupabase {
 
   setDapp(row: Record<string, unknown> & { id: number }) {
     this.dapps.set(row.id, row)
+  }
+
+  setDappUser(row: DappUserRow) {
+    this.dappUsers.set(row.uuid, row)
   }
 
   setEmailOtp(row: EmailOtpRow) {
@@ -121,6 +141,54 @@ export class MockPassportSupabase {
             }),
           }),
         }),
+      }
+    }
+
+    if (table === "dapp_users") {
+      return {
+        select: () => {
+          const filters: Record<string, unknown> = {}
+          const query = {
+            eq: (column: string, value: unknown) => {
+              filters[column] = value
+              return query
+            },
+            maybeSingle: async () => {
+              const row = this.dappUsers.get(String(filters.uuid))
+              if (!row || String(row.dapp_id) !== String(filters.dapp_id)) {
+                return { data: null, error: null }
+              }
+              return { data: row, error: null }
+            },
+          }
+          return query
+        },
+      }
+    }
+
+    if (table === "dapp_user_secrets") {
+      return {
+        select: () => ({
+          eq: (_column: string, value: string) => ({
+            then: (
+              resolve: (value: {
+                data: Record<string, unknown>[]
+                error: null
+              }) => unknown
+            ) => {
+              return Promise.resolve({
+                data: this.dappUserSecrets.filter(
+                  (row) => row.dapp_user_uuid === value
+                ),
+                error: null,
+              }).then(resolve)
+            },
+          }),
+        }),
+        insert: async (row: Record<string, unknown>) => {
+          this.dappUserSecrets.push(row)
+          return { error: null }
+        },
       }
     }
 
