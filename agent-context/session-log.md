@@ -1989,3 +1989,30 @@ Complete the Passport-side C03.4 hardening slice by moving the legacy Passport A
 
 - close `C03.4` metadata in `agent-context/todo.md`
 - move to `C03.5` for final observability and any remaining targeted API test harness cleanup
+
+### session: v70
+
+- timestamp: 2026-04-27T17:13:00-0400
+- agent: **OpenAI Codex**
+- branch: **codex/c03-api-security-baseline**
+- head: **`91214ce`**
+- session name: **Close C03.4 roadmap metadata**
+
+#### Objective
+
+Bring the roadmap metadata back into sync with the committed Passport hardening implementation so the next session can start directly on `C03.5` without ambiguity about what landed in `C03.4`.
+
+#### Actions Taken
+
+- marked `C03.4` completed in `agent-context/todo.md`
+- recorded the implementation head and session references for the Passport baseline slice
+- left parent `C03` open because `C03.5` still owns the final cross-repo observability and test closeout
+
+#### Verification
+
+- confirmed the Passport hardening implementation landed in commit `91214ce`
+- confirmed the requested validation set had already completed before metadata closure
+
+#### Follow-up
+
+- start `C03.5` for final observability, CI expectations, and any remaining targeted API test harness work

@@ -343,12 +343,12 @@ Apply the shared API baseline to every `apps/admin/pages/api/admin/*` route so A
 
 ### C03.4 Normalize and harden Passport public APIs
 
-- Status: Started
+- Status: Completed
 - Timestamp started: 2026-04-27T14:37:00-0400
-- Timestamp completed: TBD
+- Timestamp completed: 2026-04-27T17:12:00-0400
 - Feature branch: codex/c03-api-security-baseline
-- Head: TBD
-- Session-log reference(s): TBD
+- Head: 91214ce
+- Session-log reference(s): session: v69, session: v70
 
 Bring the sprawling Passport API surface under the shared security baseline, including `/api/oidc/*`, `/api/dapp/*`, `/api/v2/*`, `/api/verify/*`, `/api/allow/*`, `/api/wallet/*`, `/api/cubid-webhook/*`, cron-style routes, and the current first-party data access layer. Remove wildcard CORS, add structured validation for body, query, and header inputs, and replace route-by-route authorization with shared `user`, `dapp`, and `internal` actor guards. Internal job endpoints should reject browser CORS entirely and require a server-to-server bearer token. Replace the generic `/api/supabase/*` CRUD surface with a smaller Passport-owned data API for the production app use cases, then hard-disable the old arbitrary table endpoints. End with focused tests around OTP, dapp identity, webhook, and arbitrary CRUD abuse paths.
 
