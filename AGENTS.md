@@ -3,8 +3,10 @@
 ## Workflow
 
 - Do not push directly to `main`.
-- Create a feature branch for every change and open a pull request back into `main`.
-- Rebase or otherwise sync frequently from `main` so long-running branches do not drift.
+- Always work on a feature branch; do not make implementation commits directly on shared branches such as `main`, `dev`, or `prod`.
+- Several related changes or todos may land on the same feature branch when they are part of one coherent review stack.
+- Open pull requests back into `dev` by default. Target `main` only when the user explicitly requests a production/mainline PR.
+- Rebase or otherwise sync frequently from `dev` so long-running branches do not drift.
 - Add a new entry to `agent-context/session-log.md` immediately before every commit.
 - After implementing each todo, commit immediately once the task is in a coherent state and the required session-log entry has been added.
 

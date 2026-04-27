@@ -2665,3 +2665,29 @@ Address the second Codex review pass on PR #149 after the first review fixes wer
 #### Follow-up
 
 - push the second review-fix commit, reply to and resolve the new Codex threads, then re-check CI
+
+### session: v92
+
+- timestamp: 2026-04-27T23:48:06Z
+- agent: **OpenAI Codex**
+- branch: **codex/c04-c06-secrets-hardening-split**
+- head: **`ac336c8`**
+- session name: **Correct AGENTS PR target guidance**
+
+#### Objective
+
+Update repo agent workflow instructions so future agents target the project’s actual `dev` PR flow and do not create unnecessary one-change feature branches.
+
+#### Actions Taken
+
+- changed AGENTS workflow guidance to say agents should work on feature branches, but related changes may share one coherent feature branch
+- changed default PR target guidance from `main` to `dev`
+- kept `main` targeting available only when explicitly requested
+
+#### Verification
+
+- not run; documentation-only process correction
+
+#### Follow-up
+
+- continue PR #149 review/merge flow or approved cleanup after merge
