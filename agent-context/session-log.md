@@ -2533,3 +2533,28 @@ Correct the C05.1 dapp user secret custody boundary so `public.dapp_user_secrets
 #### Follow-up
 
 - update C05.1 todo metadata to reference this corrected implementation head after commit
+
+### session: v87
+
+- timestamp: 2026-04-27T22:41:30Z
+- agent: **OpenAI Codex**
+- branch: **codex/c04-c06-secrets-hardening-split**
+- head: **`f3e8b02`**
+- session name: **Close C05.1 private-schema metadata**
+
+#### Objective
+
+Record the corrected C05.1 implementation head after moving encrypted v3 dapp user secret storage from the public table design into `private.dapp_user_secrets`.
+
+#### Actions Taken
+
+- updated `agent-context/todo.md` so C05.1 now references implementation commit `f3e8b02`
+- preserved the original C05.1 session reference while adding the private-schema correction sessions
+
+#### Verification
+
+- confirmed implementation commit `f3e8b02` contains the validated private-schema C05.1 correction
+
+#### Follow-up
+
+- continue with C05.1.1 after production backfill verification, or move on to C06 operational-secret hardening

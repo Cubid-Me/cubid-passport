@@ -425,8 +425,8 @@ Create the retrievable-secret custody track for values Cubid must later recover 
 - Timestamp started: 2026-04-27T15:31:54-0400
 - Timestamp completed: 2026-04-27T16:25:06-0400
 - Feature branch: codex/c04-c06-secrets-hardening-split
-- Head: 18b361e
-- Session-log reference(s): session: v79
+- Head: f3e8b02
+- Session-log reference(s): session: v79, session: v86, session: v87
 
 Migrate dapp user secret custody away from plaintext storage using the C05 Supabase Vault envelope-encryption helper. Preserve the legacy `/api/v2/save_secret` behavior and `public.dapp_user_secrets` table for compatibility, and introduce `/api/v3/save_secret` as the encrypted replacement backed by `private.dapp_user_secrets`. The v3 route must authenticate the dapp, validate that `user_id` belongs to that dapp, encrypt the submitted secret before writing the private-schema table, and store only a non-secret sentinel in the private legacy `secret` column. Provide a careful migration path that reads existing public plaintext rows and inserts encrypted private copies without logging raw values. No public decrypt endpoint should be added in this slice; decryption helpers are server-only for future explicit internal workflows.
 
