@@ -2156,3 +2156,30 @@ Move dapp API keys off plaintext runtime lookup by introducing hash-only `dapp_a
 
 - close the `C04.1` todo metadata against the implementation commit
 - run Passport tests under Node 20 in CI or a Node 20 local shell
+
+### session: v75
+
+- timestamp: 2026-04-27T14:53:23-0400
+- agent: **OpenAI Codex**
+- branch: **codex/c04-c06-secrets-hardening-split**
+- head: **`43e63f8`**
+- session name: **Close C04.1 metadata**
+
+#### Objective
+
+Mark `C04.1` complete against the landed hashed dapp API key implementation and keep the parent `C04` track open for the remaining email OTP hash work.
+
+#### Actions Taken
+
+- marked parent `C04` as started because the first hash-at-rest child task has landed
+- marked `C04.1` completed with the implementation head, branch, timestamp, session reference, and target-state doc
+- left `C04.1.1` open for post-deployment removal of the legacy `dapps.apikey` column
+
+#### Verification
+
+- confirmed implementation commit `43e63f8` contains the validated C04.1 changes
+
+#### Follow-up
+
+- run Passport tests under Node 20 when available
+- tackle `C04.2` for email OTP hash storage next

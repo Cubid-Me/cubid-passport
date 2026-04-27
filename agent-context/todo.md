@@ -365,23 +365,23 @@ Finish C03 by validating the shared baseline as a platform-wide contract rather 
 
 ### C04. Hash non-retrievable secrets
 
-- Status: Not started
-- Timestamp started: TBD
+- Status: Started
+- Timestamp started: 2026-04-27T14:49:01-0400
 - Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Feature branch: codex/c04-c06-secrets-hardening-split
+- Head: 43e63f8
+- Session-log reference(s): session: v74
 
 Replace plaintext storage for secrets that only need possession verification, not later recovery. This parent track covers credentials where Cubid should never need to reconstruct the original value after issuance or submission. The target posture is hash-at-rest with strong one-way hashing, explicit prefixes or lookup identifiers where needed, show-once issuance, safe rotation, and no leakage through API responses, Admin tables, logs, errors, or analytics. Document the difference between verification-only secrets and retrievable operational secrets so later engineers do not accidentally encrypt values that should be hashed, or hash values that must be used for outbound signing. Finish this track only after dapp API keys and email OTP codes use clear hash verification paths, existing callers are migrated, and legacy plaintext fields are either removed, ignored, or retained only behind a documented migration window.
 
 ### C04.1 Hash dapp API keys
 
-- Status: Started
+- Status: Completed
 - Timestamp started: 2026-04-27T14:49:01-0400
-- Timestamp completed: TBD
+- Timestamp completed: 2026-04-27T14:53:23-0400
 - Feature branch: codex/c04-c06-secrets-hardening-split
-- Head: f673183
-- Session-log reference(s): TBD
+- Head: 43e63f8
+- Session-log reference(s): session: v74
 - Target-state doc: [docs/engineering/dapp-api-key-hardening.md](/Users/botmaster/src/cubid/cubid-passport/docs/engineering/dapp-api-key-hardening.md)
 
 Migrate dapp API keys from plaintext `dapps.apikey` lookup to a verification-only model. Generate new keys with a non-secret prefix for lookup and a high-entropy secret body shown only once on create or rotate. Store only the prefix, hash, hash algorithm, version, creation timestamp, and last-rotated metadata needed for operations. Update Passport dapp actor authentication, Admin app creation, Admin key rotation, and any displayed app tables so operators can identify a key without copying a recoverable secret from the database. Preserve a safe migration path for existing plaintext keys: either accept them temporarily through a legacy verifier while writing hashed replacements, or force rotation with clear Admin messaging. Add tests proving plaintext keys are not returned after creation/rotation, invalid keys fail consistently, and existing dapp-facing routes still authenticate through the shared Passport baseline.
