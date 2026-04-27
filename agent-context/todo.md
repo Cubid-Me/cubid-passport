@@ -365,12 +365,12 @@ Finish C03 by validating the shared baseline as a platform-wide contract rather 
 
 ### C04. Hash non-retrievable secrets
 
-- Status: Started
+- Status: Completed
 - Timestamp started: 2026-04-27T14:49:01-0400
-- Timestamp completed: TBD
+- Timestamp completed: 2026-04-27T15:04:22-0400
 - Feature branch: codex/c04-c06-secrets-hardening-split
-- Head: 43e63f8
-- Session-log reference(s): session: v74
+- Head: 6732c16
+- Session-log reference(s): session: v74, session: v76
 
 Replace plaintext storage for secrets that only need possession verification, not later recovery. This parent track covers credentials where Cubid should never need to reconstruct the original value after issuance or submission. The target posture is hash-at-rest with strong one-way hashing, explicit prefixes or lookup identifiers where needed, show-once issuance, safe rotation, and no leakage through API responses, Admin tables, logs, errors, or analytics. Document the difference between verification-only secrets and retrievable operational secrets so later engineers do not accidentally encrypt values that should be hashed, or hash values that must be used for outbound signing. Finish this track only after dapp API keys and email OTP codes use clear hash verification paths, existing callers are migrated, and legacy plaintext fields are either removed, ignored, or retained only behind a documented migration window.
 
@@ -399,12 +399,12 @@ Physically remove the legacy `dapps.apikey` column only after the C04.1 migratio
 
 ### C04.2 Hash email OTP codes
 
-- Status: Started
+- Status: Completed
 - Timestamp started: 2026-04-27T15:01:11-0400
-- Timestamp completed: TBD
+- Timestamp completed: 2026-04-27T15:04:22-0400
 - Feature branch: codex/c04-c06-secrets-hardening-split
-- Head: 8ba6770
-- Session-log reference(s): TBD
+- Head: 6732c16
+- Session-log reference(s): session: v76
 
 Move email OTP storage from plaintext `email_otp.otp` values to short-lived hash verification. Generate OTP codes as before for user delivery, but store only a keyed hash or slow hash plus expiration, attempt count, consumed timestamp, request metadata, and any rate-limit correlation needed for abuse triage. Verification should compare against the stored hash, reject expired or consumed codes, increment failed attempts, and delete or mark the code consumed after success so replay is not possible. Keep Twilio Verify phone OTP out of this database migration because the provider already owns that challenge state. Update tests for send, verify, expired, replayed, malformed, and over-attempted OTP flows, and document the retry-safe behavior so downstream apps understand which failures can be retried without generating confusing duplicate challenges.
 

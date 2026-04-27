@@ -2216,3 +2216,30 @@ Replace plaintext email OTP storage with verification-only hashing, 10-minute ex
 
 - close `C04.2` and the parent `C04` metadata against the implementation commit
 - run the full Passport suite under Node 20 in CI or a Node 20 local shell
+
+### session: v77
+
+- timestamp: 2026-04-27T15:04:22-0400
+- agent: **OpenAI Codex**
+- branch: **codex/c04-c06-secrets-hardening-split**
+- head: **`6732c16`**
+- session name: **Close C04.2 and C04 metadata**
+
+#### Objective
+
+Mark `C04.2` and parent `C04` complete now that both non-retrievable secret tracks, dapp API keys and email OTP codes, have landed.
+
+#### Actions Taken
+
+- marked `C04.2` completed with the implementation head, timestamp, and session reference
+- marked parent `C04` completed while keeping `C04.1.1` open as a post-deployment cleanup follow-up for dropping legacy `dapps.apikey`
+- preserved `C05` and `C06` as the next secrets-hardening tracks for retrievable and env-backed secrets
+
+#### Verification
+
+- confirmed implementation commit `6732c16` contains the validated C04.2 changes
+
+#### Follow-up
+
+- run the full Passport suite under Node 20 when available
+- tackle `C04.1.1` after production smoke, or start `C05.1` for encrypted dapp user secrets
