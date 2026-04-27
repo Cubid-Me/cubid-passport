@@ -29,7 +29,7 @@ At the start of a new session, inspect and summarize the relevant work from:
 
 ## Commands
 
-- Use Node 20 when working locally
+- Use Node 24 when working locally
 - Install dependencies with `pnpm install`
 - Start local development with `pnpm dev`
 - Start the admin app explicitly with `pnpm dev:admin`

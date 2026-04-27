@@ -5,7 +5,7 @@
   "description": "Cubid platform monorepo root.",
   "packageManager": "pnpm@10.33.0",
   "engines": {
-    "node": "20.x"
+    "node": "24.x"
   },
   "scripts": {
     "dev": "turbo run dev --filter=@cubid/passport",

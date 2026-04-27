@@ -2243,3 +2243,43 @@ Mark `C04.2` and parent `C04` complete now that both non-retrievable secret trac
 
 - run the full Passport suite under Node 20 when available
 - tackle `C04.1.1` after production smoke, or start `C05.1` for encrypted dapp user secrets
+
+### session: v78
+
+- timestamp: 2026-04-27T15:31:54-0400
+- agent: **OpenAI Codex**
+- branch: **codex/c04-c06-secrets-hardening-split**
+- head: **`08520bf`**
+- session name: **Upgrade runtime baseline to Node 24 LTS**
+
+#### Objective
+
+Move the monorepo from Node 20 to Node 24 LTS for local development and CI while keeping the package manager, Turbo task graph, and dependency changes narrowly focused on the runtime baseline.
+
+#### Actions Taken
+
+- updated `.nvmrc`, root `engines.node`, CI setup, AGENTS guidance, and the monorepo operating-model doc from Node 20 to Node 24
+- updated workspace `@types/node` dev dependencies to the Node 24 type line
+- refreshed and verified the pnpm lockfile under Node 24 while avoiding unrelated dependency modernization
+- confirmed the Passport test suite no longer hits the local Node 25 JWT dependency crash when executed under Node 24
+
+#### Verification
+
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm install --frozen-lockfile --reporter append-only`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm --filter @cubid/auth test`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm --filter @cubid/auth typecheck`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm --filter @cubid/passport test`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm --filter @cubid/passport typecheck`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm --filter @cubid/admin test`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm --filter @cubid/admin typecheck`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm --filter @cubid/oidc test`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm --filter @cubid/oidc typecheck`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm lint`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm typecheck`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm test`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm build`
+
+#### Follow-up
+
+- keep an eye on the existing Next/security warning for the pinned Next.js 14.2.15 release in a dedicated dependency-hardening slice
+- consider cleaning existing frontend lint warnings separately from the runtime baseline upgrade

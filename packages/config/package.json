@@ -21,7 +21,7 @@
     "format:write": "echo \"No format changes required for @cubid/config\""
   },
   "devDependencies": {
-    "@types/node": "^20.17.10",
+    "@types/node": "^24.0.0",
     "typescript": "5.2.2"
   }
 }
