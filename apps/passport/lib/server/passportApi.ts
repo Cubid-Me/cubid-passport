@@ -15,15 +15,13 @@ import {
   z,
   type ZodTypeAny,
 } from "@cubid/auth/server"
-import {
-  getCsvEnv,
-  getRequiredEnv,
-} from "@cubid/config"
+import { getCsvEnv } from "@cubid/config"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { DecodedIdToken } from "firebase-admin/auth"
 import type { NextApiHandler, NextApiRequest, NextApiResponse } from "next"
 
 import { getPassportFirebaseAdminAuth } from "./firebaseAdmin"
+import { getPassportInternalApiToken } from "./operationalSecrets"
 import { getPassportSupabase } from "./supabase"
 
 type PassportActor = "anonymous" | "dapp" | "internal" | "user"
@@ -362,8 +360,6 @@ const enforceRateLimit = async (input: {
   }
 }
 
-const getInternalApiToken = () => getRequiredEnv("PASSPORT_INTERNAL_API_TOKEN")
-
 const requireUser = async (
   req: NextApiRequest,
   requestId: string
@@ -542,7 +538,7 @@ const requireInternal = async (
 ): Promise<PassportInternalContext> => {
   const bearerToken = getBearerToken(req)
 
-  if (!bearerToken || bearerToken !== getInternalApiToken()) {
+  if (!bearerToken || bearerToken !== getPassportInternalApiToken()) {
     throw new ApiSecurityError(
       401,
       "unauthorized",

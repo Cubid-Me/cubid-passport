@@ -15,7 +15,7 @@ test("buildOidcRuntimeConfig derives passkey rp settings from passport origin", 
     OIDC_ISSUER_URL: "https://id.cubid.me",
     OIDC_PUBLIC_ORIGIN: "https://id.cubid.me",
     OIDC_PORT: "4280",
-    OIDC_PAIRWISE_SUBJECT_MASTER_SECRET: "secret",
+    OIDC_PAIRWISE_SUBJECT_MASTER_SECRET: "test-pairwise-subject-master-secret-32",
     PASSPORT_LOGIN_URL: "https://passport.cubid.me/login",
     PASSPORT_CONSENT_URL: "https://passport.cubid.me/allow",
     OIDC_JWKS_JSON: '{"keys":[]}',
@@ -33,7 +33,7 @@ test("buildOidcRuntimeConfig respects explicit passkey overrides", () => {
     OIDC_ISSUER_URL: "https://id.cubid.me",
     OIDC_PUBLIC_ORIGIN: "https://id.cubid.me",
     OIDC_PORT: "4280",
-    OIDC_PAIRWISE_SUBJECT_MASTER_SECRET: "secret",
+    OIDC_PAIRWISE_SUBJECT_MASTER_SECRET: "test-pairwise-subject-master-secret-32",
     PASSPORT_LOGIN_URL: "https://passport.cubid.me/login",
     PASSPORT_CONSENT_URL: "https://passport.cubid.me/allow",
     PASSPORT_PUBLIC_ORIGIN: "https://passport.cubid.me",
@@ -60,7 +60,7 @@ test("buildOidcRuntimeConfig parses allowed browser origins for OIDC interaction
     OIDC_PUBLIC_ORIGIN: "https://id.cubid.me",
     OIDC_CORS_ALLOWED_ORIGINS:
       "https://passport.cubid.me, https://passport-preview.cubid.me",
-    OIDC_PAIRWISE_SUBJECT_MASTER_SECRET: "secret",
+    OIDC_PAIRWISE_SUBJECT_MASTER_SECRET: "test-pairwise-subject-master-secret-32",
     PASSPORT_LOGIN_URL: "https://passport.cubid.me/login",
     PASSPORT_CONSENT_URL: "https://passport.cubid.me/allow",
     OIDC_JWKS_JSON: '{"keys":[]}',
@@ -72,4 +72,47 @@ test("buildOidcRuntimeConfig parses allowed browser origins for OIDC interaction
     "https://passport.cubid.me",
     "https://passport-preview.cubid.me",
   ]);
+});
+
+test("buildOidcRuntimeConfig rejects short pairwise subject master secrets", () => {
+  assert.throws(
+    () =>
+      buildOidcRuntimeConfig(createTestEnv({
+        OIDC_ISSUER_URL: "https://id.cubid.me",
+        OIDC_PAIRWISE_SUBJECT_MASTER_SECRET: "short",
+        SUPABASE_URL: "https://supabase.example.com",
+        SUPABASE_SERVICE_ROLE_KEY: "service-role-key",
+      })),
+    /OIDC_PAIRWISE_SUBJECT_MASTER_SECRET must be at least 32 characters/
+  );
+});
+
+test("buildOidcRuntimeConfig rejects invalid OIDC signing private JWK JSON", () => {
+  assert.throws(
+    () =>
+      buildOidcRuntimeConfig(createTestEnv({
+        OIDC_ISSUER_URL: "https://id.cubid.me",
+        OIDC_PAIRWISE_SUBJECT_MASTER_SECRET:
+          "test-pairwise-subject-master-secret-32",
+        OIDC_SIGNING_PRIVATE_JWK_JSON: "{not json",
+        SUPABASE_URL: "https://supabase.example.com",
+        SUPABASE_SERVICE_ROLE_KEY: "service-role-key",
+      })),
+    /OIDC_SIGNING_PRIVATE_JWK_JSON must be valid JSON/
+  );
+});
+
+test("buildOidcRuntimeConfig requires an active signing kid when private JWK has no kid", () => {
+  assert.throws(
+    () =>
+      buildOidcRuntimeConfig(createTestEnv({
+        OIDC_ISSUER_URL: "https://id.cubid.me",
+        OIDC_PAIRWISE_SUBJECT_MASTER_SECRET:
+          "test-pairwise-subject-master-secret-32",
+        OIDC_SIGNING_PRIVATE_JWK_JSON: '{"kty":"RSA"}',
+        SUPABASE_URL: "https://supabase.example.com",
+        SUPABASE_SERVICE_ROLE_KEY: "service-role-key",
+      })),
+    /OIDC_ACTIVE_SIGNING_KID or OIDC_SIGNING_PRIVATE_JWK_JSON.kid is required/
+  );
 });

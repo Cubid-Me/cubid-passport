@@ -1,6 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js"
 
-import { getRequiredEnv } from "@cubid/config"
+import { getSupabaseServiceRoleConfig } from "@cubid/config"
 
 let supabaseClient: SupabaseClient | null = null
 
@@ -12,9 +12,10 @@ export const setPassportSupabaseForTests = (
 
 export const getPassportSupabase = () => {
   if (!supabaseClient) {
+    const config = getSupabaseServiceRoleConfig()
     supabaseClient = createClient(
-      getRequiredEnv("SUPABASE_URL"),
-      getRequiredEnv("SUPABASE_SERVICE_ROLE_KEY"),
+      config.url,
+      config.serviceRoleKey,
       {
         auth: {
           autoRefreshToken: false,

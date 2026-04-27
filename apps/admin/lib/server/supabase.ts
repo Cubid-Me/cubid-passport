@@ -1,4 +1,4 @@
-import { getRequiredEnv } from '@cubid/config';
+import { getSupabaseServiceRoleConfig } from '@cubid/config';
 import { createClient } from '@supabase/supabase-js';
 
 type AdminSupabaseClient = ReturnType<typeof createClient<any>>;
@@ -7,9 +7,10 @@ let supabaseClient: AdminSupabaseClient | null = null;
 
 export const getSupabase = () => {
   if (!supabaseClient) {
+    const config = getSupabaseServiceRoleConfig();
     supabaseClient = createClient<any>(
-      getRequiredEnv('SUPABASE_URL'),
-      getRequiredEnv('SUPABASE_SERVICE_ROLE_KEY'),
+      config.url,
+      config.serviceRoleKey,
       {
         auth: {
           autoRefreshToken: false,

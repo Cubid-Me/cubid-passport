@@ -2558,3 +2558,34 @@ Record the corrected C05.1 implementation head after moving encrypted v3 dapp us
 #### Follow-up
 
 - continue with C05.1.1 after production backfill verification, or move on to C06 operational-secret hardening
+
+### session: v88
+
+- timestamp: 2026-04-27T22:55:47Z
+- agent: **OpenAI Codex**
+- branch: **codex/c04-c06-secrets-hardening-split**
+- head: **`ade5b82`**
+- session name: **Harden env-backed operational secret loading**
+
+#### Objective
+
+Implement C06 so environment-backed operational secrets are loaded, parsed, redacted, documented, and smoke-checked through shared helpers instead of scattered raw `process.env` reads.
+
+#### Actions Taken
+
+- extended `@cubid/config` with required-secret loading, alias fallback, JSON secret parsing, Firebase private-key normalization, Supabase service-role config loading, and redaction helpers
+- migrated OIDC signing, pairwise subject, Firebase Admin, Supabase service-role, Twilio, Fractal, Instagram, Worldcoin, NEAR issuer, and Passport internal-token call sites onto shared secret helpers
+- added Passport operational-secret helpers, tests, canonical env names with legacy alias support, and a repo-level operational-secret readiness check
+- documented C06 ownership, rotation, emergency revocation, local-development handling, and redaction expectations
+
+#### Verification
+
+- `pnpm --filter @cubid/config test && pnpm --filter @cubid/config typecheck`
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/oidc test && pnpm --filter @cubid/oidc typecheck'`
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/passport test && pnpm --filter @cubid/passport typecheck && pnpm --filter @cubid/admin test && pnpm --filter @cubid/admin typecheck'`
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/config test && pnpm --filter @cubid/config typecheck && pnpm --filter @cubid/passport build && pnpm check:secrets'`
+- `npx -p node@24 -c 'node --version && pnpm test && pnpm typecheck && pnpm build'`
+
+#### Follow-up
+
+- close C06 todo metadata after committing this implementation head

@@ -15,7 +15,7 @@ process.env.OIDC_ISSUER_URL ??= "https://id.cubid.me";
 process.env.OIDC_PUBLIC_ORIGIN ??= "https://id.cubid.me";
 process.env.OIDC_CORS_ALLOWED_ORIGINS ??=
   "https://passport.cubid.me,https://passport-preview.cubid.me";
-process.env.OIDC_PAIRWISE_SUBJECT_MASTER_SECRET ??= "secret";
+process.env.OIDC_PAIRWISE_SUBJECT_MASTER_SECRET ??= "test-pairwise-subject-master-secret-32";
 process.env.PASSPORT_LOGIN_URL ??= "https://passport.cubid.me/login";
 process.env.PASSPORT_CONSENT_URL ??= "https://passport.cubid.me/allow";
 process.env.OIDC_JWKS_JSON ??= '{"keys":[]}';

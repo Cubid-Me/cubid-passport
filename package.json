@@ -19,6 +19,7 @@
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "check:api-security": "bash ./scripts/check-api-security-regressions.sh",
+    "check:secrets": "node ./scripts/check-operational-secrets.mjs",
     "format": "turbo run format",
     "format:write": "turbo run format:write"
   },

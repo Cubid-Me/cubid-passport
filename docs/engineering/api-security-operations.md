@@ -207,6 +207,9 @@ Checks:
 - `SUPABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`
 - Firebase Admin server credentials for bearer-token verification
+- `NEAR_ISSUER_PRIVATE_KEY` preferred over legacy `private_key_near`
+- `TWILIO_ACCOUNT_SID` preferred over legacy `twilio_sid`
+- `TWILIO_AUTH_TOKEN` preferred over legacy `authToken`
 
 Passport also owns route-specific secrets for OTP, webhook, and outbound integrations touched by the hardened API surface.
 
@@ -257,6 +260,12 @@ material.
 - issuer URL, signing-key, and client-registration configuration
 - `SUPABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`
+- `OIDC_PAIRWISE_SUBJECT_MASTER_SECRET`
+- `OIDC_SIGNING_PRIVATE_JWK_JSON`
+- `OIDC_ACTIVE_SIGNING_KID`
+
+See `docs/engineering/operational-secret-hardening.md` for the C06 runbook,
+canonical names, legacy aliases, readiness checks, and rotation procedures.
 
 ## CI and Regression Expectations
 

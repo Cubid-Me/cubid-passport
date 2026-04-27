@@ -1,5 +1,8 @@
 import {
+  getOptionalEnvFrom,
+  getRequiredSecretFrom,
   parseCsvValue,
+  parseJsonSecretObject,
 } from "@cubid/config";
 
 export interface OidcRuntimeConfig {
@@ -23,11 +26,6 @@ export interface OidcRuntimeConfig {
 }
 
 let cachedConfig: OidcRuntimeConfig | null = null;
-
-function getOptionalEnvFrom(env: NodeJS.ProcessEnv, name: string): string | null {
-  const value = env[name]?.trim();
-  return value ? value : null;
-}
 
 function getOptionalNumericEnvFrom(
   env: NodeJS.ProcessEnv,
@@ -59,28 +57,33 @@ function parseJwks(rawValue: string | null): { keys: unknown[] } {
   };
 }
 
-function parseJsonObject(rawValue: string | null, envName: string): Record<string, unknown> | null {
-  if (!rawValue) {
+function getRequiredEnvFrom(env: NodeJS.ProcessEnv, name: string): string {
+  return getRequiredSecretFrom(env, name);
+}
+
+function parseSigningPrivateJwk(env: NodeJS.ProcessEnv): Record<string, unknown> | null {
+  const privateJwk = parseJsonSecretObject(
+    getOptionalEnvFrom(env, "OIDC_SIGNING_PRIVATE_JWK_JSON"),
+    "OIDC_SIGNING_PRIVATE_JWK_JSON"
+  );
+
+  if (!privateJwk) {
     return null;
   }
 
-  const parsed = JSON.parse(rawValue) as unknown;
+  const configuredKid = getOptionalEnvFrom(env, "OIDC_ACTIVE_SIGNING_KID");
+  const jwkKid =
+    typeof privateJwk.kid === "string" && privateJwk.kid.trim()
+      ? privateJwk.kid.trim()
+      : null;
 
-  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
-    throw new Error(`${envName} must be a JSON object.`);
+  if (!configuredKid && !jwkKid) {
+    throw new Error(
+      "OIDC_ACTIVE_SIGNING_KID or OIDC_SIGNING_PRIVATE_JWK_JSON.kid is required"
+    );
   }
 
-  return parsed as Record<string, unknown>;
-}
-
-function getRequiredEnvFrom(env: NodeJS.ProcessEnv, name: string): string {
-  const value = env[name]?.trim();
-
-  if (!value) {
-    throw new Error(`Missing required environment variable ${name}`);
-  }
-
-  return value;
+  return privateJwk;
 }
 
 export function buildOidcRuntimeConfig(env: NodeJS.ProcessEnv): OidcRuntimeConfig {
@@ -102,7 +105,7 @@ export function buildOidcRuntimeConfig(env: NodeJS.ProcessEnv): OidcRuntimeConfi
     issuer,
     publicOrigin,
     port,
-    pairwiseSubjectMasterSecret: getRequiredEnvFrom(env, "OIDC_PAIRWISE_SUBJECT_MASTER_SECRET"),
+    pairwiseSubjectMasterSecret: getRequiredSecretFrom(env, "OIDC_PAIRWISE_SUBJECT_MASTER_SECRET", { minLength: 32 }),
     passportLoginUrl,
     passportConsentUrl,
     passkeyRpId: getOptionalEnvFrom(env, "OIDC_PASSKEY_RP_ID") ?? new URL(passportPublicOrigin).hostname,
@@ -110,11 +113,11 @@ export function buildOidcRuntimeConfig(env: NodeJS.ProcessEnv): OidcRuntimeConfi
     passkeyRpName: getOptionalEnvFrom(env, "OIDC_PASSKEY_RP_NAME") ?? "Cubid Passport",
     firebaseProjectId: getOptionalEnvFrom(env, "OIDC_FIREBASE_PROJECT_ID") ?? getOptionalEnvFrom(env, "FIREBASE_PROJECT_ID"),
     firebaseJwksUrl: getOptionalEnvFrom(env, "OIDC_FIREBASE_JWKS_URL") ?? "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com",
-    signingPrivateJwk: parseJsonObject(getOptionalEnvFrom(env, "OIDC_SIGNING_PRIVATE_JWK_JSON"), "OIDC_SIGNING_PRIVATE_JWK_JSON"),
+    signingPrivateJwk: parseSigningPrivateJwk(env),
     activeSigningKid: getOptionalEnvFrom(env, "OIDC_ACTIVE_SIGNING_KID"),
     jwks: parseJwks(getOptionalEnvFrom(env, "OIDC_JWKS_JSON")),
     supabaseUrl: getRequiredEnvFrom(env, "SUPABASE_URL"),
-    supabaseServiceRoleKey: getRequiredEnvFrom(env, "SUPABASE_SERVICE_ROLE_KEY"),
+    supabaseServiceRoleKey: getRequiredSecretFrom(env, "SUPABASE_SERVICE_ROLE_KEY", { minLength: 12 }),
   };
 }
 

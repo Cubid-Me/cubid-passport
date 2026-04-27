@@ -4,12 +4,11 @@ import { createHash } from "crypto"
 import type { NextApiRequest, NextApiResponse } from "next"
 import { Contract, KeyPair, connect, keyStores } from "near-api-js"
 
-import { getRequiredEnv } from "@cubid/config"
-
 import {
   fetchGitcoinPassportScore,
   submitGitcoinPassport,
 } from "@/lib/server/gitcoinScorer"
+import { getNearIssuerPrivateKey } from "@/lib/server/operationalSecrets"
 import { handlePassportRoute } from "@/lib/server/passportApi"
 import { getPassportSupabase } from "@/lib/server/supabase"
 
@@ -28,7 +27,7 @@ export default async function handler(
     },
     async () => {
       const myKeyStore = new keyStores.InMemoryKeyStore()
-      const keyPairString = KeyPair.fromString(getRequiredEnv("private_key_near"))
+      const keyPairString = KeyPair.fromString(getNearIssuerPrivateKey())
 
       await myKeyStore.setKey("mainnet", "issuer.cubidme.near", keyPairString)
 

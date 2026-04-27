@@ -3,22 +3,22 @@ import axios from "axios";
 import { encode_data } from "@/lib/encode_data";
 import { supabase } from "../utils/supabase";
 import { insertStamp } from "@/lib/stampInsertion";
+import { getRequiredSecret, getOptionalEnv } from "@cubid/config";
 
 export default async function handler(req, res) {
   const { code, userid } = req.body;
   const worldcoinRedirectUri =
-    process.env.WLD_REDIRECT_URI ?? process.env.NEXT_PUBLIC_WORLDCOIN_REDIRECT_URI ?? "";
-
-  if (!process.env.WLD_CLIENT_ID || !process.env.WLD_CLIENT_SECRET || !worldcoinRedirectUri) {
-    return res.status(500).send({ error: "Missing Worldcoin environment configuration" });
-  }
+    getOptionalEnv("WLD_REDIRECT_URI") ??
+    getRequiredSecret("NEXT_PUBLIC_WORLDCOIN_REDIRECT_URI");
+  const worldcoinClientId = getRequiredSecret("WLD_CLIENT_ID");
+  const worldcoinClientSecret = getRequiredSecret("WLD_CLIENT_SECRET");
 
   try {
     const data = new URLSearchParams();
     data.append("code", code);
     data.append("grant_type", "authorization_code");
     data.append("redirect_uri", worldcoinRedirectUri);
-    data.append("client_id", process.env.WLD_CLIENT_ID ?? "");
+    data.append("client_id", worldcoinClientId);
 
     const { data: dta } = await axios.post(
       "https://id.worldcoin.org/token",
@@ -26,7 +26,7 @@ export default async function handler(req, res) {
       {
         headers: {
           Authorization: `Basic ${Buffer.from(
-            `${process.env.WLD_CLIENT_ID}:${process.env.WLD_CLIENT_SECRET}`
+            `${worldcoinClientId}:${worldcoinClientSecret}`
           ).toString("base64")}`,
           "Content-Type": "application/x-www-form-urlencoded",
         },

@@ -3,6 +3,7 @@ import type { NextApiRequest } from "next"
 import { createClient, type SupabaseClient } from "@supabase/supabase-js"
 import type { DecodedIdToken } from "firebase-admin/auth"
 import { ApiSecurityError } from "@cubid/auth/server"
+import { getSupabaseServiceRoleConfig } from "@cubid/config"
 
 import { getPassportFirebaseAdminAuth } from "./firebaseAdmin"
 
@@ -45,21 +46,12 @@ export type PassportConsentSummary = {
 
 let supabaseClient: PassportSupabaseClient | null = null
 
-const getRequiredEnv = (name: string) => {
-  const value = process.env[name]?.trim()
-
-  if (!value) {
-    throw new Error(`Missing required environment variable ${name}`)
-  }
-
-  return value
-}
-
 export const getPassportSupabase = () => {
   if (!supabaseClient) {
+    const config = getSupabaseServiceRoleConfig()
     supabaseClient = createClient(
-      getRequiredEnv("SUPABASE_URL"),
-      getRequiredEnv("SUPABASE_SERVICE_ROLE_KEY"),
+      config.url,
+      config.serviceRoleKey,
       {
         auth: {
           autoRefreshToken: false,

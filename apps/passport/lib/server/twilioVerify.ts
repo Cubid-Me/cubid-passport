@@ -1,25 +1,24 @@
 import twilio from "twilio"
 
-import { getRequiredEnv } from "@cubid/config"
+import {
+  getTwilioAccountSid,
+  getTwilioAuthToken,
+  getTwilioVerifyServiceSid,
+} from "./operationalSecrets"
 
 let twilioClient: ReturnType<typeof twilio> | null = null
 
 const getTwilioVerifyClient = () => {
   if (!twilioClient) {
-    twilioClient = twilio(
-      getRequiredEnv("twilio_sid"),
-      getRequiredEnv("authToken")
-    )
+    twilioClient = twilio(getTwilioAccountSid(), getTwilioAuthToken())
   }
 
   return twilioClient
 }
 
-const getVerifyServiceSid = () => getRequiredEnv("TWILIO_VERIFY_SERVICE_SID")
-
 export const sendPhoneOtp = async (phone: string) => {
   await getTwilioVerifyClient().verify.v2
-    .services(getVerifyServiceSid())
+    .services(getTwilioVerifyServiceSid())
     .verifications.create({ channel: "sms", to: phone })
 }
 
@@ -28,7 +27,7 @@ export const verifyPhoneOtp = async (input: {
   phone: string
 }) => {
   return getTwilioVerifyClient().verify.v2
-    .services(getVerifyServiceSid())
+    .services(getTwilioVerifyServiceSid())
     .verificationChecks.create({
       code: input.otpCode,
       to: input.phone,

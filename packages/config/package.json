@@ -16,12 +16,13 @@
     "build": "pnpm exec tsc -p tsconfig.json",
     "lint": "pnpm exec tsc --noEmit -p tsconfig.json",
     "typecheck": "pnpm exec tsc --noEmit -p tsconfig.json",
-    "test": "echo \"No tests defined for @cubid/config\"",
+    "test": "pnpm exec tsx --test src/*.test.ts",
     "format": "echo \"No format changes required for @cubid/config\"",
     "format:write": "echo \"No format changes required for @cubid/config\""
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
+    "tsx": "^4.20.6",
     "typescript": "5.2.2"
   }
 }
