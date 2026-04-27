@@ -87,7 +87,8 @@ export const Profile = () => {
   const dispatch = useDispatch()
   const [userState, setUserState] = useState<any>({})
   const [walletState, setWalletState] = useState<any>({})
-  const [exportPrivateKey, setExportPrivateKey] = useState(undefined)
+  const [nearTransactionSignature, setNearTransactionSignature] =
+    useState<string | undefined>(undefined)
   const [passkeySupported, setPasskeySupported] = useState(false)
   const [passkeyLabel, setPasskeyLabel] = useState("My passkey")
   const [passkeyLoading, setPasskeyLoading] = useState(false)
@@ -181,11 +182,11 @@ export const Profile = () => {
     }
   }, [supabaseUser])
 
-  const fetchPrivateKeyWithAddress = (nearKey: any) => {
-    const stampData = (
+  const showNearTransactionSignature = (nearKey: any) => {
+    const transactionSignature = (
       allNearData.find((item: any) => item.uniquevalue === nearKey) as any
     )?.stamp_json?.transaction?.signature
-    setExportPrivateKey(stampData)
+    setNearTransactionSignature(transactionSignature)
   }
 
   useEffect(() => {
@@ -430,11 +431,11 @@ export const Profile = () => {
                   ) && (
                     <button
                       onClick={() => {
-                        fetchPrivateKeyWithAddress(item)
+                        showNearTransactionSignature(item)
                       }}
                       className="rounded-md bg-blue-600 p-2 py-1 text-xs text-white"
                     >
-                      Export Private Key
+                      View transaction signature
                     </button>
                   )}
                 </div>
@@ -765,29 +766,32 @@ export const Profile = () => {
           </CardContent>
         </Card>
         <Sheet
-          open={Boolean(exportPrivateKey)}
+          open={Boolean(nearTransactionSignature)}
           onOpenChange={(value) => {
             if (value === false) {
-              setExportPrivateKey(undefined)
+              setNearTransactionSignature(undefined)
             }
           }}
         >
           <SheetContent>
             <SheetHeader>
-              <SheetTitle>Export Private Key</SheetTitle>
-              <p className="break-all">Copy Private Key : {exportPrivateKey}</p>
+              <SheetTitle>NEAR Transaction Signature</SheetTitle>
+              <p className="break-all">
+                Transaction signature: {nearTransactionSignature}
+              </p>
               <p>
-                Copy they key if you want to import it to any other Near-wallet.
+                This is the on-chain signature associated with the NEAR stamp
+                transaction. It is not a wallet private key.
               </p>
               <Button
                 className="block"
                 onClick={() => {
-                  navigator.clipboard.writeText(exportPrivateKey as any)
-                  toast.success("Successfully copied private key")
+                  navigator.clipboard.writeText(nearTransactionSignature ?? "")
+                  toast.success("Successfully copied transaction signature")
                 }}
                 variant="outline"
               >
-                Copy
+                Copy signature
               </Button>
             </SheetHeader>
           </SheetContent>

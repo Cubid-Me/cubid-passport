@@ -363,7 +363,7 @@ Bring the sprawling Passport API surface under the shared security baseline, inc
 
 Finish C03 by validating the shared baseline as a platform-wide contract rather than a set of local refactors. Add unit tests in `@cubid/auth` for request ID handling, validation wrappers, actor guards, CORS decisions, and shared error serialization. Extend workspace test coverage so OIDC, Admin, and Passport all prove failure-path behavior, not just happy paths. Update CI expectations where needed so the route families touched by C03 are exercised in the normal monorepo validation graph. Document the new environment variables, security event fields, and monitoring expectations in long-lived engineering docs so operators know what signals now exist and how to use them. Close the parent todo only after the docs, tests, and validation story match the implemented baseline.
 
-### C04. Redesign custody for generated wallets, private keys, and sensitive disclosures
+### C04. Hash non-retrievable secrets
 
 - Status: Not started
 - Timestamp started: TBD
@@ -372,7 +372,84 @@ Finish C03 by validating the shared baseline as a platform-wide contract rather 
 - Head: TBD
 - Session-log reference(s): TBD
 
-Audit and redesign every feature that stores, returns, or displays sensitive key material. Today the platform generates EVM wallets, interacts with NEAR account creation, and exposes private-key-like artifacts in user-facing flows. Decide which custody model Cubid actually wants: no custody, encrypted custody, or delegated custody with explicit export controls. If Cubid must hold keys, store them encrypted at rest with clear key hierarchy, access policy, and logging, and never treat them as ordinary application data. If Cubid should not hold them, remove storage and restructure flows to keep keys user-controlled from creation onward. Align this work with backgrounder principles around user control and data minimization. The end result should be a documented, auditable custody posture that eliminates ambiguous or casually unsafe key handling across apps.
+Replace plaintext storage for secrets that only need possession verification, not later recovery. This parent track covers credentials where Cubid should never need to reconstruct the original value after issuance or submission. The target posture is hash-at-rest with strong one-way hashing, explicit prefixes or lookup identifiers where needed, show-once issuance, safe rotation, and no leakage through API responses, Admin tables, logs, errors, or analytics. Document the difference between verification-only secrets and retrievable operational secrets so later engineers do not accidentally encrypt values that should be hashed, or hash values that must be used for outbound signing. Finish this track only after dapp API keys and email OTP codes use clear hash verification paths, existing callers are migrated, and legacy plaintext fields are either removed, ignored, or retained only behind a documented migration window.
+
+### C04.1 Hash dapp API keys
+
+- Status: Not started
+- Timestamp started: TBD
+- Timestamp completed: TBD
+- Feature branch: TBD
+- Head: TBD
+- Session-log reference(s): TBD
+
+Migrate dapp API keys from plaintext `dapps.apikey` lookup to a verification-only model. Generate new keys with a non-secret prefix for lookup and a high-entropy secret body shown only once on create or rotate. Store only the prefix, hash, hash algorithm, version, creation timestamp, and last-rotated metadata needed for operations. Update Passport dapp actor authentication, Admin app creation, Admin key rotation, and any displayed app tables so operators can identify a key without copying a recoverable secret from the database. Preserve a safe migration path for existing plaintext keys: either accept them temporarily through a legacy verifier while writing hashed replacements, or force rotation with clear Admin messaging. Add tests proving plaintext keys are not returned after creation/rotation, invalid keys fail consistently, and existing dapp-facing routes still authenticate through the shared Passport baseline.
+
+### C04.2 Hash email OTP codes
+
+- Status: Not started
+- Timestamp started: TBD
+- Timestamp completed: TBD
+- Feature branch: TBD
+- Head: TBD
+- Session-log reference(s): TBD
+
+Move email OTP storage from plaintext `email_otp.otp` values to short-lived hash verification. Generate OTP codes as before for user delivery, but store only a keyed hash or slow hash plus expiration, attempt count, consumed timestamp, request metadata, and any rate-limit correlation needed for abuse triage. Verification should compare against the stored hash, reject expired or consumed codes, increment failed attempts, and delete or mark the code consumed after success so replay is not possible. Keep Twilio Verify phone OTP out of this database migration because the provider already owns that challenge state. Update tests for send, verify, expired, replayed, malformed, and over-attempted OTP flows, and document the retry-safe behavior so downstream apps understand which failures can be retried without generating confusing duplicate challenges.
+
+### C05. Envelope-encrypt retrievable secrets with Supabase Vault
+
+- Status: Not started
+- Timestamp started: TBD
+- Timestamp completed: TBD
+- Feature branch: TBD
+- Head: TBD
+- Session-log reference(s): TBD
+
+Create the retrievable-secret custody track for values Cubid must later recover in order to perform a server-side action. Use envelope encryption with data-key secrets managed in Supabase Vault as the default implementation model. Each encrypted row should carry ciphertext, nonce or IV, authentication tag, algorithm, key identifier, key version, purpose, and enough authenticated context to prevent ciphertext swapping across tenants or users. Decryption must happen only in server-side code after explicit actor authorization, with request IDs and audit/security events for sensitive access, rotation, and failure cases. This track should produce a target-state document for encrypted database secrets, a reusable server helper, migration patterns for legacy plaintext columns, and tests proving decrypted values never appear in generic API responses, Admin lists, logs, or error envelopes.
+
+### C05.1 Envelope-encrypt dapp user secrets
+
+- Status: Not started
+- Timestamp started: TBD
+- Timestamp completed: TBD
+- Feature branch: TBD
+- Head: TBD
+- Session-log reference(s): TBD
+
+Migrate `dapp_user_secrets.secret` away from plaintext storage using the C05 Supabase Vault envelope-encryption helper. First confirm the product contract for dapp user secrets: who can create them, whether they are ever returned to callers, and which server workflows need recovery. Then add encrypted columns and metadata, write new submissions as ciphertext, and provide a careful migration path for existing plaintext rows without logging or returning the raw values. If retrieval is not actually required for a subset of uses, move those values to a hash-only pattern instead of encrypting them by habit. Update the dapp-facing route to validate purpose and ownership, add audit events for create/decrypt/rotate decisions, and test that browsers, Admin list views, and ordinary dapp APIs cannot access raw secrets accidentally.
+
+### C05.2 Redesign blockchain private-key custody
+
+- Status: Not started
+- Timestamp started: TBD
+- Timestamp completed: TBD
+- Feature branch: TBD
+- Head: TBD
+- Session-log reference(s): TBD
+
+Remove ambiguous plaintext custody for blockchain private keys across EVM, NEAR, SUI, and legacy generated-wallet tables. Start by inventorying all `private_key` columns, wallet-generation routes, minting routes, UI disclosure paths, and server signing paths. Lock the preferred posture for user wallet keys as no-custody unless an explicit product requirement proves otherwise: Cubid should store public addresses, stamp metadata, and transaction references, not exportable user private keys. For any remaining operational signing keys or unavoidable retrievable private keys, require C05 envelope encryption, server-only access, and audit events. Add migrations that quarantine or null legacy plaintext fields where safe, update generated-wallet routes so they no longer insert recoverable private keys as ordinary data, and add regression checks preventing “private key” export copy from returning to Profile or wallet flows.
+
+### C05.3 Envelope-encrypt webhook signing secrets
+
+- Status: Not started
+- Timestamp started: TBD
+- Timestamp completed: TBD
+- Feature branch: TBD
+- Head: TBD
+- Session-log reference(s): TBD
+
+Move webhook signing secrets into the retrievable-secret track because Passport must recover the raw secret to HMAC-sign outbound webhook payloads. Replace plaintext `dapp_webhook_subscriptions.secret` storage with Supabase Vault envelope-encrypted ciphertext and metadata. Admin should return the generated secret only during create or rotate flows, then display a redacted identifier, creation time, rotation time, and status in list and detail views. Passport webhook delivery code should decrypt only inside the internal delivery path, bind decryption context to the dapp and webhook subscription, and audit signing failures, rotations, and suspicious access attempts without logging secret material. Preserve compatibility for existing subscriptions through a migration window or forced rotation plan, and add tests proving Admin cannot repeatedly reveal stored webhook secrets while delivery signatures still verify.
+
+### C06. Harden env-backed operational secrets
+
+- Status: Not started
+- Timestamp started: TBD
+- Timestamp completed: TBD
+- Feature branch: TBD
+- Head: TBD
+- Session-log reference(s): TBD
+
+Harden runtime secrets that are already environment-backed rather than stored in application tables. This includes the OIDC signing private JWK, pairwise subject master secret, Firebase private keys, Supabase service role keys, Twilio credentials, SMTP credentials, Instagram and Fractal client secrets, NEAR issuer keys, internal Passport bearer tokens, and similar integration credentials. The goal is not to move these into user-facing storage; it is to define ownership, required environments, rotation procedures, leak response, local-development handling, and deployment checks. Update config helpers where needed so required secrets fail closed with clear messages and never appear in client-safe bundles. Add docs and smoke checks for secret presence, key rotation readiness, and safe redaction in logs. Finish with an operator runbook that separates routine rotation from incident-driven revocation.
 
 ## D. Shared Domain and Application Refactor
 

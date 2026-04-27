@@ -2089,3 +2089,33 @@ Bring the roadmap metadata back into sync with the validated `C03.5` implementat
 
 - publish the completed C03 branch for review
 - tackle `C04` next for wallet and sensitive-disclosure custody hardening, unless priorities shift back to package publishing or integration DX work
+
+### session: v73
+
+- timestamp: 2026-04-27T13:59:31-0400
+- agent: **OpenAI Codex**
+- branch: **codex/c04-c06-secrets-hardening-split**
+- head: **`144a334`**
+- session name: **Split secrets hardening roadmap and fix Profile disclosure**
+
+#### Objective
+
+Split the broad `C04` custody todo into concrete hashed-secret, encrypted-retrievable-secret, and env-backed operational-secret tracks, and remove misleading Passport Profile copy that described a NEAR transaction signature as a private key.
+
+#### Actions Taken
+
+- replaced the old broad `C04` todo with a hash-at-rest track for non-retrievable verification secrets
+- added `C04.1` for dapp API keys and `C04.2` for email OTP code hashing
+- added `C05` for Supabase Vault envelope encryption, including dapp user secrets, blockchain private-key custody, and webhook signing secrets
+- added `C06` for hardening env-backed operational secrets such as OIDC signing keys, Firebase keys, Supabase service roles, Twilio, SMTP, Instagram, Fractal, NEAR issuer keys, and internal bearer tokens
+- updated Passport Profile so the NEAR stamp transaction signature sheet no longer uses private-key export language
+
+#### Verification
+
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport test` attempted, but blocked by the local Node v25.8.2 runtime; the workspace requires Node 20 and the older JWT dependency fails before tests execute
+- confirmed Profile no longer contains “Export Private Key” or “Copy Private Key” copy
+
+#### Follow-up
+
+- implement `C04.1` for hashed dapp API keys, or `C04.2` for hashed email OTP codes if OTP cleanup should land first
