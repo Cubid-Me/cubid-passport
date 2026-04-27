@@ -184,6 +184,7 @@ describe('Admin route baseline wiring', () => {
   });
 
   it('creates webhook subscriptions with encrypted one-time signing secrets', async () => {
+    const eventInsertMock = jest.fn(async () => ({ error: null }));
     const insertMock = jest.fn(() => ({
       select: () => ({
         maybeSingle: async () => ({
@@ -222,6 +223,12 @@ describe('Admin route baseline wiring', () => {
         if (table === 'dapp_webhook_subscriptions') {
           return {
             insert: insertMock,
+          };
+        }
+
+        if (table === 'api_security_events') {
+          return {
+            insert: eventInsertMock,
           };
         }
 
@@ -267,6 +274,13 @@ describe('Admin route baseline wiring', () => {
       expect.objectContaining({
         secret: '__cubid_encrypted_webhook_signing_secret__',
         secret_ciphertext: 'secret-ciphertext',
+      })
+    );
+    expect(eventInsertMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event_id: expect.stringMatching(/^api_event_/),
+        event_type: 'webhook_signing_secret.created',
+        route: 'admin/webhooks/create',
       })
     );
     expect(response.json).toHaveBeenCalledWith({

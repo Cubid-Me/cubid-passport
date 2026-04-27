@@ -47,9 +47,13 @@ const writeWebhookSecretSecurityEvent = async (
   row: Record<string, unknown>
 ) => {
   try {
-    await supabase.from('api_security_events').insert(row);
-  } catch {
+    const { error } = await supabase.from('api_security_events').insert(row);
+    if (error) {
+      throw error;
+    }
+  } catch (error) {
     // Secret custody must not fail open because audit logging is unavailable.
+    throw error;
   }
 };
 
@@ -131,9 +135,11 @@ const rotateWebhookSecret = async (
         webhookId,
         webhook: existingWebhook.webhook,
       },
+      event_id: `api_event_${randomUUID().replace(/-/g, '')}`,
       event_type: 'webhook_signing_secret.rotated',
       outcome: 'success',
       request_id: request.requestId,
+      route: 'admin/webhooks/rotate-secret',
     });
 
     return res.status(200).json({

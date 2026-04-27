@@ -472,10 +472,14 @@ export const resolvePassportDappFromApiKey = async (
     )
   }
 
-  void supabase
+  const { error: lastUsedError } = await supabase
     .from("dapp_api_keys")
     .update({ last_used_at: new Date().toISOString() })
     .eq("id", keyRecord.id)
+
+  if (lastUsedError) {
+    throw lastUsedError
+  }
 
   return dappRow as PassportDappRecord
 }

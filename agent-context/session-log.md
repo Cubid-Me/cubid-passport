@@ -2691,3 +2691,30 @@ Update repo agent workflow instructions so future agents target the project’s 
 #### Follow-up
 
 - continue PR #149 review/merge flow or approved cleanup after merge
+
+### session: v93
+
+- timestamp: 2026-04-27T23:59:10Z
+- agent: **OpenAI Codex**
+- branch: **codex/c04-c06-secrets-hardening-split**
+- head: **`7077c44`**
+- session name: **Address remaining PR 149 Codex review comments**
+
+#### Objective
+
+Address the remaining unresolved Codex review comments on PR #149.
+
+#### Actions Taken
+
+- populated required `event_id` and `route` fields for webhook signing secret audit events on create and rotate paths
+- stopped silently ignoring webhook audit insert errors so custody audit failures surface instead of disappearing
+- awaited dapp API-key `last_used_at` updates after successful Passport dapp authentication
+- added Admin route test coverage for webhook audit event required fields
+
+#### Verification
+
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/admin test && pnpm --filter @cubid/admin typecheck && pnpm --filter @cubid/passport test && pnpm --filter @cubid/passport typecheck'`
+
+#### Follow-up
+
+- push the review-fix commit, reply to and resolve the remaining PR #149 review threads, then re-check CI
