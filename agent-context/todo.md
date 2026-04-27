@@ -476,12 +476,12 @@ Move webhook signing secrets into the retrievable-secret track because Passport 
 
 ### C06. Harden env-backed operational secrets
 
-- Status: Started
+- Status: Completed
 - Timestamp started: 2026-04-27T22:47:00Z
-- Timestamp completed: TBD
+- Timestamp completed: 2026-04-27T22:56:40Z
 - Feature branch: codex/c04-c06-secrets-hardening-split
-- Head: ade5b82
-- Session-log reference(s): TBD
+- Head: b29831b
+- Session-log reference(s): session: v88
 
 Harden runtime secrets that are already environment-backed rather than stored in application tables. This includes the OIDC signing private JWK, pairwise subject master secret, Firebase private keys, Supabase service role keys, Twilio credentials, SMTP credentials, Instagram and Fractal client secrets, NEAR issuer keys, internal Passport bearer tokens, and similar integration credentials. The goal is not to move these into user-facing storage; it is to define ownership, required environments, rotation procedures, leak response, local-development handling, and deployment checks. Update config helpers where needed so required secrets fail closed with clear messages and never appear in client-safe bundles. Add docs and smoke checks for secret presence, key rotation readiness, and safe redaction in logs. Finish with an operator runbook that separates routine rotation from incident-driven revocation.
 

@@ -2589,3 +2589,27 @@ Implement C06 so environment-backed operational secrets are loaded, parsed, reda
 #### Follow-up
 
 - close C06 todo metadata after committing this implementation head
+
+### session: v89
+
+- timestamp: 2026-04-27T22:56:40Z
+- agent: **OpenAI Codex**
+- branch: **codex/c04-c06-secrets-hardening-split**
+- head: **`b29831b`**
+- session name: **Close C06 operational-secret metadata**
+
+#### Objective
+
+Mark C06 complete after committing the validated env-backed operational-secret hardening implementation.
+
+#### Actions Taken
+
+- updated `agent-context/todo.md` with the C06 completion timestamp, implementation head, and session-log reference
+
+#### Verification
+
+- confirmed implementation commit `b29831b` contains the validated C06 hardening work
+
+#### Follow-up
+
+- continue with a C05/C06 follow-up or publish the current branch for review
