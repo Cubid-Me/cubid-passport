@@ -226,6 +226,14 @@ before enabling v3 writes or running the legacy backfill script. The legacy
 `/api/v2/save_secret` route is preserved for compatibility, but v3 is the
 encrypted custody contract.
 
+Webhook signing secrets use the same C05 envelope model because Passport must
+recover them to sign outbound webhook deliveries. Admin-created subscriptions
+store encrypted secret fields in `dapp_webhook_subscriptions`, return the raw
+secret only once during creation, and show only redacted secret status in list
+views. Provision the Supabase Vault secret
+`passport_webhook_signing_secret_wrapping_key_v1` before creating encrypted
+webhook subscriptions or running the legacy webhook backfill script.
+
 ### Admin
 
 - `ADMIN_CORS_ALLOWED_ORIGINS`

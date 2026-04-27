@@ -4,6 +4,7 @@ import axios from "axios"
 
 import { handlePassportRoute } from "@/lib/server/passportApi"
 import { getPassportSupabase } from "@/lib/server/supabase"
+import { resolveWebhookSigningSecret } from "@/lib/server/webhookSigningSecrets"
 
 async function fetchOldStamps() {
   const oneYearAgo = new Date()
@@ -79,13 +80,23 @@ export default async function handler(
               }
 
               const target = webhookRows?.[0]
-              if (!target?.secret || !target?.url) {
+              const targetUrl = target?.webhook_url ?? target?.url
+              if (!target || !targetUrl) {
+                return
+              }
+
+              const signingSecret = await resolveWebhookSigningSecret(
+                supabase,
+                target
+              )
+
+              if (!signingSecret) {
                 return
               }
 
               const signature = createSignature(
                 JSON.stringify({ stampid }),
-                target.secret
+                signingSecret
               )
 
               let insertedData: any
@@ -139,7 +150,7 @@ export default async function handler(
 
               try {
                 const response = await axios.post(
-                  target.url,
+                  targetUrl,
                   { stampid },
                   {
                     headers: {

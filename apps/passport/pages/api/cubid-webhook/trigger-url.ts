@@ -7,6 +7,7 @@ import {
   passportSchemas,
 } from "@/lib/server/passportApi"
 import { getPassportSupabase } from "@/lib/server/supabase"
+import { resolveWebhookSigningSecret } from "@/lib/server/webhookSigningSecrets"
 
 function createSignature(payload: string, secret: string): string {
   return crypto.createHmac("sha256", secret).update(payload).digest("hex")
@@ -85,9 +86,18 @@ export default async function handler(
                 return
               }
 
+              const signingSecret = await resolveWebhookSigningSecret(
+                supabase,
+                subscription
+              )
+
+              if (!signingSecret || !subscription.webhook_url) {
+                return
+              }
+
               const signature = createSignature(
                 JSON.stringify({ stampid }),
-                subscription.secret
+                signingSecret
               )
 
               const { data: existingEvents, error: existingEventsError } =

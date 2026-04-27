@@ -25,7 +25,14 @@ For dapp user secrets, the context includes:
 - `purpose`
 - algorithm and key version
 
-Decrypting with the wrong dapp, user UUID, purpose, or key fails.
+For webhook signing secrets, the context includes:
+
+- `dappId`
+- `secretReferenceId`
+- `webhook`
+
+Decrypting with the wrong dapp, user UUID, webhook subscription reference,
+purpose, or key fails.
 
 ## Dapp User Secrets
 
@@ -61,3 +68,33 @@ raw secret values.
 
 Physical removal of the legacy `secret` column is deferred until production
 smoke confirms current rows are encrypted and no callers depend on plaintext.
+
+## Webhook Signing Secrets
+
+Webhook signing secrets are retrievable operational secrets because Passport
+must recover the raw value to HMAC-sign outbound webhook deliveries. Admin
+creates new subscriptions with a generated signing secret, stores only encrypted
+fields plus `__cubid_encrypted_webhook_signing_secret__` in the legacy `secret`
+column, and returns the raw secret only in the immediate create response.
+
+Admin list/detail surfaces must not return the raw secret, ciphertext, wrapped
+data key, IVs, or authentication tags. They may show non-secret metadata such
+as status, creation time, and whether a subscription has been migrated to
+encrypted custody.
+
+The required Vault secret is
+`passport_webhook_signing_secret_wrapping_key_v1`. It must be a base64 or
+base64url encoded 32-byte value. Passport webhook delivery decrypts only inside
+the internal server-to-server delivery path.
+
+Run the idempotent webhook backfill script after the Vault secret is
+provisioned:
+
+```sh
+pnpm --filter @cubid/passport exec tsx scripts/encrypt-webhook-signing-secrets.ts --dry-run
+pnpm --filter @cubid/passport exec tsx scripts/encrypt-webhook-signing-secrets.ts
+```
+
+The delivery path temporarily accepts legacy plaintext rows so existing
+subscriptions can keep working during the migration window. New Admin-created
+subscriptions use encrypted storage immediately.

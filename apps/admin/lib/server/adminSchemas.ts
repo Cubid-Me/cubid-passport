@@ -93,6 +93,12 @@ export const adminWebhookDetailsSchema = z
   })
   .passthrough();
 
+export const adminWebhookRotateSecretSchema = z
+  .object({
+    webhookId: z.coerce.number().int().positive(),
+  })
+  .passthrough();
+
 export const adminArchiveClaimSchema = z
   .object({
     claimId: z.string().trim().min(1),

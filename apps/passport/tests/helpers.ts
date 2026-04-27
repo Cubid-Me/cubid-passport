@@ -67,6 +67,15 @@ export class MockPassportSupabase {
       })
     }
 
+    if (name === "get_webhook_signing_secret_wrapping_key_v1") {
+      return Promise.resolve({
+        data: Buffer.from(
+          "abcdef0123456789abcdef0123456789"
+        ).toString("base64"),
+        error: null,
+      })
+    }
+
     throw new Error(`Unexpected RPC ${name}`)
   }
 

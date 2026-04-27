@@ -1,4 +1,6 @@
 import {
+  createCipheriv,
+  createDecipheriv,
   createHash,
   randomBytes,
   randomUUID,
@@ -50,6 +52,21 @@ export type DappApiKeyMaterial = {
   apiKey: string;
   keyHash: string;
   keyPrefix: string;
+};
+
+export type Aes256GcmEnvelopeContext = Record<string, string | number | boolean | null>;
+
+export type Aes256GcmEnvelopePayload = {
+  ciphertext: string;
+  iv: string;
+  authTag: string;
+  wrappedDataKey: string;
+  wrappedDataKeyIv: string;
+  wrappedDataKeyAuthTag: string;
+  algorithm: "aes-256-gcm-envelope";
+  keyId: string;
+  keyVersion: number;
+  purpose: string;
 };
 
 type HeaderValue = string | string[] | undefined;
@@ -200,6 +217,136 @@ export function generateDappApiKey(): DappApiKeyMaterial {
     keyHash: hashDappApiKey(apiKey),
     keyPrefix,
   };
+}
+
+const toBase64 = (value: Buffer) => value.toString("base64");
+
+const fromBase64 = (value: string) => Buffer.from(value, "base64");
+
+export function decodeAes256GcmEnvelopeKey(encodedKey: string, label = "key") {
+  const trimmed = encodedKey.trim();
+  const decoded = Buffer.from(trimmed, "base64");
+
+  if (decoded.length === 32) {
+    return decoded;
+  }
+
+  const base64UrlDecoded = Buffer.from(
+    trimmed.replace(/-/g, "+").replace(/_/g, "/"),
+    "base64"
+  );
+
+  if (base64UrlDecoded.length === 32) {
+    return base64UrlDecoded;
+  }
+
+  throw new Error(`${label} must decode to exactly 32 bytes.`);
+}
+
+export function buildAes256GcmEnvelopeAad(
+  purpose: string,
+  context: Aes256GcmEnvelopeContext
+) {
+  return Buffer.from(
+    JSON.stringify({
+      context,
+      purpose,
+    }),
+    "utf8"
+  );
+}
+
+export function encryptAes256GcmEnvelope(
+  plaintext: string,
+  wrappingKey: Buffer,
+  options: {
+    context: Aes256GcmEnvelopeContext;
+    keyId: string;
+    keyVersion: number;
+    purpose: string;
+  }
+): Aes256GcmEnvelopePayload {
+  if (wrappingKey.length !== 32) {
+    throw new Error("AES-256-GCM envelope wrapping key must be 32 bytes.");
+  }
+
+  const dataKey = randomBytes(32);
+  const iv = randomBytes(12);
+  const wrapIv = randomBytes(12);
+  const aad = buildAes256GcmEnvelopeAad(options.purpose, options.context);
+
+  const cipher = createCipheriv("aes-256-gcm", dataKey, iv);
+  cipher.setAAD(aad);
+  const ciphertext = Buffer.concat([
+    cipher.update(plaintext, "utf8"),
+    cipher.final(),
+  ]);
+  const authTag = cipher.getAuthTag();
+
+  const wrapCipher = createCipheriv("aes-256-gcm", wrappingKey, wrapIv);
+  wrapCipher.setAAD(aad);
+  const wrappedDataKey = Buffer.concat([
+    wrapCipher.update(dataKey),
+    wrapCipher.final(),
+  ]);
+  const wrappedDataKeyAuthTag = wrapCipher.getAuthTag();
+  dataKey.fill(0);
+
+  return {
+    algorithm: "aes-256-gcm-envelope",
+    authTag: toBase64(authTag),
+    ciphertext: toBase64(ciphertext),
+    iv: toBase64(iv),
+    keyId: options.keyId,
+    keyVersion: options.keyVersion,
+    purpose: options.purpose,
+    wrappedDataKey: toBase64(wrappedDataKey),
+    wrappedDataKeyAuthTag: toBase64(wrappedDataKeyAuthTag),
+    wrappedDataKeyIv: toBase64(wrapIv),
+  };
+}
+
+export function decryptAes256GcmEnvelope(
+  envelope: Aes256GcmEnvelopePayload,
+  wrappingKey: Buffer,
+  context: Aes256GcmEnvelopeContext
+) {
+  if (wrappingKey.length !== 32) {
+    throw new Error("AES-256-GCM envelope wrapping key must be 32 bytes.");
+  }
+
+  if (envelope.algorithm !== "aes-256-gcm-envelope") {
+    throw new Error(`Unsupported envelope algorithm ${envelope.algorithm}.`);
+  }
+
+  const aad = buildAes256GcmEnvelopeAad(envelope.purpose, context);
+  const wrapDecipher = createDecipheriv(
+    "aes-256-gcm",
+    wrappingKey,
+    fromBase64(envelope.wrappedDataKeyIv)
+  );
+  wrapDecipher.setAAD(aad);
+  wrapDecipher.setAuthTag(fromBase64(envelope.wrappedDataKeyAuthTag));
+  const dataKey = Buffer.concat([
+    wrapDecipher.update(fromBase64(envelope.wrappedDataKey)),
+    wrapDecipher.final(),
+  ]);
+
+  try {
+    const decipher = createDecipheriv(
+      "aes-256-gcm",
+      dataKey,
+      fromBase64(envelope.iv)
+    );
+    decipher.setAAD(aad);
+    decipher.setAuthTag(fromBase64(envelope.authTag));
+    return Buffer.concat([
+      decipher.update(fromBase64(envelope.ciphertext)),
+      decipher.final(),
+    ]).toString("utf8");
+  } finally {
+    dataKey.fill(0);
+  }
 }
 
 export function getRequestIdFromNextRequest(

@@ -7,6 +7,31 @@ import {
   sendServerError,
 } from '../../../../lib/server/adminApi';
 
+const redactWebhookSecretFields = (webhook: Record<string, unknown>) => {
+  const {
+    secret,
+    secret_auth_tag,
+    secret_ciphertext,
+    secret_context,
+    secret_iv,
+    wrapped_data_key,
+    wrapped_data_key_auth_tag,
+    wrapped_data_key_iv,
+    ...safeWebhook
+  } = webhook;
+
+  void secret;
+  void secret_auth_tag;
+  void secret_ciphertext;
+  void secret_context;
+  void secret_iv;
+  void wrapped_data_key;
+  void wrapped_data_key_auth_tag;
+  void wrapped_data_key_iv;
+
+  return safeWebhook;
+};
+
 const listWebhooks = async (req: NextApiRequest, res: NextApiResponse) => {
   const request = await prepareAdminApiRequest(req, res, {
     actor: 'admin',
@@ -49,10 +74,14 @@ const listWebhooks = async (req: NextApiRequest, res: NextApiResponse) => {
       (dappsResponse.data ?? []).map((dapp) => [dapp.id, dapp.appname])
     );
 
-    const data = (webhookSubscriptionsResponse.data ?? []).map((webhook) => ({
-      ...webhook,
-      appName: appNameById.get(webhook.dapp) ?? 'Unknown App',
-    }));
+    const data = (webhookSubscriptionsResponse.data ?? []).map((webhook) => {
+      const safeWebhook = redactWebhookSecretFields(webhook);
+      return {
+        ...safeWebhook,
+        appName: appNameById.get(webhook.dapp) ?? 'Unknown App',
+        secretStatus: webhook.secret_ciphertext ? 'encrypted' : 'legacy',
+      };
+    });
 
     return res.status(200).json({ data });
   } catch (error) {

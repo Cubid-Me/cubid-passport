@@ -1,12 +1,10 @@
 import { randomBytes, randomUUID } from 'crypto';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
-import { adminWebhookCreateSchema } from '../../../../lib/server/adminSchemas';
+import { adminWebhookRotateSecretSchema } from '../../../../lib/server/adminSchemas';
 import {
   getOwnedDapp,
-  getPlatformUserByEmail,
   prepareAdminApiRequest,
-  sendBadRequest,
   sendForbidden,
   sendServerError,
 } from '../../../../lib/server/adminApi';
@@ -55,12 +53,15 @@ const writeWebhookSecretSecurityEvent = async (
   }
 };
 
-const createWebhook = async (req: NextApiRequest, res: NextApiResponse) => {
+const rotateWebhookSecret = async (
+  req: NextApiRequest,
+  res: NextApiResponse
+) => {
   const request = await prepareAdminApiRequest(req, res, {
     actor: 'admin',
-    bodySchema: adminWebhookCreateSchema,
+    bodySchema: adminWebhookRotateSecretSchema,
     rateLimitGroup: 'admin_sensitive',
-    route: 'admin/webhooks/create',
+    route: 'admin/webhooks/rotate-secret',
   });
 
   if (!request) {
@@ -68,35 +69,29 @@ const createWebhook = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 
   try {
-    const { dappId, webhookTypeId, webhookUrl } = request.body;
-    const ownedDapp = await getOwnedDapp(request.context, dappId);
+    const { webhookId } = request.body;
+    const existingResponse = await request.context.supabase
+      .from('dapp_webhook_subscriptions')
+      .select('*')
+      .eq('id', webhookId)
+      .maybeSingle();
+
+    if (existingResponse.error) {
+      throw existingResponse.error;
+    }
+
+    const existingWebhook = existingResponse.data;
+    if (!existingWebhook) {
+      return sendForbidden(res, 'You do not have access to that webhook');
+    }
+
+    const ownedDapp = await getOwnedDapp(
+      request.context,
+      Number(existingWebhook.dapp)
+    );
 
     if (!ownedDapp) {
-      return sendForbidden(res, 'You do not have access to that app');
-    }
-
-    const [platformUser, webhookTypeResponse] = await Promise.all([
-      getPlatformUserByEmail(request.context),
-      request.context.supabase
-        .from('webhook_types')
-        .select('*')
-        .match({ id: webhookTypeId })
-        .maybeSingle(),
-    ]);
-
-    if (!platformUser) {
-      return sendForbidden(
-        res,
-        'No matching platform user record exists for this admin'
-      );
-    }
-
-    if (webhookTypeResponse.error) {
-      throw webhookTypeResponse.error;
-    }
-
-    if (!webhookTypeResponse.data) {
-      return sendBadRequest(res, 'Invalid webhook type');
+      return sendForbidden(res, 'You do not have access to that webhook');
     }
 
     const webhookSecret = randomBytes(32).toString('hex');
@@ -105,55 +100,51 @@ const createWebhook = async (req: NextApiRequest, res: NextApiResponse) => {
       request.context.supabase,
       webhookSecret,
       {
-        dappId,
+        dappId: existingWebhook.dapp,
         secretReferenceId,
-        webhook: webhookTypeResponse.data.name,
+        webhook: String(existingWebhook.webhook),
       }
     );
 
-    const response = await request.context.supabase
+    const updatedResponse = await request.context.supabase
       .from('dapp_webhook_subscriptions')
-      .insert({
-        dapp: dappId,
-        webhook_url: webhookUrl,
-        webhook: webhookTypeResponse.data.name,
-        created_by_user: platformUser.id,
-        status: 'active',
+      .update({
+        ...encryptedSecret,
         secret: WEBHOOK_SIGNING_SECRET_LEGACY_SENTINEL,
         secret_encrypted_at: new Date().toISOString(),
         secret_reference_id: secretReferenceId,
         secret_rotated_at: new Date().toISOString(),
-        ...encryptedSecret,
       })
+      .eq('id', webhookId)
       .select('*')
       .maybeSingle();
 
-    if (response.error) {
-      throw response.error;
+    if (updatedResponse.error) {
+      throw updatedResponse.error;
     }
 
     await writeWebhookSecretSecurityEvent(request.context.supabase, {
       actor_identifier: request.context.adminUser.uid,
       actor_type: 'admin',
       details: {
-        dappId,
-        webhookId: response.data?.id ?? null,
-        webhook: webhookTypeResponse.data.name,
+        dappId: existingWebhook.dapp,
+        webhookId,
+        webhook: existingWebhook.webhook,
       },
-      event_type: 'webhook_signing_secret.created',
+      event_type: 'webhook_signing_secret.rotated',
       outcome: 'success',
       request_id: request.requestId,
     });
 
     return res.status(200).json({
       data: {
-        ...redactWebhookSecretFields(response.data),
+        ...redactWebhookSecretFields(updatedResponse.data),
         webhookSecret,
       },
     });
   } catch (error) {
-    return sendServerError(res, error, 'Failed to create webhook');
+    return sendServerError(res, error, 'Failed to rotate webhook secret');
   }
 };
 
-export default createWebhook;
+export default rotateWebhookSecret;

@@ -2346,3 +2346,47 @@ Mark `C05.1` complete after the encrypted API v3 dapp user secret path, migratio
 #### Follow-up
 
 - continue C05 with either webhook signing secret encryption or blockchain private-key custody
+
+### session: v81
+
+- timestamp: 2026-04-27T16:54:34-0400
+- agent: **OpenAI Codex**
+- branch: **codex/c04-c06-secrets-hardening-split**
+- head: **`7d812b3`**
+- session name: **Implement C05.3 encrypted webhook signing secrets**
+
+#### Objective
+
+Move webhook signing secrets into the C05 retrievable-secret custody model by encrypting new and rotated webhook secrets with Supabase Vault envelope encryption while preserving a safe migration window for existing plaintext rows.
+
+#### Actions Taken
+
+- added shared server-side AES-256-GCM envelope helpers in `@cubid/auth/server`
+- added a Supabase migration for encrypted `dapp_webhook_subscriptions` fields and the Vault-backed `passport_webhook_signing_secret_wrapping_key_v1` helper
+- added Admin create and rotate-secret flows that return raw webhook secrets only once, store encrypted fields, and log security events
+- removed stored-secret copy behavior from Admin webhook lists and replaced it with redacted encrypted/legacy status plus rotate controls
+- updated Passport webhook delivery and expired-cron delivery to decrypt encrypted webhook signing secrets server-side while temporarily accepting legacy plaintext rows
+- added an idempotent dry-run-capable backfill script for legacy webhook subscriptions
+- updated encrypted-secret and API-security operations docs
+- added tests for shared envelope helpers, webhook secret encryption context binding, Admin redaction/create/rotate behavior, and Passport helper coverage
+
+#### Verification
+
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm --filter @cubid/auth test`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm --filter @cubid/auth typecheck`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm --filter @cubid/passport test`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm --filter @cubid/passport typecheck`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm --filter @cubid/passport build`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm --filter @cubid/admin test`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm --filter @cubid/admin typecheck`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm --filter @cubid/admin build`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm lint`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm typecheck`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm test`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm build`
+
+#### Follow-up
+
+- close `C05.3` metadata against this implementation commit
+- run the webhook backfill script in dry-run mode before production migration execution
+- keep a future physical cleanup follow-up open for removing or quarantining the legacy plaintext webhook `secret` column after production verification

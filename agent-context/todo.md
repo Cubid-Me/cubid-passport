@@ -454,11 +454,11 @@ Remove ambiguous plaintext custody for blockchain private keys across EVM, NEAR,
 
 ### C05.3 Envelope-encrypt webhook signing secrets
 
-- Status: Not started
-- Timestamp started: TBD
+- Status: Started
+- Timestamp started: 2026-04-27T16:43:32-0400
 - Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
+- Feature branch: codex/c04-c06-secrets-hardening-split
+- Head: 7d812b3
 - Session-log reference(s): TBD
 
 Move webhook signing secrets into the retrievable-secret track because Passport must recover the raw secret to HMAC-sign outbound webhook payloads. Replace plaintext `dapp_webhook_subscriptions.secret` storage with Supabase Vault envelope-encrypted ciphertext and metadata. Admin should return the generated secret only during create or rotate flows, then display a redacted identifier, creation time, rotation time, and status in list and detail views. Passport webhook delivery code should decrypt only inside the internal delivery path, bind decryption context to the dapp and webhook subscription, and audit signing failures, rotations, and suspicious access attempts without logging secret material. Preserve compatibility for existing subscriptions through a migration window or forced rotation plan, and add tests proving Admin cannot repeatedly reveal stored webhook secrets while delivery signatures still verify.

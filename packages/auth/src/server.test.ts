@@ -10,6 +10,9 @@ import {
   buildOidcErrorEnvelope,
   createCorsHeaders,
   createRequestId,
+  decryptAes256GcmEnvelope,
+  decodeAes256GcmEnvelopeKey,
+  encryptAes256GcmEnvelope,
   generateDappApiKey,
   getBearerToken,
   getRequestIdFromFetchRequest,
@@ -161,4 +164,51 @@ test("verifyDappApiKey supports legacy one-way migrated hashes", () => {
   assert.equal(parseDappApiKeyPrefix(legacyKey), "22222222-222");
   assert.equal(verifyDappApiKey(legacyKey, hash), true);
   assert.equal(verifyDappApiKey("22222222-2222-wrong", hash), false);
+});
+
+test("AES-256-GCM envelope encryption round-trips with authenticated context", () => {
+  const wrappingKey = decodeAes256GcmEnvelopeKey(
+    Buffer.from("0123456789abcdef0123456789abcdef").toString("base64"),
+    "test wrapping key"
+  );
+  const context = {
+    dappId: "42",
+    secretReferenceId: "secret_ref",
+    webhook: "credential_added",
+  };
+
+  const encrypted = encryptAes256GcmEnvelope("webhook-secret", wrappingKey, {
+    context,
+    keyId: "test_key",
+    keyVersion: 1,
+    purpose: "webhook_signing_secret",
+  });
+
+  assert.equal(encrypted.ciphertext.includes("webhook-secret"), false);
+  assert.equal(
+    decryptAes256GcmEnvelope(encrypted, wrappingKey, context),
+    "webhook-secret"
+  );
+});
+
+test("AES-256-GCM envelope decryption rejects swapped context", () => {
+  const wrappingKey = Buffer.from("0123456789abcdef0123456789abcdef");
+  const encrypted = encryptAes256GcmEnvelope("webhook-secret", wrappingKey, {
+    context: {
+      dappId: "42",
+      secretReferenceId: "secret_ref",
+      webhook: "credential_added",
+    },
+    keyId: "test_key",
+    keyVersion: 1,
+    purpose: "webhook_signing_secret",
+  });
+
+  assert.throws(() =>
+    decryptAes256GcmEnvelope(encrypted, wrappingKey, {
+      dappId: "43",
+      secretReferenceId: "secret_ref",
+      webhook: "credential_added",
+    })
+  );
 });
