@@ -2451,3 +2451,30 @@ Add a new v3 blockchain account custody surface that stores generated account me
 - update the `C05.2` todo head after this implementation commit lands
 - provision `passport_blockchain_private_key_wrapping_key_v1` in Supabase Vault before enabling v3 account generation outside local/test environments
 - implement `C05.2.1` for Sui once the SDK dependency and address format are locked
+
+### session: v84
+
+- timestamp: 2026-04-27T22:10:42Z
+- agent: **OpenAI Codex**
+- branch: **codex/c04-c06-secrets-hardening-split**
+- head: **`dde73b0`**
+- session name: **Close C05.2 metadata**
+
+#### Objective
+
+Record the implementation commit for `C05.2` after the encrypted v3 blockchain account custody slice landed and passed validation.
+
+#### Actions Taken
+
+- updated `agent-context/todo.md` so `C05.2` references implementation commit `dde73b0`
+- kept `C05` open because `C05.1.1` and `C05.2.1` remain active follow-ups
+- preserved the Sui follow-up as the next chain-expansion item for v3 account custody
+
+#### Verification
+
+- confirmed implementation commit `dde73b0` contains the validated C05.2 changes
+
+#### Follow-up
+
+- provision the blockchain private-key wrapping key in Supabase Vault before enabling v3 generation in shared environments
+- consider `C05.2.1` for Sui or continue with `C06` env-backed operational-secret hardening

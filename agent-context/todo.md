@@ -447,8 +447,8 @@ After C05.1 is deployed, Supabase Vault is provisioned, and the backfill script 
 - Timestamp started: 2026-04-27T21:59:47Z
 - Timestamp completed: 2026-04-27T22:07:15Z
 - Feature branch: codex/c04-c06-secrets-hardening-split
-- Head: TBD
-- Session-log reference(s): session: v83
+- Head: dde73b0
+- Session-log reference(s): session: v83, session: v84
 
 Remove ambiguous plaintext custody for blockchain private keys across EVM, NEAR, SUI, and legacy generated-wallet tables. Start by inventorying all `private_key` columns, wallet-generation routes, minting routes, UI disclosure paths, and server signing paths. Lock the preferred posture for user wallet keys as no-custody unless an explicit product requirement proves otherwise: Cubid should store public addresses, stamp metadata, and transaction references, not exportable user private keys. For any remaining operational signing keys or unavoidable retrievable private keys, require C05 envelope encryption, server-only access, and audit events. Add migrations that quarantine or null legacy plaintext fields where safe, update generated-wallet routes so they no longer insert recoverable private keys as ordinary data, and add regression checks preventing “private key” export copy from returning to Profile or wallet flows.
 
