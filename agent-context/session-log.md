@@ -2061,3 +2061,31 @@ Close `C03.5` by making the shared API security baseline provable and operable a
 
 - commit the validated `C03.5` implementation slice
 - then close `C03.5` and the parent `C03` metadata against the landed implementation head
+
+### session: v72
+
+- timestamp: 2026-04-27T09:59:57-0400
+- agent: **OpenAI Codex**
+- branch: **codex/c03-api-security-baseline**
+- head: **`be70126`**
+- session name: **Close C03.5 and C03 metadata**
+
+#### Objective
+
+Bring the roadmap metadata back into sync with the validated `C03.5` implementation so the full C03 security-baseline stream is marked complete from the correct implementation head.
+
+#### Actions Taken
+
+- marked `C03.5` completed in [agent-context/todo.md](/Users/botmaster/src/cubid/cubid-passport/agent-context/todo.md) with its completion timestamp, feature branch, implementation head, and session references
+- closed the parent `C03` todo with the final validated implementation head and the full set of sessions that landed the OIDC, Admin, Passport, and closeout slices
+- kept the target-state doc reference on the parent C03 item pointing at [docs/engineering/api-security-baseline.md](/Users/botmaster/src/cubid/cubid-passport/docs/engineering/api-security-baseline.md)
+
+#### Verification
+
+- confirmed the validated `C03.5` implementation landed in commit `be70126`
+- confirmed the full root validation set and the dedicated API security regression check had already completed successfully before metadata closure
+
+#### Follow-up
+
+- publish the completed C03 branch for review
+- tackle `C04` next for wallet and sensitive-disclosure custody hardening, unless priorities shift back to package publishing or integration DX work

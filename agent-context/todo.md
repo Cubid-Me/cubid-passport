@@ -297,12 +297,12 @@ Remove the current pattern of exposing arbitrary table access through generic AP
 
 ### C03. Add consistent validation, authorization, rate limits, and CORS policy
 
-- Status: Started
+- Status: Completed
 - Timestamp started: 2026-04-26T17:52:11-0400
-- Timestamp completed: TBD
+- Timestamp completed: 2026-04-27T09:59:57-0400
 - Feature branch: codex/c03-api-security-baseline
-- Head: 7519f0f
-- Session-log reference(s): session: v63, session: v64
+- Head: be70126
+- Session-log reference(s): session: v63, session: v64, session: v65, session: v66, session: v67, session: v69, session: v70, session: v71, session: v72
 - Target-state doc(s): [docs/engineering/api-security-baseline.md](/Users/botmaster/src/cubid/cubid-passport/docs/engineering/api-security-baseline.md)
 
 Introduce a shared API security baseline for all public-facing endpoints across Passport, Admin, and the new OIDC service. Add request validation with a single library, structured authorization checks for user, dapp, and admin actors, route-level rate limiting for authentication and verification flows, and explicit CORS allowlists instead of `origin: "*"`. Use this todo to standardize error envelopes, request IDs, audit logs, and abuse monitoring so security controls are visible and operable. Prioritize OTP, email verification, user creation, score lookup, claim issuance, token issuance, and webhook endpoints because they are the most attractive abuse surfaces. The objective is to move from route-by-route improvisation to a shared security contract enforced across the monorepo. This work should ship with automated tests for failure paths, not just happy-path validation.
@@ -354,12 +354,12 @@ Bring the sprawling Passport API surface under the shared security baseline, inc
 
 ### C03.5 Close with tests, CI, and observability updates
 
-- Status: Started
+- Status: Completed
 - Timestamp started: 2026-04-27T09:47:34-0400
-- Timestamp completed: TBD
+- Timestamp completed: 2026-04-27T09:59:57-0400
 - Feature branch: codex/c03-api-security-baseline
-- Head: 7515335
-- Session-log reference(s): TBD
+- Head: be70126
+- Session-log reference(s): session: v71, session: v72
 
 Finish C03 by validating the shared baseline as a platform-wide contract rather than a set of local refactors. Add unit tests in `@cubid/auth` for request ID handling, validation wrappers, actor guards, CORS decisions, and shared error serialization. Extend workspace test coverage so OIDC, Admin, and Passport all prove failure-path behavior, not just happy paths. Update CI expectations where needed so the route families touched by C03 are exercised in the normal monorepo validation graph. Document the new environment variables, security event fields, and monitoring expectations in long-lived engineering docs so operators know what signals now exist and how to use them. Close the parent todo only after the docs, tests, and validation story match the implemented baseline.
 
