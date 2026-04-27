@@ -399,11 +399,11 @@ Physically remove the legacy `dapps.apikey` column only after the C04.1 migratio
 
 ### C04.2 Hash email OTP codes
 
-- Status: Not started
-- Timestamp started: TBD
+- Status: Started
+- Timestamp started: 2026-04-27T15:01:11-0400
 - Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
+- Feature branch: codex/c04-c06-secrets-hardening-split
+- Head: 8ba6770
 - Session-log reference(s): TBD
 
 Move email OTP storage from plaintext `email_otp.otp` values to short-lived hash verification. Generate OTP codes as before for user delivery, but store only a keyed hash or slow hash plus expiration, attempt count, consumed timestamp, request metadata, and any rate-limit correlation needed for abuse triage. Verification should compare against the stored hash, reject expired or consumed codes, increment failed attempts, and delete or mark the code consumed after success so replay is not possible. Keep Twilio Verify phone OTP out of this database migration because the provider already owns that challenge state. Update tests for send, verify, expired, replayed, malformed, and over-attempted OTP flows, and document the retry-safe behavior so downstream apps understand which failures can be retried without generating confusing duplicate challenges.

@@ -210,6 +210,14 @@ Checks:
 
 Passport also owns route-specific secrets for OTP, webhook, and outbound integrations touched by the hardened API surface.
 
+Email OTP rows are verification-only. Passport stores `otp_hash` values derived
+by the Supabase function `hash_email_otp`, which reads the
+`passport_email_otp_hash_secret` secret from Supabase Vault. Codes expire after
+10 minutes, allow at most three failed attempts per issued code, and successful
+challenges are marked consumed instead of retaining reusable plaintext codes.
+Provision the Vault secret before enabling email OTP sends in an environment;
+the application intentionally fails closed if the secret is absent.
+
 ### Admin
 
 - `ADMIN_CORS_ALLOWED_ORIGINS`

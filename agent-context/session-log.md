@@ -2183,3 +2183,36 @@ Mark `C04.1` complete against the landed hashed dapp API key implementation and 
 
 - run Passport tests under Node 20 when available
 - tackle `C04.2` for email OTP hash storage next
+
+### session: v76
+
+- timestamp: 2026-04-27T15:03:48-0400
+- agent: **OpenAI Codex**
+- branch: **codex/c04-c06-secrets-hardening-split**
+- head: **`8ba6770`**
+- session name: **Implement C04.2 email OTP hashing**
+
+#### Objective
+
+Replace plaintext email OTP storage with verification-only hashing, 10-minute expiry, 3-attempt enforcement, and one-time consumption while keeping the dapp-facing send and verify response contracts stable.
+
+#### Actions Taken
+
+- added a Supabase migration that adds `otp_hash`, hash metadata, expiry, attempt count, consumed timestamp, and active lookup indexes to `email_otp`
+- added Supabase Vault-backed SQL functions so OTP HMAC hashing uses the `passport_email_otp_hash_secret` Vault secret instead of an app environment variable
+- updated Passport email OTP send to normalize email addresses, hash OTPs through Supabase RPC, store only hash metadata, and send the raw OTP only through SMTP
+- updated Passport email OTP verify to load the latest unconsumed row, reject expired or over-attempted codes, increment failed attempts, and mark successful challenges consumed
+- added helper and route tests for deterministic hashing, wrong-code rejection, hashed storage, one-time consumption, failed attempts, expired codes, and attempt-limit behavior
+- documented the Vault-backed OTP secret and fail-closed operational requirement
+
+#### Verification
+
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+- `pnpm --filter @cubid/passport exec tsx --test tests/emailOtp.test.ts`
+- `pnpm --filter @cubid/passport test` attempted; the new email OTP helper tests passed before the known local Node v25.8.2 JWT dependency crash stopped `passportApi.test.ts` and `passportRoutes.test.ts`
+
+#### Follow-up
+
+- close `C04.2` and the parent `C04` metadata against the implementation commit
+- run the full Passport suite under Node 20 in CI or a Node 20 local shell

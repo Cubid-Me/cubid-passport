@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next"
+import { createHmac } from "node:crypto"
 
 type BucketRow = {
   bucket_key: string
@@ -14,12 +15,44 @@ type DappApiKeyRow = {
   status: string
 }
 
+type EmailOtpRow = Record<string, unknown> & {
+  attempt_count?: number
+  consumed_at?: string | null
+  created_at?: string
+  email: string
+  expires_at?: string
+  id: number
+  otp_hash?: string
+}
+
 export class MockPassportSupabase {
   readonly buckets = new Map<string, BucketRow>()
   readonly dappApiKeys = new Map<string, DappApiKeyRow>()
   readonly dapps = new Map<number, Record<string, unknown>>()
+  readonly emailOtps = new Map<string, EmailOtpRow[]>()
   readonly eventInserts: Array<Record<string, unknown>> = []
   readonly lastUsedUpdates: number[] = []
+  private nextEmailOtpId = 1
+
+  rpc(name: string, params: Record<string, unknown>) {
+    if (name === "hash_email_otp") {
+      return Promise.resolve({
+        data: createHmac("sha256", "test-passport-email-otp-vault-secret")
+          .update(
+            [
+              String(params.p_email).trim().toLowerCase(),
+              String(params.p_otp).trim(),
+              "email_otp",
+              "v1",
+            ].join(":")
+          )
+          .digest("hex"),
+        error: null,
+      })
+    }
+
+    throw new Error(`Unexpected RPC ${name}`)
+  }
 
   setBucket(bucketKey: string, count: number) {
     this.buckets.set(bucketKey, {
@@ -35,6 +68,16 @@ export class MockPassportSupabase {
 
   setDapp(row: Record<string, unknown> & { id: number }) {
     this.dapps.set(row.id, row)
+  }
+
+  setEmailOtp(row: EmailOtpRow) {
+    const rows = this.emailOtps.get(row.email) ?? []
+    rows.push({
+      ...row,
+      created_at: row.created_at ?? new Date().toISOString(),
+      id: row.id ?? this.nextEmailOtpId++,
+    })
+    this.emailOtps.set(row.email, rows)
   }
 
   from(table: string) {
@@ -104,6 +147,70 @@ export class MockPassportSupabase {
           eq: (_column: string, value: number) => {
             if (row.last_used_at) {
               this.lastUsedUpdates.push(Number(value))
+            }
+            return { error: null }
+          },
+        }),
+      }
+    }
+
+    if (table === "email_otp") {
+      return {
+        delete: () => ({
+          eq: (_column: string, value: string) => {
+            this.emailOtps.delete(value)
+            return { error: null }
+          },
+        }),
+        insert: async (row: Record<string, unknown>) => {
+          this.setEmailOtp({
+            ...row,
+            email: String(row.email),
+            id: this.nextEmailOtpId++,
+          })
+          return { error: null }
+        },
+        select: () => {
+          const filters: Record<string, unknown> = {}
+          const query = {
+            eq: (column: string, value: unknown) => {
+              filters[column] = value
+              return query
+            },
+            is: (column: string, value: unknown) => {
+              filters[column] = value
+              return query
+            },
+            limit: () => query,
+            maybeSingle: async () => {
+              const rows = [
+                ...(this.emailOtps.get(String(filters.email)) ?? []),
+              ].filter((row) => {
+                if (
+                  Object.prototype.hasOwnProperty.call(filters, "consumed_at")
+                ) {
+                  return row.consumed_at === filters.consumed_at
+                }
+                return true
+              })
+              rows.sort((left, right) =>
+                String(right.created_at ?? "").localeCompare(
+                  String(left.created_at ?? "")
+                )
+              )
+              return { data: rows[0] ?? null, error: null }
+            },
+            order: () => query,
+          }
+          return query
+        },
+        update: (patch: Record<string, unknown>) => ({
+          eq: (_column: string, value: number) => {
+            for (const rows of this.emailOtps.values()) {
+              const row = rows.find((candidate) => candidate.id === value)
+              if (row) {
+                Object.assign(row, patch)
+              }
             }
             return { error: null }
           },
