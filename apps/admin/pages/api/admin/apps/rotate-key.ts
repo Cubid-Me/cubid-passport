@@ -1,4 +1,3 @@
-import { randomUUID } from 'crypto';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 import { adminDappIdSchema } from '../../../../lib/server/adminSchemas';
@@ -8,6 +7,7 @@ import {
   sendForbidden,
   sendServerError,
 } from '../../../../lib/server/adminApi';
+import { rotateDappApiKey } from '../../../../lib/server/dappApiKeys';
 
 const rotateKey = async (req: NextApiRequest, res: NextApiResponse) => {
   const request = await prepareAdminApiRequest(req, res, {
@@ -28,23 +28,25 @@ const rotateKey = async (req: NextApiRequest, res: NextApiResponse) => {
       return sendForbidden(res, 'You do not have access to that app');
     }
 
-    const response = await request.context.supabase
-      .from('dapps')
-      .update({
-        apikey: randomUUID(),
-      })
-      .match({
-        id: request.body.dappId,
-        admin_uid: request.context.adminUser.uid,
-      })
-      .select('*')
-      .maybeSingle();
+    const { apiKey, keyRecord } = await rotateDappApiKey(
+      request.context.supabase,
+      request.body.dappId
+    );
+    const { apikey: _apikey, ...safeApp } = ownedDapp;
 
-    if (response.error) {
-      throw response.error;
-    }
-
-    return res.status(200).json({ data: response.data });
+    return res.status(200).json({
+      data: {
+        apiKey,
+        apiKeyPrefix: keyRecord.key_prefix,
+        app: {
+          ...safeApp,
+          apiKeyLastUsedAt: keyRecord.last_used_at ?? null,
+          apiKeyPrefix: keyRecord.key_prefix,
+          apiKeyRotatedAt: keyRecord.rotated_at ?? null,
+          apiKeyStatus: keyRecord.status,
+        },
+      },
+    });
   } catch (error) {
     return sendServerError(res, error, 'Failed to rotate app key');
   }

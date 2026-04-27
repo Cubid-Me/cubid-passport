@@ -6,9 +6,20 @@ type BucketRow = {
   window_start: string
 }
 
+type DappApiKeyRow = {
+  dapp_id: number
+  id: number
+  key_hash: string
+  key_prefix: string
+  status: string
+}
+
 export class MockPassportSupabase {
   readonly buckets = new Map<string, BucketRow>()
+  readonly dappApiKeys = new Map<string, DappApiKeyRow>()
+  readonly dapps = new Map<number, Record<string, unknown>>()
   readonly eventInserts: Array<Record<string, unknown>> = []
+  readonly lastUsedUpdates: number[] = []
 
   setBucket(bucketKey: string, count: number) {
     this.buckets.set(bucketKey, {
@@ -16,6 +27,14 @@ export class MockPassportSupabase {
       count,
       window_start: new Date(0).toISOString(),
     })
+  }
+
+  setDappApiKey(row: DappApiKeyRow) {
+    this.dappApiKeys.set(`${row.key_prefix}:${row.status}`, row)
+  }
+
+  setDapp(row: Record<string, unknown> & { id: number }) {
+    this.dapps.set(row.id, row)
   }
 
   from(table: string) {
@@ -52,12 +71,42 @@ export class MockPassportSupabase {
     if (table === "dapps") {
       return {
         select: () => ({
-          eq: () => ({
+          eq: (_column: string, value: number) => ({
             maybeSingle: async () => ({
-              data: null,
+              data: this.dapps.get(Number(value)) ?? null,
               error: null,
             }),
           }),
+        }),
+      }
+    }
+
+    if (table === "dapp_api_keys") {
+      return {
+        select: () => {
+          const filters: Record<string, unknown> = {}
+          const query = {
+            eq: (column: string, value: unknown) => {
+              filters[column] = value
+              return query
+            },
+            maybeSingle: async () => ({
+              data:
+                this.dappApiKeys.get(
+                  `${filters.key_prefix}:${filters.status}`
+                ) ?? null,
+              error: null,
+            }),
+          }
+          return query
+        },
+        update: (row: Record<string, unknown>) => ({
+          eq: (_column: string, value: number) => {
+            if (row.last_used_at) {
+              this.lastUsedUpdates.push(Number(value))
+            }
+            return { error: null }
+          },
         }),
       }
     }

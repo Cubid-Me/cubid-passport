@@ -25,6 +25,7 @@ interface CreateAppFormValues {
 
 interface CreateAppProps {
   fetchSuperApps: () => Promise<void>;
+  onApiKeyCreated?: (apiKey: string) => void;
 }
 
 type SchemaOption = {
@@ -32,7 +33,7 @@ type SchemaOption = {
   value: number;
 };
 
-export function CreateApp({ fetchSuperApps }: CreateAppProps) {
+export function CreateApp({ fetchSuperApps, onApiKeyCreated }: CreateAppProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [stampList, setStampList] = useState<StampTypeRecord[]>([]);
   const [schemaList, setSchemaList] = useState<SchemaRecord[]>([]);
@@ -211,7 +212,11 @@ export function CreateApp({ fetchSuperApps }: CreateAppProps) {
       }
 
       setLoading(true);
-      await authedPost('/api/admin/apps/create', {
+      const response = await authedPost<{
+        data: {
+          apiKey?: string;
+        };
+      }>('/api/admin/apps/create', {
         appName: userData.appName,
         pages: userData.apps.map((app, idx) => ({
           pageName: app.app_name || `Page ${idx + 1}`,
@@ -229,11 +234,22 @@ export function CreateApp({ fetchSuperApps }: CreateAppProps) {
         schemaId: getValues('schema'),
         url: userData.url,
       });
+      if (response.data.data.apiKey) {
+        onApiKeyCreated?.(response.data.data.apiKey);
+      }
       setLoading(false);
       await fetchSuperApps();
       closeModal();
     },
-    [allStampTypes, closeModal, fetchSuperApps, getValues, requestedInfo, user]
+    [
+      allStampTypes,
+      closeModal,
+      fetchSuperApps,
+      getValues,
+      onApiKeyCreated,
+      requestedInfo,
+      user,
+    ]
   );
 
   const onSubmit = (data: CreateAppFormValues) => {

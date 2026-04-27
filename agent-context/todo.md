@@ -376,6 +376,18 @@ Replace plaintext storage for secrets that only need possession verification, no
 
 ### C04.1 Hash dapp API keys
 
+- Status: Started
+- Timestamp started: 2026-04-27T14:49:01-0400
+- Timestamp completed: TBD
+- Feature branch: codex/c04-c06-secrets-hardening-split
+- Head: f673183
+- Session-log reference(s): TBD
+- Target-state doc: [docs/engineering/dapp-api-key-hardening.md](/Users/botmaster/src/cubid/cubid-passport/docs/engineering/dapp-api-key-hardening.md)
+
+Migrate dapp API keys from plaintext `dapps.apikey` lookup to a verification-only model. Generate new keys with a non-secret prefix for lookup and a high-entropy secret body shown only once on create or rotate. Store only the prefix, hash, hash algorithm, version, creation timestamp, and last-rotated metadata needed for operations. Update Passport dapp actor authentication, Admin app creation, Admin key rotation, and any displayed app tables so operators can identify a key without copying a recoverable secret from the database. Preserve a safe migration path for existing plaintext keys: either accept them temporarily through a legacy verifier while writing hashed replacements, or force rotation with clear Admin messaging. Add tests proving plaintext keys are not returned after creation/rotation, invalid keys fail consistently, and existing dapp-facing routes still authenticate through the shared Passport baseline.
+
+### C04.1.1 Remove legacy `dapps.apikey` after production smoke
+
 - Status: Not started
 - Timestamp started: TBD
 - Timestamp completed: TBD
@@ -383,7 +395,7 @@ Replace plaintext storage for secrets that only need possession verification, no
 - Head: TBD
 - Session-log reference(s): TBD
 
-Migrate dapp API keys from plaintext `dapps.apikey` lookup to a verification-only model. Generate new keys with a non-secret prefix for lookup and a high-entropy secret body shown only once on create or rotate. Store only the prefix, hash, hash algorithm, version, creation timestamp, and last-rotated metadata needed for operations. Update Passport dapp actor authentication, Admin app creation, Admin key rotation, and any displayed app tables so operators can identify a key without copying a recoverable secret from the database. Preserve a safe migration path for existing plaintext keys: either accept them temporarily through a legacy verifier while writing hashed replacements, or force rotation with clear Admin messaging. Add tests proving plaintext keys are not returned after creation/rotation, invalid keys fail consistently, and existing dapp-facing routes still authenticate through the shared Passport baseline.
+Physically remove the legacy `dapps.apikey` column only after the C04.1 migration and app changes have been deployed and production smoke confirms that existing Cubid dapps authenticate through `dapp_api_keys`. This follow-up should query or otherwise verify that every active dapp has exactly one active hashed key row, that Passport dapp-auth logs show successful new-table verification, and that Admin create/rotate/list no longer reads or returns plaintext keys. Once confirmed, add a migration that drops the old unique constraint and column, remove any remaining compatibility types or seed data references, and update engineering docs to state that dapp API keys are permanently non-retrievable. This is intentionally separate from C04.1 so deployment validation can happen before destructive schema cleanup.
 
 ### C04.2 Hash email OTP codes
 

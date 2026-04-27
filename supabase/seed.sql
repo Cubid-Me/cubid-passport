@@ -25,6 +25,26 @@ values (
 )
 on conflict (id) do nothing;
 
+insert into public.dapp_api_keys (
+  dapp_id,
+  key_prefix,
+  key_hash,
+  hash_algorithm,
+  hash_version,
+  status,
+  rotated_at
+)
+values (
+  900001,
+  substring('22222222-2222-2222-2222-222222222222' from 1 for 12),
+  'sha256:v1:' || encode(extensions.digest('22222222-2222-2222-2222-222222222222', 'sha256'), 'hex'),
+  'sha256',
+  1,
+  'active',
+  now()
+)
+on conflict do nothing;
+
 insert into public.stamptypes (
   id,
   stamptype,

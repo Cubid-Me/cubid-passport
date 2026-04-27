@@ -1,6 +1,8 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 
+import { hashDappApiKey, hashLegacyDappApiKey } from "@cubid/auth/server"
+
 import {
   handlePassportRoute,
   passportSchemas,
@@ -131,6 +133,134 @@ test("handlePassportRoute rejects missing dapp credentials before handler execut
     error: {
       code: "unauthorized",
       message: "Missing dapp API key.",
+      requestId: res.headers["x-request-id"],
+    },
+  })
+})
+
+test("handlePassportRoute authenticates dapp actors through dapp_api_keys", async () => {
+  const apiKey = "cubid_live_abc123def4567890_secret"
+  const supabase = new MockPassportSupabase()
+  supabase.setDapp({ id: 42, appname: "Test App" })
+  supabase.setDappApiKey({
+    dapp_id: 42,
+    id: 7,
+    key_hash: hashDappApiKey(apiKey),
+    key_prefix: "abc123def4567890",
+    status: "active",
+  })
+  setPassportSupabaseForTests(supabase as never)
+
+  const req = createApiRequest({
+    body: {
+      apikey: apiKey,
+      dapp_id: 42,
+    },
+  })
+  const res = createApiResponse()
+
+  await handlePassportRoute(
+    req,
+    res,
+    {
+      actor: "dapp",
+      bodySchema: passportSchemas.z.object({
+        apikey: passportSchemas.z.string(),
+        dapp_id: passportSchemas.z.number(),
+      }),
+      rateLimitGroup: "passport_dapp_read",
+      route: "passport.test.dapp_auth_success",
+    },
+    async ({ context }) => {
+      res.status(200).json({ data: { dappId: context.dapp.id } })
+    }
+  )
+
+  assert.equal(res.statusCode, 200)
+  assert.deepEqual(res.body, { data: { dappId: 42 } })
+  assert.deepEqual(supabase.lastUsedUpdates, [7])
+})
+
+test("handlePassportRoute supports migrated legacy dapp API key hashes", async () => {
+  const apiKey = "22222222-2222-2222-2222-222222222222"
+  const supabase = new MockPassportSupabase()
+  supabase.setDapp({ id: 42, appname: "Legacy App" })
+  supabase.setDappApiKey({
+    dapp_id: 42,
+    id: 8,
+    key_hash: hashLegacyDappApiKey(apiKey),
+    key_prefix: "22222222-222",
+    status: "active",
+  })
+  setPassportSupabaseForTests(supabase as never)
+
+  const req = createApiRequest({
+    body: {
+      dapp_id: apiKey,
+    },
+  })
+  const res = createApiResponse()
+
+  await handlePassportRoute(
+    req,
+    res,
+    {
+      actor: "dapp",
+      bodySchema: passportSchemas.z.object({
+        dapp_id: passportSchemas.z.string(),
+      }),
+      rateLimitGroup: "passport_dapp_read",
+      route: "passport.test.legacy_dapp_auth_success",
+    },
+    async ({ context }) => {
+      res.status(200).json({ data: { dappId: context.dapp.id } })
+    }
+  )
+
+  assert.equal(res.statusCode, 200)
+  assert.deepEqual(res.body, { data: { dappId: 42 } })
+})
+
+test("handlePassportRoute rejects invalid dapp API keys from dapp_api_keys", async () => {
+  const supabase = new MockPassportSupabase()
+  supabase.setDapp({ id: 42, appname: "Test App" })
+  supabase.setDappApiKey({
+    dapp_id: 42,
+    id: 7,
+    key_hash: hashDappApiKey("cubid_live_abc123def4567890_secret"),
+    key_prefix: "abc123def4567890",
+    status: "active",
+  })
+  setPassportSupabaseForTests(supabase as never)
+
+  const req = createApiRequest({
+    body: {
+      apikey: "cubid_live_abc123def4567890_wrong",
+    },
+  })
+  const res = createApiResponse()
+
+  await handlePassportRoute(
+    req,
+    res,
+    {
+      actor: "dapp",
+      bodySchema: passportSchemas.z.object({
+        apikey: passportSchemas.z.string(),
+      }),
+      rateLimitGroup: "passport_dapp_read",
+      route: "passport.test.dapp_auth_invalid",
+    },
+    async () => {
+      throw new Error("handler should not run")
+    }
+  )
+
+  assert.equal(res.statusCode, 401)
+  assert.deepEqual(res.body, {
+    error: {
+      code: "unauthorized",
+      message: "Invalid dapp API key.",
       requestId: res.headers["x-request-id"],
     },
   })

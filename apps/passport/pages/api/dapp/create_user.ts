@@ -40,26 +40,14 @@ export default async function handler(
     req,
     res,
     {
-      actor: "anonymous",
+      actor: "dapp",
       bodySchema: schema,
       rateLimitGroup: "passport_dapp_mutation",
       route: "dapp.create_user",
     },
-    async ({ body }) => {
+    async ({ body, context }) => {
       const supabase = getPassportSupabase()
-      const { data: dappRow, error: dappError } = await supabase
-        .from("dapps")
-        .select("*")
-        .eq("apikey", body.dapp_id)
-        .maybeSingle()
-
-      if (dappError) {
-        throw dappError
-      }
-
-      if (!dappRow?.id) {
-        return res.status(400).json({ error: "Invalid API key or dapp_id" })
-      }
+      const dappRow = context.dapp
 
       const uniqueValue = body.phone || body.email || body.evm
       if (!uniqueValue) {

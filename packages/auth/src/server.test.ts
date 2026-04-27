@@ -10,9 +10,14 @@ import {
   buildOidcErrorEnvelope,
   createCorsHeaders,
   createRequestId,
+  generateDappApiKey,
   getBearerToken,
   getRequestIdFromFetchRequest,
+  hashDappApiKey,
+  hashLegacyDappApiKey,
+  parseDappApiKeyPrefix,
   validateWithSchema,
+  verifyDappApiKey,
   z,
 } from "./server";
 
@@ -132,4 +137,28 @@ test("buildOidcErrorEnvelope preserves OIDC-compatible error fields and request 
 test("getBearerToken returns null for non-bearer authorization headers", () => {
   assert.equal(getBearerToken("Basic abc123"), null);
   assert.equal(getBearerToken("Bearer token_123"), "token_123");
+});
+
+test("generateDappApiKey returns show-once keys with lookup prefixes", () => {
+  const material = generateDappApiKey();
+
+  assert.match(material.apiKey, /^cubid_live_[0-9a-f]{16}_[A-Za-z0-9_-]+$/);
+  assert.equal(parseDappApiKeyPrefix(material.apiKey), material.keyPrefix);
+  assert.equal(verifyDappApiKey(material.apiKey, material.keyHash), true);
+});
+
+test("verifyDappApiKey rejects invalid scrypt API key material", () => {
+  const hash = hashDappApiKey("cubid_live_prefix_secret");
+
+  assert.equal(verifyDappApiKey("cubid_live_prefix_secret", hash), true);
+  assert.equal(verifyDappApiKey("cubid_live_prefix_wrong", hash), false);
+});
+
+test("verifyDappApiKey supports legacy one-way migrated hashes", () => {
+  const legacyKey = "22222222-2222-2222-2222-222222222222";
+  const hash = hashLegacyDappApiKey(legacyKey);
+
+  assert.equal(parseDappApiKeyPrefix(legacyKey), "22222222-222");
+  assert.equal(verifyDappApiKey(legacyKey, hash), true);
+  assert.equal(verifyDappApiKey("22222222-2222-wrong", hash), false);
 });

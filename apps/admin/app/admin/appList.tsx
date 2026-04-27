@@ -10,9 +10,12 @@ import { toast } from 'react-toastify';
 import { RotateApiKeyModal } from './rotateKeyModal';
 
 interface SuperApp {
+  apiKeyLastUsedAt?: string | null;
+  apiKeyPrefix?: string | null;
+  apiKeyRotatedAt?: string | null;
+  apiKeyStatus?: string | null;
   uid: string;
   appname: string;
-  apikey: string;
   id: string;
   admin_uid: string;
 }
@@ -22,6 +25,7 @@ export default function AppList() {
   const { user } = useAuth();
   const [loading, setLoading] = useState<boolean>(true);
   const [apiKeyToRotate, setApiKeyToRotate] = useState<string | null>(null);
+  const [oneTimeApiKey, setOneTimeApiKey] = useState<string | null>(null);
 
   const fetchSuperApps = useCallback(async () => {
     setLoading(true);
@@ -54,9 +58,16 @@ export default function AppList() {
         throw new Error('Unable to find app to rotate');
       }
 
-      await authedPost('/api/admin/apps/rotate-key', {
+      const response = await authedPost<{
+        data: {
+          apiKey?: string;
+        };
+      }>('/api/admin/apps/rotate-key', {
         dappId: selectedApp.id,
       });
+      if (response.data.data.apiKey) {
+        setOneTimeApiKey(response.data.data.apiKey);
+      }
       fetchSuperApps();
       toast.success('Successfully rotated API Keys');
     } catch {
@@ -68,8 +79,40 @@ export default function AppList() {
     <div className="p-3 pt-0">
       <div className="flex w-full items-center justify-between">
         <p className="text-xl">API KEYS</p>
-        <CreateApp fetchSuperApps={fetchSuperApps} />
+        <CreateApp
+          fetchSuperApps={fetchSuperApps}
+          onApiKeyCreated={setOneTimeApiKey}
+        />
       </div>
+      {oneTimeApiKey && (
+        <div className="mt-3 rounded border border-amber-500 bg-amber-950 p-4 text-sm text-amber-100">
+          <p className="font-semibold">Copy this API key now</p>
+          <p className="mt-1">
+            Cubid stores only a hash and cannot show this key again after you
+            leave this screen.
+          </p>
+          <div className="mt-3 flex items-center gap-2">
+            <code className="break-all rounded bg-black/40 px-2 py-1">
+              {oneTimeApiKey}
+            </code>
+            <button
+              className="rounded bg-amber-200 px-3 py-1 font-semibold text-black"
+              onClick={() => {
+                navigator.clipboard.writeText(oneTimeApiKey);
+                toast.success('Successfully copied API key to clipboard');
+              }}
+            >
+              Copy once
+            </button>
+            <button
+              className="rounded border border-amber-200 px-3 py-1"
+              onClick={() => setOneTimeApiKey(null)}
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
       <div className="relative mt-3 overflow-x-auto">
         {loading ? (
           <div className="flex justify-center items-center py-6">
@@ -87,7 +130,7 @@ export default function AppList() {
               <tr>
                 <th scope="col" className="px-6 py-3">App Name</th>
                 <th scope="col" className="px-6 py-3">App ID</th>
-                <th scope="col" className="px-6 py-3">Secret Key</th>
+                <th scope="col" className="px-6 py-3">API Key</th>
                 <th scope="col" className="px-6 py-3">Actions</th>
               </tr>
             </thead>
@@ -107,25 +150,16 @@ export default function AppList() {
                       </th>
                       <td className="px-6 py-4">{item.uid}</td>
                       <td className="px-6 py-4">
-                        <Tooltip placement="left" trigger={['hover']} overlay={<span>Copy API KEY</span>}>
-                          <button
-                            onClick={() => {
-                              toast.success('Successfully copied API KEY to clipboard');
-                              navigator.clipboard.writeText(item.apikey);
-                            }}
-                            className={`${item.apikey}-action`}
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="#fff" height="20px" width="20px" version="1.1" id="Layer_1" viewBox="0 0 64 64" enable-background="new 0 0 64 64">
-                              <g id="Text-files">
-                                <path d="M53.9791489,9.1429005H50.010849c-0.0826988,0-0.1562004,0.0283995-0.2331009,0.0469999V5.0228   C49.7777481,2.253,47.4731483,0,44.6398468,0h-34.422596C7.3839517,0,5.0793519,2.253,5.0793519,5.0228v46.8432999   c0,2.7697983,2.3045998,5.0228004,5.1378999,5.0228004h6.0367002v2.2678986C16.253952,61.8274002,18.4702511,64,21.1954517,64   h32.783699c2.7252007,0,4.9414978-2.1725998,4.9414978-4.8432007V13.9861002   C58.9206467,11.3155003,56.7043495,9.1429005,53.9791489,9.1429005z M7.1110516,51.8661003V5.0228   c0-1.6487999,1.3938999-2.9909999,3.1062002-2.9909999h34.422596c1.7123032,0,3.1062012,1.3422,3.1062012,2.9909999v46.8432999   c0,1.6487999-1.393898,2.9911003-3.1062012,2.9911003h-34.422596C8.5049515,54.8572006,7.1110516,53.5149002,7.1110516,51.8661003z    M56.8888474,59.1567993c0,1.550602-1.3055,2.8115005-2.9096985,2.8115005h-32.783699   c-1.6042004,0-2.9097996-1.2608986-2.9097996-2.8115005v-2.2678986h26.3541946   c2.8333015,0,5.1379013-2.2530022,5.1379013-5.0228004V11.1275997c0.0769005,0.0186005,0.1504021,0.0469999,0.2331009,0.0469999   h3.9682999c1.6041985,0,2.9096985,1.2609005,2.9096985,2.8115005V59.1567993z" />
-                                <path d="M38.6031494,13.2063999H16.253952c-0.5615005,0-1.0159006,0.4542999-1.0159006,1.0158005   c0,0.5615997,0.4544001,1.0158997,1.0159006,1.0158997h22.3491974c0.5615005,0,1.0158997-0.4542999,1.0158997-1.0158997   C39.6190491,13.6606998,39.16465,13.2063999,38.6031494,13.2063999z" />
-                                <path d="M38.6031494,21.3334007H16.253952c-0.5615005,0-1.0159006,0.4542999-1.0159006,1.0157986   c0,0.5615005,0.4544001,1.0159016,1.0159006,1.0159016h22.3491974c0.5615005,0,1.0158997-0.454401,1.0158997-1.0159016   C39.6190491,21.7877007,39.16465,21.3334007,38.6031494,21.3334007z" />
-                                <path d="M38.6031494,29.4603004H16.253952c-0.5615005,0-1.0159006,0.4543991-1.0159006,1.0158997   s0.4544001,1.0158997,1.0159006,1.0158997h22.3491974c0.5615005,0,1.0158997-0.4543991,1.0158997-1.0158997   S39.16465,29.4603004,38.6031494,29.4603004z" />
-                                <path d="M28.4444485,37.5872993H16.253952c-0.5615005,0-1.0159006,0.4543991-1.0159006,1.0158997   s0.4544001,1.0158997,1.0159006,1.0158997h12.1904964c0.5615025,0,1.0158005-0.4543991,1.0158005-1.0158997   S29.0059509,37.5872993,28.4444485,37.5872993z" />
-                              </g>
-                            </svg>
-                          </button>
-                        </Tooltip>
+                        <div>
+                          <p className="font-mono text-xs">
+                            {item.apiKeyPrefix
+                              ? `${item.apiKeyPrefix}...`
+                              : 'No active key'}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {item.apiKeyStatus ?? 'missing'}
+                          </p>
+                        </div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center  space-x-2">

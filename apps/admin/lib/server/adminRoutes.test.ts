@@ -8,6 +8,7 @@ import rotateKey from '../../pages/api/admin/apps/rotate-key';
 const prepareAdminApiRequestMock = jest.fn();
 const ensureAdminUserRecordMock = jest.fn();
 const getOwnedDappMock = jest.fn();
+const rotateDappApiKeyMock = jest.fn();
 const updateOidcClientOpsMock = jest.fn();
 const normalizeClientOpsUpdateInputMock = jest.fn();
 
@@ -27,6 +28,10 @@ jest.mock('./oidcOperations', () => ({
   normalizeClientOpsUpdateInput: (...args: unknown[]) =>
     normalizeClientOpsUpdateInputMock(...args),
   updateOidcClientOps: (...args: unknown[]) => updateOidcClientOpsMock(...args),
+}));
+
+jest.mock('./dappApiKeys', () => ({
+  rotateDappApiKey: (...args: unknown[]) => rotateDappApiKeyMock(...args),
 }));
 
 const createResponse = () => {
@@ -96,23 +101,23 @@ describe('Admin route baseline wiring', () => {
       body: { dappId: 42 },
       context: {
         adminUser: { uid: 'admin_uid' },
-        supabase: {
-          from: () => ({
-            update: () => ({
-              match: () => ({
-                select: () => ({
-                  maybeSingle: async () => ({ data: { id: 42 }, error: null }),
-                }),
-              }),
-            }),
-          }),
-        },
+        supabase: {},
       },
       requestId: 'admin_request_3',
     });
     getOwnedDappMock.mockResolvedValue({ id: 42 });
+    rotateDappApiKeyMock.mockResolvedValue({
+      apiKey: 'cubid_live_prefix_secret',
+      keyRecord: {
+        key_prefix: 'prefix',
+        last_used_at: null,
+        rotated_at: '2026-04-27T00:00:00.000Z',
+        status: 'active',
+      },
+    });
 
-    await rotateKey({} as NextApiRequest, createResponse());
+    const response = createResponse();
+    await rotateKey({} as NextApiRequest, response);
 
     expect(prepareAdminApiRequestMock).toHaveBeenCalledWith(
       expect.anything(),
@@ -121,6 +126,15 @@ describe('Admin route baseline wiring', () => {
         actor: 'admin',
         rateLimitGroup: 'admin_sensitive',
         route: 'admin/apps/rotate-key',
+      })
+    );
+    expect(rotateDappApiKeyMock).toHaveBeenCalledWith({}, 42);
+    expect(response.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          apiKey: 'cubid_live_prefix_secret',
+          apiKeyPrefix: 'prefix',
+        }),
       })
     );
   });

@@ -1,4 +1,10 @@
-import { randomUUID } from "node:crypto";
+import {
+  createHash,
+  randomBytes,
+  randomUUID,
+  scryptSync,
+  timingSafeEqual,
+} from "node:crypto";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { z, type ZodTypeAny } from "zod";
 
@@ -35,6 +41,16 @@ export interface ApiRateLimitAdapterInput {
 export interface ApiRateLimitAdapter {
   enforce(input: ApiRateLimitAdapterInput): Promise<void>;
 }
+
+const DAPP_API_KEY_PREFIX = "cubid_live";
+const DAPP_API_KEY_SCRYPT_VERSION = "scrypt:v1";
+const DAPP_API_KEY_SHA256_VERSION = "sha256:v1";
+
+export type DappApiKeyMaterial = {
+  apiKey: string;
+  keyHash: string;
+  keyPrefix: string;
+};
 
 type HeaderValue = string | string[] | undefined;
 
@@ -106,6 +122,84 @@ export function createRequestId(prefix: string, candidate?: string | null) {
   }
 
   return `${prefix}_${randomUUID()}`;
+}
+
+export function parseDappApiKeyPrefix(apiKey: string) {
+  const trimmed = apiKey.trim();
+  const parts = trimmed.split("_");
+
+  if (parts.length >= 4 && parts[0] === "cubid" && parts[1] === "live") {
+    return parts[2] || null;
+  }
+
+  return trimmed.slice(0, 12) || null;
+}
+
+export function hashDappApiKey(apiKey: string) {
+  const salt = randomBytes(16).toString("hex");
+  const hash = scryptSync(apiKey, salt, 64).toString("hex");
+  return `${DAPP_API_KEY_SCRYPT_VERSION}:${salt}:${hash}`;
+}
+
+export function hashLegacyDappApiKey(apiKey: string) {
+  return `${DAPP_API_KEY_SHA256_VERSION}:${createHash("sha256")
+    .update(apiKey)
+    .digest("hex")}`;
+}
+
+export function verifyDappApiKey(apiKey: string, storedHash: string) {
+  const parts = storedHash.split(":");
+
+  if (parts[0] === "scrypt" && parts[1] === "v1") {
+    const [, , salt, expectedHash] = parts;
+
+    if (!salt || !expectedHash) {
+      return false;
+    }
+
+    const actualHash = scryptSync(apiKey, salt, 64);
+    const expectedBuffer = Buffer.from(expectedHash, "hex");
+
+    if (actualHash.length !== expectedBuffer.length) {
+      return false;
+    }
+
+    return timingSafeEqual(actualHash, expectedBuffer);
+  }
+
+  if (parts[0] === "sha256" && parts[1] === "v1") {
+    const expectedHash = parts[2];
+
+    if (!expectedHash) {
+      return false;
+    }
+
+    const actualBuffer = Buffer.from(
+      createHash("sha256").update(apiKey).digest("hex"),
+      "hex"
+    );
+    const expectedBuffer = Buffer.from(expectedHash, "hex");
+
+    if (actualBuffer.length !== expectedBuffer.length) {
+      return false;
+    }
+
+    return timingSafeEqual(actualBuffer, expectedBuffer);
+  }
+
+  return false;
+}
+
+export function generateDappApiKey(): DappApiKeyMaterial {
+  const keyPrefix = randomBytes(8).toString("hex");
+  const secret = randomBytes(32).toString("base64url");
+  const apiKey = `${DAPP_API_KEY_PREFIX}_${keyPrefix}_${secret}`;
+
+  return {
+    apiKey,
+    keyHash: hashDappApiKey(apiKey),
+    keyPrefix,
+  };
 }
 
 export function getRequestIdFromNextRequest(

@@ -8,8 +8,10 @@ import {
   buildAppErrorEnvelope,
   createCorsHeaders,
   getBearerToken,
+  parseDappApiKeyPrefix,
   getRequestIdFromNextRequest,
   validateWithSchema,
+  verifyDappApiKey,
   z,
   type ZodTypeAny,
 } from "@cubid/auth/server"
@@ -48,10 +50,17 @@ type PassportRouteBody<TSchema extends ZodTypeAny | undefined> =
   TSchema extends ZodTypeAny ? z.infer<TSchema> : undefined
 
 export type PassportDappRecord = {
-  apikey: string
   id: number
   name?: string | null
   [key: string]: unknown
+}
+
+type PassportDappApiKeyRecord = {
+  dapp_id: number
+  id: number
+  key_hash: string
+  key_prefix: string
+  status: string
 }
 
 type PassportBaseContext = {
@@ -412,6 +421,81 @@ const DAPP_CREDENTIAL_SCHEMA = z.object({
   id_to_read_from: z.string().min(1).optional(),
 })
 
+export const resolvePassportDappFromApiKey = async (
+  apiKey: string,
+  expectedDappId?: number | string
+) => {
+  const keyPrefix = parseDappApiKeyPrefix(apiKey)
+
+  if (!keyPrefix) {
+    throw new ApiSecurityError(
+      401,
+      "unauthorized",
+      "Invalid dapp API key."
+    )
+  }
+
+  const supabase = getPassportSupabase()
+  const { data: apiKeyRow, error: apiKeyError } = await supabase
+    .from("dapp_api_keys")
+    .select("*")
+    .eq("key_prefix", keyPrefix)
+    .eq("status", "active")
+    .maybeSingle()
+
+  if (apiKeyError) {
+    throw apiKeyError
+  }
+
+  if (
+    !apiKeyRow ||
+    !verifyDappApiKey(apiKey, String(apiKeyRow.key_hash ?? ""))
+  ) {
+    throw new ApiSecurityError(
+      401,
+      "unauthorized",
+      "Invalid dapp API key."
+    )
+  }
+
+  const keyRecord = apiKeyRow as PassportDappApiKeyRecord
+  const { data: dappRow, error: dappError } = await supabase
+    .from("dapps")
+    .select("*")
+    .eq("id", keyRecord.dapp_id)
+    .maybeSingle()
+
+  if (dappError) {
+    throw dappError
+  }
+
+  if (!dappRow) {
+    throw new ApiSecurityError(
+      401,
+      "unauthorized",
+      "Invalid dapp API key."
+    )
+  }
+
+  if (
+    expectedDappId !== undefined &&
+    String(expectedDappId) !== String(dappRow.id)
+  ) {
+    throw new ApiSecurityError(
+      403,
+      "forbidden",
+      "Dapp identifier does not match the provided API key."
+    )
+  }
+
+  void supabase
+    .from("dapp_api_keys")
+    .update({ last_used_at: new Date().toISOString() })
+    .eq("id", keyRecord.id)
+
+  return dappRow as PassportDappRecord
+}
+
 const requireDapp = async (
   req: NextApiRequest,
   requestId: string
@@ -419,7 +503,9 @@ const requireDapp = async (
   const parsedBody = getParsedBody(req)
   const credentials = validateWithSchema(parsedBody, DAPP_CREDENTIAL_SCHEMA)
   const apiKey =
-    credentials.apikey ?? credentials.id_to_read_from ?? null
+    credentials.apikey ??
+    credentials.id_to_read_from ??
+    (typeof credentials.dapp_id === "string" ? credentials.dapp_id : null)
 
   if (!apiKey) {
     throw new ApiSecurityError(
@@ -429,34 +515,11 @@ const requireDapp = async (
     )
   }
 
-  const { data, error } = await getPassportSupabase()
-    .from("dapps")
-    .select("*")
-    .eq("apikey", apiKey)
-    .maybeSingle()
-
-  if (error) {
-    throw error
-  }
-
-  if (!data) {
-    throw new ApiSecurityError(
-      401,
-      "unauthorized",
-      "Invalid dapp API key."
-    )
-  }
-
-  if (
-    credentials.dapp_id !== undefined &&
-    String(credentials.dapp_id) !== String(data.id)
-  ) {
-    throw new ApiSecurityError(
-      403,
-      "forbidden",
-      "Dapp identifier does not match the provided API key."
-    )
-  }
+  const expectedDappId =
+    credentials.apikey || credentials.id_to_read_from
+      ? credentials.dapp_id
+      : undefined
+  const data = await resolvePassportDappFromApiKey(apiKey, expectedDappId)
 
   return {
     actorIdentifier: String(data.id),

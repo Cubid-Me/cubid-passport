@@ -5,6 +5,7 @@ import {
   prepareAdminApiRequest,
   sendServerError,
 } from '../../../../lib/server/adminApi';
+import { createDappApiKey } from '../../../../lib/server/dappApiKeys';
 
 const createApp = async (req: NextApiRequest, res: NextApiResponse) => {
   const request = await prepareAdminApiRequest(req, res, {
@@ -35,6 +36,10 @@ const createApp = async (req: NextApiRequest, res: NextApiResponse) => {
     }
 
     const createdApp = appInsertResponse.data;
+    const { apiKey, keyRecord } = await createDappApiKey(
+      request.context.supabase,
+      createdApp.id
+    );
 
     const schemaResponse = await request.context.supabase
       .from('stampscore_dapps')
@@ -85,7 +90,21 @@ const createApp = async (req: NextApiRequest, res: NextApiResponse) => {
       }
     }
 
-    return res.status(200).json({ data: createdApp });
+    const { apikey: _apikey, ...safeApp } = createdApp;
+
+    return res.status(200).json({
+      data: {
+        apiKey,
+        apiKeyPrefix: keyRecord.key_prefix,
+        app: {
+          ...safeApp,
+          apiKeyLastUsedAt: keyRecord.last_used_at ?? null,
+          apiKeyPrefix: keyRecord.key_prefix,
+          apiKeyRotatedAt: keyRecord.rotated_at ?? null,
+          apiKeyStatus: keyRecord.status,
+        },
+      },
+    });
   } catch (error) {
     return sendServerError(res, error, 'Failed to create app');
   }

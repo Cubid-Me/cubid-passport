@@ -2119,3 +2119,40 @@ Split the broad `C04` custody todo into concrete hashed-secret, encrypted-retrie
 #### Follow-up
 
 - implement `C04.1` for hashed dapp API keys, or `C04.2` for hashed email OTP codes if OTP cleanup should land first
+
+### session: v74
+
+- timestamp: 2026-04-27T14:52:24-0400
+- agent: **OpenAI Codex**
+- branch: **codex/c04-c06-secrets-hardening-split**
+- head: **`f673183`**
+- session name: **Implement C04.1 hashed dapp API keys**
+
+#### Objective
+
+Move dapp API keys off plaintext runtime lookup by introducing hash-only `dapp_api_keys` verification while keeping currently issued keys working through a one-way migration.
+
+#### Actions Taken
+
+- added a `dapp_api_keys` Supabase migration and local seed backfill that hash existing `dapps.apikey` UUIDs into non-retrievable verifier rows
+- added shared dapp key generation, parsing, hashing, legacy hash, and verification helpers in `@cubid/auth/server`
+- updated Passport dapp actor authentication and the legacy `/api/dapp/create_user` path to verify through `dapp_api_keys` instead of direct `dapps.apikey` lookup
+- updated Admin app create, list, and rotate flows so raw API keys are shown only once and list views expose only non-secret key metadata
+- added focused tests for new and migrated dapp key verification, invalid key rejection, Admin rotate response shape, and Passport dapp auth behavior
+- documented the storage model and the follow-up to drop `dapps.apikey` after production smoke
+
+#### Verification
+
+- `pnpm --filter @cubid/auth test`
+- `pnpm --filter @cubid/auth typecheck`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/admin typecheck`
+- `pnpm --filter @cubid/admin test`
+- `pnpm --filter @cubid/admin build`
+- `pnpm --filter @cubid/passport build`
+- `pnpm --filter @cubid/passport test` attempted, but blocked by the local Node v25.8.2 runtime; the workspace requires Node 20 and an older JWT dependency fails before tests execute
+
+#### Follow-up
+
+- close the `C04.1` todo metadata against the implementation commit
+- run Passport tests under Node 20 in CI or a Node 20 local shell
