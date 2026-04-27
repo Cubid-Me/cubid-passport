@@ -2503,3 +2503,33 @@ Update repo agent guidance so deprecated and v2-only database tables are left al
 #### Follow-up
 
 - continue with `C06` env-backed operational-secret hardening or `C05.2.1` Sui support when ready
+
+### session: v86
+
+- timestamp: 2026-04-27T22:41:01Z
+- agent: **OpenAI Codex**
+- branch: **codex/c04-c06-secrets-hardening-split**
+- head: **`2b50f2f`**
+- session name: **Move encrypted dapp user secrets into private schema**
+
+#### Objective
+
+Correct the C05.1 dapp user secret custody boundary so `public.dapp_user_secrets` remains the legacy v2 plaintext table and encrypted v3 writes land only in `private.dapp_user_secrets`.
+
+#### Actions Taken
+
+- rewrote the C05.1 migration to preserve the public table and create a service-role-only `private.dapp_user_secrets` table for encrypted v3 custody
+- kept `/api/v2/save_secret` on the legacy public table and changed `/api/v3/save_secret` to write through the private schema
+- updated the backfill script to read public plaintext rows and insert encrypted private copies without mutating the public table
+- updated Passport route tests and mocks to distinguish public legacy rows from private encrypted rows
+- updated encrypted-secret and API-security operations docs plus todo language for the public/v2 and private/v3 split
+
+#### Verification
+
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/passport test'`
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/passport typecheck && pnpm --filter @cubid/passport build'`
+- `npx -p node@24 -c 'node --version && pnpm test && pnpm typecheck'`
+
+#### Follow-up
+
+- update C05.1 todo metadata to reference this corrected implementation head after commit

@@ -36,6 +36,7 @@ export class MockPassportSupabase {
   readonly dappApiKeys = new Map<string, DappApiKeyRow>()
   readonly dappUserAccounts: Array<Record<string, unknown>> = []
   readonly dappUserSecrets: Array<Record<string, unknown>> = []
+  readonly privateDappUserSecrets: Array<Record<string, unknown>> = []
   readonly dappUsers = new Map<string, DappUserRow>()
   readonly dapps = new Map<number, Record<string, unknown>>()
   readonly emailOtps = new Map<string, EmailOtpRow[]>()
@@ -216,6 +217,50 @@ export class MockPassportSupabase {
         insert: async (row: Record<string, unknown>) => {
           this.dappUserSecrets.push(row)
           return { error: null }
+        },
+      }
+    }
+
+    if (table === "private.dapp_user_secrets") {
+      return {
+        insert: async (row: Record<string, unknown>) => {
+          this.privateDappUserSecrets.push(row)
+          return { error: null }
+        },
+        select: () => {
+          const filters: Record<string, unknown> = {}
+          const query = {
+            eq: (column: string, value: unknown) => {
+              filters[column] = value
+              return query
+            },
+            maybeSingle: async () => {
+              const row =
+                this.privateDappUserSecrets.find((candidate) =>
+                  Object.entries(filters).every(
+                    ([column, value]) =>
+                      String(candidate[column]) === String(value)
+                  )
+                ) ?? null
+              return { data: row, error: null }
+            },
+            then: (
+              resolve: (value: {
+                data: Record<string, unknown>[]
+                error: null
+              }) => unknown
+            ) => {
+              return Promise.resolve({
+                data: this.privateDappUserSecrets.filter((row) =>
+                  Object.entries(filters).every(
+                    ([column, value]) => String(row[column]) === String(value)
+                  )
+                ),
+                error: null,
+              }).then(resolve)
+            },
+          }
+          return query
         },
       }
     }

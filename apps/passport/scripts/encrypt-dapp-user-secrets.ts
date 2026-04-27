@@ -6,10 +6,11 @@ import {
 import { getPassportSupabase } from "../lib/server/supabase"
 
 type LegacyDappUserSecretRow = {
+  description: string | null
   dapp_user_uuid: string
   id: number
   secret: string
-  secret_ciphertext: string | null
+  secret_sequential_id: number
 }
 
 const isDryRun = process.argv.includes("--dry-run")
@@ -18,8 +19,7 @@ const main = async () => {
   const supabase = getPassportSupabase()
   const { data: rows, error } = await supabase
     .from("dapp_user_secrets")
-    .select("id,dapp_user_uuid,secret,secret_ciphertext")
-    .is("secret_ciphertext", null)
+    .select("id,dapp_user_uuid,secret,secret_sequential_id,description")
     .neq("secret", DAPP_USER_SECRET_LEGACY_SENTINEL)
 
   if (error) {
@@ -56,23 +56,44 @@ const main = async () => {
       continue
     }
 
+    const { data: existingPrivateRow, error: existingPrivateError } =
+      await supabase
+        .schema("private")
+        .from("dapp_user_secrets")
+        .select("id")
+        .eq("legacy_public_secret_id", row.id)
+        .maybeSingle()
+
+    if (existingPrivateError) {
+      throw existingPrivateError
+    }
+
+    if (existingPrivateRow) {
+      skippedCount += 1
+      continue
+    }
+
     const encrypted = await encryptDappUserSecret(supabase, row.secret, {
       dappId: dappUser.dapp_id,
       dappUserUuid: row.dapp_user_uuid,
       purpose: DAPP_USER_SECRET_PURPOSE,
     })
 
-    const { error: updateError } = await supabase
+    const { error: insertError } = await supabase
+      .schema("private")
       .from("dapp_user_secrets")
-      .update({
+      .insert({
         ...encrypted,
-        migrated_from_plaintext_at: new Date().toISOString(),
+        dapp_user_uuid: row.dapp_user_uuid,
+        description: row.description,
+        legacy_public_secret_id: row.id,
+        migrated_from_public_at: new Date().toISOString(),
         secret: DAPP_USER_SECRET_LEGACY_SENTINEL,
+        secret_sequential_id: row.secret_sequential_id,
       })
-      .eq("id", row.id)
 
-    if (updateError) {
-      throw updateError
+    if (insertError) {
+      throw insertError
     }
 
     encryptedCount += 1

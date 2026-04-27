@@ -48,9 +48,13 @@ blockchain account, purpose, or key fails.
 
 - authenticates the dapp through hashed `dapp_api_keys`
 - confirms the `dapp_users.uuid` belongs to the authenticated dapp
-- encrypts the submitted secret before writing `dapp_user_secrets`
+- encrypts the submitted secret before writing `private.dapp_user_secrets`
 - stores `__cubid_encrypted_dapp_user_secret__` in the legacy `secret` column
 - writes a security event without raw secret material
+
+`public.dapp_user_secrets` remains the legacy v2 table. It is intentionally
+left intact while v2 is supported, and new encrypted v3 work must not add
+encrypted columns or new custody behavior to the public table.
 
 The required Vault secret is `passport_dapp_user_secret_wrapping_key_v1`. It
 must be a base64 or base64url encoded 32-byte value and must be provisioned
@@ -69,12 +73,13 @@ pnpm --filter @cubid/passport exec tsx scripts/encrypt-dapp-user-secrets.ts --dr
 pnpm --filter @cubid/passport exec tsx scripts/encrypt-dapp-user-secrets.ts
 ```
 
-The script encrypts rows where `secret_ciphertext` is empty and replaces
-plaintext `secret` with the sentinel. It reports counts only and must never log
-raw secret values.
+The script reads plaintext rows from `public.dapp_user_secrets` and inserts
+encrypted copies into `private.dapp_user_secrets`. It reports counts only,
+must never log raw secret values, and does not mutate the legacy public table.
 
-Physical removal of the legacy `secret` column is deferred until production
-smoke confirms current rows are encrypted and no callers depend on plaintext.
+Physical removal or final quarantine of the legacy public table is deferred
+until production smoke confirms current rows are encrypted privately and no
+callers depend on the v2 plaintext table.
 
 ## Webhook Signing Secrets
 

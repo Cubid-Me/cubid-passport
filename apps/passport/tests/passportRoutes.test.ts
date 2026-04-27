@@ -8,6 +8,7 @@ import supabaseSelectHandler from "../pages/api/supabase/select"
 import sendOtpHandler from "../pages/api/twillio/send-otp"
 import sendEmailOtpHandler from "../pages/api/v2/email/send_otp"
 import verifyEmailOtpHandler from "../pages/api/v2/email/verify_otp"
+import saveSecretV2Handler from "../pages/api/v2/save_secret"
 import generateAccountV3Handler from "../pages/api/v3/accounts/generate"
 import listAccountsV3Handler from "../pages/api/v3/accounts/list"
 import saveSecretV3Handler from "../pages/api/v3/save_secret"
@@ -358,6 +359,35 @@ test("Passport v2 create_user rejects malformed dapp payloads before execution",
   )
 })
 
+test("Passport v2 save_secret keeps legacy public-table behavior", async () => {
+  const supabase = new MockPassportSupabase()
+  const apiKey = addDappAuth(supabase)
+  const userId = "00000000-0000-4000-8000-000000000041"
+  setPassportSupabaseForTests(supabase as never)
+
+  const req = createApiRequest({
+    body: {
+      api_key: apiKey,
+      secret: "legacy plaintext dapp user secret",
+      user_id: userId,
+    },
+    headers: {
+      origin: "https://passport.cubid.me",
+    },
+    url: "/api/v2/save_secret",
+  })
+  const res = createApiResponse()
+
+  await saveSecretV2Handler(req, res)
+
+  assert.equal(res.statusCode, 200)
+  assert.deepEqual(res.body, { success: true })
+  assert.equal(supabase.dappUserSecrets.length, 1)
+  assert.equal(supabase.privateDappUserSecrets.length, 0)
+  assert.equal(supabase.dappUserSecrets[0].secret, "legacy plaintext dapp user secret")
+  assert.equal(supabase.dappUserSecrets[0].secret_sequential_id, 1)
+})
+
 test("Passport v3 save_secret stores only encrypted dapp user secrets", async () => {
   const supabase = new MockPassportSupabase()
   const apiKey = addDappAuth(supabase)
@@ -382,9 +412,11 @@ test("Passport v3 save_secret stores only encrypted dapp user secrets", async ()
 
   assert.equal(res.statusCode, 200)
   assert.deepEqual(res.body, { success: true })
-  assert.equal(supabase.dappUserSecrets.length, 1)
-  const storedSecret = supabase.dappUserSecrets[0]
+  assert.equal(supabase.dappUserSecrets.length, 0)
+  assert.equal(supabase.privateDappUserSecrets.length, 1)
+  const storedSecret = supabase.privateDappUserSecrets[0]
   assert.equal(storedSecret.secret, DAPP_USER_SECRET_LEGACY_SENTINEL)
+  assert.equal(storedSecret.secret_sequential_id, 1)
   assert.notEqual(storedSecret.secret_ciphertext, "raw dapp user secret")
   assert.equal(
     String(storedSecret.secret_ciphertext).includes("raw dapp user secret"),
@@ -434,6 +466,7 @@ test("Passport v3 save_secret rejects dapp users outside the authenticated app",
 
   assert.equal(res.statusCode, 404)
   assert.equal(supabase.dappUserSecrets.length, 0)
+  assert.equal(supabase.privateDappUserSecrets.length, 0)
   assert.deepEqual(res.body, {
     error: {
       code: "not_found",

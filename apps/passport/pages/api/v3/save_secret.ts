@@ -69,11 +69,25 @@ export default async function handler(
         }
       )
 
-      const { error } = await supabase.from("dapp_user_secrets").insert({
-        ...encryptedSecret,
-        dapp_user_uuid: body.user_id,
-        secret: DAPP_USER_SECRET_LEGACY_SENTINEL,
-      })
+      const { data: existingRows, error: existingError } = await supabase
+        .schema("private")
+        .from("dapp_user_secrets")
+        .select("id")
+        .eq("dapp_user_uuid", body.user_id)
+
+      if (existingError) {
+        throw existingError
+      }
+
+      const { error } = await supabase
+        .schema("private")
+        .from("dapp_user_secrets")
+        .insert({
+          ...encryptedSecret,
+          dapp_user_uuid: body.user_id,
+          secret: DAPP_USER_SECRET_LEGACY_SENTINEL,
+          secret_sequential_id: (existingRows ?? []).length + 1,
+        })
 
       if (error) {
         throw error

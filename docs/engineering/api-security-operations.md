@@ -220,11 +220,12 @@ the application intentionally fails closed if the secret is absent.
 
 Dapp user secrets are retrievable server-side secrets and use the C05 envelope
 encryption model. `/api/v3/save_secret` encrypts submissions into
-`dapp_user_secrets` using a per-row data key wrapped by the Supabase Vault
-secret `passport_dapp_user_secret_wrapping_key_v1`. Provision this Vault secret
-before enabling v3 writes or running the legacy backfill script. The legacy
-`/api/v2/save_secret` route is preserved for compatibility, but v3 is the
-encrypted custody contract.
+`private.dapp_user_secrets` using a per-row data key wrapped by the Supabase
+Vault secret `passport_dapp_user_secret_wrapping_key_v1`. Provision this Vault
+secret before enabling v3 writes or running the legacy backfill script. The
+legacy `/api/v2/save_secret` route is preserved for compatibility and continues
+to use `public.dapp_user_secrets`; v3 is the encrypted private-schema custody
+contract.
 
 Webhook signing secrets use the same C05 envelope model because Passport must
 recover them to sign outbound webhook deliveries. Admin-created subscriptions
