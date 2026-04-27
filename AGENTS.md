@@ -39,4 +39,5 @@ At the start of a new session, inspect and summarize the relevant work from:
 
 - Treat committed secrets as incidents, not convenience. Use environment variables or local-only files that are ignored by Git.
 - Keep cleanup-only changes separate from feature work whenever practical.
+- Treat deprecated and v2-only database tables as quarantine surfaces. Do not build new features on them, refactor them, migrate them, drop them, or otherwise work on them unless a specific future todo explicitly names that cleanup. This includes `wallet_list`, `wallet_details`, `sui-api-accounts`, `near-api-accounts`, `eth-api-accounts`, `evm_accounts`, `authorized_dapps_deprecated`, `blacklist_deprecated`, and `dapp_stampscores_deprecated`.
 - In every final readout, explicitly report whether a commit was made, whether the repo is clean, and propose the next todo to tackle.

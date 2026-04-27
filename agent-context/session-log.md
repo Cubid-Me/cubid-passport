@@ -2478,3 +2478,28 @@ Record the implementation commit for `C05.2` after the encrypted v3 blockchain a
 
 - provision the blockchain private-key wrapping key in Supabase Vault before enabling v3 generation in shared environments
 - consider `C05.2.1` for Sui or continue with `C06` env-backed operational-secret hardening
+
+### session: v85
+
+- timestamp: 2026-04-27T22:20:26Z
+- agent: **OpenAI Codex**
+- branch: **codex/c04-c06-secrets-hardening-split**
+- head: **`ca19c31`**
+- session name: **Document deprecated database quarantine tables**
+
+#### Objective
+
+Update repo agent guidance so deprecated and v2-only database tables are left alone unless a future todo explicitly scopes their cleanup.
+
+#### Actions Taken
+
+- added an `AGENTS.md` note marking legacy wallet, chain-account, and deprecated score/auth tables as quarantine surfaces
+- included `wallet_list`, `wallet_details`, `sui-api-accounts`, `near-api-accounts`, `eth-api-accounts`, `evm_accounts`, `authorized_dapps_deprecated`, `blacklist_deprecated`, and `dapp_stampscores_deprecated`
+
+#### Verification
+
+- not run; documentation-only change
+
+#### Follow-up
+
+- continue with `C06` env-backed operational-secret hardening or `C05.2.1` Sui support when ready
