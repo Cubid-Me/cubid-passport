@@ -2390,3 +2390,29 @@ Move webhook signing secrets into the C05 retrievable-secret custody model by en
 - close `C05.3` metadata against this implementation commit
 - run the webhook backfill script in dry-run mode before production migration execution
 - keep a future physical cleanup follow-up open for removing or quarantining the legacy plaintext webhook `secret` column after production verification
+
+### session: v82
+
+- timestamp: 2026-04-27T16:55:20-0400
+- agent: **OpenAI Codex**
+- branch: **codex/c04-c06-secrets-hardening-split**
+- head: **`89ae627`**
+- session name: **Close C05.3 metadata**
+
+#### Objective
+
+Mark `C05.3` complete after the webhook signing-secret envelope-encryption implementation landed and passed validation.
+
+#### Actions Taken
+
+- updated `agent-context/todo.md` so `C05.3` records completion timestamp, implementation head, and session-log reference
+- kept parent `C05` open because blockchain private-key custody remains outstanding
+- preserved the production follow-up expectation for running the webhook backfill and later removing or quarantining legacy plaintext storage after verification
+
+#### Verification
+
+- confirmed implementation commit `89ae627` contains the validated C05.3 changes
+
+#### Follow-up
+
+- continue C05 with `C05.2` blockchain private-key custody, or add a narrow post-deployment cleanup todo for physically removing legacy webhook plaintext after production backfill verification
