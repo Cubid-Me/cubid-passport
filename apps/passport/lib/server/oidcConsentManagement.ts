@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto"
-import type { NextApiRequest, NextApiResponse } from "next"
+import type { NextApiRequest } from "next"
 import { createClient, type SupabaseClient } from "@supabase/supabase-js"
 import type { DecodedIdToken } from "firebase-admin/auth"
+import { ApiSecurityError } from "@cubid/auth/server"
 
 import { getPassportFirebaseAdminAuth } from "./firebaseAdmin"
 
@@ -40,15 +41,6 @@ export type PassportConsentSummary = {
   policyVersion: string
   revokedAt: string | null
   revokedBy: "user" | "operator" | null
-}
-
-export class PassportApiError extends Error {
-  statusCode: number
-
-  constructor(statusCode: number, message: string) {
-    super(message)
-    this.statusCode = statusCode
-  }
 }
 
 let supabaseClient: PassportSupabaseClient | null = null
@@ -124,22 +116,15 @@ const getBearerToken = (req: NextApiRequest) => {
   return authorizationHeader.slice("Bearer ".length).trim()
 }
 
-export const getPassportRequestId = (req: NextApiRequest) => {
-  const headerValue = req.headers["x-request-id"]
-  const candidate = Array.isArray(headerValue) ? headerValue[0] : headerValue
-
-  if (candidate?.trim()) {
-    return candidate.trim()
-  }
-
-  return `passport_${randomUUID()}`
-}
-
 export const requirePassportFirebaseUser = async (req: NextApiRequest) => {
   const bearerToken = getBearerToken(req)
 
   if (!bearerToken) {
-    throw new PassportApiError(401, "Missing Firebase bearer token")
+    throw new ApiSecurityError(
+      401,
+      "unauthorized",
+      "Missing Firebase bearer token."
+    )
   }
 
   try {
@@ -148,19 +133,24 @@ export const requirePassportFirebaseUser = async (req: NextApiRequest) => {
     )
 
     if (!token.email && !token.phone_number) {
-      throw new PassportApiError(
+      throw new ApiSecurityError(
         401,
-        "Firebase token is missing email or phone identity"
+        "unauthorized",
+        "Firebase token is missing email or phone identity."
       )
     }
 
     return token
   } catch (error) {
-    if (error instanceof PassportApiError) {
+    if (error instanceof ApiSecurityError) {
       throw error
     }
 
-    throw new PassportApiError(401, "Invalid Firebase bearer token")
+    throw new ApiSecurityError(
+      401,
+      "unauthorized",
+      "Invalid Firebase bearer token."
+    )
   }
 }
 
@@ -328,7 +318,11 @@ export const revokePassportOidcConsent = async (
   requestId: string
 ) => {
   if (!consentId) {
-    throw new PassportApiError(400, "consentId is required")
+    throw new ApiSecurityError(
+      400,
+      "invalid_request",
+      "consentId is required."
+    )
   }
 
   const supabase = getPassportSupabase()
@@ -336,7 +330,7 @@ export const revokePassportOidcConsent = async (
   const subjectKeys = await resolveHumanSubjectKeys(supabase, token)
 
   if (subjectKeys.length === 0) {
-    throw new PassportApiError(404, "Consent not found")
+    throw new ApiSecurityError(404, "not_found", "Consent not found.")
   }
 
   const { data: consent, error: consentError } = await supabase
@@ -350,7 +344,7 @@ export const revokePassportOidcConsent = async (
   }
 
   if (!consent || !subjectKeys.includes(consent.human_subject_key)) {
-    throw new PassportApiError(404, "Consent not found")
+    throw new ApiSecurityError(404, "not_found", "Consent not found.")
   }
 
   if (consent.revoked_at) {
@@ -418,20 +412,4 @@ export const revokePassportOidcConsent = async (
     consentId,
     revokedAt,
   }
-}
-
-export const sendPassportApiError = (
-  res: NextApiResponse,
-  error: unknown,
-  fallbackMessage: string
-) => {
-  if (error instanceof PassportApiError) {
-    return res.status(error.statusCode).json({ error: error.message })
-  }
-
-  if (error instanceof Error) {
-    process.stderr.write(`${error.stack ?? error.message}\n`)
-  }
-
-  return res.status(500).json({ error: fallbackMessage })
 }

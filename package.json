@@ -18,6 +18,7 @@
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
+    "check:api-security": "bash ./scripts/check-api-security-regressions.sh",
     "format": "turbo run format",
     "format:write": "turbo run format:write"
   },

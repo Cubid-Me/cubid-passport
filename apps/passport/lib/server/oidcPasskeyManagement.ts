@@ -1,15 +1,13 @@
 import { randomUUID } from "node:crypto"
 import type { NextApiRequest } from "next"
+import { ApiSecurityError } from "@cubid/auth/server"
 
 import {
-  PassportApiError,
   getPassportSupabase,
   normalizeStringArray,
   requirePassportFirebaseUser,
   resolveHumanSubjectKeys,
 } from "./oidcConsentManagement"
-
-export { sendPassportApiError } from "./oidcConsentManagement"
 
 type PasskeyDeviceRow = {
   authenticator_attachment: string | null
@@ -78,7 +76,7 @@ const getOwnedPasskeyDevice = async (
 
   const row = data as PasskeyDeviceRow | null
   if (!row || !subjectKeys.includes(row.human_subject_key)) {
-    throw new PassportApiError(404, "Passkey device not found")
+    throw new ApiSecurityError(404, "not_found", "Passkey device not found.")
   }
 
   return row
@@ -119,13 +117,18 @@ export const renamePassportPasskeyDevice = async (
   const label = input.label?.trim()
 
   if (!deviceId) {
-    throw new PassportApiError(400, "deviceId is required")
+    throw new ApiSecurityError(
+      400,
+      "invalid_request",
+      "deviceId is required."
+    )
   }
 
   if (!label || label.length > 80) {
-    throw new PassportApiError(
+    throw new ApiSecurityError(
       400,
-      "label is required and must be 80 characters or fewer"
+      "invalid_request",
+      "label is required and must be 80 characters or fewer."
     )
   }
 
@@ -137,7 +140,11 @@ export const renamePassportPasskeyDevice = async (
   const row = await getOwnedPasskeyDevice(deviceId, subjectKeys)
 
   if (row.revoked_at) {
-    throw new PassportApiError(409, "Revoked passkeys cannot be renamed")
+    throw new ApiSecurityError(
+      409,
+      "invalid_state",
+      "Revoked passkeys cannot be renamed."
+    )
   }
 
   const now = new Date().toISOString()
@@ -186,7 +193,11 @@ export const revokePassportPasskeyDevice = async (
   const deviceId = deviceIdInput?.trim()
 
   if (!deviceId) {
-    throw new PassportApiError(400, "deviceId is required")
+    throw new ApiSecurityError(
+      400,
+      "invalid_request",
+      "deviceId is required."
+    )
   }
 
   const supabase = getPassportSupabase()

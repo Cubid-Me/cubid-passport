@@ -42,7 +42,10 @@ const createResponse = () => {
   };
 };
 
-const createSupabase = (adminUser: unknown) => ({
+const createSupabase = (
+  adminUser: unknown,
+  options: { bucketCount?: number } = {}
+) => ({
   from(table: string) {
     if (table === 'dapp-admin-users') {
       return {
@@ -71,7 +74,14 @@ const createSupabase = (adminUser: unknown) => ({
               return {
                 async maybeSingle() {
                   return {
-                    data: null,
+                    data:
+                      typeof options.bucketCount === 'number'
+                        ? {
+                            bucket_key: 'bucket_key',
+                            count: options.bucketCount,
+                            window_start: new Date(0).toISOString(),
+                          }
+                        : null,
                     error: null,
                   };
                 },
@@ -174,6 +184,36 @@ describe('adminApi security baseline', () => {
     });
   });
 
+  it('rejects requests that do not include a Firebase bearer token', async () => {
+    const req = {
+      body: {
+        dappId: 42,
+      },
+      headers: {
+        origin: 'https://admin.cubid.me',
+      },
+      method: 'POST',
+    } as unknown as NextApiRequest;
+    const res = createResponse();
+
+    const prepared = await prepareAdminApiRequest(req, res, {
+      actor: 'admin',
+      bodySchema: adminDappIdSchema,
+      rateLimitGroup: 'admin_read',
+      route: 'admin/apps/config',
+    });
+
+    expect(prepared).toBeNull();
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(res.body).toEqual({
+      error: {
+        code: 'unauthorized',
+        message: 'Missing Firebase bearer token',
+        requestId: expect.stringMatching(/^admin_/),
+      },
+    });
+  });
+
   it('rejects non-admin callers before route execution', async () => {
     getSupabaseMock.mockReturnValue(createSupabase(null));
 
@@ -237,6 +277,49 @@ describe('adminApi security baseline', () => {
         details: {
           issues: expect.any(Array),
         },
+      },
+    });
+  });
+
+  it('returns a rate-limit denial when the trusted threshold is exceeded', async () => {
+    getSupabaseMock.mockReturnValue(
+      createSupabase(
+        {
+          email: 'admin@example.com',
+          uid: 'firebase_uid_123',
+        },
+        {
+          bucketCount: 300,
+        }
+      )
+    );
+
+    const req = {
+      body: {
+        dappId: 42,
+      },
+      headers: {
+        authorization: 'Bearer test-token',
+        origin: 'https://admin.cubid.me',
+      },
+      method: 'POST',
+    } as unknown as NextApiRequest;
+    const res = createResponse();
+
+    const prepared = await prepareAdminApiRequest(req, res, {
+      actor: 'admin',
+      bodySchema: adminDappIdSchema,
+      rateLimitGroup: 'admin_read',
+      route: 'admin/apps/config',
+    });
+
+    expect(prepared).toBeNull();
+    expect(res.status).toHaveBeenCalledWith(429);
+    expect(res.body).toEqual({
+      error: {
+        code: 'rate_limit_exceeded',
+        message: 'Too many requests for this Admin API.',
+        requestId: expect.stringMatching(/^admin_/),
       },
     });
   });

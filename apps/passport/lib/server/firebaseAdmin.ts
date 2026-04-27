@@ -1,5 +1,7 @@
 import { cert, getApps, initializeApp } from "firebase-admin/app"
-import { getAuth } from "firebase-admin/auth"
+import { getAuth, type Auth } from "firebase-admin/auth"
+
+let firebaseAdminAuthOverride: Pick<Auth, "verifyIdToken"> | null = null
 
 const getRequiredEnv = (name: string) => {
   const value = process.env[name]?.trim()
@@ -12,6 +14,10 @@ const getRequiredEnv = (name: string) => {
 }
 
 export const getPassportFirebaseAdminAuth = () => {
+  if (firebaseAdminAuthOverride) {
+    return firebaseAdminAuthOverride
+  }
+
   const existingApp = getApps().find((app) => app.name === "passport-server")
 
   if (existingApp) {
@@ -30,4 +36,10 @@ export const getPassportFirebaseAdminAuth = () => {
   )
 
   return getAuth(app)
+}
+
+export const setPassportFirebaseAdminAuthForTests = (
+  auth: Pick<Auth, "verifyIdToken"> | null
+) => {
+  firebaseAdminAuthOverride = auth
 }

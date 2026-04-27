@@ -2016,3 +2016,48 @@ Bring the roadmap metadata back into sync with the committed Passport hardening 
 #### Follow-up
 
 - start `C03.5` for final observability, CI expectations, and any remaining targeted API test harness work
+
+### session: v71
+
+- timestamp: 2026-04-27T09:59:19-0400
+- agent: **OpenAI Codex**
+- branch: **codex/c03-api-security-baseline**
+- head: **`7515335`**
+- session name: **Implement C03.5 security baseline closeout**
+
+#### Objective
+
+Close `C03.5` by making the shared API security baseline provable and operable across Passport, Admin, and OIDC with real Passport tests, cold-safe typecheck behavior, CI regression checks, and operator-facing observability docs.
+
+#### Actions Taken
+
+- added a lightweight Passport `tsx --test` harness with focused coverage for request IDs, structured error envelopes, origin denials, dapp and internal auth denials, OTP throttling, and hard-disabled `/api/supabase/*` behavior
+- moved the remaining Passport `/api/oidc/consents/*` and `/api/oidc/passkeys/*` account-management routes onto the shared Passport baseline and replaced their ad hoc `PassportApiError` path with shared `ApiSecurityError` handling
+- added test-only Passport Supabase and Firebase Admin overrides so server-route failure paths can be covered without network calls or real credentials
+- split Next app `typecheck` onto dedicated `tsconfig.typecheck.json` files, kept `.next/types` under build-owned `tsconfig.json`, and added a CI regression script that fails on `nextjs-cors` or wildcard-origin reintroduction in hardened API handlers
+- extended OIDC and Admin failure-path tests, then added [docs/engineering/api-security-operations.md](/Users/botmaster/src/cubid/cubid-passport/docs/engineering/api-security-operations.md) plus final closeout notes in [docs/engineering/api-security-baseline.md](/Users/botmaster/src/cubid/cubid-passport/docs/engineering/api-security-baseline.md)
+
+#### Verification
+
+- `pnpm install`
+- `pnpm check:api-security`
+- `rm -rf apps/passport/.next apps/admin/.next`
+- `pnpm --filter @cubid/auth test`
+- `pnpm --filter @cubid/auth typecheck`
+- `pnpm --filter @cubid/oidc test`
+- `pnpm --filter @cubid/oidc typecheck`
+- `pnpm --filter @cubid/admin test`
+- `pnpm --filter @cubid/admin typecheck`
+- `pnpm --filter @cubid/admin build`
+- `pnpm --filter @cubid/passport test`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+- `pnpm lint`
+- `pnpm typecheck`
+- `pnpm test`
+- `pnpm build`
+
+#### Follow-up
+
+- commit the validated `C03.5` implementation slice
+- then close `C03.5` and the parent `C03` metadata against the landed implementation head

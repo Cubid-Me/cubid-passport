@@ -112,3 +112,29 @@ test("logout route honors the configured trusted tier threshold", async () => {
     RateLimitError
   );
 });
+
+test("consent completion route denies the 121st trusted request and logs the denial", async () => {
+  const supabase = new MockOidcSupabase();
+
+  for (let index = 0; index < 120; index += 1) {
+    await enforceRateLimit(supabase as never, {
+      key: "human_subject_key_123",
+      requestId: `oidc_consent_${index}`,
+      route: "consent_complete",
+      tier: "trusted",
+    });
+  }
+
+  await assert.rejects(
+    () =>
+      enforceRateLimit(supabase as never, {
+        key: "human_subject_key_123",
+        requestId: "oidc_consent_blocked",
+        route: "consent_complete",
+        tier: "trusted",
+      }),
+    RateLimitError
+  );
+
+  assert.equal(supabase.inserts.at(-1)?.event_type, "rate_limit.denied");
+});

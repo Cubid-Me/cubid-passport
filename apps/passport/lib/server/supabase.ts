@@ -4,6 +4,12 @@ import { getRequiredEnv } from "@cubid/config"
 
 let supabaseClient: SupabaseClient | null = null
 
+export const setPassportSupabaseForTests = (
+  client: SupabaseClient | null
+) => {
+  supabaseClient = client
+}
+
 export const getPassportSupabase = () => {
   if (!supabaseClient) {
     supabaseClient = createClient(

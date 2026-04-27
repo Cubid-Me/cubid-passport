@@ -1,7 +1,7 @@
 # Cubid API Security Baseline
 
 Last updated: 2026-04-27
-Status: Accepted contract implemented across OIDC, Admin, and Passport route baselines through C03.4
+Status: Accepted contract implemented across OIDC, Admin, and Passport route baselines through C03.5
 
 ## Purpose
 
@@ -201,7 +201,43 @@ The Passport slice completed the following architectural moves:
 - replaced generic first-party `/api/supabase/*` application usage with typed Passport data routes and hard-disabled the old CRUD endpoints
 - moved legacy Passport API families off wildcard CORS and onto explicit `anonymous`, `dapp`, or `internal` route contracts
 
-Remaining closeout work for `C03.5` is focused on broader observability, CI, and any additional targeted test coverage rather than on changing the baseline contract itself.
+## C03.5 Closeout Notes
+
+The C03 closeout completed the following enforcement work:
+
+- Passport now has a real lightweight server-test harness built on `tsx --test`, with coverage for request ID propagation, structured error envelopes, CORS denials, dapp auth denials, internal bearer-token denials, OTP throttling, and hard-disabled `/api/supabase/*` behavior.
+- The remaining Passport `/api/oidc/*` account-management routes now use the shared Passport baseline instead of their earlier ad hoc request-ID and error helper.
+- Root CI keeps the existing `lint`, `typecheck`, `test`, and `build` contract, but adds a dedicated regression check that fails if hardened API route families reintroduce `nextjs-cors` usage or wildcard `origin: "*"` behavior.
+- Turbo no longer claims coverage outputs for packages whose test tasks do not emit them, which removes noisy but misleading cache-output expectations from routine validation.
+- The Next workspace `typecheck` contract is now cold-safe:
+  - app workspace `tsconfig.json` files still include `.next/types/**/*.ts` so `next build` remains free to manage route typing
+  - app workspace `typecheck` scripts point at dedicated `tsconfig.typecheck.json` files that exclude volatile generated artifacts
+  - root `pnpm typecheck` no longer depends on a pre-generated `.next/types` tree
+
+## Validation Contract
+
+The enforced validation contract for this baseline is now:
+
+- package-level shared helper validation in `@cubid/auth`
+- OIDC protocol and rate-limit failure-path validation in `@cubid/oidc`
+- Admin auth, envelope, and route-policy validation in `@cubid/admin`
+- Passport security-baseline validation in `@cubid/passport`
+- root monorepo validation with:
+  - `pnpm lint`
+  - `pnpm typecheck`
+  - `pnpm test`
+  - `pnpm build`
+  - `pnpm check:api-security` in CI
+
+## Known Non-Blocking Warnings
+
+The security baseline is complete even though the repo still has unrelated warning noise:
+
+- pre-existing frontend lint warnings in both Next workspaces, mostly Tailwind ordering and React hook dependency warnings
+- a pre-existing Passport build warning from `@celo/contractkit` attempting to resolve `fs` in a browser-facing import path
+- routine dependency deprecation and peer-warning output during `pnpm install`
+
+These warnings should not be confused with baseline gaps in request IDs, auth guards, validation, rate limits, or CORS enforcement.
 
 ## Shared Package Boundaries
 

@@ -354,11 +354,11 @@ Bring the sprawling Passport API surface under the shared security baseline, inc
 
 ### C03.5 Close with tests, CI, and observability updates
 
-- Status: Not started
-- Timestamp started: TBD
+- Status: Started
+- Timestamp started: 2026-04-27T09:47:34-0400
 - Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
+- Feature branch: codex/c03-api-security-baseline
+- Head: 7515335
 - Session-log reference(s): TBD
 
 Finish C03 by validating the shared baseline as a platform-wide contract rather than a set of local refactors. Add unit tests in `@cubid/auth` for request ID handling, validation wrappers, actor guards, CORS decisions, and shared error serialization. Extend workspace test coverage so OIDC, Admin, and Passport all prove failure-path behavior, not just happy paths. Update CI expectations where needed so the route families touched by C03 are exercised in the normal monorepo validation graph. Document the new environment variables, security event fields, and monitoring expectations in long-lived engineering docs so operators know what signals now exist and how to use them. Close the parent todo only after the docs, tests, and validation story match the implemented baseline.

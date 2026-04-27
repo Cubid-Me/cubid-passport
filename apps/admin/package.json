@@ -10,7 +10,7 @@
     "lint": "pnpm exec next lint",
     "lint:fix": "pnpm exec next lint --fix",
     "lint:strict": "pnpm exec next lint --max-warnings 0",
-    "typecheck": "pnpm exec tsc --noEmit --incremental false",
+    "typecheck": "pnpm exec tsc --noEmit --incremental false -p tsconfig.typecheck.json",
     "test:watch": "pnpm exec jest --watch",
     "test": "pnpm exec jest --runInBand",
     "format": "pnpm exec prettier --check \"**/*.{js,jsx,ts,tsx,json,css,md}\" --cache",
