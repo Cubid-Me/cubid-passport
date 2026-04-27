@@ -2320,3 +2320,29 @@ Implement the first retrievable-secret custody slice by moving dapp user secret 
 - close `C05.1` metadata against this implementation commit
 - run the legacy-row backfill script in dry-run mode before any production migration execution
 - keep `C05.1.1` open for physically dropping or replacing the legacy plaintext `secret` column after production verification
+
+### session: v80
+
+- timestamp: 2026-04-27T16:25:14-0400
+- agent: **OpenAI Codex**
+- branch: **codex/c04-c06-secrets-hardening-split**
+- head: **`18b361e`**
+- session name: **Close C05.1 metadata**
+
+#### Objective
+
+Mark `C05.1` complete after the encrypted API v3 dapp user secret path, migration, docs, script, and tests landed in the implementation commit.
+
+#### Actions Taken
+
+- updated `agent-context/todo.md` so `C05.1` records completion timestamp, implementation head, and session-log reference
+- kept parent `C05` open because blockchain private-key custody and webhook signing-secret envelope encryption remain outstanding
+- kept `C05.1.1` open as the post-production-verification cleanup for the legacy plaintext column
+
+#### Verification
+
+- confirmed implementation commit `18b361e` contains the validated C05.1 changes
+
+#### Follow-up
+
+- continue C05 with either webhook signing secret encryption or blockchain private-key custody
