@@ -47,6 +47,18 @@ export class MockPassportSupabase {
   private nextEmailOtpId = 1
 
   rpc(name: string, params: Record<string, unknown>) {
+    if (name === "increment_api_rate_limit_bucket") {
+      const bucketKey = String(params.p_bucket_key)
+      const existing = this.buckets.get(bucketKey)
+      const count = (existing?.count ?? 0) + 1
+      this.buckets.set(bucketKey, {
+        bucket_key: bucketKey,
+        count,
+        window_start: String(params.p_window_start ?? ""),
+      })
+      return Promise.resolve({ data: count, error: null })
+    }
+
     if (name === "hash_email_otp") {
       return Promise.resolve({
         data: createHmac("sha256", "test-passport-email-otp-vault-secret")

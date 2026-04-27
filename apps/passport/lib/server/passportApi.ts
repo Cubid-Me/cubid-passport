@@ -302,19 +302,27 @@ const enforceRateLimit = async (input: {
   const bucketKey = createBucketKey(input.route, key, windowStartMs)
   const supabase = getPassportSupabase()
 
-  const { data: existingBucket, error: selectError } = await supabase
-    .from("api_rate_limit_buckets")
-    .select("bucket_key,count")
-    .eq("bucket_key", bucketKey)
-    .maybeSingle()
+  const { data: nextCount, error: rateLimitError } = await supabase.rpc(
+    "increment_api_rate_limit_bucket",
+    {
+      p_bucket_key: bucketKey,
+      p_expires_at: expiresAt.toISOString(),
+      p_limit_key: key,
+      p_metadata: {
+        actorIdentifier: input.actorIdentifier,
+        actorType: input.actorType,
+      },
+      p_route: input.route,
+      p_tier: tier,
+      p_window_start: new Date(windowStartMs).toISOString(),
+    }
+  )
 
-  if (selectError) {
-    throw selectError
+  if (rateLimitError) {
+    throw rateLimitError
   }
 
-  const nextCount = (existingBucket?.count ?? 0) + 1
-
-  if (nextCount > limit) {
+  if (Number(nextCount) > limit) {
     const retryAfterSeconds = Math.max(
       1,
       Math.ceil((windowStartMs + WINDOW_MS - now) / 1000)
@@ -336,27 +344,6 @@ const enforceRateLimit = async (input: {
     })
 
     throw new ApiRateLimitError(retryAfterSeconds)
-  }
-
-  const { error: upsertError } = await supabase
-    .from("api_rate_limit_buckets")
-    .upsert({
-      bucket_key: bucketKey,
-      count: nextCount,
-      expires_at: expiresAt.toISOString(),
-      limit_key: key,
-      metadata: {
-        actorIdentifier: input.actorIdentifier,
-        actorType: input.actorType,
-      },
-      route: input.route,
-      tier,
-      updated_at: new Date(now).toISOString(),
-      window_start: new Date(windowStartMs).toISOString(),
-    })
-
-  if (upsertError) {
-    throw upsertError
   }
 }
 

@@ -2639,3 +2639,29 @@ Address actionable Codex review comments on PR #149 after retargeting the branch
 #### Follow-up
 
 - push review fixes, reply to and resolve the Codex review threads, then re-check CI
+
+### session: v91
+
+- timestamp: 2026-04-27T23:40:47Z
+- agent: **OpenAI Codex**
+- branch: **codex/c04-c06-secrets-hardening-split**
+- head: **`6e1bccb`**
+- session name: **Address second PR 149 Codex review pass**
+
+#### Objective
+
+Address the second Codex review pass on PR #149 after the first review fixes were pushed.
+
+#### Actions Taken
+
+- restored the missing `webhook_call` import used by `server_insertStamp`
+- added a DB-side `increment_api_rate_limit_bucket` helper so Passport rate-limit counters increment atomically instead of through read-then-upsert logic
+- updated Passport tests/mocks to exercise the atomic rate-limit RPC path
+
+#### Verification
+
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/passport test && pnpm --filter @cubid/passport typecheck'`
+
+#### Follow-up
+
+- push the second review-fix commit, reply to and resolve the new Codex threads, then re-check CI
