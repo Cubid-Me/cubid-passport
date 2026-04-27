@@ -1928,3 +1928,30 @@ Bring the roadmap and session metadata back into sync with the completed C03.2 a
 #### Follow-up
 
 - continue with `C03.4` to bring Passport APIs onto the same shared request ID, validation, actor-guard, CORS, and rate-limit baseline
+
+### session: v68
+
+- timestamp: 2026-04-27T14:45:00-0400
+- agent: **OpenAI Codex**
+- branch: **codex/c03-api-security-baseline**
+- head: **`b143894`**
+- session name: **Expand roadmap for SDK and package publishing work**
+
+#### Objective
+
+Capture the newly identified downstream SDK, package publishing, JSR, Deno, and integration-doc work in the roadmap without mixing it into the in-progress Passport hardening implementation slice.
+
+#### Actions Taken
+
+- refined `E02` so it explicitly covers publishable integration packages rather than only a generic REST and React surface
+- added `E02.1` through `E02.4` for dual-target `@cubid/api`, high-level identity sync helpers, publishable `@cubid/web2` and `@cubid/web2-react`, and Deno plus Supabase Edge validation and docs
+- left the active `C03.4` implementation changes uncommitted so the roadmap update can land as a separate metadata-only checkpoint
+
+#### Verification
+
+- compared the requested package and DX actions against `agent-context/todo.md`
+- confirmed the new SDK and runtime-support work was not already represented with sufficient specificity in the current roadmap
+
+#### Follow-up
+
+- continue `C03.4` on the current branch, then return to the new `E02.*` items after the shared Passport API hardening is complete
