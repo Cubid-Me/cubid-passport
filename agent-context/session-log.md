@@ -2718,3 +2718,32 @@ Address the remaining unresolved Codex review comments on PR #149.
 #### Follow-up
 
 - push the review-fix commit, reply to and resolve the remaining PR #149 review threads, then re-check CI
+
+### session: v94
+
+- timestamp: 2026-04-28T08:37:24Z
+- agent: **OpenAI Codex**
+- branch: **codex/e02-1-cubid-api-package**
+- head: **`ba0b51c`**
+- session name: **Build the @cubid/api package foundation**
+
+#### Objective
+
+Start E02 and implement the E02.1 repository foundation for a public, runtime-agnostic `@cubid/api` package that can be published through npm and JSR trusted publishing.
+
+#### Actions Taken
+
+- created `packages/api` with a standards-only ESM client, typed low-level Passport v2 wrappers, structured `CubidApiError` categories, and injected-fetch support
+- added package README, JSR metadata, npm package metadata, publish dry-run scripts, and a manual trusted-publishing workflow
+- added CI coverage for npm pack and JSR dry-runs, plus an engineering note documenting the package contract and registry setup requirements
+- confirmed `@cubid/api` is not yet present on npm or JSR and left live publish blocked on trusted-publisher/package setup rather than using local credentials
+
+#### Verification
+
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/api test && pnpm --filter @cubid/api typecheck && pnpm --filter @cubid/api build && pnpm --filter @cubid/api pack:dry-run && pnpm --filter @cubid/api jsr:dry-run'`
+- `npx -p node@24 -c 'node --version && pnpm check:api-package && pnpm test && pnpm typecheck && pnpm build'`
+- `npx -p node@24 -c 'node --version && pnpm lint'`
+
+#### Follow-up
+
+- configure npm Trusted Publishing and the linked JSR package for `@cubid/api`, then run the manual publish workflow once this branch is reviewed and merged

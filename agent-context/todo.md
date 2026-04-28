@@ -528,23 +528,23 @@ Take the backgrounder’s core ideas seriously by making app-scoped identity and
 
 ### E02. Productize the developer platform: REST API v2, React SDK, and webhook contracts
 
-- Status: Not started
-- Timestamp started: TBD
+- Status: Started
+- Timestamp started: 2026-04-28T08:28:44Z
 - Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Feature branch: codex/e02-1-cubid-api-package
+- Head: ba0b51c
+- Session-log reference(s): session: v94
 
 Turn the current mixed bag of legacy routes into a coherent developer platform. Define the canonical REST API v2 surface for app onboarding, user creation, score lookup, identity queries, consent status, claim retrieval, and webhook registration. Build first-party packages on top of those stable contracts so integrators stop depending on internal UI code, local tarballs, or undocumented route behavior. That now explicitly includes a dual-target `@cubid/api` package that works from both npm and JSR, plus publishable `@cubid/web2` and `@cubid/web2-react` packages for browser and React integrations. Standardize webhook events around meaningful protocol events such as consent granted, claim updated, score changed, stamp blacklisted, and subject revoked, with signed payloads and replay protection. Add versioning and compatibility rules so downstream apps can rely on Cubid as infrastructure rather than reverse-engineering a moving target.
 
 ### E02.1 Publish `@cubid/api` as a dual-target runtime-agnostic package
 
-- Status: Not started
-- Timestamp started: TBD
+- Status: Started
+- Timestamp started: 2026-04-28T08:28:44Z
 - Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Feature branch: codex/e02-1-cubid-api-package
+- Head: ba0b51c
+- Session-log reference(s): session: v94
 
 Package `@cubid/api` as a real public integration surface that works cleanly from both npm and JSR, so downstream apps can import `@cubid/api` in Next.js and `jsr:@cubid/api` in Supabase Edge or other Deno runtimes without mirrors, tarballs, or path hacks. Keep the package strictly runtime-agnostic: no React, no browser-only helpers, and no Node-only assumptions beyond standards already available in modern runtimes. All request logic should rely on `fetch`, `RequestInit`, `Headers`, and plain JSON contracts, with callers able to inject `fetch` and server-held credentials explicitly. The output of this todo is a package layout, export map, build/publish setup, and usage contract that makes Cubid’s core API client feel native in both Node and Deno environments.
 

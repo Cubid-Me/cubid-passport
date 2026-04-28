@@ -1,0 +1,18 @@
+{
+  "name": "@cubid/api",
+  "version": "0.1.0",
+  "license": "UNLICENSED",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "publish": {
+    "include": [
+      "README.md",
+      "src/**/*.ts",
+      "jsr.json"
+    ],
+    "exclude": [
+      "src/*.test.ts"
+    ]
+  }
+}

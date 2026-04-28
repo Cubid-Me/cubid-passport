@@ -1,0 +1,44 @@
+{
+  "name": "@cubid/api",
+  "version": "0.1.0",
+  "description": "Runtime-agnostic Cubid API client for server-side integrations.",
+  "type": "module",
+  "license": "UNLICENSED",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "jsr.json"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Cubid-Me/cubid-passport.git",
+    "directory": "packages/api"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "rm -rf dist && pnpm exec tsc -p tsconfig.build.json",
+    "lint": "pnpm exec tsc --noEmit -p tsconfig.json",
+    "typecheck": "pnpm exec tsc --noEmit -p tsconfig.json",
+    "test": "pnpm exec tsx --test src/*.test.ts",
+    "pack:dry-run": "npm pack --dry-run",
+    "jsr:dry-run": "pnpm dlx jsr publish --dry-run --allow-dirty",
+    "format": "echo \"No format changes required for @cubid/api\"",
+    "format:write": "echo \"No format changes required for @cubid/api\""
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsx": "^4.20.6",
+    "typescript": "5.2.2"
+  }
+}

@@ -4,6 +4,12 @@
   "version": "0.0.0",
   "description": "Cubid platform monorepo root.",
   "packageManager": "pnpm@10.33.0",
+  "workspaces": [
+    "apps/*",
+    "services/*",
+    "packages/*",
+    "tooling/*"
+  ],
   "engines": {
     "node": "24.x"
   },
@@ -19,6 +25,7 @@
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "check:api-security": "bash ./scripts/check-api-security-regressions.sh",
+    "check:api-package": "pnpm --filter @cubid/api build && pnpm --filter @cubid/api pack:dry-run && pnpm --filter @cubid/api jsr:dry-run",
     "check:secrets": "node ./scripts/check-operational-secrets.mjs",
     "format": "turbo run format",
     "format:write": "turbo run format:write"
