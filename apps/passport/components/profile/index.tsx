@@ -11,6 +11,11 @@ import {
   browserSupportsWebAuthn,
   registerOidcPasskey,
 } from "@/lib/oidcPasskeys"
+import {
+  findPassportUserByIdentity,
+  findPassportWalletDetailsByIdentity,
+  listPassportStampsByUser,
+} from "@/lib/passportDataApi"
 import useAuth from "@/hooks/useAuth"
 import { Button } from "@/components/ui/button"
 import {
@@ -82,7 +87,8 @@ export const Profile = () => {
   const dispatch = useDispatch()
   const [userState, setUserState] = useState<any>({})
   const [walletState, setWalletState] = useState<any>({})
-  const [exportPrivateKey, setExportPrivateKey] = useState(undefined)
+  const [nearTransactionSignature, setNearTransactionSignature] =
+    useState<string | undefined>(undefined)
   const [passkeySupported, setPasskeySupported] = useState(false)
   const [passkeyLabel, setPasskeyLabel] = useState("My passkey")
   const [passkeyLoading, setPasskeyLoading] = useState(false)
@@ -107,55 +113,33 @@ export const Profile = () => {
 
   const fetchStamps = useCallback(async () => {
     if (email) {
-      const {
-        data: { data: userData },
-      } = await axios.post("/api/supabase/select", {
-        match: { email },
-        table: "users",
-      })
-      setUserState(userData?.[0])
+      setUserState(await findPassportUserByIdentity({ email }))
     }
     if (phone) {
-      const {
-        data: { data: userData },
-      } = await axios.post("/api/supabase/select", {
-        match: { phone },
-        table: "users",
-      })
-      setUserState(userData?.[0])
+      setUserState(await findPassportUserByIdentity({ phone }))
     }
   }, [email, phone])
 
   const fetchWalletDetails = useCallback(
     async (emailValue: string) => {
       if (emailValue) {
-        const {
-          data: { data: wallet_details },
-        } = await axios.post(`/api/supabase/select`, {
-          match: {
-            email: emailValue,
-          },
-          table: "wallet_details",
+        const wallet_details = await findPassportWalletDetailsByIdentity({
+          email: emailValue,
         })
 
-        if (wallet_details?.[0]) {
-          setWalletState(wallet_details?.[0])
+        if (wallet_details) {
+          setWalletState(wallet_details)
           return
         }
       }
 
       if (phone) {
-        const {
-          data: { data: wallet_details_phone },
-        } = await axios.post(`/api/supabase/select`, {
-          match: {
-            phone,
-          },
-          table: "wallet_details",
+        const wallet_details_phone = await findPassportWalletDetailsByIdentity({
+          phone,
         })
 
-        if (wallet_details_phone?.[0]) {
-          setWalletState(wallet_details_phone?.[0])
+        if (wallet_details_phone) {
+          setWalletState(wallet_details_phone)
           return
         }
       }
@@ -183,23 +167,13 @@ export const Profile = () => {
 
   const fetchWallets = useCallback(async () => {
     if (supabaseUser?.id) {
-      const {
-        data: { data },
-      } = await axios.post("/api/supabase/select", {
-        match: {
-          created_by_user_id: supabaseUser.id,
-          stamptype: 15,
-        },
-        table: "stamps",
+      const data = await listPassportStampsByUser({
+        stampTypeIds: [15],
+        userId: supabaseUser.id,
       })
-      const {
-        data: { data: evmData },
-      } = await axios.post("/api/supabase/select", {
-        match: {
-          created_by_user_id: supabaseUser.id,
-          stamptype: 14,
-        },
-        table: "stamps",
+      const evmData = await listPassportStampsByUser({
+        stampTypeIds: [14],
+        userId: supabaseUser.id,
       })
       const allNearAcc = data.map((item: any) => item.uniquevalue)
       setAllEvmData((evmData ?? []).map((item: any) => item.uniquevalue))
@@ -208,11 +182,11 @@ export const Profile = () => {
     }
   }, [supabaseUser])
 
-  const fetchPrivateKeyWithAddress = (nearKey: any) => {
-    const stampData = (
+  const showNearTransactionSignature = (nearKey: any) => {
+    const transactionSignature = (
       allNearData.find((item: any) => item.uniquevalue === nearKey) as any
     )?.stamp_json?.transaction?.signature
-    setExportPrivateKey(stampData)
+    setNearTransactionSignature(transactionSignature)
   }
 
   useEffect(() => {
@@ -457,11 +431,11 @@ export const Profile = () => {
                   ) && (
                     <button
                       onClick={() => {
-                        fetchPrivateKeyWithAddress(item)
+                        showNearTransactionSignature(item)
                       }}
                       className="rounded-md bg-blue-600 p-2 py-1 text-xs text-white"
                     >
-                      Export Private Key
+                      View transaction signature
                     </button>
                   )}
                 </div>
@@ -792,29 +766,32 @@ export const Profile = () => {
           </CardContent>
         </Card>
         <Sheet
-          open={Boolean(exportPrivateKey)}
+          open={Boolean(nearTransactionSignature)}
           onOpenChange={(value) => {
             if (value === false) {
-              setExportPrivateKey(undefined)
+              setNearTransactionSignature(undefined)
             }
           }}
         >
           <SheetContent>
             <SheetHeader>
-              <SheetTitle>Export Private Key</SheetTitle>
-              <p className="break-all">Copy Private Key : {exportPrivateKey}</p>
+              <SheetTitle>NEAR Transaction Signature</SheetTitle>
+              <p className="break-all">
+                Transaction signature: {nearTransactionSignature}
+              </p>
               <p>
-                Copy they key if you want to import it to any other Near-wallet.
+                This is the on-chain signature associated with the NEAR stamp
+                transaction. It is not a wallet private key.
               </p>
               <Button
                 className="block"
                 onClick={() => {
-                  navigator.clipboard.writeText(exportPrivateKey as any)
-                  toast.success("Successfully copied private key")
+                  navigator.clipboard.writeText(nearTransactionSignature ?? "")
+                  toast.success("Successfully copied transaction signature")
                 }}
                 variant="outline"
               >
-                Copy
+                Copy signature
               </Button>
             </SheetHeader>
           </SheetContent>

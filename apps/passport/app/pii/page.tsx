@@ -14,6 +14,10 @@ import { mainnet, sepolia } from "wagmi/chains"
 
 import { insertStampPerm } from "@/lib/insert_stamp_perm"
 import {
+  listPassportStampsByUser,
+  updatePassportUserProfile,
+} from "@/lib/passportDataApi"
+import {
   Sheet,
   SheetContent,
   SheetHeader,
@@ -264,16 +268,13 @@ export default function IndexPage() {
   useEffect(() => {
     if (coordinates?.lat) {
       (async () => {
-        await axios.post("/api/supabase/update", {
-          body: {
+        await updatePassportUserProfile({
+          patch: {
             address: {
               coordinates,
             },
           },
-          table: "users",
-          match: {
-            id: userData?.dapp_users?.[0].users?.id,
-          },
+          userId: userData?.dapp_users?.[0].users?.id,
         })
         const { data } = await axios.post(
           "/api/v2/identity/fetch_approx_location",
@@ -288,8 +289,8 @@ export default function IndexPage() {
   }, [userData, coordinates])
 
   const onSubmit = async (data) => {
-    await axios.post("/api/supabase/update", {
-      body: {
+    await updatePassportUserProfile({
+      patch: {
         address: {
           address: data.location,
           country: data.country,
@@ -301,23 +302,17 @@ export default function IndexPage() {
         cubid_country: data.country,
         phone: data.phone,
       },
-      table: "users",
-      match: {
-        id: userData?.dapp_users?.[0].users?.id,
-      },
+      userId: userData?.dapp_users?.[0].users?.id,
     })
     const { data: uid_data } = await axios.post("/api/allow/fetch_uid_data", {
       uid: searchParams.get("uid"),
     })
-    const { data: stamps } = await axios.post("/api/supabase/select", {
-      table: "stamps",
-      match: {
-        created_by_user_id: uid_data?.dapp_users[0].users.id,
-      },
+    const stamps = await listPassportStampsByUser({
+      userId: uid_data?.dapp_users[0].users.id,
     })
 
     const dapp_id = uid_data?.dapp_users[0]?.dapp_id
-    const filteredStamps = stamps.data.filter(
+    const filteredStamps = stamps.filter(
       (item) =>
         item.uniquevalue === data.phone || item.uniquevalue === data.email
     )

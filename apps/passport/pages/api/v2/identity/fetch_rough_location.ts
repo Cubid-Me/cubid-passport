@@ -1,80 +1,71 @@
-// @ts-nocheck
-import NextCors from "nextjs-cors"
-import { OpenLocationCode } from "open-location-code"
+import type { NextApiRequest, NextApiResponse } from "next"
+
+import {
+  handlePassportRoute,
+  passportSchemas,
+} from "@/lib/server/passportApi"
+import { getPassportSupabase } from "@/lib/server/supabase"
+
+const { OpenLocationCode } = require("open-location-code")
 
 import { getLocationDetailsFromPlusCode } from "../../utils/locationMethods"
-import { stampsWithId } from "../../utils/stampKey"
-import { supabase } from "../../utils/supabase"
 
-const log = (message: any, lineNumber: any) => {
-  console.log(`Line ${lineNumber}: ${message}`)
-}
-const rough_location = async (req: any, res: any) => {
-  await NextCors(req, res, {
-    // Options
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-    origin: "*", // Allow all origins
-    optionsSuccessStatus: 200, // Some legacy browsers choke on 204
-  })
-  const { apikey, user_id } = typeof req.body === "string" ? JSON.parse(req.body) : req.body
-  const { data: dataForApp } = await supabase
-    .from("dapps")
-    .select("*")
-    .match({ apikey })
-  const dappId = dataForApp?.[0]?.id
-  if (!dappId) {
-    log("Invalid API key or dapp_id", 50)
-    return res.status(400).json({ error: "Invalid API key" })
-  }
-  const { data: dapp_users, error } = await supabase
-    .from("dapp_users")
-    .select("*,users:user_id(*),dapps:dapp_id(*)")
-    .match({
-      uuid: user_id,
-    })
+const schema = passportSchemas.z.object({
+  apikey: passportSchemas.z.string().min(1),
+  user_id: passportSchemas.z.string().min(1),
+})
 
-  const {
-    users: { address, cubid_country, cubid_postalcode },
-  } = dapp_users?.[0]
+const roundToOneDecimal = (value: number) => Math.round(value * 10) / 10
 
-  const roundToTwoDecimals = (number: number) => {
-    return Math.round(number * 10) / 10
-  }
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  return handlePassportRoute(
+    req,
+    res,
+    {
+      actor: "dapp",
+      bodySchema: schema,
+      rateLimitGroup: "passport_dapp_read",
+      route: "v2.identity.fetch_rough_location",
+    },
+    async ({ body }) => {
+      const { data: dappUsers, error } = await getPassportSupabase()
+        .from("dapp_users")
+        .select("*,users:user_id(*),dapps:dapp_id(*)")
+        .eq("uuid", body.user_id)
 
-  if (Boolean(address?.locationDetails?.geometry?.location?.lat)) {
-    res.send({
-      error: "No location found for user"
-    })
-  }
+      if (error) {
+        throw error
+      }
 
-  const openLocationCode = new OpenLocationCode()
-  const country = await getLocationDetailsFromPlusCode(
-    openLocationCode.encode(
-      address?.locationDetails?.geometry?.location?.lat ??
-      address?.coordinates?.lat,
-      address?.locationDetails?.geometry?.location?.lng ??
-      address?.coordinates?.lon
-    )
-  )
-  res.send({
-    cubid_country: country,
-    pluscode: openLocationCode.encode(
-      address?.locationDetails?.geometry?.location?.lat,
-      address?.locationDetails?.geometry?.location?.lng,
-      6
-    ),
-    coordinates: {
-      lat: roundToTwoDecimals(
+      const address = dappUsers?.[0]?.users?.address
+      const latitude =
         address?.locationDetails?.geometry?.location?.lat ??
         address?.coordinates?.lat
-      ),
-      lng: roundToTwoDecimals(
+      const longitude =
         address?.locationDetails?.geometry?.location?.lng ??
-      address?.coordinates?.lon
-      ),
-    },
-    error,
-  })
-}
+        address?.coordinates?.lon
 
-export default rough_location
+      if (!latitude || !longitude) {
+        return res.status(200).json({ error: "No location found for user" })
+      }
+
+      const openLocationCode = new OpenLocationCode()
+      const country = await getLocationDetailsFromPlusCode(
+        openLocationCode.encode(latitude, longitude)
+      )
+
+      return res.status(200).json({
+        coordinates: {
+          lat: roundToOneDecimal(latitude),
+          lng: roundToOneDecimal(longitude),
+        },
+        cubid_country: country,
+        error: null,
+        pluscode: openLocationCode.encode(latitude, longitude, 6),
+      })
+    }
+  )
+}

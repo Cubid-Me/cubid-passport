@@ -1,9 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
+import { adminOidcClientOpsUpdateSchema } from '../../../../../lib/server/adminSchemas';
 import {
-  requireAdminUser,
+  prepareAdminApiRequest,
   sendBadRequest,
-  sendMethodNotAllowed,
   sendServerError,
 } from '../../../../../lib/server/adminApi';
 import {
@@ -13,19 +13,20 @@ import {
 } from '../../../../../lib/server/oidcOperations';
 
 const updateOps = async (req: NextApiRequest, res: NextApiResponse) => {
-  if (req.method !== 'POST') {
-    return sendMethodNotAllowed(res, ['POST']);
-  }
+  const request = await prepareAdminApiRequest(req, res, {
+    actor: 'admin',
+    bodySchema: adminOidcClientOpsUpdateSchema,
+    rateLimitGroup: 'admin_sensitive',
+    route: 'admin/oidc/clients/update-ops',
+  });
 
-  const context = await requireAdminUser(req, res);
-
-  if (!context) {
+  if (!request) {
     return;
   }
 
   try {
-    const input = normalizeClientOpsUpdateInput(req.body);
-    const data = await updateOidcClientOps(context, input);
+    const input = normalizeClientOpsUpdateInput(request.body);
+    const data = await updateOidcClientOps(request.context, input);
     return res.status(200).json({ data });
   } catch (error) {
     if (isOidcOpsInputError(error)) {

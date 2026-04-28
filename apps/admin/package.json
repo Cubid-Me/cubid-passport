@@ -10,7 +10,7 @@
     "lint": "pnpm exec next lint",
     "lint:fix": "pnpm exec next lint --fix",
     "lint:strict": "pnpm exec next lint --max-warnings 0",
-    "typecheck": "pnpm exec tsc --noEmit --incremental false",
+    "typecheck": "pnpm exec tsc --noEmit --incremental false -p tsconfig.typecheck.json",
     "test:watch": "pnpm exec jest --watch",
     "test": "pnpm exec jest --runInBand",
     "format": "pnpm exec prettier --check \"**/*.{js,jsx,ts,tsx,json,css,md}\" --cache",
@@ -19,6 +19,7 @@
     "postbuild": "pnpm exec next-sitemap --config next-sitemap.config.js"
   },
   "dependencies": {
+    "@cubid/auth": "workspace:*",
     "@cubid/config": "workspace:*",
     "@cubid/claims": "workspace:*",
     "@cubid/types": "workspace:*",
@@ -52,7 +53,7 @@
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@types/jest": "^29.5.14",
-    "@types/node": "^20.17.10",
+    "@types/node": "^24.0.0",
     "@types/react": "^18.2.25",
     "@types/react-select": "^5.0.1",
     "@typescript-eslint/eslint-plugin": "^5.62.0",

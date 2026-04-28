@@ -1,25 +1,26 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
+import { adminNoBodySchema } from '../../../../lib/server/adminSchemas';
 import {
   ensureAdminUserRecord,
-  requireVerifiedUser,
-  sendMethodNotAllowed,
+  prepareAdminApiRequest,
   sendServerError,
 } from '../../../../lib/server/adminApi';
 
 const syncAdminUser = async (req: NextApiRequest, res: NextApiResponse) => {
-  if (req.method !== 'POST') {
-    return sendMethodNotAllowed(res, ['POST']);
-  }
+  const request = await prepareAdminApiRequest(req, res, {
+    actor: 'user',
+    bodySchema: adminNoBodySchema,
+    rateLimitGroup: 'admin_auth_sync',
+    route: 'admin/auth/sync',
+  });
 
-  const context = await requireVerifiedUser(req, res);
-
-  if (!context) {
+  if (!request) {
     return;
   }
 
   try {
-    const adminUser = await ensureAdminUserRecord(context);
+    const adminUser = await ensureAdminUserRecord(request.context);
     return res.status(200).json({ data: { adminUser } });
   } catch (error) {
     return sendServerError(res, error, 'Failed to sync admin user');

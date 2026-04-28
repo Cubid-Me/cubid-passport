@@ -14,7 +14,7 @@ A01 locked the operating model. A02 and A03 then enacted the first live pieces o
 - The current `cubid-passport` repository becomes the long-term umbrella monorepo root.
 - `pnpm` is the workspace manager.
 - Turborepo is the task runner and task graph orchestrator.
-- Node 20 is the runtime baseline for local development and CI.
+- Node 24 is the runtime baseline for local development and CI.
 - Migration principle is:
   - preserve behavior first
   - move code second

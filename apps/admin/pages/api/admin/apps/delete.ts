@@ -1,42 +1,39 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
+import { adminDappIdSchema } from '../../../../lib/server/adminSchemas';
 import {
   getOwnedDapp,
-  requireAdminUser,
-  sendBadRequest,
+  prepareAdminApiRequest,
   sendForbidden,
-  sendMethodNotAllowed,
   sendServerError,
 } from '../../../../lib/server/adminApi';
 
 const deleteApp = async (req: NextApiRequest, res: NextApiResponse) => {
-  if (req.method !== 'POST') {
-    return sendMethodNotAllowed(res, ['POST']);
-  }
+  const request = await prepareAdminApiRequest(req, res, {
+    actor: 'admin',
+    bodySchema: adminDappIdSchema,
+    rateLimitGroup: 'admin_mutation',
+    route: 'admin/apps/delete',
+  });
 
-  const context = await requireAdminUser(req, res);
-
-  if (!context) {
+  if (!request) {
     return;
   }
 
-  const numericDappId = Number(req.body?.dappId);
-
-  if (!numericDappId) {
-    return sendBadRequest(res, 'Missing dappId');
-  }
-
   try {
-    const ownedDapp = await getOwnedDapp(context, numericDappId);
+    const ownedDapp = await getOwnedDapp(request.context, request.body.dappId);
 
     if (!ownedDapp) {
       return sendForbidden(res, 'You do not have access to that app');
     }
 
-    const response = await context.supabase
+    const response = await request.context.supabase
       .from('dapps')
       .delete()
-      .match({ id: numericDappId, admin_uid: context.adminUser.uid });
+      .match({
+        id: request.body.dappId,
+        admin_uid: request.context.adminUser.uid,
+      });
 
     if (response.error) {
       throw response.error;

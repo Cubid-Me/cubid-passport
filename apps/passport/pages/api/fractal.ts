@@ -1,14 +1,12 @@
 import axios from "axios"
 
+import { getRequiredSecret } from "@cubid/config"
+
 export default async function handler(req: any, res: any) {
   const { code } = req.body
-  const fractalClientId = process.env.FRACTAL_CLIENT_ID
-  const fractalClientSecret = process.env.FRACTAL_CLIENT_SECRET
-  const fractalRedirectUri = process.env.FRACTAL_REDIRECT_URI
-
-  if (!fractalClientId || !fractalClientSecret || !fractalRedirectUri) {
-    return res.status(500).send({ error: "Missing Fractal environment configuration" })
-  }
+  const fractalClientId = getRequiredSecret("FRACTAL_CLIENT_ID")
+  const fractalClientSecret = getRequiredSecret("FRACTAL_CLIENT_SECRET")
+  const fractalRedirectUri = getRequiredSecret("FRACTAL_REDIRECT_URI")
 
   try {
     const { data } = await axios.post(

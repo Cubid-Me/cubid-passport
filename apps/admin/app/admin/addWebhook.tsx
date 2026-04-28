@@ -19,6 +19,7 @@ interface AddWebhookProps {
 export function AddWebhook({ fetchWebhooks }: AddWebhookProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [createdWebhookSecret, setCreatedWebhookSecret] = useState<string | null>(null);
   const [webhookTypes, setWebhookTypes] = useState<WebhookType[]>([]);
   const [superApps, setSuperApps] = useState<DappRecord[]>([]);
   const { user } = useAuth();
@@ -36,6 +37,7 @@ export function AddWebhook({ fetchWebhooks }: AddWebhookProps) {
 
   function closeModal() {
     setIsOpen(false);
+    setCreatedWebhookSecret(null);
     reset();
   }
 
@@ -69,14 +71,17 @@ export function AddWebhook({ fetchWebhooks }: AddWebhookProps) {
   const onSubmit = async (data: { webhook_url: string; webhook_type_id: number; dapp_id: string }) => {
     try {
       setLoading(true);
-      await authedPost('/api/admin/webhooks/create', {
+      const response = await authedPost<{ data: { webhookSecret?: string } }>(
+        '/api/admin/webhooks/create',
+        {
         dappId: data.dapp_id,
         webhookUrl: data.webhook_url,
         webhookTypeId: data.webhook_type_id,
-      });
-      toast.success('Webhook URL added successfully');
+        }
+      );
+      setCreatedWebhookSecret(response.data.data.webhookSecret ?? null);
+      toast.success('Webhook URL added successfully. Store the signing secret now.');
       fetchWebhooks();
-      closeModal();
     } catch {
       toast.error('Failed to add webhook URL');
     } finally {
@@ -125,6 +130,17 @@ export function AddWebhook({ fetchWebhooks }: AddWebhookProps) {
                 <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-white">
                   Add Webhook URL
                 </Dialog.Title>
+                {createdWebhookSecret ? (
+                  <div className="mt-4 rounded-md border border-yellow-500/40 bg-yellow-500/10 p-3 text-yellow-100">
+                    <p className="text-sm font-semibold">Webhook signing secret</p>
+                    <p className="mt-1 text-xs text-yellow-100/80">
+                      Store this now. Cubid will not show this secret again.
+                    </p>
+                    <code className="mt-2 block break-all rounded bg-black/40 p-2 text-xs">
+                      {createdWebhookSecret}
+                    </code>
+                  </div>
+                ) : null}
                 <form onSubmit={handleSubmit(onSubmit)} className="mt-4">
                   <div className="mt-4">
                     <label className="block text-sm font-medium text-gray-300">

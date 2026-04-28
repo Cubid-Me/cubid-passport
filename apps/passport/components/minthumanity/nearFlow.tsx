@@ -6,6 +6,7 @@ import axios from "axios"
 import { toast } from "react-toastify"
 
 import useAuth from "@/hooks/useAuth"
+import { listPassportStampsByUser } from "@/lib/passportDataApi"
 
 export const NearFlow = () => {
   const [stepFlow, setStepFlow] = useState(0)
@@ -18,30 +19,20 @@ export const NearFlow = () => {
   const [mintingSBT, setMintingSBT] = useState(false)
   const [loading, setLoading] = useState(false)
   const [sbtMintSuccess, setSbtMintSuccess] = useState(false)
-  const [nearAcc, setNearAcc] = useState([])
+  const [nearAcc, setNearAcc] = useState<any[]>([])
   const { supabaseUser } = useAuth({})
   const [gitcoinScore, setGitcoinScore] = useState(0)
   const [gitcoinAddress, setGitcoinAddress] = useState("")
 
   const fetchNearAndGitcoinStamps = useCallback(async () => {
     if (supabaseUser?.id) {
-      const {
-        data: { data },
-      } = await axios.post("/api/supabase/select", {
-        match: {
-          created_by_user_id: supabaseUser.id,
-          stamptype: 15,
-        },
-        table: "stamps",
+      const data = await listPassportStampsByUser({
+        stampTypeIds: [15],
+        userId: supabaseUser.id,
       })
-      const {
-        data: { data: gitcoin_data },
-      } = await axios.post("/api/supabase/select", {
-        match: {
-          created_by_user_id: supabaseUser.id,
-          stamptype: 9,
-        },
-        table: "stamps",
+      const gitcoin_data = await listPassportStampsByUser({
+        stampTypeIds: [9],
+        userId: supabaseUser.id,
       })
       const score = gitcoin_data[0]?.stamp_json?.scores?.score
       const address = gitcoin_data[0]?.uniquevalue

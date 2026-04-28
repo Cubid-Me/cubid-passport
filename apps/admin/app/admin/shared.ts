@@ -20,7 +20,10 @@ export interface StampTypeRecord {
 
 export interface DappRecord {
   admin_uid: string;
-  apikey: string;
+  apiKeyLastUsedAt?: string | null;
+  apiKeyPrefix?: string | null;
+  apiKeyRotatedAt?: string | null;
+  apiKeyStatus?: string | null;
   appname: string;
   id: number;
   uid: string;

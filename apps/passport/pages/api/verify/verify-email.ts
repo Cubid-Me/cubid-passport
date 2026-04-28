@@ -1,35 +1,43 @@
-import NextCors from "nextjs-cors"
+import type { NextApiRequest, NextApiResponse } from "next"
 
-import { supabase } from "../utils/supabase"
+import {
+  handlePassportRoute,
+  passportSchemas,
+} from "@/lib/server/passportApi"
+import { getPassportSupabase } from "@/lib/server/supabase"
 
-const verifyEmail = async (req: any, res: any) => {
-    await NextCors(req, res, {
-        // Options
-        methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-        origin: "*", // Allow all origins
-        optionsSuccessStatus: 200, // Some legacy browsers choke on 204
-    })
-    const { apikey, email, otp, allStamps, dappuser_id } = typeof req.body === "string" ? JSON.parse(req.body) : req.body
-    const { data: dataForApp } = await supabase
-        .from("dapps")
-        .select("*")
-        .match({ apikey })
-    const dappId = dataForApp?.[0]?.id
-    if (!dappId) {
-        return res.status(400).json({ error: "Invalid API key" })
-    }
+const schema = passportSchemas.z.object({
+  allStamps: passportSchemas.z.unknown().optional(),
+  apikey: passportSchemas.z.string().min(1),
+  dappuser_id: passportSchemas.z.string().min(1).optional(),
+  email: passportSchemas.z.string().email(),
+  otp: passportSchemas.z.string().min(1),
+})
 
-    const { data, error } = await supabase.auth.verifyOtp({
-        email,
-        token: otp,
-        type: "email"
-    })
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  return handlePassportRoute(
+    req,
+    res,
+    {
+      actor: "dapp",
+      bodySchema: schema,
+      rateLimitGroup: "passport_dapp_mutation",
+      route: "verify.verify_email",
+    },
+    async ({ body }) => {
+      const { data, error } = await getPassportSupabase().auth.verifyOtp({
+        email: body.email,
+        token: body.otp,
+        type: "email",
+      })
 
-    res.send({
+      return res.status(200).json({
+        error,
         success: Boolean(data?.user?.id),
-        error
-    })
-
+      })
+    }
+  )
 }
-
-export default verifyEmail

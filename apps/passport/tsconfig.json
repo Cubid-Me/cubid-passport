@@ -5,6 +5,12 @@
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "@cubid/auth/server": [
+        "../../packages/auth/src/server.ts"
+      ],
+      "@cubid/config": [
+        "../../packages/config/src/index.ts"
       ]
     },
     "plugins": [

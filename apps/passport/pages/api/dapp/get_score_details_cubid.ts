@@ -1,62 +1,98 @@
-import NextCors from "nextjs-cors"
+import type { NextApiRequest, NextApiResponse } from "next"
 
-import { supabase } from "../utils/supabase"
+import {
+  handlePassportRoute,
+  passportSchemas,
+} from "@/lib/server/passportApi"
+import { getPassportSupabase } from "@/lib/server/supabase"
 
-const fetch_score = async (req: any, res: any) => {
-  await NextCors(req, res, {
-    // Options
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-    origin: "*", // Allow all origins
-    optionsSuccessStatus: 200, // Some legacy browsers choke on 204
-  })
-  const { uid } = req.body
-  console.log(req.body)
-  const { data: dapp_users } = await supabase
-    .from("dapp_users")
-    .select("*,users:user_id(*),dapps:dapp_id(*)")
-    .match({
-      uuid: uid,
-    })
-  const { error, data: stampData } = await supabase
-    .from("dapp_stamptypes")
-    .select("*,stamptypes:stamptype_id(*)")
-    .match({
-      dapp_id: dapp_users?.[0]?.dapp_id,
-    })
-  const { data: scoreData } = await supabase
-    .from("stampscore_dapps")
-    .select("*,stampscore_schemas:schema_id(*)")
-    .match({
-      dapp_id: dapp_users?.[0]?.dapp_id,
-    })
-  const { data: stampScores } = await supabase
-    .from("stampscores_available")
-    .select("*")
-    .match({
-      schema_id: scoreData?.[0]?.schema_id,
-    })
+const schema = passportSchemas.z.object({
+  uid: passportSchemas.z.string().min(1),
+})
 
-  const { data: stampsList } = await supabase
-    .from("stamps")
-    .select("*,stamptypes:stamptype(*)")
-    .match({
-      created_by_user_id: dapp_users?.[0]?.user_id,
-    })
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  return handlePassportRoute(
+    req,
+    res,
+    {
+      actor: "anonymous",
+      bodySchema: schema,
+      rateLimitGroup: "passport_user_read",
+      route: "dapp.get_score_details_cubid",
+    },
+    async ({ body }) => {
+      const supabase = getPassportSupabase()
+      const dappUsersResponse = await supabase
+        .from("dapp_users")
+        .select("*,users:user_id(*),dapps:dapp_id(*)")
+        .eq("uuid", body.uid)
 
-  const stampsToSend = stampData ?? []
+      if (dappUsersResponse.error) {
+        throw dappUsersResponse.error
+      }
 
-  const allStampIds = (stampsList ?? []).map((item: any) => item.stamptype)
+      const dappId = dappUsersResponse.data?.[0]?.dapp_id
+      const userId = dappUsersResponse.data?.[0]?.user_id
 
-  const score_details = [
-    ...stampsToSend.filter((item) =>
-      allStampIds?.includes(item?.stamptypes?.id)
-    ),
-  ].map((item) => {
-    const allData = stampsList?.filter((_) => _.stamptype === item.stamptype_id)
-    return { [item.stamptypes.stamptype]: allData?.map((item)=>item?.uniquevalue) }
-  })
+      const [stampDataResponse, scoreDataResponse, stampsListResponse] =
+        await Promise.all([
+          supabase
+            .from("dapp_stamptypes")
+            .select("*,stamptypes:stamptype_id(*)")
+            .eq("dapp_id", dappId),
+          supabase
+            .from("stampscore_dapps")
+            .select("*,stampscore_schemas:schema_id(*)")
+            .eq("dapp_id", dappId),
+          supabase
+            .from("stamps")
+            .select("*,stamptypes:stamptype(*)")
+            .eq("created_by_user_id", userId),
+        ])
 
-  res.send({ score_details })
+      if (stampDataResponse.error) {
+        throw stampDataResponse.error
+      }
+      if (scoreDataResponse.error) {
+        throw scoreDataResponse.error
+      }
+      if (stampsListResponse.error) {
+        throw stampsListResponse.error
+      }
+
+      const schemaId = scoreDataResponse.data?.[0]?.schema_id
+      const stampScoresResponse = await supabase
+        .from("stampscores_available")
+        .select("*")
+        .eq("schema_id", schemaId)
+
+      if (stampScoresResponse.error) {
+        throw stampScoresResponse.error
+      }
+
+      const stampsToSend = stampDataResponse.data ?? []
+      const allStampIds = (stampsListResponse.data ?? []).map(
+        (item: any) => item.stamptype
+      )
+
+      const score_details = stampsToSend
+        .filter((item: any) => allStampIds.includes(item?.stamptypes?.id))
+        .map((item: any) => {
+          const allData = (stampsListResponse.data ?? []).filter(
+            (stamp: any) => stamp.stamptype === item.stamptype_id
+          )
+
+          return {
+            [item.stamptypes.stamptype]: allData.map(
+              (stamp: any) => stamp?.uniquevalue
+            ),
+          }
+        })
+
+      return res.status(200).json({ score_details })
+    }
+  )
 }
-
-export default fetch_score

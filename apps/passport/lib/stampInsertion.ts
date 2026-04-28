@@ -1,9 +1,9 @@
 // @ts-nocheck
-import axios from "axios"
 import { encode_data } from "./encode_data"
-import { insertStampPerm } from "./insert_stamp_perm"
 import { supabase } from "./supabase"
 import { webhook_call } from "./webhook_call"
+
+import { createPassportStamp } from "@/lib/passportDataApi"
 
 export const stampsWithId = {
     facebook: 1,
@@ -33,94 +33,13 @@ export const stampsWithId = {
 
 
 export const insertStamp = async ({ stampData, user_data, stamp_type, app_id, is_auth = false }: { is_auth: boolean, app_id: number, stampData: any, user_data: { user_id: number, uuid: string }, stamp_type: keyof typeof stampsWithId, is_auth?: boolean }) => {
-    const stampID = stampsWithId[stamp_type]
-    const { data } = await supabase.from("stamptypes").select("*").match({ id: stampID })
-
-    if (data?.[0]) {
-        const { fields_to_use } = data?.[0];
-        if (fields_to_use?.make_child_email_stamp && stampData?.email) {
-            const dataToSet_stamp = {
-                created_by_user_id: user_data?.user_id,
-                created_by_app: app_id,
-                stamptype: stampsWithId.email,
-                uniquevalue: stampData.email,
-                user_id_and_uniqueval: `${user_data?.user_id} ${stampsWithId.email} ${stampData.email}`,
-                unique_hash: await encode_data(JSON.stringify(stampData)),
-                stamp_json: { stampData },
-                type_and_uniquehash: `${stampsWithId.email} ${await encode_data(
-                    JSON.stringify(stampData)
-                )}`,
-                identity: stampData?.email,
-                is_auth
-            };
-            const {
-                data: { data: evmData },
-            } = await axios.post("/api/supabase/insert", {
-                table: "stamps",
-                body: dataToSet_stamp,
-            })
-        }
-        if (fields_to_use?.make_child_phone_stamp && stampData?.phone) {
-            const dataToSet_stamp = {
-                created_by_user_id: user_data?.user_id,
-                created_by_app: app_id,
-                stamptype: stampsWithId.phone,
-                uniquevalue: stampData.phone,
-                user_id_and_uniqueval: `${user_data?.user_id} ${stampsWithId.phone} ${stampData.phone}`,
-                unique_hash: await encode_data(JSON.stringify(stampData)),
-                stamp_json: { stampData },
-                type_and_uniquehash: `${stampsWithId.phone} ${await encode_data(
-                    JSON.stringify(stampData)
-                )}`,
-                identity: stampData?.phone
-            };
-            const {
-                data: { data: evmData },
-            } = await axios.post("/api/supabase/insert", {
-                table: "stamps",
-                body: dataToSet_stamp,
-            })
-        }
-    }
-
-    const dataToSet_stamp = {
-        created_by_user_id: user_data?.user_id,
-        created_by_app: app_id,
-        stamptype: stampsWithId[stamp_type],
-        uniquevalue: stampData.uniquevalue,
-        user_id_and_uniqueval: `${user_data?.user_id} ${stampsWithId[stamp_type]} ${stampData.uniquevalue}`,
-        unique_hash: await encode_data(JSON.stringify(stampData)),
-        stamp_json: { stampData },
-        type_and_uniquehash: `${stampsWithId[stamp_type]} ${await encode_data(
-            JSON.stringify(stampData)
-        )}`,
-        identity: stampData?.identity,
-        is_auth
-    };
-    const {
-        data: { data: stampInsertData },
-    } = await axios.post("/api/supabase/insert", {
-        table: "stamps",
-        body: dataToSet_stamp,
-    })
-    if (user_data?.uuid) {
-        await insertStampPerm(stampInsertData?.[0]?.id, user_data.uuid)
-    } else {
-        const { data: dapp_data } = await supabase.from("dapp_users")?.select("*").match({ user_id: user_data?.user_id, dapp_id: process.env.NEXT_PUBLIC_DAPP_ID })
-        if (dapp_data?.[0]) {
-            await insertStampPerm(stampInsertData?.[0]?.id, dapp_data?.[0]?.uuid)
-        } else {
-            const { data: newDappUser, error } = await supabase
-                .from("dapp_users")
-                .insert({ user_id: user_data?.user_id, dapp_id: process.env.NEXT_PUBLIC_DAPP_ID })
-                .select("*")
-            await insertStampPerm(stampInsertData?.[0]?.id, newDappUser?.[0]?.uuid)
-        }
-    }
-    webhook_call({
-        type_and_uniquehash: `${stampsWithId[stamp_type]} ${await encode_data(
-            JSON.stringify(stampData)
-        )}`
+    return createPassportStamp({
+        appId: app_id,
+        isAuth: is_auth,
+        stampData,
+        stampType: stamp_type,
+        userId: user_data?.user_id,
+        userUuid: user_data?.uuid || undefined,
     })
 }
 

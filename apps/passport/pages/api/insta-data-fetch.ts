@@ -2,18 +2,16 @@ import { NextApiRequest, NextApiResponse } from "next"
 import axios from "axios"
 import FormData from "form-data"
 
+import { getRequiredSecret } from "@cubid/config"
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
   let code = req.body.code
   let redirectUri = req.body.redirectUri
-  const instagramClientId = process.env.NEXT_PUBLIC_INSTAGRAM_CLIENT_ID
-  const instagramClientSecret = process.env.INSTAGRAM_CLIENT_SECRET
-
-  if (!instagramClientId || !instagramClientSecret) {
-    return res.status(500).send({ error: "Missing Instagram environment configuration" })
-  }
+  const instagramClientId = getRequiredSecret("NEXT_PUBLIC_INSTAGRAM_CLIENT_ID")
+  const instagramClientSecret = getRequiredSecret("INSTAGRAM_CLIENT_SECRET")
 
   // send form based request to Instagram API
   const formData = new URLSearchParams()

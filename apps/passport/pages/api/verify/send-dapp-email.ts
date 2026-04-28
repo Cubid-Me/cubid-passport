@@ -1,33 +1,39 @@
-import NextCors from "nextjs-cors"
+import type { NextApiRequest, NextApiResponse } from "next"
 
-import { supabase } from "../utils/supabase"
+import {
+  handlePassportRoute,
+  passportSchemas,
+} from "@/lib/server/passportApi"
+import { getPassportSupabase } from "@/lib/server/supabase"
 
-const sendDappEmail = async (req: any, res: any) => {
-    await NextCors(req, res, {
-        // Options
-        methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-        origin: "*", // Allow all origins
-        optionsSuccessStatus: 200, // Some legacy browsers choke on 204
-    })
-    const { apikey, email } = typeof req.body === "string" ? JSON.parse(req.body) : req.body
-    const { data: dataForApp } = await supabase
-        .from("dapps")
-        .select("*")
-        .match({ apikey })
-    const dappId = dataForApp?.[0]?.id
-    if (!dappId) {
-        return res.status(400).json({ error: "Invalid API key" })
-    }
-    const { error,data } = await supabase.auth.signInWithOtp({
-        email,
+const schema = passportSchemas.z.object({
+  apikey: passportSchemas.z.string().min(1),
+  email: passportSchemas.z.string().email(),
+})
 
-    })
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  return handlePassportRoute(
+    req,
+    res,
+    {
+      actor: "dapp",
+      bodySchema: schema,
+      rateLimitGroup: "passport_dapp_mutation",
+      route: "verify.send_dapp_email",
+    },
+    async ({ body }) => {
+      const { data, error } = await getPassportSupabase().auth.signInWithOtp({
+        email: body.email,
+      })
 
-    res.send({
-        success: true,
+      return res.status(200).json({
+        data,
         error,
-        data
-    })
+        success: true,
+      })
+    }
+  )
 }
-
-export default sendDappEmail

@@ -9,6 +9,10 @@ import { Guest } from "components/auth/guest"
 import firebase from "lib/firebase"
 import { toast } from "react-toastify"
 
+import {
+  ensurePassportUserByIdentity,
+  findPassportUserByIdentity,
+} from "@/lib/passportDataApi"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
@@ -20,16 +24,14 @@ export default function AuthenticationPage() {
     try {
       localStorage.setItem("email", emailField.current.value)
 
-      const data: any = await axios.post("/api/supabase/select", {
-        match: { email: emailField.current.value },
-        table: "users",
+      const data = await findPassportUserByIdentity({
+        email: emailField.current.value ?? undefined,
       })
       await firebase.auth().signInWithCustomToken(values.idToken)
 
-      if (!data?.[0]) {
-        await axios.post(`/api/supabase/insert`, {
-          table: "users",
-          body: { email: localStorage.getItem("email") },
+      if (!data?.id) {
+        await ensurePassportUserByIdentity({
+          email: localStorage.getItem("email") ?? undefined,
         })
       }
       toast.success("Successfully logged into cubid")

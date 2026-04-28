@@ -1,46 +1,40 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
+import { adminPagesCreateSchema } from '../../../../lib/server/adminSchemas';
 import {
   getOwnedDapp,
-  requireAdminUser,
-  sendBadRequest,
+  prepareAdminApiRequest,
   sendForbidden,
-  sendMethodNotAllowed,
   sendServerError,
 } from '../../../../lib/server/adminApi';
 
 const createPages = async (req: NextApiRequest, res: NextApiResponse) => {
-  if (req.method !== 'POST') {
-    return sendMethodNotAllowed(res, ['POST']);
-  }
+  const request = await prepareAdminApiRequest(req, res, {
+    actor: 'admin',
+    bodySchema: adminPagesCreateSchema,
+    rateLimitGroup: 'admin_mutation',
+    route: 'admin/pages/create',
+  });
 
-  const context = await requireAdminUser(req, res);
-
-  if (!context) {
+  if (!request) {
     return;
   }
 
-  const numericDappId = Number(req.body?.dappId);
-  const pages = req.body?.pages;
-
-  if (!numericDappId || !Array.isArray(pages) || pages.length === 0) {
-    return sendBadRequest(res, 'Missing page creation fields');
-  }
-
   try {
-    const ownedDapp = await getOwnedDapp(context, numericDappId);
+    const { dappId, pages } = request.body;
+    const ownedDapp = await getOwnedDapp(request.context, dappId);
 
     if (!ownedDapp) {
       return sendForbidden(res, 'You do not have access to that app');
     }
 
     for (const page of pages) {
-      const pageResponse = await context.supabase
+      const pageResponse = await request.context.supabase
         .from('dapp_pages')
         .insert({
           page_name: page.pageName,
           redirect_url: page.redirectUrl,
-          dapp_id: numericDappId,
+          dapp_id: dappId,
         })
         .select('*')
         .maybeSingle();
@@ -56,10 +50,10 @@ const createPages = async (req: NextApiRequest, res: NextApiResponse) => {
           continue;
         }
 
-        const stampResponse = await context.supabase
+        const stampResponse = await request.context.supabase
           .from('dapp_stamptypes')
           .insert({
-            dapp_id: numericDappId,
+            dapp_id: dappId,
             page_id: pageResponse.data.id,
             stamptype_id: stampConfig.stampTypeId,
             is_auth_enabled: stampConfig.auth,

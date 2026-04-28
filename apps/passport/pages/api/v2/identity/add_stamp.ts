@@ -1,37 +1,88 @@
-import NextCors from "nextjs-cors"
+import type { NextApiRequest, NextApiResponse } from "next"
 
-import { supabase } from "../../utils/supabase"
 import { server_insertStamp } from "@/lib/stampInsertion"
+import {
+  handlePassportRoute,
+  passportSchemas,
+} from "@/lib/server/passportApi"
+import { getPassportSupabase } from "@/lib/server/supabase"
 
-const add_stamp = async (req: any, res: any) => {
-    await NextCors(req, res, {
-        // Options
-        methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-        origin: "*", // Allow all origins
-        optionsSuccessStatus: 200, // Some legacy browsers choke on 204
-    })
-    const { page_id, stamp_type, stampData, user_data } = typeof req.body === "string" ? JSON.parse(req.body) : req.body
-    const { data } = await supabase.from("dapp_users").select("*").match({ uuid: user_data?.uuid })
-    const { data: dapp_page_data } = await supabase.from("dapp_pages").select("*").match({ id: page_id })
+const schema = passportSchemas.z.object({
+  page_id: passportSchemas.z.union([
+    passportSchemas.z.number().int().positive(),
+    passportSchemas.z.string().min(1),
+  ]),
+  stamp_type: passportSchemas.z.string().min(1),
+  stampData: passportSchemas.z.record(passportSchemas.z.unknown()),
+  user_data: passportSchemas.z.object({
+    uuid: passportSchemas.z.string().min(1),
+  }),
+})
 
-    if (stamp_type === "address") {
-        await supabase.from("users").update({
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  return handlePassportRoute(
+    req,
+    res,
+    {
+      actor: "anonymous",
+      bodySchema: schema,
+      rateLimitGroup: "passport_user_mutation",
+      route: "v2.identity.add_stamp",
+    },
+    async ({ body }) => {
+      const supabase = getPassportSupabase()
+      const stampData = body.stampData as any
+      const { data: dappUsers, error: dappUsersError } = await supabase
+        .from("dapp_users")
+        .select("*")
+        .eq("uuid", body.user_data.uuid)
+
+      if (dappUsersError) {
+        throw dappUsersError
+      }
+
+      const { data: dappPages, error: dappPagesError } = await supabase
+        .from("dapp_pages")
+        .select("*")
+        .eq("id", Number(body.page_id))
+
+      if (dappPagesError) {
+        throw dappPagesError
+      }
+
+      if (body.stamp_type === "address") {
+        const stampLocation = stampData?.geometry?.location
+        const { error: userUpdateError } = await supabase
+          .from("users")
+          .update({
             address: {
-                coordinates: {
-                    lat: stampData.geometry.location.lat,
-                    lon: stampData.geometry.location.lng,
-                }
+              coordinates: {
+                lat: stampLocation?.lat,
+                lon: stampLocation?.lng,
+              },
             },
-        }).match({ id: data?.[0]?.user_id })
+          })
+          .eq("id", dappUsers?.[0]?.user_id)
+
+        if (userUpdateError) {
+          throw userUpdateError
+        }
+      }
+
+      await server_insertStamp({
+        app_id: dappPages?.[0]?.dapp_id,
+        stamp_type: body.stamp_type as any,
+        stampData,
+        user_data: {
+          user_id: dappUsers?.[0]?.user_id,
+          uuid: body.user_data.uuid,
+        },
+      })
+
+      return res.status(200).json({ success: true })
     }
-
-    server_insertStamp({
-        app_id: dapp_page_data?.[0]?.dapp_id,
-        stampData: stampData, user_data: { user_id: data?.[0]?.user_id, uuid: user_data?.uuid }, stamp_type: stamp_type
-    })
-    res.send({
-        success: true
-    })
+  )
 }
-
-export default add_stamp

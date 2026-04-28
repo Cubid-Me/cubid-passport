@@ -13,6 +13,7 @@ import { useTheme } from "next-themes"
 import { WagmiConfig } from "wagmi"
 import { config as passportWagmiConfig } from "../../config/web3Config"
 import { useSelectStampPerm } from '../../lib/insert_stamp_perm'
+import { listPassportStampsByUser } from "@/lib/passportDataApi"
 
 import { Stamps } from "./stamps"
 import { OptionalInfo } from "./steps/optional_info"
@@ -27,7 +28,7 @@ const AllowPage = () => {
   const [isValid, setIsValid] = useState(false)
   const [userUidData, setUserUidData] = useState<any>({})
   const [stampToAdd, setStampToAdd] = useState("")
-  const [stampsList, setStampsList] = useState([])
+  const [stampsList, setStampsList] = useState<any[]>([])
   const [oidcConsentChallenge, setOidcConsentChallenge] = useState<any>(null)
   const [oidcSubmitting, setOidcSubmitting] = useState(false)
 
@@ -57,13 +58,8 @@ const AllowPage = () => {
   }, [isOidcConsentFlow, uuid, setTheme, colormode, page_id])
 
   const fetchAllStamps = useCallback(async (userId: any) => {
-    const {
-      data: { data },
-    } = await axios.post("/api/supabase/select", {
-      table: "stamps",
-      match: {
-        created_by_user_id: userId,
-      },
+    const data = await listPassportStampsByUser({
+      userId,
     })
     setStampsList(data)
   }, [])

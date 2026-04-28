@@ -1,38 +1,44 @@
-import { NextApiRequest, NextApiResponse } from "next"
-import NextCors from "nextjs-cors"
+import type { NextApiRequest, NextApiResponse } from "next"
 
-import { supabase } from "@/lib/supabase"
+import {
+  handlePassportRoute,
+  passportSchemas,
+} from "@/lib/server/passportApi"
+import { getPassportSupabase } from "@/lib/server/supabase"
 
-const log = (message: any, lineNumber: any) => {
-  console.log(`Line ${lineNumber}: ${message}`)
-}
+const schema = passportSchemas.z.object({
+  page_id: passportSchemas.z.union([
+    passportSchemas.z.number().int().positive(),
+    passportSchemas.z.string().min(1),
+  ]),
+})
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  log("Received API request", 27)
+  return handlePassportRoute(
+    req,
+    res,
+    {
+      actor: "anonymous",
+      bodySchema: schema,
+      rateLimitGroup: "passport_user_read",
+      route: "page_id_details",
+    },
+    async ({ body }) => {
+      const { data, error } = await getPassportSupabase()
+        .from("dapp_stamptypes")
+        .select("*,dapp_id:dapps(*)")
+        .eq("page_id", Number(body.page_id))
 
-  await NextCors(req, res, {
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-    origin: "*", // Allow all origins
-    optionsSuccessStatus: 200,
-  })
-  log("CORS setup completed", 34)
+      if (error) {
+        throw error
+      }
 
-  const { page_id } = req.body
-
-  if (!page_id) {
-    log("Missing required parameters", 37)
-    return res.status(400).json({ error: "Missing required parameters" })
-  }
-
-  const { data: dapp_stamp_data } = await supabase
-    .from("dapp_stamptypes")
-    .select("*,dapp_id:dapps(*)")
-    .match({ page_id })
-
-  return res.status(200).json({
-    dapp_data: dapp_stamp_data?.[0],
-  })
+      return res.status(200).json({
+        dapp_data: data?.[0] ?? null,
+      })
+    }
+  )
 }

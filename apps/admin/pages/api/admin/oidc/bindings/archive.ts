@@ -1,9 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
+import { adminArchiveBindingSchema } from '../../../../../lib/server/adminSchemas';
 import {
-  requireAdminUser,
+  prepareAdminApiRequest,
   sendBadRequest,
-  sendMethodNotAllowed,
   sendServerError,
 } from '../../../../../lib/server/adminApi';
 import {
@@ -12,24 +12,22 @@ import {
 } from '../../../../../lib/server/oidcPolicyRegistry';
 
 const archiveBinding = async (req: NextApiRequest, res: NextApiResponse) => {
-  if (req.method !== 'POST') {
-    return sendMethodNotAllowed(res, ['POST']);
-  }
+  const request = await prepareAdminApiRequest(req, res, {
+    actor: 'admin',
+    bodySchema: adminArchiveBindingSchema,
+    rateLimitGroup: 'admin_mutation',
+    route: 'admin/oidc/bindings/archive',
+  });
 
-  const context = await requireAdminUser(req, res);
-
-  if (!context) {
+  if (!request) {
     return;
   }
 
   try {
-    const bindingId = req.body?.bindingId;
-
-    if (typeof bindingId !== 'string' || !bindingId.trim()) {
-      return sendBadRequest(res, 'bindingId is required');
-    }
-
-    const data = await archiveClientClaimPolicyBinding(context, bindingId);
+    const data = await archiveClientClaimPolicyBinding(
+      request.context,
+      request.body.bindingId
+    );
 
     return res.status(200).json({ data });
   } catch (error) {

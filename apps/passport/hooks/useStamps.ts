@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import axios from "axios"
 import { useAccount } from "wagmi"
 
+import { listPassportStampsByUser } from "@/lib/passportDataApi"
+
 import useAuth from "./useAuth"
 
 export const useStamps = ({ user }: { user?: any }) => {
@@ -10,20 +12,14 @@ export const useStamps = ({ user }: { user?: any }) => {
   const { supabaseUser } = useAuth({})
   const fetchNearAndGitcoinStamps = useCallback(async () => {
     if (supabaseUser?.id) {
-      const {
-        data: { data: gitcoin_data },
-      } = await axios.post("/api/supabase/select", {
-        match: {
-          created_by_user_id: user ? user?.id : supabaseUser.id,
-          stamptype: 9,
-        },
-        table: "stamps",
+      const gitcoinData = await listPassportStampsByUser({
+        stampTypeIds: [9],
+        userId: user ? user?.id : supabaseUser.id,
       })
-      const gitcoinStamps = gitcoin_data?.[0]?.stamp_json?.stamps?.items ?? []
+      const gitcoinStamp = gitcoinData?.[0]
+      const gitcoinStamps = gitcoinStamp?.stamp_json?.stamps?.items ?? []
       setStamps(gitcoinStamps)
-      setGitcoinScore(
-        Math.round(gitcoin_data?.[0]?.stamp_json?.scores?.score ?? 0)
-      )
+      setGitcoinScore(Math.round(gitcoinStamp?.stamp_json?.scores?.score ?? 0))
     }
   }, [supabaseUser, user])
 

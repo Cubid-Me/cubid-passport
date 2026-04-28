@@ -1,15 +1,32 @@
-const accountSid = process.env.twilio_sid;
-const authToken = process.env.authToken;
-const verifySid = 'VA627c33ab3023aa319bf6351a0367d2c8';
-const client = require('twilio')(accountSid, authToken);
+import type { NextApiRequest, NextApiResponse } from "next"
 
-const verifyOtp = (req:any, res:any) => {
-  const { otpCode, phone } = req.body;
-  client.verify.v2
-    .services(verifySid)
-    .verificationChecks.create({ to: phone, code: otpCode })
-    .then((verification_check:any) => {
-      res.send(verification_check);
-    });
-};
-export default verifyOtp;
+import {
+  handlePassportRoute,
+  passportSchemas,
+} from "@/lib/server/passportApi"
+import { verifyPhoneOtp } from "@/lib/server/twilioVerify"
+
+const schema = passportSchemas.z.object({
+  otpCode: passportSchemas.z.string().min(1),
+  phone: passportSchemas.z.string().min(1),
+})
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  return handlePassportRoute(
+    req,
+    res,
+    {
+      actor: "anonymous",
+      bodySchema: schema,
+      rateLimitGroup: "passport_otp",
+      route: "passport.twilio.verify_otp",
+    },
+    async ({ body }) => {
+      const data = await verifyPhoneOtp(body)
+      return res.status(200).json({ data })
+    }
+  )
+}

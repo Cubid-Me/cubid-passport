@@ -1,24 +1,19 @@
 import { useCallback, useState } from "react"
-import axios from "axios"
 
 import useAuth from "@/hooks/useAuth"
+import { listPassportStampsByUser } from "@/lib/passportDataApi"
 
 import { NearFlow } from "./nearFlow"
 
 export const MintHumanity = () => {
   const [sbtFlow, setSbtFlow] = useState(0)
-  const [nearAcc, setNearAcc] = useState([])
+  const [nearAcc, setNearAcc] = useState<any[]>([])
   const { supabaseUser } = useAuth({})
   const fetchNearStamps = useCallback(async () => {
     if (supabaseUser?.id) {
-      const {
-        data: { data },
-      } = await axios.post("/api/supabase/select", {
-        match: {
-          created_by_user_id: supabaseUser.id,
-          stamptype: 15,
-        },
-        table: "stamps",
+      const data = await listPassportStampsByUser({
+        stampTypeIds: [15],
+        userId: supabaseUser.id,
       })
       const allNearAcc = data.map((item: any) => item.uniquevalue)
       setNearAcc(allNearAcc)

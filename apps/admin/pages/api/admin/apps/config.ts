@@ -1,48 +1,42 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
+import { adminDappIdSchema } from '../../../../lib/server/adminSchemas';
 import {
   getOwnedDapp,
-  requireAdminUser,
-  sendBadRequest,
+  prepareAdminApiRequest,
   sendForbidden,
-  sendMethodNotAllowed,
   sendServerError,
 } from '../../../../lib/server/adminApi';
 
 const appConfig = async (req: NextApiRequest, res: NextApiResponse) => {
-  if (req.method !== 'POST') {
-    return sendMethodNotAllowed(res, ['POST']);
-  }
+  const request = await prepareAdminApiRequest(req, res, {
+    actor: 'admin',
+    bodySchema: adminDappIdSchema,
+    rateLimitGroup: 'admin_read',
+    route: 'admin/apps/config',
+  });
 
-  const context = await requireAdminUser(req, res);
-
-  if (!context) {
+  if (!request) {
     return;
   }
 
-  const dappId = Number(req.body?.dappId);
-
-  if (!dappId) {
-    return sendBadRequest(res, 'Missing dappId');
-  }
-
   try {
-    const ownedDapp = await getOwnedDapp(context, dappId);
+    const ownedDapp = await getOwnedDapp(request.context, request.body.dappId);
 
     if (!ownedDapp) {
       return sendForbidden(res, 'You do not have access to that app');
     }
 
     const [stampScoreResponse, dappStampTypesResponse] = await Promise.all([
-      context.supabase
+      request.context.supabase
         .from('stampscore_dapps')
         .select('*')
-        .match({ dapp_id: dappId })
+        .match({ dapp_id: request.body.dappId })
         .maybeSingle(),
-      context.supabase
+      request.context.supabase
         .from('dapp_stamptypes')
         .select('*')
-        .match({ dapp_id: dappId }),
+        .match({ dapp_id: request.body.dappId }),
     ]);
 
     if (stampScoreResponse.error) {

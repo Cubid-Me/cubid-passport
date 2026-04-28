@@ -6,6 +6,7 @@ import { NextApiRequest, NextApiResponse } from "next"
 import axios from "axios"
 import { Contract, KeyPair, connect, keyStores, utils } from "near-api-js"
 
+import { getNearIssuerPrivateKey } from "@/lib/server/operationalSecrets"
 import { supabase } from "./utils/supabase"
 
 export default async function handler(
@@ -14,7 +15,7 @@ export default async function handler(
 ) {
   const { nearAccount, score, web3Address, user_id } = req.body
   const myKeyStore = new keyStores.InMemoryKeyStore()
-  const PRIVATE_KEY = process.env.private_key_near
+  const PRIVATE_KEY = getNearIssuerPrivateKey()
   // creates a public / private key pair using the provided private key
   const keyPairString = KeyPair.fromString(PRIVATE_KEY)
   // adds the keyPair you created to keyStore

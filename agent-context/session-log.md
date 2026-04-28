@@ -1,3 +1,54 @@
+### session: v64
+
+- timestamp: 2026-04-26T17:53:38-0400
+- agent: **OpenAI Codex**
+- branch: **codex/c03-api-security-baseline**
+- head: **`7519f0f`**
+- session name: **Record C03.1 completion metadata**
+
+#### Objective
+
+Close the roadmap metadata for `C03.1` after the API security baseline doc and C03 split landed on the branch.
+
+#### Actions Taken
+
+- updated [agent-context/todo.md](/Users/botmaster/src/cubid/cubid-passport/agent-context/todo.md) so the parent `C03` item points at the landed kickoff commit
+- marked `C03.1` completed with its completion timestamp, landed head, and the two kickoff metadata sessions
+
+#### Verification
+
+- metadata-only follow-up after the documentation kickoff commit recorded in `session: v63`
+
+#### Follow-up
+
+- implement `C03.2` next by moving `services/oidc` onto the shared request ID, CORS, validation, and rate-limit primitives without changing OIDC wire shapes
+
+### session: v63
+
+- timestamp: 2026-04-26T17:52:11-0400
+- agent: **OpenAI Codex**
+- branch: **codex/c03-api-security-baseline**
+- head: **`8f1f43c`**
+- session name: **Start C03 and define the API security baseline**
+
+#### Objective
+
+Start `C03` as a repo-wide hardening stream by splitting it into sequential subtodos and writing the dedicated target-state API security contract for Passport, Admin, and OIDC.
+
+#### Actions Taken
+
+- updated [agent-context/todo.md](/Users/botmaster/src/cubid/cubid-passport/agent-context/todo.md) to mark the parent `C03` workstream started on `codex/c03-api-security-baseline`
+- split `C03` into `C03.1` through `C03.5` with ordered descriptions covering contract definition, OIDC adoption, Admin adoption, Passport adoption, and closeout validation
+- added [docs/engineering/api-security-baseline.md](/Users/botmaster/src/cubid/cubid-passport/docs/engineering/api-security-baseline.md) as the target-state source of truth for shared request IDs, `zod` validation, actor guards, CORS allowlists, error envelopes, rate-limit storage, internal-only route rules, and migration order
+
+#### Verification
+
+- reviewed the new roadmap and engineering doc content locally to confirm the C03 sequencing, metadata, and target-state rules are internally consistent
+
+#### Follow-up
+
+- commit the C03 kickoff artifacts, then record the C03.1 completion metadata once the target-state doc lands on the branch
+
 ### session: v62
 
 - timestamp: 2026-04-26T05:20:33-0400
@@ -1787,3 +1838,883 @@ Address the PR 146 `validate` CI failure where `@cubid/admin` could not prerende
 #### Follow-up
 
 - push the fix and re-check PR 146 CI after the required polling interval
+
+### session: v65
+
+- timestamp: 2026-04-26T18:36:22-0400
+- agent: **OpenAI Codex**
+- branch: **codex/c03-api-security-baseline**
+- head: **`7656e09`**
+- session name: **Adopt shared API security baseline in OIDC**
+
+#### Objective
+
+Move `services/oidc` onto the shared API security baseline by introducing reusable server-side security primitives, adding the generic Admin/Passport security schema, and refitting the OIDC runtime for shared request IDs, shared validation, targeted browser CORS, and normalized rate-limit plumbing without changing OIDC wire semantics.
+
+#### Actions Taken
+
+- added `@cubid/auth/server` helpers for request IDs, CORS decisions, method guards, JSON and `zod` validation, bearer parsing, shared security errors, and a rate-limit adapter interface
+- extended `@cubid/config` with optional env and CSV parsing helpers and added a new Supabase migration for `api_rate_limit_buckets` and `api_security_events`
+- updated the OIDC runtime config, app router, and rate-limit layer to use shared request IDs, explicit browser-callable CORS policies, shared validation for registration and interaction payloads, and additional route-limit coverage for registration, consent completion, revoke, and logout
+- added focused `@cubid/auth` and `@cubid/oidc` tests covering request IDs, error envelopes, CORS allowlists, config parsing, and route-limit denial behavior
+
+#### Verification
+
+- `pnpm install`
+- `pnpm --filter @cubid/auth typecheck`
+- `pnpm --filter @cubid/auth test`
+- `pnpm --filter @cubid/oidc typecheck`
+- `pnpm --filter @cubid/oidc test`
+
+#### Follow-up
+
+- commit the OIDC baseline slice, then migrate Admin routes onto the same shared contract in `C03.3`
+
+### session: v66
+
+- timestamp: 2026-04-26T18:27:09-0400
+- agent: **OpenAI Codex**
+- branch: **codex/c03-api-security-baseline**
+- head: **`d7a1afd`**
+- session name: **Adopt shared API security baseline in Admin**
+
+#### Objective
+
+Move the Admin API surface onto the shared API security baseline by centralizing request IDs, CORS allowlists, Firebase-backed actor guards, structured error envelopes, route-level rate limiting, and schema-based request validation across all `pages/api/admin/*` handlers without changing success payloads.
+
+#### Actions Taken
+
+- rewrote `apps/admin/lib/server/adminApi.ts` around the shared server-security primitives and added Admin-specific rate-limit storage, denial logging, and typed request preparation
+- added route-shape schemas in `apps/admin/lib/server/adminSchemas.ts`, wired all Admin route families through the shared entrypoint, and added `ADMIN_CORS_ALLOWED_ORIGINS` plus the `@cubid/auth` workspace dependency
+- added focused Admin helper and representative route tests covering request ID propagation, CORS rejection, auth failures, schema failures, and route-to-policy wiring
+
+#### Verification
+
+- `pnpm install`
+- `pnpm --filter @cubid/admin typecheck`
+- `pnpm --filter @cubid/admin test`
+- `pnpm --filter @cubid/admin build`
+- `pnpm --filter @cubid/auth typecheck`
+- `pnpm --filter @cubid/auth test`
+- `pnpm --filter @cubid/oidc typecheck`
+- `pnpm --filter @cubid/oidc test`
+
+#### Follow-up
+
+- commit the Admin baseline slice, then close `C03.2`/`C03.3` metadata and move to Passport hardening in `C03.4`
+
+### session: v67
+
+- timestamp: 2026-04-26T18:27:42-0400
+- agent: **OpenAI Codex**
+- branch: **codex/c03-api-security-baseline**
+- head: **`c2e078b`**
+- session name: **Close C03.2 and C03.3 roadmap metadata**
+
+#### Objective
+
+Bring the roadmap and session metadata back into sync with the completed C03.2 and C03.3 implementation commits so the next session starts from an accurate security-hardening state.
+
+#### Actions Taken
+
+- marked `C03.2` completed at OIDC commit `d7a1afd`
+- marked `C03.3` completed at Admin commit `c2e078b`
+- left parent `C03` open for the remaining Passport adoption and final cross-repo validation work in `C03.4` and `C03.5`
+
+#### Verification
+
+- confirmed the implementation commits and clean worktree state before metadata closure
+
+#### Follow-up
+
+- continue with `C03.4` to bring Passport APIs onto the same shared request ID, validation, actor-guard, CORS, and rate-limit baseline
+
+### session: v68
+
+- timestamp: 2026-04-27T14:45:00-0400
+- agent: **OpenAI Codex**
+- branch: **codex/c03-api-security-baseline**
+- head: **`b143894`**
+- session name: **Expand roadmap for SDK and package publishing work**
+
+#### Objective
+
+Capture the newly identified downstream SDK, package publishing, JSR, Deno, and integration-doc work in the roadmap without mixing it into the in-progress Passport hardening implementation slice.
+
+#### Actions Taken
+
+- refined `E02` so it explicitly covers publishable integration packages rather than only a generic REST and React surface
+- added `E02.1` through `E02.4` for dual-target `@cubid/api`, high-level identity sync helpers, publishable `@cubid/web2` and `@cubid/web2-react`, and Deno plus Supabase Edge validation and docs
+- left the active `C03.4` implementation changes uncommitted so the roadmap update can land as a separate metadata-only checkpoint
+
+#### Verification
+
+- compared the requested package and DX actions against `agent-context/todo.md`
+- confirmed the new SDK and runtime-support work was not already represented with sufficient specificity in the current roadmap
+
+#### Follow-up
+
+- continue `C03.4` on the current branch, then return to the new `E02.*` items after the shared Passport API hardening is complete
+
+### session: v69
+
+- timestamp: 2026-04-27T16:55:00-0400
+- agent: **OpenAI Codex**
+- branch: **codex/c03-api-security-baseline**
+- head: **`5eede7b`**
+- session name: **Implement Passport API security baseline**
+
+#### Objective
+
+Complete the Passport-side C03.4 hardening slice by moving the legacy Passport API surface onto the shared security baseline, removing wildcard CORS, eliminating committed route secrets, locking internal routes behind bearer auth, and replacing the production app's dependency on generic `/api/supabase/*` CRUD endpoints.
+
+#### Actions Taken
+
+- added shared Passport server helpers for request IDs, CORS, actor guards, rate limiting, Supabase access, Twilio Verify, SMTP-backed email OTP, and Gitcoin scorer access
+- replaced first-party `/api/supabase/*` usage with typed `/api/passport/data/*` query and command routes, then hard-disabled the old generic Supabase CRUD handlers
+- migrated Passport `/api/allow/*`, `/api/dapp/*`, `/api/v2/*`, `/api/verify/*`, `/api/wallet/*`, webhook, and cron endpoints onto explicit validation and actor contracts
+- converted internal webhook and cron routes to require `PASSPORT_INTERNAL_API_TOKEN` and moved route-owned secrets to env-backed config
+- updated Passport env examples and the API security baseline engineering doc to reflect the landed Passport contract
+
+#### Verification
+
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+- `pnpm test`
+- `pnpm typecheck`
+- `pnpm build`
+- `pnpm lint`
+
+#### Follow-up
+
+- close `C03.4` metadata in `agent-context/todo.md`
+- move to `C03.5` for final observability and any remaining targeted API test harness cleanup
+
+### session: v70
+
+- timestamp: 2026-04-27T17:13:00-0400
+- agent: **OpenAI Codex**
+- branch: **codex/c03-api-security-baseline**
+- head: **`91214ce`**
+- session name: **Close C03.4 roadmap metadata**
+
+#### Objective
+
+Bring the roadmap metadata back into sync with the committed Passport hardening implementation so the next session can start directly on `C03.5` without ambiguity about what landed in `C03.4`.
+
+#### Actions Taken
+
+- marked `C03.4` completed in `agent-context/todo.md`
+- recorded the implementation head and session references for the Passport baseline slice
+- left parent `C03` open because `C03.5` still owns the final cross-repo observability and test closeout
+
+#### Verification
+
+- confirmed the Passport hardening implementation landed in commit `91214ce`
+- confirmed the requested validation set had already completed before metadata closure
+
+#### Follow-up
+
+- start `C03.5` for final observability, CI expectations, and any remaining targeted API test harness work
+
+### session: v71
+
+- timestamp: 2026-04-27T09:59:19-0400
+- agent: **OpenAI Codex**
+- branch: **codex/c03-api-security-baseline**
+- head: **`7515335`**
+- session name: **Implement C03.5 security baseline closeout**
+
+#### Objective
+
+Close `C03.5` by making the shared API security baseline provable and operable across Passport, Admin, and OIDC with real Passport tests, cold-safe typecheck behavior, CI regression checks, and operator-facing observability docs.
+
+#### Actions Taken
+
+- added a lightweight Passport `tsx --test` harness with focused coverage for request IDs, structured error envelopes, origin denials, dapp and internal auth denials, OTP throttling, and hard-disabled `/api/supabase/*` behavior
+- moved the remaining Passport `/api/oidc/consents/*` and `/api/oidc/passkeys/*` account-management routes onto the shared Passport baseline and replaced their ad hoc `PassportApiError` path with shared `ApiSecurityError` handling
+- added test-only Passport Supabase and Firebase Admin overrides so server-route failure paths can be covered without network calls or real credentials
+- split Next app `typecheck` onto dedicated `tsconfig.typecheck.json` files, kept `.next/types` under build-owned `tsconfig.json`, and added a CI regression script that fails on `nextjs-cors` or wildcard-origin reintroduction in hardened API handlers
+- extended OIDC and Admin failure-path tests, then added [docs/engineering/api-security-operations.md](/Users/botmaster/src/cubid/cubid-passport/docs/engineering/api-security-operations.md) plus final closeout notes in [docs/engineering/api-security-baseline.md](/Users/botmaster/src/cubid/cubid-passport/docs/engineering/api-security-baseline.md)
+
+#### Verification
+
+- `pnpm install`
+- `pnpm check:api-security`
+- `rm -rf apps/passport/.next apps/admin/.next`
+- `pnpm --filter @cubid/auth test`
+- `pnpm --filter @cubid/auth typecheck`
+- `pnpm --filter @cubid/oidc test`
+- `pnpm --filter @cubid/oidc typecheck`
+- `pnpm --filter @cubid/admin test`
+- `pnpm --filter @cubid/admin typecheck`
+- `pnpm --filter @cubid/admin build`
+- `pnpm --filter @cubid/passport test`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+- `pnpm lint`
+- `pnpm typecheck`
+- `pnpm test`
+- `pnpm build`
+
+#### Follow-up
+
+- commit the validated `C03.5` implementation slice
+- then close `C03.5` and the parent `C03` metadata against the landed implementation head
+
+### session: v72
+
+- timestamp: 2026-04-27T09:59:57-0400
+- agent: **OpenAI Codex**
+- branch: **codex/c03-api-security-baseline**
+- head: **`be70126`**
+- session name: **Close C03.5 and C03 metadata**
+
+#### Objective
+
+Bring the roadmap metadata back into sync with the validated `C03.5` implementation so the full C03 security-baseline stream is marked complete from the correct implementation head.
+
+#### Actions Taken
+
+- marked `C03.5` completed in [agent-context/todo.md](/Users/botmaster/src/cubid/cubid-passport/agent-context/todo.md) with its completion timestamp, feature branch, implementation head, and session references
+- closed the parent `C03` todo with the final validated implementation head and the full set of sessions that landed the OIDC, Admin, Passport, and closeout slices
+- kept the target-state doc reference on the parent C03 item pointing at [docs/engineering/api-security-baseline.md](/Users/botmaster/src/cubid/cubid-passport/docs/engineering/api-security-baseline.md)
+
+#### Verification
+
+- confirmed the validated `C03.5` implementation landed in commit `be70126`
+- confirmed the full root validation set and the dedicated API security regression check had already completed successfully before metadata closure
+
+#### Follow-up
+
+- publish the completed C03 branch for review
+- tackle `C04` next for wallet and sensitive-disclosure custody hardening, unless priorities shift back to package publishing or integration DX work
+
+### session: v73
+
+- timestamp: 2026-04-27T13:59:31-0400
+- agent: **OpenAI Codex**
+- branch: **codex/c04-c06-secrets-hardening-split**
+- head: **`144a334`**
+- session name: **Split secrets hardening roadmap and fix Profile disclosure**
+
+#### Objective
+
+Split the broad `C04` custody todo into concrete hashed-secret, encrypted-retrievable-secret, and env-backed operational-secret tracks, and remove misleading Passport Profile copy that described a NEAR transaction signature as a private key.
+
+#### Actions Taken
+
+- replaced the old broad `C04` todo with a hash-at-rest track for non-retrievable verification secrets
+- added `C04.1` for dapp API keys and `C04.2` for email OTP code hashing
+- added `C05` for Supabase Vault envelope encryption, including dapp user secrets, blockchain private-key custody, and webhook signing secrets
+- added `C06` for hardening env-backed operational secrets such as OIDC signing keys, Firebase keys, Supabase service roles, Twilio, SMTP, Instagram, Fractal, NEAR issuer keys, and internal bearer tokens
+- updated Passport Profile so the NEAR stamp transaction signature sheet no longer uses private-key export language
+
+#### Verification
+
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport test` attempted, but blocked by the local Node v25.8.2 runtime; the workspace requires Node 20 and the older JWT dependency fails before tests execute
+- confirmed Profile no longer contains “Export Private Key” or “Copy Private Key” copy
+
+#### Follow-up
+
+- implement `C04.1` for hashed dapp API keys, or `C04.2` for hashed email OTP codes if OTP cleanup should land first
+
+### session: v74
+
+- timestamp: 2026-04-27T14:52:24-0400
+- agent: **OpenAI Codex**
+- branch: **codex/c04-c06-secrets-hardening-split**
+- head: **`f673183`**
+- session name: **Implement C04.1 hashed dapp API keys**
+
+#### Objective
+
+Move dapp API keys off plaintext runtime lookup by introducing hash-only `dapp_api_keys` verification while keeping currently issued keys working through a one-way migration.
+
+#### Actions Taken
+
+- added a `dapp_api_keys` Supabase migration and local seed backfill that hash existing `dapps.apikey` UUIDs into non-retrievable verifier rows
+- added shared dapp key generation, parsing, hashing, legacy hash, and verification helpers in `@cubid/auth/server`
+- updated Passport dapp actor authentication and the legacy `/api/dapp/create_user` path to verify through `dapp_api_keys` instead of direct `dapps.apikey` lookup
+- updated Admin app create, list, and rotate flows so raw API keys are shown only once and list views expose only non-secret key metadata
+- added focused tests for new and migrated dapp key verification, invalid key rejection, Admin rotate response shape, and Passport dapp auth behavior
+- documented the storage model and the follow-up to drop `dapps.apikey` after production smoke
+
+#### Verification
+
+- `pnpm --filter @cubid/auth test`
+- `pnpm --filter @cubid/auth typecheck`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/admin typecheck`
+- `pnpm --filter @cubid/admin test`
+- `pnpm --filter @cubid/admin build`
+- `pnpm --filter @cubid/passport build`
+- `pnpm --filter @cubid/passport test` attempted, but blocked by the local Node v25.8.2 runtime; the workspace requires Node 20 and an older JWT dependency fails before tests execute
+
+#### Follow-up
+
+- close the `C04.1` todo metadata against the implementation commit
+- run Passport tests under Node 20 in CI or a Node 20 local shell
+
+### session: v75
+
+- timestamp: 2026-04-27T14:53:23-0400
+- agent: **OpenAI Codex**
+- branch: **codex/c04-c06-secrets-hardening-split**
+- head: **`43e63f8`**
+- session name: **Close C04.1 metadata**
+
+#### Objective
+
+Mark `C04.1` complete against the landed hashed dapp API key implementation and keep the parent `C04` track open for the remaining email OTP hash work.
+
+#### Actions Taken
+
+- marked parent `C04` as started because the first hash-at-rest child task has landed
+- marked `C04.1` completed with the implementation head, branch, timestamp, session reference, and target-state doc
+- left `C04.1.1` open for post-deployment removal of the legacy `dapps.apikey` column
+
+#### Verification
+
+- confirmed implementation commit `43e63f8` contains the validated C04.1 changes
+
+#### Follow-up
+
+- run Passport tests under Node 20 when available
+- tackle `C04.2` for email OTP hash storage next
+
+### session: v76
+
+- timestamp: 2026-04-27T15:03:48-0400
+- agent: **OpenAI Codex**
+- branch: **codex/c04-c06-secrets-hardening-split**
+- head: **`8ba6770`**
+- session name: **Implement C04.2 email OTP hashing**
+
+#### Objective
+
+Replace plaintext email OTP storage with verification-only hashing, 10-minute expiry, 3-attempt enforcement, and one-time consumption while keeping the dapp-facing send and verify response contracts stable.
+
+#### Actions Taken
+
+- added a Supabase migration that adds `otp_hash`, hash metadata, expiry, attempt count, consumed timestamp, and active lookup indexes to `email_otp`
+- added Supabase Vault-backed SQL functions so OTP HMAC hashing uses the `passport_email_otp_hash_secret` Vault secret instead of an app environment variable
+- updated Passport email OTP send to normalize email addresses, hash OTPs through Supabase RPC, store only hash metadata, and send the raw OTP only through SMTP
+- updated Passport email OTP verify to load the latest unconsumed row, reject expired or over-attempted codes, increment failed attempts, and mark successful challenges consumed
+- added helper and route tests for deterministic hashing, wrong-code rejection, hashed storage, one-time consumption, failed attempts, expired codes, and attempt-limit behavior
+- documented the Vault-backed OTP secret and fail-closed operational requirement
+
+#### Verification
+
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+- `pnpm --filter @cubid/passport exec tsx --test tests/emailOtp.test.ts`
+- `pnpm --filter @cubid/passport test` attempted; the new email OTP helper tests passed before the known local Node v25.8.2 JWT dependency crash stopped `passportApi.test.ts` and `passportRoutes.test.ts`
+
+#### Follow-up
+
+- close `C04.2` and the parent `C04` metadata against the implementation commit
+- run the full Passport suite under Node 20 in CI or a Node 20 local shell
+
+### session: v77
+
+- timestamp: 2026-04-27T15:04:22-0400
+- agent: **OpenAI Codex**
+- branch: **codex/c04-c06-secrets-hardening-split**
+- head: **`6732c16`**
+- session name: **Close C04.2 and C04 metadata**
+
+#### Objective
+
+Mark `C04.2` and parent `C04` complete now that both non-retrievable secret tracks, dapp API keys and email OTP codes, have landed.
+
+#### Actions Taken
+
+- marked `C04.2` completed with the implementation head, timestamp, and session reference
+- marked parent `C04` completed while keeping `C04.1.1` open as a post-deployment cleanup follow-up for dropping legacy `dapps.apikey`
+- preserved `C05` and `C06` as the next secrets-hardening tracks for retrievable and env-backed secrets
+
+#### Verification
+
+- confirmed implementation commit `6732c16` contains the validated C04.2 changes
+
+#### Follow-up
+
+- run the full Passport suite under Node 20 when available
+- tackle `C04.1.1` after production smoke, or start `C05.1` for encrypted dapp user secrets
+
+### session: v78
+
+- timestamp: 2026-04-27T15:31:54-0400
+- agent: **OpenAI Codex**
+- branch: **codex/c04-c06-secrets-hardening-split**
+- head: **`08520bf`**
+- session name: **Upgrade runtime baseline to Node 24 LTS**
+
+#### Objective
+
+Move the monorepo from Node 20 to Node 24 LTS for local development and CI while keeping the package manager, Turbo task graph, and dependency changes narrowly focused on the runtime baseline.
+
+#### Actions Taken
+
+- updated `.nvmrc`, root `engines.node`, CI setup, AGENTS guidance, and the monorepo operating-model doc from Node 20 to Node 24
+- updated workspace `@types/node` dev dependencies to the Node 24 type line
+- refreshed and verified the pnpm lockfile under Node 24 while avoiding unrelated dependency modernization
+- confirmed the Passport test suite no longer hits the local Node 25 JWT dependency crash when executed under Node 24
+
+#### Verification
+
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm install --frozen-lockfile --reporter append-only`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm --filter @cubid/auth test`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm --filter @cubid/auth typecheck`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm --filter @cubid/passport test`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm --filter @cubid/passport typecheck`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm --filter @cubid/admin test`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm --filter @cubid/admin typecheck`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm --filter @cubid/oidc test`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm --filter @cubid/oidc typecheck`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm lint`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm typecheck`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm test`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm build`
+
+#### Follow-up
+
+- keep an eye on the existing Next/security warning for the pinned Next.js 14.2.15 release in a dedicated dependency-hardening slice
+- consider cleaning existing frontend lint warnings separately from the runtime baseline upgrade
+
+### session: v79
+
+- timestamp: 2026-04-27T16:24:22-0400
+- agent: **OpenAI Codex**
+- branch: **codex/c04-c06-secrets-hardening-split**
+- head: **`21c5d7b`**
+- session name: **Implement C05.1 encrypted dapp user secrets on API v3**
+
+#### Objective
+
+Implement the first retrievable-secret custody slice by moving dapp user secret writes to a Vault-backed envelope-encrypted API v3 path while leaving the existing API v2 route behavior unchanged.
+
+#### Actions Taken
+
+- added a Supabase migration for encrypted `dapp_user_secrets` fields, service-role-only Vault key access, and tightened table grants
+- added Passport server helpers for AES-256-GCM envelope encryption/decryption using a per-row data key wrapped by `passport_dapp_user_secret_wrapping_key_v1`
+- introduced `/api/v3/save_secret` with dapp authentication, dapp-user ownership checks, encrypted-only storage, and security-event logging
+- added an idempotent dry-run-capable backfill script for legacy plaintext rows without printing secret material
+- documented the C05.1 custody model and noted that `/api/v2/save_secret` is intentionally preserved while v3 becomes the encrypted path
+- added focused helper and route tests for round-trip encryption, AAD rejection, v3 encrypted storage, and cross-dapp ownership rejection
+
+#### Verification
+
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm --filter @cubid/passport test`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm --filter @cubid/passport typecheck`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm --filter @cubid/passport build`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm typecheck`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm test`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm lint`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm build`
+
+#### Follow-up
+
+- close `C05.1` metadata against this implementation commit
+- run the legacy-row backfill script in dry-run mode before any production migration execution
+- keep `C05.1.1` open for physically dropping or replacing the legacy plaintext `secret` column after production verification
+
+### session: v80
+
+- timestamp: 2026-04-27T16:25:14-0400
+- agent: **OpenAI Codex**
+- branch: **codex/c04-c06-secrets-hardening-split**
+- head: **`18b361e`**
+- session name: **Close C05.1 metadata**
+
+#### Objective
+
+Mark `C05.1` complete after the encrypted API v3 dapp user secret path, migration, docs, script, and tests landed in the implementation commit.
+
+#### Actions Taken
+
+- updated `agent-context/todo.md` so `C05.1` records completion timestamp, implementation head, and session-log reference
+- kept parent `C05` open because blockchain private-key custody and webhook signing-secret envelope encryption remain outstanding
+- kept `C05.1.1` open as the post-production-verification cleanup for the legacy plaintext column
+
+#### Verification
+
+- confirmed implementation commit `18b361e` contains the validated C05.1 changes
+
+#### Follow-up
+
+- continue C05 with either webhook signing secret encryption or blockchain private-key custody
+
+### session: v81
+
+- timestamp: 2026-04-27T16:54:34-0400
+- agent: **OpenAI Codex**
+- branch: **codex/c04-c06-secrets-hardening-split**
+- head: **`7d812b3`**
+- session name: **Implement C05.3 encrypted webhook signing secrets**
+
+#### Objective
+
+Move webhook signing secrets into the C05 retrievable-secret custody model by encrypting new and rotated webhook secrets with Supabase Vault envelope encryption while preserving a safe migration window for existing plaintext rows.
+
+#### Actions Taken
+
+- added shared server-side AES-256-GCM envelope helpers in `@cubid/auth/server`
+- added a Supabase migration for encrypted `dapp_webhook_subscriptions` fields and the Vault-backed `passport_webhook_signing_secret_wrapping_key_v1` helper
+- added Admin create and rotate-secret flows that return raw webhook secrets only once, store encrypted fields, and log security events
+- removed stored-secret copy behavior from Admin webhook lists and replaced it with redacted encrypted/legacy status plus rotate controls
+- updated Passport webhook delivery and expired-cron delivery to decrypt encrypted webhook signing secrets server-side while temporarily accepting legacy plaintext rows
+- added an idempotent dry-run-capable backfill script for legacy webhook subscriptions
+- updated encrypted-secret and API-security operations docs
+- added tests for shared envelope helpers, webhook secret encryption context binding, Admin redaction/create/rotate behavior, and Passport helper coverage
+
+#### Verification
+
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm --filter @cubid/auth test`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm --filter @cubid/auth typecheck`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm --filter @cubid/passport test`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm --filter @cubid/passport typecheck`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm --filter @cubid/passport build`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm --filter @cubid/admin test`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm --filter @cubid/admin typecheck`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm --filter @cubid/admin build`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm lint`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm typecheck`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm test`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm build`
+
+#### Follow-up
+
+- close `C05.3` metadata against this implementation commit
+- run the webhook backfill script in dry-run mode before production migration execution
+- keep a future physical cleanup follow-up open for removing or quarantining the legacy plaintext webhook `secret` column after production verification
+
+### session: v82
+
+- timestamp: 2026-04-27T16:55:20-0400
+- agent: **OpenAI Codex**
+- branch: **codex/c04-c06-secrets-hardening-split**
+- head: **`89ae627`**
+- session name: **Close C05.3 metadata**
+
+#### Objective
+
+Mark `C05.3` complete after the webhook signing-secret envelope-encryption implementation landed and passed validation.
+
+#### Actions Taken
+
+- updated `agent-context/todo.md` so `C05.3` records completion timestamp, implementation head, and session-log reference
+- kept parent `C05` open because blockchain private-key custody remains outstanding
+- preserved the production follow-up expectation for running the webhook backfill and later removing or quarantining legacy plaintext storage after verification
+
+#### Verification
+
+- confirmed implementation commit `89ae627` contains the validated C05.3 changes
+
+#### Follow-up
+
+- continue C05 with `C05.2` blockchain private-key custody, or add a narrow post-deployment cleanup todo for physically removing legacy webhook plaintext after production backfill verification
+
+### session: v83
+
+- timestamp: 2026-04-27T22:07:15Z
+- agent: **OpenAI Codex**
+- branch: **codex/c04-c06-secrets-hardening-split**
+- head: **`36f1618`**
+- session name: **Implement C05.2 encrypted blockchain account custody**
+
+#### Objective
+
+Add a new v3 blockchain account custody surface that stores generated account metadata separately from Vault-backed encrypted private-key envelopes while leaving legacy v2 wallet and private-key routes unchanged.
+
+#### Actions Taken
+
+- added a Supabase migration creating the `private` schema, `public.ref_chains`, `public.user_accounts`, `public.dapp_user_accounts`, and service-role-only `private.private_keys`
+- added the Vault-backed `passport_blockchain_private_key_wrapping_key_v1` helper function for private-key envelope wrapping
+- added Passport server helpers for EVM, NEAR, and Solana account generation plus AES-256-GCM envelope encryption bound to account context
+- added `/api/v3/accounts/generate` and `/api/v3/accounts/list` as dapp-authenticated v3 routes that never return raw private keys or encrypted key material
+- added a `C05.2.1` follow-up for Sui support after selecting a Sui SDK and address-normalization contract
+- updated encrypted-secret and API-security operations docs with the blockchain custody contract
+- added helper and route tests covering encryption, wrong-context rejection, dapp ownership checks, Sui rejection, no key leakage, and dapp-user account linking
+
+#### Verification
+
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/passport test'`
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/passport typecheck && pnpm --filter @cubid/passport build'`
+- `npx -p node@24 -c 'node --version && pnpm test && pnpm typecheck'`
+- `npx -p node@24 -c 'node --version && pnpm lint && pnpm build'`
+
+#### Follow-up
+
+- update the `C05.2` todo head after this implementation commit lands
+- provision `passport_blockchain_private_key_wrapping_key_v1` in Supabase Vault before enabling v3 account generation outside local/test environments
+- implement `C05.2.1` for Sui once the SDK dependency and address format are locked
+
+### session: v84
+
+- timestamp: 2026-04-27T22:10:42Z
+- agent: **OpenAI Codex**
+- branch: **codex/c04-c06-secrets-hardening-split**
+- head: **`dde73b0`**
+- session name: **Close C05.2 metadata**
+
+#### Objective
+
+Record the implementation commit for `C05.2` after the encrypted v3 blockchain account custody slice landed and passed validation.
+
+#### Actions Taken
+
+- updated `agent-context/todo.md` so `C05.2` references implementation commit `dde73b0`
+- kept `C05` open because `C05.1.1` and `C05.2.1` remain active follow-ups
+- preserved the Sui follow-up as the next chain-expansion item for v3 account custody
+
+#### Verification
+
+- confirmed implementation commit `dde73b0` contains the validated C05.2 changes
+
+#### Follow-up
+
+- provision the blockchain private-key wrapping key in Supabase Vault before enabling v3 generation in shared environments
+- consider `C05.2.1` for Sui or continue with `C06` env-backed operational-secret hardening
+
+### session: v85
+
+- timestamp: 2026-04-27T22:20:26Z
+- agent: **OpenAI Codex**
+- branch: **codex/c04-c06-secrets-hardening-split**
+- head: **`ca19c31`**
+- session name: **Document deprecated database quarantine tables**
+
+#### Objective
+
+Update repo agent guidance so deprecated and v2-only database tables are left alone unless a future todo explicitly scopes their cleanup.
+
+#### Actions Taken
+
+- added an `AGENTS.md` note marking legacy wallet, chain-account, and deprecated score/auth tables as quarantine surfaces
+- included `wallet_list`, `wallet_details`, `sui-api-accounts`, `near-api-accounts`, `eth-api-accounts`, `evm_accounts`, `authorized_dapps_deprecated`, `blacklist_deprecated`, and `dapp_stampscores_deprecated`
+
+#### Verification
+
+- not run; documentation-only change
+
+#### Follow-up
+
+- continue with `C06` env-backed operational-secret hardening or `C05.2.1` Sui support when ready
+
+### session: v86
+
+- timestamp: 2026-04-27T22:41:01Z
+- agent: **OpenAI Codex**
+- branch: **codex/c04-c06-secrets-hardening-split**
+- head: **`2b50f2f`**
+- session name: **Move encrypted dapp user secrets into private schema**
+
+#### Objective
+
+Correct the C05.1 dapp user secret custody boundary so `public.dapp_user_secrets` remains the legacy v2 plaintext table and encrypted v3 writes land only in `private.dapp_user_secrets`.
+
+#### Actions Taken
+
+- rewrote the C05.1 migration to preserve the public table and create a service-role-only `private.dapp_user_secrets` table for encrypted v3 custody
+- kept `/api/v2/save_secret` on the legacy public table and changed `/api/v3/save_secret` to write through the private schema
+- updated the backfill script to read public plaintext rows and insert encrypted private copies without mutating the public table
+- updated Passport route tests and mocks to distinguish public legacy rows from private encrypted rows
+- updated encrypted-secret and API-security operations docs plus todo language for the public/v2 and private/v3 split
+
+#### Verification
+
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/passport test'`
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/passport typecheck && pnpm --filter @cubid/passport build'`
+- `npx -p node@24 -c 'node --version && pnpm test && pnpm typecheck'`
+
+#### Follow-up
+
+- update C05.1 todo metadata to reference this corrected implementation head after commit
+
+### session: v87
+
+- timestamp: 2026-04-27T22:41:30Z
+- agent: **OpenAI Codex**
+- branch: **codex/c04-c06-secrets-hardening-split**
+- head: **`f3e8b02`**
+- session name: **Close C05.1 private-schema metadata**
+
+#### Objective
+
+Record the corrected C05.1 implementation head after moving encrypted v3 dapp user secret storage from the public table design into `private.dapp_user_secrets`.
+
+#### Actions Taken
+
+- updated `agent-context/todo.md` so C05.1 now references implementation commit `f3e8b02`
+- preserved the original C05.1 session reference while adding the private-schema correction sessions
+
+#### Verification
+
+- confirmed implementation commit `f3e8b02` contains the validated private-schema C05.1 correction
+
+#### Follow-up
+
+- continue with C05.1.1 after production backfill verification, or move on to C06 operational-secret hardening
+
+### session: v88
+
+- timestamp: 2026-04-27T22:55:47Z
+- agent: **OpenAI Codex**
+- branch: **codex/c04-c06-secrets-hardening-split**
+- head: **`ade5b82`**
+- session name: **Harden env-backed operational secret loading**
+
+#### Objective
+
+Implement C06 so environment-backed operational secrets are loaded, parsed, redacted, documented, and smoke-checked through shared helpers instead of scattered raw `process.env` reads.
+
+#### Actions Taken
+
+- extended `@cubid/config` with required-secret loading, alias fallback, JSON secret parsing, Firebase private-key normalization, Supabase service-role config loading, and redaction helpers
+- migrated OIDC signing, pairwise subject, Firebase Admin, Supabase service-role, Twilio, Fractal, Instagram, Worldcoin, NEAR issuer, and Passport internal-token call sites onto shared secret helpers
+- added Passport operational-secret helpers, tests, canonical env names with legacy alias support, and a repo-level operational-secret readiness check
+- documented C06 ownership, rotation, emergency revocation, local-development handling, and redaction expectations
+
+#### Verification
+
+- `pnpm --filter @cubid/config test && pnpm --filter @cubid/config typecheck`
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/oidc test && pnpm --filter @cubid/oidc typecheck'`
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/passport test && pnpm --filter @cubid/passport typecheck && pnpm --filter @cubid/admin test && pnpm --filter @cubid/admin typecheck'`
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/config test && pnpm --filter @cubid/config typecheck && pnpm --filter @cubid/passport build && pnpm check:secrets'`
+- `npx -p node@24 -c 'node --version && pnpm test && pnpm typecheck && pnpm build'`
+
+#### Follow-up
+
+- close C06 todo metadata after committing this implementation head
+
+### session: v89
+
+- timestamp: 2026-04-27T22:56:40Z
+- agent: **OpenAI Codex**
+- branch: **codex/c04-c06-secrets-hardening-split**
+- head: **`b29831b`**
+- session name: **Close C06 operational-secret metadata**
+
+#### Objective
+
+Mark C06 complete after committing the validated env-backed operational-secret hardening implementation.
+
+#### Actions Taken
+
+- updated `agent-context/todo.md` with the C06 completion timestamp, implementation head, and session-log reference
+
+#### Verification
+
+- confirmed implementation commit `b29831b` contains the validated C06 hardening work
+
+#### Follow-up
+
+- continue with a C05/C06 follow-up or publish the current branch for review
+
+### session: v90
+
+- timestamp: 2026-04-27T23:27:28Z
+- agent: **OpenAI Codex**
+- branch: **codex/c04-c06-secrets-hardening-split**
+- head: **`fc00d0d`**
+- session name: **Address PR 149 Codex review feedback**
+
+#### Objective
+
+Address actionable Codex review comments on PR #149 after retargeting the branch to `dev`.
+
+#### Actions Taken
+
+- changed Admin dapp API-key rotation to create the replacement key before revoking older active keys, with cleanup of the replacement if old-key revocation fails
+- added compensating cleanup for v3 blockchain account creation so partial private-key or dapp-user-account failures do not leave orphaned custodial account rows
+- changed v3 dapp user secret sequencing from row-count assignment to max-plus-one with a unique per-user sequence index and duplicate-key retry
+
+#### Verification
+
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/passport test && pnpm --filter @cubid/passport typecheck && pnpm --filter @cubid/admin test && pnpm --filter @cubid/admin typecheck'`
+
+#### Follow-up
+
+- push review fixes, reply to and resolve the Codex review threads, then re-check CI
+
+### session: v91
+
+- timestamp: 2026-04-27T23:40:47Z
+- agent: **OpenAI Codex**
+- branch: **codex/c04-c06-secrets-hardening-split**
+- head: **`6e1bccb`**
+- session name: **Address second PR 149 Codex review pass**
+
+#### Objective
+
+Address the second Codex review pass on PR #149 after the first review fixes were pushed.
+
+#### Actions Taken
+
+- restored the missing `webhook_call` import used by `server_insertStamp`
+- added a DB-side `increment_api_rate_limit_bucket` helper so Passport rate-limit counters increment atomically instead of through read-then-upsert logic
+- updated Passport tests/mocks to exercise the atomic rate-limit RPC path
+
+#### Verification
+
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/passport test && pnpm --filter @cubid/passport typecheck'`
+
+#### Follow-up
+
+- push the second review-fix commit, reply to and resolve the new Codex threads, then re-check CI
+
+### session: v92
+
+- timestamp: 2026-04-27T23:48:06Z
+- agent: **OpenAI Codex**
+- branch: **codex/c04-c06-secrets-hardening-split**
+- head: **`ac336c8`**
+- session name: **Correct AGENTS PR target guidance**
+
+#### Objective
+
+Update repo agent workflow instructions so future agents target the project’s actual `dev` PR flow and do not create unnecessary one-change feature branches.
+
+#### Actions Taken
+
+- changed AGENTS workflow guidance to say agents should work on feature branches, but related changes may share one coherent feature branch
+- changed default PR target guidance from `main` to `dev`
+- kept `main` targeting available only when explicitly requested
+
+#### Verification
+
+- not run; documentation-only process correction
+
+#### Follow-up
+
+- continue PR #149 review/merge flow or approved cleanup after merge
+
+### session: v93
+
+- timestamp: 2026-04-27T23:59:10Z
+- agent: **OpenAI Codex**
+- branch: **codex/c04-c06-secrets-hardening-split**
+- head: **`7077c44`**
+- session name: **Address remaining PR 149 Codex review comments**
+
+#### Objective
+
+Address the remaining unresolved Codex review comments on PR #149.
+
+#### Actions Taken
+
+- populated required `event_id` and `route` fields for webhook signing secret audit events on create and rotate paths
+- stopped silently ignoring webhook audit insert errors so custody audit failures surface instead of disappearing
+- awaited dapp API-key `last_used_at` updates after successful Passport dapp authentication
+- added Admin route test coverage for webhook audit event required fields
+
+#### Verification
+
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/admin test && pnpm --filter @cubid/admin typecheck && pnpm --filter @cubid/passport test && pnpm --filter @cubid/passport typecheck'`
+
+#### Follow-up
+
+- push the review-fix commit, reply to and resolve the remaining PR #149 review threads, then re-check CI

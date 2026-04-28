@@ -1,9 +1,26 @@
-import { supabase } from "../utils/supabase"
+import type { NextApiRequest, NextApiResponse } from "next"
 
-const deleteTable = async (req: any, res: any) => {
-  const { match, table } = req.body
-  const { error, data } = await supabase.from(table).delete().match(match)
-  res.send({ error, data })
+import { ApiSecurityError } from "@cubid/auth/server"
+
+import {
+  getPassportRequestId,
+  sendPassportApiError,
+} from "@/lib/server/passportApi"
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  res.setHeader("X-Request-Id", getPassportRequestId(req))
+  return sendPassportApiError(
+    req,
+    res,
+    new ApiSecurityError(
+      410,
+      "endpoint_removed",
+      "Generic Passport Supabase CRUD endpoints have been removed."
+    ),
+    "Generic Passport Supabase CRUD endpoints have been removed.",
+    "passport.supabase.delete"
+  )
 }
-
-export default deleteTable

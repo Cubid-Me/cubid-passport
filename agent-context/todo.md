@@ -297,16 +297,96 @@ Remove the current pattern of exposing arbitrary table access through generic AP
 
 ### C03. Add consistent validation, authorization, rate limits, and CORS policy
 
-- Status: Not started
-- Timestamp started: TBD
-- Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Status: Completed
+- Timestamp started: 2026-04-26T17:52:11-0400
+- Timestamp completed: 2026-04-27T09:59:57-0400
+- Feature branch: codex/c03-api-security-baseline
+- Head: be70126
+- Session-log reference(s): session: v63, session: v64, session: v65, session: v66, session: v67, session: v69, session: v70, session: v71, session: v72
+- Target-state doc(s): [docs/engineering/api-security-baseline.md](/Users/botmaster/src/cubid/cubid-passport/docs/engineering/api-security-baseline.md)
 
 Introduce a shared API security baseline for all public-facing endpoints across Passport, Admin, and the new OIDC service. Add request validation with a single library, structured authorization checks for user, dapp, and admin actors, route-level rate limiting for authentication and verification flows, and explicit CORS allowlists instead of `origin: "*"`. Use this todo to standardize error envelopes, request IDs, audit logs, and abuse monitoring so security controls are visible and operable. Prioritize OTP, email verification, user creation, score lookup, claim issuance, token issuance, and webhook endpoints because they are the most attractive abuse surfaces. The objective is to move from route-by-route improvisation to a shared security contract enforced across the monorepo. This work should ship with automated tests for failure paths, not just happy-path validation.
 
-### C04. Redesign custody for generated wallets, private keys, and sensitive disclosures
+### C03.1 Define the shared API security contract
+
+- Status: Completed
+- Timestamp started: 2026-04-26T17:52:11-0400
+- Timestamp completed: 2026-04-26T17:53:38-0400
+- Feature branch: codex/c03-api-security-baseline
+- Head: 7519f0f
+- Session-log reference(s): session: v63, session: v64
+- Target-state doc(s): [docs/engineering/api-security-baseline.md](/Users/botmaster/src/cubid/cubid-passport/docs/engineering/api-security-baseline.md)
+
+Write the decision-complete target-state contract for Cubid API security before changing route code at scale. Define the shared request lifecycle, request ID rules, error-envelope rules, CORS ownership, actor types, validation library, and rate-limit model that Passport, Admin, and OIDC must all adopt. Be explicit about which legacy wire contracts may change, which OIDC contracts must remain RFC-compliant, which routes are public versus internal-only, and where shared primitives will live in the monorepo. This slice should also lock the required environment variables, event logging fields, and adoption order across route families so later implementation work does not fork into competing patterns. The output is the new target-state engineering doc plus roadmap updates that sequence the remaining C03 work.
+
+### C03.2 Adopt the shared baseline in OIDC
+
+- Status: Completed
+- Timestamp started: 2026-04-26T18:03:27-0400
+- Timestamp completed: 2026-04-26T18:27:42-0400
+- Feature branch: codex/c03-api-security-baseline
+- Head: d7a1afd
+- Session-log reference(s): session: v65, session: v67
+
+Refit `services/oidc` onto the shared API security baseline without breaking OIDC protocol semantics. Keep the issuer’s RFC and OIDC wire formats stable, but make request IDs universal, align error plumbing to the shared helper layer, and move its current rate limiting, validation, and CORS behavior behind shared `@cubid/auth` server-side primitives. Browser-driven login, consent, and passkey flows should receive explicit origin allowlists, while discovery and token-facing endpoints stay spec-driven rather than browser-open APIs. Use this slice to prove the shared security contract works on a non-Next runtime and to lock how OIDC-specific audit logging coexists with the generic baseline. End with OIDC tests covering unchanged protocol errors, request ID propagation, and rate-limit denial behavior.
+
+### C03.3 Adopt the shared baseline in Admin
+
+- Status: Completed
+- Timestamp started: 2026-04-26T18:27:09-0400
+- Timestamp completed: 2026-04-26T18:27:42-0400
+- Feature branch: codex/c03-api-security-baseline
+- Head: c2e078b
+- Session-log reference(s): session: v66, session: v67
+
+Apply the shared API baseline to every `apps/admin/pages/api/admin/*` route so Admin stops relying on thin one-off method guards and ad hoc Firebase verification. Introduce shared request-context, validation, and authorization helpers for admin actors, require request IDs on every response, and enforce an explicit Admin CORS allowlist rather than assuming the browser shell is always the caller. Normalize mutation and read routes onto the same structured error contract, then add DB-backed rate limiting for sensitive control-plane operations such as API-key rotation, webhook management, OIDC client operations, and claims or policy mutation. The success condition is that every Admin route consumes the same security primitives, rejects malformed bodies consistently, and logs abuse-relevant denials with enough context for operator debugging and later incident review.
+
+### C03.4 Normalize and harden Passport public APIs
+
+- Status: Completed
+- Timestamp started: 2026-04-27T14:37:00-0400
+- Timestamp completed: 2026-04-27T17:12:00-0400
+- Feature branch: codex/c03-api-security-baseline
+- Head: 91214ce
+- Session-log reference(s): session: v69, session: v70
+
+Bring the sprawling Passport API surface under the shared security baseline, including `/api/oidc/*`, `/api/dapp/*`, `/api/v2/*`, `/api/verify/*`, `/api/allow/*`, `/api/wallet/*`, `/api/cubid-webhook/*`, cron-style routes, and the current first-party data access layer. Remove wildcard CORS, add structured validation for body, query, and header inputs, and replace route-by-route authorization with shared `user`, `dapp`, and `internal` actor guards. Internal job endpoints should reject browser CORS entirely and require a server-to-server bearer token. Replace the generic `/api/supabase/*` CRUD surface with a smaller Passport-owned data API for the production app use cases, then hard-disable the old arbitrary table endpoints. End with focused tests around OTP, dapp identity, webhook, and arbitrary CRUD abuse paths.
+
+### C03.5 Close with tests, CI, and observability updates
+
+- Status: Completed
+- Timestamp started: 2026-04-27T09:47:34-0400
+- Timestamp completed: 2026-04-27T09:59:57-0400
+- Feature branch: codex/c03-api-security-baseline
+- Head: be70126
+- Session-log reference(s): session: v71, session: v72
+
+Finish C03 by validating the shared baseline as a platform-wide contract rather than a set of local refactors. Add unit tests in `@cubid/auth` for request ID handling, validation wrappers, actor guards, CORS decisions, and shared error serialization. Extend workspace test coverage so OIDC, Admin, and Passport all prove failure-path behavior, not just happy paths. Update CI expectations where needed so the route families touched by C03 are exercised in the normal monorepo validation graph. Document the new environment variables, security event fields, and monitoring expectations in long-lived engineering docs so operators know what signals now exist and how to use them. Close the parent todo only after the docs, tests, and validation story match the implemented baseline.
+
+### C04. Hash non-retrievable secrets
+
+- Status: Completed
+- Timestamp started: 2026-04-27T14:49:01-0400
+- Timestamp completed: 2026-04-27T15:04:22-0400
+- Feature branch: codex/c04-c06-secrets-hardening-split
+- Head: 6732c16
+- Session-log reference(s): session: v74, session: v76
+
+Replace plaintext storage for secrets that only need possession verification, not later recovery. This parent track covers credentials where Cubid should never need to reconstruct the original value after issuance or submission. The target posture is hash-at-rest with strong one-way hashing, explicit prefixes or lookup identifiers where needed, show-once issuance, safe rotation, and no leakage through API responses, Admin tables, logs, errors, or analytics. Document the difference between verification-only secrets and retrievable operational secrets so later engineers do not accidentally encrypt values that should be hashed, or hash values that must be used for outbound signing. Finish this track only after dapp API keys and email OTP codes use clear hash verification paths, existing callers are migrated, and legacy plaintext fields are either removed, ignored, or retained only behind a documented migration window.
+
+### C04.1 Hash dapp API keys
+
+- Status: Completed
+- Timestamp started: 2026-04-27T14:49:01-0400
+- Timestamp completed: 2026-04-27T14:53:23-0400
+- Feature branch: codex/c04-c06-secrets-hardening-split
+- Head: 43e63f8
+- Session-log reference(s): session: v74
+- Target-state doc: [docs/engineering/dapp-api-key-hardening.md](/Users/botmaster/src/cubid/cubid-passport/docs/engineering/dapp-api-key-hardening.md)
+
+Migrate dapp API keys from plaintext `dapps.apikey` lookup to a verification-only model. Generate new keys with a non-secret prefix for lookup and a high-entropy secret body shown only once on create or rotate. Store only the prefix, hash, hash algorithm, version, creation timestamp, and last-rotated metadata needed for operations. Update Passport dapp actor authentication, Admin app creation, Admin key rotation, and any displayed app tables so operators can identify a key without copying a recoverable secret from the database. Preserve a safe migration path for existing plaintext keys: either accept them temporarily through a legacy verifier while writing hashed replacements, or force rotation with clear Admin messaging. Add tests proving plaintext keys are not returned after creation/rotation, invalid keys fail consistently, and existing dapp-facing routes still authenticate through the shared Passport baseline.
+
+### C04.1.1 Remove legacy `dapps.apikey` after production smoke
 
 - Status: Not started
 - Timestamp started: TBD
@@ -315,7 +395,95 @@ Introduce a shared API security baseline for all public-facing endpoints across 
 - Head: TBD
 - Session-log reference(s): TBD
 
-Audit and redesign every feature that stores, returns, or displays sensitive key material. Today the platform generates EVM wallets, interacts with NEAR account creation, and exposes private-key-like artifacts in user-facing flows. Decide which custody model Cubid actually wants: no custody, encrypted custody, or delegated custody with explicit export controls. If Cubid must hold keys, store them encrypted at rest with clear key hierarchy, access policy, and logging, and never treat them as ordinary application data. If Cubid should not hold them, remove storage and restructure flows to keep keys user-controlled from creation onward. Align this work with backgrounder principles around user control and data minimization. The end result should be a documented, auditable custody posture that eliminates ambiguous or casually unsafe key handling across apps.
+Physically remove the legacy `dapps.apikey` column only after the C04.1 migration and app changes have been deployed and production smoke confirms that existing Cubid dapps authenticate through `dapp_api_keys`. This follow-up should query or otherwise verify that every active dapp has exactly one active hashed key row, that Passport dapp-auth logs show successful new-table verification, and that Admin create/rotate/list no longer reads or returns plaintext keys. Once confirmed, add a migration that drops the old unique constraint and column, remove any remaining compatibility types or seed data references, and update engineering docs to state that dapp API keys are permanently non-retrievable. This is intentionally separate from C04.1 so deployment validation can happen before destructive schema cleanup.
+
+### C04.2 Hash email OTP codes
+
+- Status: Completed
+- Timestamp started: 2026-04-27T15:01:11-0400
+- Timestamp completed: 2026-04-27T15:04:22-0400
+- Feature branch: codex/c04-c06-secrets-hardening-split
+- Head: 6732c16
+- Session-log reference(s): session: v76
+
+Move email OTP storage from plaintext `email_otp.otp` values to short-lived hash verification. Generate OTP codes as before for user delivery, but store only a keyed hash or slow hash plus expiration, attempt count, consumed timestamp, request metadata, and any rate-limit correlation needed for abuse triage. Verification should compare against the stored hash, reject expired or consumed codes, increment failed attempts, and delete or mark the code consumed after success so replay is not possible. Keep Twilio Verify phone OTP out of this database migration because the provider already owns that challenge state. Update tests for send, verify, expired, replayed, malformed, and over-attempted OTP flows, and document the retry-safe behavior so downstream apps understand which failures can be retried without generating confusing duplicate challenges.
+
+### C05. Envelope-encrypt retrievable secrets with Supabase Vault
+
+- Status: Started
+- Timestamp started: 2026-04-27T15:31:54-0400
+- Timestamp completed: TBD
+- Feature branch: codex/c04-c06-secrets-hardening-split
+- Head: 21c5d7b
+- Session-log reference(s): TBD
+
+Create the retrievable-secret custody track for values Cubid must later recover in order to perform a server-side action. Use envelope encryption with data-key secrets managed in Supabase Vault as the default implementation model. Each encrypted row should carry ciphertext, nonce or IV, authentication tag, algorithm, key identifier, key version, purpose, and enough authenticated context to prevent ciphertext swapping across tenants or users. Decryption must happen only in server-side code after explicit actor authorization, with request IDs and audit/security events for sensitive access, rotation, and failure cases. This track should produce a target-state document for encrypted database secrets, a reusable server helper, migration patterns for legacy plaintext columns, and tests proving decrypted values never appear in generic API responses, Admin lists, logs, or error envelopes.
+
+### C05.1 Envelope-encrypt dapp user secrets
+
+- Status: Completed
+- Timestamp started: 2026-04-27T15:31:54-0400
+- Timestamp completed: 2026-04-27T16:25:06-0400
+- Feature branch: codex/c04-c06-secrets-hardening-split
+- Head: f3e8b02
+- Session-log reference(s): session: v79, session: v86, session: v87
+
+Migrate dapp user secret custody away from plaintext storage using the C05 Supabase Vault envelope-encryption helper. Preserve the legacy `/api/v2/save_secret` behavior and `public.dapp_user_secrets` table for compatibility, and introduce `/api/v3/save_secret` as the encrypted replacement backed by `private.dapp_user_secrets`. The v3 route must authenticate the dapp, validate that `user_id` belongs to that dapp, encrypt the submitted secret before writing the private-schema table, and store only a non-secret sentinel in the private legacy `secret` column. Provide a careful migration path that reads existing public plaintext rows and inserts encrypted private copies without logging raw values. No public decrypt endpoint should be added in this slice; decryption helpers are server-only for future explicit internal workflows.
+
+### C05.1.1 Remove legacy dapp user secret plaintext column
+
+- Status: Not started
+- Timestamp started: TBD
+- Timestamp completed: TBD
+- Feature branch: TBD
+- Head: TBD
+- Session-log reference(s): TBD
+
+After C05.1 is deployed, Supabase Vault is provisioned, and the backfill script has inserted encrypted private copies for all legacy public rows in production, remove or permanently quarantine the legacy `public.dapp_user_secrets` plaintext table. First smoke-test that `/api/v3/save_secret` writes encrypted rows to `private.dapp_user_secrets`, that the backfill reports zero unmigrated public rows, and that no active caller depends on `/api/v2/save_secret` or public plaintext reads. Then add the physical cleanup migration, update docs and generated schema expectations, and add a regression check preventing new code from selecting or inserting raw `secret` values on the public table. This follow-up must not run before production verification because existing rows need a safe migration window.
+
+### C05.2 Redesign blockchain private-key custody
+
+- Status: Completed
+- Timestamp started: 2026-04-27T21:59:47Z
+- Timestamp completed: 2026-04-27T22:07:15Z
+- Feature branch: codex/c04-c06-secrets-hardening-split
+- Head: dde73b0
+- Session-log reference(s): session: v83, session: v84
+
+Remove ambiguous plaintext custody for blockchain private keys across EVM, NEAR, SUI, and legacy generated-wallet tables. Start by inventorying all `private_key` columns, wallet-generation routes, minting routes, UI disclosure paths, and server signing paths. Lock the preferred posture for user wallet keys as no-custody unless an explicit product requirement proves otherwise: Cubid should store public addresses, stamp metadata, and transaction references, not exportable user private keys. For any remaining operational signing keys or unavoidable retrievable private keys, require C05 envelope encryption, server-only access, and audit events. Add migrations that quarantine or null legacy plaintext fields where safe, update generated-wallet routes so they no longer insert recoverable private keys as ordinary data, and add regression checks preventing “private key” export copy from returning to Profile or wallet flows.
+
+### C05.2.1 Add Sui support to v3 blockchain account custody
+
+- Status: Not started
+- Timestamp started: TBD
+- Timestamp completed: TBD
+- Feature branch: TBD
+- Head: TBD
+- Session-log reference(s): TBD
+
+Add Sui to the v3 blockchain account custody surface after selecting and validating the repo-supported Sui SDK. Extend `public.ref_chains` with Sui metadata, add the Sui keypair generator, normalize Sui public-address handling, and add route/helper tests proving `/api/v3/accounts/generate` and `/api/v3/accounts/list` work without returning private-key material. Keep the same C05 Vault envelope-encryption model and `private.private_keys` storage contract used for EVM, NEAR, and Solana. This follow-up should not alter legacy v2 wallet APIs; it should only expand the v3 route surface once the Sui dependency and address format are intentionally locked.
+
+### C05.3 Envelope-encrypt webhook signing secrets
+
+- Status: Completed
+- Timestamp started: 2026-04-27T16:43:32-0400
+- Timestamp completed: 2026-04-27T16:55:20-0400
+- Feature branch: codex/c04-c06-secrets-hardening-split
+- Head: 89ae627
+- Session-log reference(s): session: v81
+
+Move webhook signing secrets into the retrievable-secret track because Passport must recover the raw secret to HMAC-sign outbound webhook payloads. Replace plaintext `dapp_webhook_subscriptions.secret` storage with Supabase Vault envelope-encrypted ciphertext and metadata. Admin should return the generated secret only during create or rotate flows, then display a redacted identifier, creation time, rotation time, and status in list and detail views. Passport webhook delivery code should decrypt only inside the internal delivery path, bind decryption context to the dapp and webhook subscription, and audit signing failures, rotations, and suspicious access attempts without logging secret material. Preserve compatibility for existing subscriptions through a migration window or forced rotation plan, and add tests proving Admin cannot repeatedly reveal stored webhook secrets while delivery signatures still verify.
+
+### C06. Harden env-backed operational secrets
+
+- Status: Completed
+- Timestamp started: 2026-04-27T22:47:00Z
+- Timestamp completed: 2026-04-27T22:56:40Z
+- Feature branch: codex/c04-c06-secrets-hardening-split
+- Head: b29831b
+- Session-log reference(s): session: v88
+
+Harden runtime secrets that are already environment-backed rather than stored in application tables. This includes the OIDC signing private JWK, pairwise subject master secret, Firebase private keys, Supabase service role keys, Twilio credentials, SMTP credentials, Instagram and Fractal client secrets, NEAR issuer keys, internal Passport bearer tokens, and similar integration credentials. The goal is not to move these into user-facing storage; it is to define ownership, required environments, rotation procedures, leak response, local-development handling, and deployment checks. Update config helpers where needed so required secrets fail closed with clear messages and never appear in client-safe bundles. Add docs and smoke checks for secret presence, key rotation readiness, and safe redaction in logs. Finish with an operator runbook that separates routine rotation from incident-driven revocation.
 
 ## D. Shared Domain and Application Refactor
 
@@ -367,7 +535,51 @@ Take the backgrounder’s core ideas seriously by making app-scoped identity and
 - Head: TBD
 - Session-log reference(s): TBD
 
-Turn the current mixed bag of legacy routes into a coherent developer platform. Define the canonical REST API v2 surface for app onboarding, user creation, score lookup, identity queries, consent status, claim retrieval, and webhook registration. Build a first-party React SDK on top of those stable contracts so integrators stop depending on internal UI code or undocumented route behavior. Standardize webhook events around meaningful protocol events such as consent granted, claim updated, score changed, stamp blacklisted, and subject revoked, with signed payloads and replay protection. This todo should also add clear versioning and deprecation rules so Cubid can evolve without breaking partner apps. The goal is adoption: developers should experience Cubid as a clean trust platform, not as a fragile app they need to reverse engineer.
+Turn the current mixed bag of legacy routes into a coherent developer platform. Define the canonical REST API v2 surface for app onboarding, user creation, score lookup, identity queries, consent status, claim retrieval, and webhook registration. Build first-party packages on top of those stable contracts so integrators stop depending on internal UI code, local tarballs, or undocumented route behavior. That now explicitly includes a dual-target `@cubid/api` package that works from both npm and JSR, plus publishable `@cubid/web2` and `@cubid/web2-react` packages for browser and React integrations. Standardize webhook events around meaningful protocol events such as consent granted, claim updated, score changed, stamp blacklisted, and subject revoked, with signed payloads and replay protection. Add versioning and compatibility rules so downstream apps can rely on Cubid as infrastructure rather than reverse-engineering a moving target.
+
+### E02.1 Publish `@cubid/api` as a dual-target runtime-agnostic package
+
+- Status: Not started
+- Timestamp started: TBD
+- Timestamp completed: TBD
+- Feature branch: TBD
+- Head: TBD
+- Session-log reference(s): TBD
+
+Package `@cubid/api` as a real public integration surface that works cleanly from both npm and JSR, so downstream apps can import `@cubid/api` in Next.js and `jsr:@cubid/api` in Supabase Edge or other Deno runtimes without mirrors, tarballs, or path hacks. Keep the package strictly runtime-agnostic: no React, no browser-only helpers, and no Node-only assumptions beyond standards already available in modern runtimes. All request logic should rely on `fetch`, `RequestInit`, `Headers`, and plain JSON contracts, with callers able to inject `fetch` and server-held credentials explicitly. The output of this todo is a package layout, export map, build/publish setup, and usage contract that makes Cubid’s core API client feel native in both Node and Deno environments.
+
+### E02.2 Add a stable server-facing identity sync contract to `@cubid/api`
+
+- Status: Not started
+- Timestamp started: TBD
+- Timestamp completed: TBD
+- Feature branch: TBD
+- Head: TBD
+- Session-log reference(s): TBD
+
+Make `@cubid/api` easier to adopt by exposing a small, typed, high-level server integration surface instead of forcing every app to compose low-level Cubid route calls by hand. The package should provide stable helpers such as `ensureUserByEmail`, `fetchIdentity`, `fetchScore`, and `fetchStamps`, plus an optional normalized identity snapshot result for systems that want one typed view of Cubid user state. As part of this, explicitly document the current “resolve or create by email” semantics so integrators know whether the operation is idempotent, what canonical user identifier is returned, what happens when the user already exists, and which failures are retry-safe. Add structured error modeling for auth/config failures, validation problems, transient upstream errors, rate limits, and identity-not-found versus not-yet-verified states.
+
+### E02.3 Publish `@cubid/web2` and `@cubid/web2-react` with profile-completion primitives
+
+- Status: Not started
+- Timestamp started: TBD
+- Timestamp completed: TBD
+- Feature branch: TBD
+- Head: TBD
+- Session-log reference(s): TBD
+
+Turn the browser-side integration layer into publishable packages that downstream apps can consume without local tarballs or repo-coupled wrappers. `@cubid/web2` should own the web-facing protocol helpers and normalized client contracts, while `@cubid/web2-react` should add a clean extended-profile-completion flow for React applications. That flow should make inline phone capture, provider/stamp connection, and post-return refresh patterns easy to implement without each app owning Cubid OAuth and callback complexity. Provide primitives such as a `PhoneOtpForm`, provider connect buttons or hooks, success/failure/cancel callbacks, and helpers that report available, verified, and missing recommended credentials in one normalized shape. The goal is a small opinionated SDK surface that accelerates real integrations rather than exposing internal Passport implementation details.
+
+### E02.4 Add Deno validation, integration guides, examples, and stability notes
+
+- Status: Not started
+- Timestamp started: TBD
+- Timestamp completed: TBD
+- Feature branch: TBD
+- Head: TBD
+- Session-log reference(s): TBD
+
+Back the published packages with the DX and compatibility work needed for real external adoption. Add CI that proves `@cubid/api` is importable in Deno and usable in a Supabase-Edge-like environment, including a smoke import from the JSR form and a Deno-focused validation step in the normal package workflow. Write a dedicated integration guide for Next.js plus Supabase Edge that covers browser versus server usage, secret handling, phone OTP, provider handoff flows, and the post-return refresh pattern. Add copy-paste examples for resolving a Cubid user from an authenticated email, syncing an identity snapshot in an Edge Function, rendering linked or pending credential states in React, and collecting phone plus provider stamps after signup. Close with versioned API stability notes so downstream apps understand Cubid’s compatibility guarantees and deprecation posture.
 
 ### E03. Add agent and organization identity support, including MCP-compatible interfaces
 

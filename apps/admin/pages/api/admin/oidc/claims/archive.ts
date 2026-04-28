@@ -1,9 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
+import { adminArchiveClaimSchema } from '../../../../../lib/server/adminSchemas';
 import {
-  requireAdminUser,
+  prepareAdminApiRequest,
   sendBadRequest,
-  sendMethodNotAllowed,
   sendServerError,
 } from '../../../../../lib/server/adminApi';
 import {
@@ -12,24 +12,22 @@ import {
 } from '../../../../../lib/server/oidcPolicyRegistry';
 
 const archiveClaim = async (req: NextApiRequest, res: NextApiResponse) => {
-  if (req.method !== 'POST') {
-    return sendMethodNotAllowed(res, ['POST']);
-  }
+  const request = await prepareAdminApiRequest(req, res, {
+    actor: 'admin',
+    bodySchema: adminArchiveClaimSchema,
+    rateLimitGroup: 'admin_mutation',
+    route: 'admin/oidc/claims/archive',
+  });
 
-  const context = await requireAdminUser(req, res);
-
-  if (!context) {
+  if (!request) {
     return;
   }
 
   try {
-    const claimId = req.body?.claimId;
-
-    if (typeof claimId !== 'string' || !claimId.trim()) {
-      return sendBadRequest(res, 'claimId is required');
-    }
-
-    const data = await archiveClaimRegistryRecord(context, claimId);
+    const data = await archiveClaimRegistryRecord(
+      request.context,
+      request.body.claimId
+    );
 
     return res.status(200).json({ data });
   } catch (error) {

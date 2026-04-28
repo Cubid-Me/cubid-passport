@@ -1,9 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
+import { adminArchivePolicySchema } from '../../../../../lib/server/adminSchemas';
 import {
-  requireAdminUser,
+  prepareAdminApiRequest,
   sendBadRequest,
-  sendMethodNotAllowed,
   sendServerError,
 } from '../../../../../lib/server/adminApi';
 import {
@@ -12,24 +12,22 @@ import {
 } from '../../../../../lib/server/oidcPolicyRegistry';
 
 const archivePolicy = async (req: NextApiRequest, res: NextApiResponse) => {
-  if (req.method !== 'POST') {
-    return sendMethodNotAllowed(res, ['POST']);
-  }
+  const request = await prepareAdminApiRequest(req, res, {
+    actor: 'admin',
+    bodySchema: adminArchivePolicySchema,
+    rateLimitGroup: 'admin_mutation',
+    route: 'admin/oidc/policies/archive',
+  });
 
-  const context = await requireAdminUser(req, res);
-
-  if (!context) {
+  if (!request) {
     return;
   }
 
   try {
-    const policyId = req.body?.policyId;
-
-    if (typeof policyId !== 'string' || !policyId.trim()) {
-      return sendBadRequest(res, 'policyId is required');
-    }
-
-    const data = await archiveIdentityDepthPolicy(context, policyId);
+    const data = await archiveIdentityDepthPolicy(
+      request.context,
+      request.body.policyId
+    );
 
     return res.status(200).json({ data });
   } catch (error) {

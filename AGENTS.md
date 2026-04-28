@@ -3,8 +3,10 @@
 ## Workflow
 
 - Do not push directly to `main`.
-- Create a feature branch for every change and open a pull request back into `main`.
-- Rebase or otherwise sync frequently from `main` so long-running branches do not drift.
+- Always work on a feature branch; do not make implementation commits directly on shared branches such as `main`, `dev`, or `prod`.
+- Several related changes or todos may land on the same feature branch when they are part of one coherent review stack.
+- Open pull requests back into `dev` by default. Target `main` only when the user explicitly requests a production/mainline PR.
+- Rebase or otherwise sync frequently from `dev` so long-running branches do not drift.
 - Add a new entry to `agent-context/session-log.md` immediately before every commit.
 - After implementing each todo, commit immediately once the task is in a coherent state and the required session-log entry has been added.
 
@@ -29,7 +31,7 @@ At the start of a new session, inspect and summarize the relevant work from:
 
 ## Commands
 
-- Use Node 20 when working locally
+- Use Node 24 when working locally
 - Install dependencies with `pnpm install`
 - Start local development with `pnpm dev`
 - Start the admin app explicitly with `pnpm dev:admin`
@@ -39,4 +41,5 @@ At the start of a new session, inspect and summarize the relevant work from:
 
 - Treat committed secrets as incidents, not convenience. Use environment variables or local-only files that are ignored by Git.
 - Keep cleanup-only changes separate from feature work whenever practical.
+- Treat deprecated and v2-only database tables as quarantine surfaces. Do not build new features on them, refactor them, migrate them, drop them, or otherwise work on them unless a specific future todo explicitly names that cleanup. This includes `wallet_list`, `wallet_details`, `sui-api-accounts`, `near-api-accounts`, `eth-api-accounts`, `evm_accounts`, `authorized_dapps_deprecated`, `blacklist_deprecated`, and `dapp_stampscores_deprecated`.
 - In every final readout, explicitly report whether a commit was made, whether the repo is clean, and propose the next todo to tackle.

@@ -1,56 +1,52 @@
-import { randomUUID } from 'crypto';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
+import { adminDappIdSchema } from '../../../../lib/server/adminSchemas';
 import {
   getOwnedDapp,
-  requireAdminUser,
-  sendBadRequest,
+  prepareAdminApiRequest,
   sendForbidden,
-  sendMethodNotAllowed,
   sendServerError,
 } from '../../../../lib/server/adminApi';
+import { rotateDappApiKey } from '../../../../lib/server/dappApiKeys';
 
 const rotateKey = async (req: NextApiRequest, res: NextApiResponse) => {
-  if (req.method !== 'POST') {
-    return sendMethodNotAllowed(res, ['POST']);
-  }
+  const request = await prepareAdminApiRequest(req, res, {
+    actor: 'admin',
+    bodySchema: adminDappIdSchema,
+    rateLimitGroup: 'admin_sensitive',
+    route: 'admin/apps/rotate-key',
+  });
 
-  const context = await requireAdminUser(req, res);
-
-  if (!context) {
+  if (!request) {
     return;
   }
 
-  const numericDappId = Number(req.body?.dappId);
-
-  if (!numericDappId) {
-    return sendBadRequest(res, 'Missing dappId');
-  }
-
   try {
-    const ownedDapp = await getOwnedDapp(context, numericDappId);
+    const ownedDapp = await getOwnedDapp(request.context, request.body.dappId);
 
     if (!ownedDapp) {
       return sendForbidden(res, 'You do not have access to that app');
     }
 
-    const response = await context.supabase
-      .from('dapps')
-      .update({
-        apikey: randomUUID(),
-      })
-      .match({
-        id: numericDappId,
-        admin_uid: context.adminUser.uid,
-      })
-      .select('*')
-      .maybeSingle();
+    const { apiKey, keyRecord } = await rotateDappApiKey(
+      request.context.supabase,
+      request.body.dappId
+    );
+    const { apikey: _apikey, ...safeApp } = ownedDapp;
 
-    if (response.error) {
-      throw response.error;
-    }
-
-    return res.status(200).json({ data: response.data });
+    return res.status(200).json({
+      data: {
+        apiKey,
+        apiKeyPrefix: keyRecord.key_prefix,
+        app: {
+          ...safeApp,
+          apiKeyLastUsedAt: keyRecord.last_used_at ?? null,
+          apiKeyPrefix: keyRecord.key_prefix,
+          apiKeyRotatedAt: keyRecord.rotated_at ?? null,
+          apiKeyStatus: keyRecord.status,
+        },
+      },
+    });
   } catch (error) {
     return sendServerError(res, error, 'Failed to rotate app key');
   }

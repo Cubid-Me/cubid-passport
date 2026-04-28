@@ -1,40 +1,57 @@
-import NextCors from "nextjs-cors"
+import type { NextApiRequest, NextApiResponse } from "next"
 
-import { supabase } from "../utils/supabase"
+import {
+  handlePassportRoute,
+  passportSchemas,
+} from "@/lib/server/passportApi"
+import { getPassportSupabase } from "@/lib/server/supabase"
 
-const addStampPerm = async (req: any, res: any) => {
-    await NextCors(req, res, {
-        // Options
-        methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-        origin: "*", // Allow all origins
-        optionsSuccessStatus: 200, // Some legacy browsers choke on 204
-    })
-    const { apikey, stamp_id_array, user_id } = typeof req.body === "string" ? JSON.parse(req.body) : req.body
-    const { data: dataForApp } = await supabase
-        .from("dapps")
-        .select("*")
-        .eq("apikey", apikey)
-    const dappId = dataForApp?.[0]?.id
+const schema = passportSchemas.z.object({
+  apikey: passportSchemas.z.string().min(1),
+  stamp_id_array: passportSchemas.z.array(
+    passportSchemas.z.union([
+      passportSchemas.z.number().int().positive(),
+      passportSchemas.z.string().min(1),
+    ])
+  ),
+  user_id: passportSchemas.z.string().min(1),
+})
 
-    if (!dappId) {
-        return res.status(400).json({ error: "Invalid API key" })
-    }
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  return handlePassportRoute(
+    req,
+    res,
+    {
+      actor: "dapp",
+      bodySchema: schema,
+      rateLimitGroup: "passport_dapp_mutation",
+      route: "verify.add_stamp_perm",
+    },
+    async ({ body }) => {
+      await Promise.all(
+        body.stamp_id_array.map(async (item) => {
+          const { error } = await getPassportSupabase()
+            .from("stamp_dappuser_permissions")
+            .insert({
+              can_delete: true,
+              can_read: true,
+              can_write: true,
+              dappuser_id: body.user_id,
+              stamp_id: Number(item),
+            })
 
-    const allPromises = stamp_id_array.map(async (item: string) => {
-        await supabase.from("stamp_dappuser_permissions").insert({
-            dappuser_id: user_id,
-            stamp_id: item,
-            can_write: true,
-            can_delete: true,
-            can_read: true,
+          if (error) {
+            throw error
+          }
         })
-    })
+      )
 
-    await Promise.all(allPromises)
-
-    res.send({
+      return res.status(200).json({
         success: true,
-    })
+      })
+    }
+  )
 }
-
-export default addStampPerm

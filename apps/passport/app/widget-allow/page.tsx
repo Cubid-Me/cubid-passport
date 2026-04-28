@@ -9,6 +9,7 @@ import { useSearchParams } from "next/navigation"
 
 import useAuth from "@/hooks/useAuth"
 import { useCreatedByAppId } from "@/hooks/useCreatedByApp"
+import { findPassportDappPageById } from "@/lib/passportDataApi"
 
 
 import { encode_data } from "../../lib/encode_data"
@@ -68,12 +69,9 @@ const Stamps = ({
                 })
                 const page_id = searchParams.get("page_id")
 
-                const { data: { data } } = await await axios.post("/api/supabase/select", {
-                    match: { id: page_id },
-                    table: "dapp_pages",
-                })
+                const data = await findPassportDappPageById(parseInt(page_id))
                 supabase.auth.signOut()
-                window.location.href = data?.[0]?.redirect_url;
+                window.location.href = data?.redirect_url;
             }
         })
 

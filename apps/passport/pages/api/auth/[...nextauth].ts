@@ -1,12 +1,12 @@
 import NextAuth from "next-auth"
 
-const worldcoinClientId = process.env.WLD_CLIENT_ID
-const worldcoinClientSecret = process.env.WLD_CLIENT_SECRET
-const worldcoinRedirectUri = process.env.WLD_REDIRECT_URI ?? process.env.NEXT_PUBLIC_WORLDCOIN_REDIRECT_URI
+import { getOptionalEnv, getRequiredSecret } from "@cubid/config"
 
-if (!worldcoinClientId || !worldcoinClientSecret || !worldcoinRedirectUri) {
-  throw new Error("Missing Worldcoin environment configuration for NextAuth")
-}
+const worldcoinClientId = getRequiredSecret("WLD_CLIENT_ID")
+const worldcoinClientSecret = getRequiredSecret("WLD_CLIENT_SECRET")
+const worldcoinRedirectUri =
+  getOptionalEnv("WLD_REDIRECT_URI") ??
+  getRequiredSecret("NEXT_PUBLIC_WORLDCOIN_REDIRECT_URI")
 
 export const authOptions = {
   providers: [

@@ -1,36 +1,32 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
+import { adminAppsCreateSchema } from '../../../../lib/server/adminSchemas';
 import {
-  requireAdminUser,
-  sendBadRequest,
-  sendMethodNotAllowed,
+  prepareAdminApiRequest,
   sendServerError,
 } from '../../../../lib/server/adminApi';
+import { createDappApiKey } from '../../../../lib/server/dappApiKeys';
 
 const createApp = async (req: NextApiRequest, res: NextApiResponse) => {
-  if (req.method !== 'POST') {
-    return sendMethodNotAllowed(res, ['POST']);
-  }
+  const request = await prepareAdminApiRequest(req, res, {
+    actor: 'admin',
+    bodySchema: adminAppsCreateSchema,
+    rateLimitGroup: 'admin_mutation',
+    route: 'admin/apps/create',
+  });
 
-  const context = await requireAdminUser(req, res);
-
-  if (!context) {
+  if (!request) {
     return;
   }
 
-  const { appName, pages, schemaId, url } = req.body ?? {};
-
-  if (!appName || !schemaId || !Array.isArray(pages) || pages.length === 0) {
-    return sendBadRequest(res, 'Missing app creation fields');
-  }
-
   try {
-    const appInsertResponse = await context.supabase
+    const { appName, pages, schemaId, url } = request.body;
+    const appInsertResponse = await request.context.supabase
       .from('dapps')
       .insert({
         appname: appName,
         url,
-        admin_uid: context.adminUser.uid,
+        admin_uid: request.context.adminUser.uid,
       })
       .select('*')
       .maybeSingle();
@@ -40,8 +36,12 @@ const createApp = async (req: NextApiRequest, res: NextApiResponse) => {
     }
 
     const createdApp = appInsertResponse.data;
+    const { apiKey, keyRecord } = await createDappApiKey(
+      request.context.supabase,
+      createdApp.id
+    );
 
-    const schemaResponse = await context.supabase
+    const schemaResponse = await request.context.supabase
       .from('stampscore_dapps')
       .insert({
         dapp_id: createdApp.id,
@@ -53,7 +53,7 @@ const createApp = async (req: NextApiRequest, res: NextApiResponse) => {
     }
 
     for (const page of pages) {
-      const pageResponse = await context.supabase
+      const pageResponse = await request.context.supabase
         .from('dapp_pages')
         .insert({
           page_name: page.pageName,
@@ -72,7 +72,7 @@ const createApp = async (req: NextApiRequest, res: NextApiResponse) => {
         : [];
 
       for (const stampConfig of stampConfigs) {
-        const stampResponse = await context.supabase
+        const stampResponse = await request.context.supabase
           .from('dapp_stamptypes')
           .insert({
             dapp_id: createdApp.id,
@@ -90,7 +90,21 @@ const createApp = async (req: NextApiRequest, res: NextApiResponse) => {
       }
     }
 
-    return res.status(200).json({ data: createdApp });
+    const { apikey: _apikey, ...safeApp } = createdApp;
+
+    return res.status(200).json({
+      data: {
+        apiKey,
+        apiKeyPrefix: keyRecord.key_prefix,
+        app: {
+          ...safeApp,
+          apiKeyLastUsedAt: keyRecord.last_used_at ?? null,
+          apiKeyPrefix: keyRecord.key_prefix,
+          apiKeyRotatedAt: keyRecord.rotated_at ?? null,
+          apiKeyStatus: keyRecord.status,
+        },
+      },
+    });
   } catch (error) {
     return sendServerError(res, error, 'Failed to create app');
   }
