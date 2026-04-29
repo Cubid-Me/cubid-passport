@@ -2718,3 +2718,112 @@ Address the remaining unresolved Codex review comments on PR #149.
 #### Follow-up
 
 - push the review-fix commit, reply to and resolve the remaining PR #149 review threads, then re-check CI
+
+### session: v94
+
+- timestamp: 2026-04-28T08:37:24Z
+- agent: **OpenAI Codex**
+- branch: **codex/e02-1-cubid-api-package**
+- head: **`ba0b51c`**
+- session name: **Build the @cubid/api package foundation**
+
+#### Objective
+
+Start E02 and implement the E02.1 repository foundation for a public, runtime-agnostic `@cubid/api` package that can be published through npm and JSR trusted publishing.
+
+#### Actions Taken
+
+- created `packages/api` with a standards-only ESM client, typed low-level Passport v2 wrappers, structured `CubidApiError` categories, and injected-fetch support
+- added package README, JSR metadata, npm package metadata, publish dry-run scripts, and a manual trusted-publishing workflow
+- added CI coverage for npm pack and JSR dry-runs, plus an engineering note documenting the package contract and registry setup requirements
+- confirmed `@cubid/api` is not yet present on npm or JSR and left live publish blocked on trusted-publisher/package setup rather than using local credentials
+
+#### Verification
+
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/api test && pnpm --filter @cubid/api typecheck && pnpm --filter @cubid/api build && pnpm --filter @cubid/api pack:dry-run && pnpm --filter @cubid/api jsr:dry-run'`
+- `npx -p node@24 -c 'node --version && pnpm check:api-package && pnpm test && pnpm typecheck && pnpm build'`
+- `npx -p node@24 -c 'node --version && pnpm lint'`
+
+#### Follow-up
+
+- configure npm Trusted Publishing and the linked JSR package for `@cubid/api`, then run the manual publish workflow once this branch is reviewed and merged
+
+### session: v95
+
+- timestamp: 2026-04-29T08:19:58Z
+- agent: **OpenAI Codex**
+- branch: **codex/e02-1-cubid-api-package**
+- head: **`452874b`**
+- session name: **Rename the public SDK foundation to @cubid/core**
+
+#### Objective
+
+Rename the unpublished foundation package from `@cubid/api` to `@cubid/core` and align agent/product guidance around the target SDK package ecosystem before publication.
+
+#### Actions Taken
+
+- renamed the package workspace from `packages/api` to `packages/core` and updated npm, JSR, CI, root scripts, and trusted-publishing workflow references to `@cubid/core`
+- rewrote the Cubid agent backgrounder into a concise mission and protocol-principles document
+- added `docs/engineering/sdk-package-target-state.md` as the source of truth for SDK package boundaries, dependency rules, npm org ownership, and placement guidance
+- updated `AGENTS.md`, `README.md`, and E02 todos to point future SDK work at `@cubid/core`, `@cubid/react`, and chain-specific packages instead of the temporary `@cubid/api`/`web2` names
+
+#### Verification
+
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/core test && pnpm --filter @cubid/core typecheck && pnpm --filter @cubid/core build && pnpm --filter @cubid/core pack:dry-run && pnpm --filter @cubid/core jsr:dry-run'`
+- `npx -p node@24 -c 'node --version && pnpm check:core-package && pnpm test && pnpm typecheck && pnpm build'`
+- `npx -p node@24 -c 'node --version && pnpm lint'`
+
+#### Follow-up
+
+- configure npm Trusted Publishing and JSR linking for `@cubid/core`, then publish through the manual GitHub Actions workflow after this branch is merged
+
+### session: v96
+
+- timestamp: 2026-04-29T08:37:08Z
+- agent: **OpenAI Codex**
+- branch: **codex/e02-1-cubid-api-package**
+- head: **`2f277d5`**
+- session name: **Address PR 150 Codex transport-error review**
+
+#### Objective
+
+Address the Codex review comment on PR #150 about preserving the `@cubid/core` structured error contract for network-level fetch failures.
+
+#### Actions Taken
+
+- wrapped rejected `fetch` calls in `makeRequest` as `CubidApiError` with `upstream` category before any `Response` exists
+- added focused test coverage for transport failures so SDK consumers can reliably catch `CubidApiError`
+
+#### Verification
+
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/core test && pnpm --filter @cubid/core typecheck && pnpm --filter @cubid/core build && pnpm --filter @cubid/core pack:dry-run && pnpm --filter @cubid/core jsr:dry-run && pnpm check:core-package && pnpm test && pnpm typecheck && pnpm build && pnpm lint'`
+
+#### Follow-up
+
+- push the review fix, comment with the solution, resolve the Codex thread, and re-check PR CI
+
+### session: v97
+
+- timestamp: 2026-04-29T08:38:53Z
+- agent: **OpenAI Codex**
+- branch: **codex/e02-1-cubid-api-package**
+- head: **`baa7758`**
+- session name: **Address PR 150 Copilot SDK polish comments**
+
+#### Objective
+
+Address Copilot review comments on PR #150 for `@cubid/core` base URL validation and cross-platform package builds.
+
+#### Actions Taken
+
+- tightened `baseUrl` validation so only HTTPS is allowed generally and HTTP is allowed only for loopback development hosts
+- added tests for loopback HTTP allowance, public HTTP rejection, and non-HTTP protocol rejection
+- replaced the `rm -rf dist` package build cleanup with a cross-platform Node `fs.rmSync` cleanup command
+
+#### Verification
+
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/core test && pnpm --filter @cubid/core typecheck && pnpm --filter @cubid/core build && pnpm --filter @cubid/core pack:dry-run && pnpm --filter @cubid/core jsr:dry-run && pnpm check:core-package && pnpm test && pnpm typecheck && pnpm build && pnpm lint'`
+
+#### Follow-up
+
+- push the Copilot review fixes, reply to and resolve the review threads, then re-check PR CI and review state

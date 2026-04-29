@@ -56,5 +56,8 @@ jobs:
       - name: API security regression check
         run: pnpm check:api-security
 
+      - name: Core package publish dry-runs
+        run: pnpm check:core-package
+
       - name: Build
         run: pnpm build
