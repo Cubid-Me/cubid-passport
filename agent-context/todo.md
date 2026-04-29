@@ -594,12 +594,12 @@ Review `/Users/botmaster/src/cubid/cubid-sdk-v2/packages/web2`, `web2-react`, an
 
 ### E02.4 Add Deno validation, integration guides, examples, and stability notes
 
-- Status: Started
+- Status: Completed
 - Timestamp started: 2026-04-29T17:41:47Z
-- Timestamp completed: TBD
+- Timestamp completed: 2026-04-29T17:45:07Z
 - Feature branch: codex/e02-2-core-identity-sync
-- Head: 5626b19
-- Session-log reference(s): session: v105
+- Head: 9fe5a52
+- Session-log reference(s): session: v105, session: v106, session: v107
 
 Back the published packages with the DX and compatibility work needed for real external adoption. Add CI that proves `@cubid/core` is importable in Deno and usable in a Supabase-Edge-like environment, including a smoke import from the JSR form and a Deno-focused validation step in the normal package workflow. Write a dedicated integration guide for Next.js plus Supabase Edge that covers browser versus server usage, secret handling, phone OTP, provider handoff flows, and the post-return refresh pattern. Add copy-paste examples for resolving a Cubid user from an authenticated email, syncing an identity snapshot in an Edge Function, rendering linked or pending credential states in React, and collecting phone plus provider stamps after signup. Close with versioned API stability notes so downstream apps understand Cubid’s compatibility guarantees and deprecation posture.
 
