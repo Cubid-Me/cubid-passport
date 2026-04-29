@@ -62,7 +62,7 @@ test("createCubidApiClient allows HTTP only for loopback development hosts", asy
     })
 
     const response = await client.fetchScore({ userId: "dapp_user_123" })
-    assert.deepEqual(response, { cubid_score: 1 })
+    assert.equal(response.cubidScore, 1)
   }
 
   assert.throws(
@@ -102,7 +102,10 @@ test("createUser posts legacy v2 payload with credentials", async () => {
   })
   const response = await client.createUser({ email: "user@example.com" })
 
-  assert.equal(response.user_id, "dapp_user_123")
+  assert.equal(response.userId, "dapp_user_123")
+  assert.equal(response.isNewAppUser, true)
+  assert.equal(response.isSybilAttack, false)
+  assert.equal(response.isBlacklisted, false)
   assert.equal(
     String(calls[0]?.input),
     "https://passport.cubid.me/api/v2/create_user"
@@ -120,7 +123,16 @@ test("low-level wrappers use injected fetch for identity, score, and stamps", as
     const path = new URL(String(input)).pathname
     paths.push(path)
     if (path.endsWith("/fetch_identity")) {
-      return createJsonResponse({ error: null, stamp_details: [] })
+      return createJsonResponse({
+        error: null,
+        stamp_details: [
+          {
+            stamp_type: "email",
+            status: "Verified",
+            value: "user@example.com",
+          },
+        ],
+      })
     }
     if (path.endsWith("/fetch_score")) {
       return createJsonResponse({
@@ -138,9 +150,26 @@ test("low-level wrappers use injected fetch for identity, score, and stamps", as
     fetch: fetchImpl,
   })
 
-  await client.fetchIdentity({ userId: "dapp_user_123" })
-  await client.fetchScore({ userId: "dapp_user_123" })
-  await client.fetchStamps({ userId: "dapp_user_123" })
+  const identity = await client.fetchIdentity({ userId: "dapp_user_123" })
+  const score = await client.fetchScore({ userId: "dapp_user_123" })
+  const stamps = await client.fetchStamps({ userId: "dapp_user_123" })
+
+  assert.deepEqual(identity.stampDetails, [
+    {
+      raw: {
+        stamp_type: "email",
+        status: "Verified",
+        value: "user@example.com",
+      },
+      stampType: "email",
+      status: "Verified",
+      value: "user@example.com",
+    },
+  ])
+  assert.equal(score.cubidScore, 10)
+  assert.equal(score.scoringSchema, 1)
+  assert.deepEqual(stamps.allStamps, [])
+  assert.equal(stamps.email, "user@example.com")
 
   assert.deepEqual(paths, [
     "/api/v2/identity/fetch_identity",
@@ -219,4 +248,108 @@ test("createUser requires a dapp id without leaking the API key", async () => {
       error.category === "config" &&
       !error.message.includes("very-secret-api-key")
   )
+})
+
+test("ensureUserByEmail resolves the canonical user id through create_user", async () => {
+  const calls: Array<{ body: unknown; input: string | URL | Request }> = []
+  const client = createCubidApiClient({
+    apiKey: "api_key",
+    baseUrl: "https://passport.cubid.me",
+    dappId: "dapp_123",
+    fetch: async (input, init) => {
+      calls.push({
+        body: JSON.parse(String(init?.body)),
+        input,
+      })
+      return createJsonResponse({
+        error: null,
+        is_blacklisted: false,
+        is_new_app_user: false,
+        is_sybil_attack: false,
+        user_id: "dapp_user_123",
+      })
+    },
+  })
+
+  const response = await client.ensureUserByEmail({
+    email: " user@example.com ",
+  })
+
+  assert.equal(response.email, "user@example.com")
+  assert.equal(response.userId, "dapp_user_123")
+  assert.equal(response.isNewAppUser, false)
+  assert.deepEqual(calls[0]?.body, {
+    apikey: "api_key",
+    dapp_id: "dapp_123",
+    email: "user@example.com",
+  })
+})
+
+test("malformed success responses map to structured CubidApiError values", async () => {
+  const client = createCubidApiClient({
+    apiKey: "api_key",
+    baseUrl: "https://passport.cubid.me",
+    fetch: async () => createJsonResponse(["not", "an", "object"]),
+  })
+
+  await assert.rejects(
+    () => client.fetchIdentity({ userId: "dapp_user_123" }),
+    (error) => {
+      assert.ok(error instanceof CubidApiError)
+      assert.equal(error.category, "upstream")
+      assert.equal(error.code, "MALFORMED_RESPONSE")
+      assert.equal(error.endpoint, "identity/fetch_identity")
+      assert.equal(error.requestId, "request_123")
+      return true
+    }
+  )
+})
+
+test("syncIdentitySnapshot combines identity, score, and stamp responses", async () => {
+  const paths: string[] = []
+  const client = createCubidApiClient({
+    apiKey: "api_key",
+    baseUrl: "https://passport.cubid.me",
+    fetch: async (input) => {
+      const path = new URL(String(input)).pathname
+      paths.push(path)
+
+      if (path.endsWith("/fetch_identity")) {
+        return createJsonResponse({ error: null, stamp_details: [] })
+      }
+      if (path.endsWith("/fetch_score")) {
+        return createJsonResponse({
+          cubid_score: 99,
+          error: null,
+          scoring_schema: "v2",
+        })
+      }
+      return createJsonResponse({
+        all_stamps: [
+          {
+            id: 1,
+            is_valid: true,
+            stamptype: 13,
+            stamptype_string: "email",
+            uniquevalue: "user@example.com",
+          },
+        ],
+        email: "user@example.com",
+      })
+    },
+  })
+
+  const snapshot = await client.syncIdentitySnapshot({
+    userId: "dapp_user_123",
+  })
+
+  assert.equal(snapshot.userId, "dapp_user_123")
+  assert.equal(snapshot.score.cubidScore, 99)
+  assert.equal(snapshot.stamps.allStamps[0]?.stampType, "email")
+  assert.match(snapshot.syncedAt, /^\d{4}-\d{2}-\d{2}T/)
+  assert.deepEqual(paths.sort(), [
+    "/api/v2/identity/fetch_identity",
+    "/api/v2/identity/fetch_stamps",
+    "/api/v2/score/fetch_score",
+  ])
 })

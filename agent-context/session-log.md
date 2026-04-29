@@ -2878,3 +2878,30 @@ Mark `E02.2` started on the new feature branch before implementing the `@cubid/c
 #### Follow-up
 
 - implement the `@cubid/core` identity sync helpers, normalized response models, and malformed-response handling guided by `E02.2` and `E02.2.1`
+
+### session: v100
+
+- timestamp: 2026-04-29T16:40:48Z
+- agent: **OpenAI Codex**
+- branch: **codex/e02-2-core-identity-sync**
+- head: **`f47e98a`**
+- session name: **Implement E02.2 core identity helpers**
+
+#### Objective
+
+Implement the `@cubid/core` E02.2 server-facing identity sync helpers with normalized response models and safer malformed-response handling.
+
+#### Actions Taken
+
+- added normalized camelCase response models for create-user, identity, score, and stamp responses while retaining raw payloads for debugging
+- added `ensureUserByEmail` and `syncIdentitySnapshot` to the runtime-agnostic client
+- expanded `CubidApiError` with optional code and endpoint metadata, including `MALFORMED_RESPONSE` and `NETWORK_ERROR`
+- updated package tests, README guidance, and the engineering package contract doc for the new helper surface
+
+#### Verification
+
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/core test && pnpm --filter @cubid/core typecheck && pnpm --filter @cubid/core build'`
+
+#### Follow-up
+
+- commit the implementation, then close out E02.2 metadata with the implementation commit head

@@ -6,14 +6,23 @@ APIs, or browser-only helpers. The package uses standard `fetch` and plain JSON
 contracts so it can run in Node, Deno, Supabase Edge Functions, workers, and
 tests.
 
-## E02.1 Contract
+## Current Contract
 
 - Package name: `@cubid/core`
 - Initial version: `0.1.0`
 - Runtime target: ESM, standards-only
-- Initial surface: low-level wrappers for current Passport v2 routes
-- Deferred to E02.2: `ensureUserByEmail`, identity snapshot helpers, and
-  normalized high-level sync flows
+- Surface: normalized wrappers for current Passport v2 routes plus
+  server-facing identity sync helpers
+- Identity helpers: `ensureUserByEmail`, `fetchIdentity`, `fetchScore`,
+  `fetchStamps`, and `syncIdentitySnapshot`
+- Response model: SDK-friendly camelCase fields with the original server
+  payload retained in `raw` for migration and debugging
+- Error model: `CubidApiError` includes category, optional code, optional
+  endpoint, request ID, status, and parsed details
+
+Malformed successful responses must throw `CubidApiError` with
+`code: "MALFORMED_RESPONSE"` so integrators do not accidentally depend on
+partial or unsafe response shapes.
 
 ## Publishing
 

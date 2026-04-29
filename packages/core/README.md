@@ -34,7 +34,21 @@ const created = await cubid.createUser({
 })
 
 const score = await cubid.fetchScore({
-  userId: created.user_id!,
+  userId: created.userId!,
+})
+```
+
+For server-side "resolve or create by email" flows, prefer
+`ensureUserByEmail` so callers always receive a canonical app-scoped Cubid user
+identifier or a structured error.
+
+```ts
+const user = await cubid.ensureUserByEmail({
+  email: "person@example.com",
+})
+
+const snapshot = await cubid.syncIdentitySnapshot({
+  userId: user.userId,
 })
 ```
 
@@ -59,16 +73,23 @@ client bundles.
 
 ## Foundation Surface
 
-E02.1 provides low-level wrappers around current Passport v2 endpoints:
+The foundation client provides normalized wrappers around current Passport v2
+endpoints:
 
 - `createUser`
+- `ensureUserByEmail`
 - `fetchIdentity`
 - `fetchScore`
 - `fetchStamps`
+- `syncIdentitySnapshot`
 
-Higher-level helpers such as `ensureUserByEmail`, identity snapshots, and
-profile-completion flows are intentionally deferred to E02.2 and later SDK
-tasks.
+Responses use SDK-friendly camelCase fields while retaining the original
+server payload in `raw` for migration/debugging. Malformed successful responses
+throw `CubidApiError` with `code: "MALFORMED_RESPONSE"` instead of returning an
+unsafe partial shape.
+
+Profile-completion flows and React components are intentionally deferred to
+later SDK tasks.
 
 ## Errors
 
@@ -76,6 +97,9 @@ Failed requests throw `CubidApiError` with:
 
 - `category`: `config`, `auth`, `validation`, `rate_limit`, `not_found`,
   `upstream`, or `unknown`
+- `code`: machine-readable detail such as `NETWORK_ERROR` or
+  `MALFORMED_RESPONSE` when available
+- `endpoint`: Cubid endpoint associated with the failure when available
 - `status`: HTTP status when available
 - `requestId`: Cubid `X-Request-Id` when returned by the API
 - `details`: parsed error payload when available
