@@ -2931,3 +2931,29 @@ Mark `E02.2` completed after the `@cubid/core` identity sync helper implementati
 #### Follow-up
 
 - continue with `E02.2.1` to port additional runtime-agnostic ergonomics from `cubid-sdk-v2`, or publish the current branch for review first
+
+### session: v102
+
+- timestamp: 2026-04-29T17:27:43Z
+- agent: **OpenAI Codex**
+- branch: **codex/e02-2-core-identity-sync**
+- head: **`b78ae9e`**
+- session name: **Start E02.2.1 SDK ergonomics port**
+
+#### Objective
+
+Start the follow-on SDK ergonomics slice that ports the remaining runtime-agnostic, security-compatible helpers from `cubid-sdk-v2` into `@cubid/core`.
+
+#### Actions Taken
+
+- marked `E02.2.1` started on the current feature branch
+- inspected the older SDK API client and current Passport v2 routes for wrapper compatibility
+- confirmed the port should focus on `addStamp`, location/user-data/search, and safe OTP response helpers without exposing plaintext OTP values
+
+#### Verification
+
+- reviewed `agent-context/todo.md` metadata and current package route coverage before implementation
+
+#### Follow-up
+
+- add the compatible wrappers, tests, docs, and closeout metadata for `E02.2.1`

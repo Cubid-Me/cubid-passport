@@ -561,12 +561,12 @@ Make `@cubid/core` easier to adopt by exposing a small, typed, high-level server
 
 ### E02.2.1 Port the best runtime-agnostic SDK ergonomics from `cubid-sdk-v2`
 
-- Status: Not started
-- Timestamp started: TBD
+- Status: Started
+- Timestamp started: 2026-04-29T17:27:43Z
 - Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Feature branch: codex/e02-2-core-identity-sync
+- Head: b78ae9e
+- Session-log reference(s): session: v102
 
 Use the older `/Users/botmaster/src/cubid/cubid-sdk-v2/packages/api` implementation as a comparison source when expanding `@cubid/core`, but do not copy it blindly. Cherry-pick the stronger developer ergonomics: normalized camelCase response models, malformed-response detection, endpoint-aware error metadata, optional custom headers if still safe, and broader low-level wrappers for `addStamp`, location, user-data, search-location, and OTP routes where those routes remain part of the supported API story. Keep the newer `@cubid/core` security posture: no plaintext OTP exposure, no framework or Node-only assumptions, no broad legacy defaults that obscure the target origin, and no chain or React dependencies. The success condition is that `@cubid/core` becomes more pleasant and safer to consume without inheriting old package naming, insecure response shapes, or deprecated route assumptions.
 
