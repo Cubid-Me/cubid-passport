@@ -550,12 +550,12 @@ Package `@cubid/core` as the required public integration foundation that works c
 
 ### E02.2 Add a stable server-facing identity sync contract to `@cubid/core`
 
-- Status: Started
+- Status: Completed
 - Timestamp started: 2026-04-29T16:07:42Z
-- Timestamp completed: TBD
+- Timestamp completed: 2026-04-29T16:41:13Z
 - Feature branch: codex/e02-2-core-identity-sync
-- Head: 4cf2f89
-- Session-log reference(s): session: v99
+- Head: 2727a8e
+- Session-log reference(s): session: v99, session: v100, session: v101
 
 Make `@cubid/core` easier to adopt by exposing a small, typed, high-level server integration surface instead of forcing every app to compose low-level Cubid route calls by hand. The package should provide stable helpers such as `ensureUserByEmail`, `fetchIdentity`, `fetchScore`, and `fetchStamps`, plus an optional normalized identity snapshot result for systems that want one typed view of Cubid user state. As part of this, explicitly document the current “resolve or create by email” semantics so integrators know whether the operation is idempotent, what canonical user identifier is returned, what happens when the user already exists, and which failures are retry-safe. Add structured error modeling for auth/config failures, validation problems, transient upstream errors, rate limits, and identity-not-found versus not-yet-verified states.
 

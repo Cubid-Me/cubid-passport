@@ -2905,3 +2905,29 @@ Implement the `@cubid/core` E02.2 server-facing identity sync helpers with norma
 #### Follow-up
 
 - commit the implementation, then close out E02.2 metadata with the implementation commit head
+
+### session: v101
+
+- timestamp: 2026-04-29T16:41:13Z
+- agent: **OpenAI Codex**
+- branch: **codex/e02-2-core-identity-sync**
+- head: **`2727a8e`**
+- session name: **Close E02.2 metadata**
+
+#### Objective
+
+Mark `E02.2` completed after the `@cubid/core` identity sync helper implementation and focused validation landed.
+
+#### Actions Taken
+
+- updated `agent-context/todo.md` with the E02.2 completion timestamp
+- recorded the implementation commit as the E02.2 head
+- attached the start, implementation, and closeout session-log references to the todo
+
+#### Verification
+
+- confirmed the E02.2 metadata points at implementation head `2727a8e`
+
+#### Follow-up
+
+- continue with `E02.2.1` to port additional runtime-agnostic ergonomics from `cubid-sdk-v2`, or publish the current branch for review first
