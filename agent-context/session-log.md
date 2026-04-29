@@ -3206,3 +3206,30 @@ Resolve the actionable Copilot and Codex review comments on PR #151 before conti
 #### Follow-up
 
 - commit and push the review fixes, comment with the solutions, resolve the PR threads, and recheck CI
+
+### session: v108
+
+- timestamp: 2026-04-29T17:57:47Z
+- agent: **OpenAI Codex**
+- branch: **codex/e03-actor-identity-model**
+- head: **`397c376`**
+- session name: **Start E03 actor identity model**
+
+#### Objective
+
+Start E03 to add human, agent, and organization self-identification support with MCP-compatible trust interfaces while preserving human proof-of-personhood as the primary validation focus.
+
+#### Actions Taken
+
+- created a fresh E03 branch from `dev`
+- marked `E03` started in `agent-context/todo.md`
+- inspected `@cubid/identity`, `@cubid/claims`, OIDC contracts, and existing docs to place the actor model in shared domain packages rather than app-local code
+- locked the implementation direction: humans receive deep validation/scoring; agents and organizations are represented and can claim stamps, but receive limited generic validation by default
+
+#### Verification
+
+- confirmed the branch starts from current `dev` and the repository was clean before E03 metadata changes
+
+#### Follow-up
+
+- implement the shared actor identity model, MCP trust response contracts, minimal OIDC claim definitions, docs, tests, and closeout metadata
