@@ -2957,3 +2957,30 @@ Start the follow-on SDK ergonomics slice that ports the remaining runtime-agnost
 #### Follow-up
 
 - add the compatible wrappers, tests, docs, and closeout metadata for `E02.2.1`
+
+### session: v103
+
+- timestamp: 2026-04-29T17:31:12Z
+- agent: **OpenAI Codex**
+- branch: **codex/e02-2-core-identity-sync**
+- head: **`10bdeb8`**
+- session name: **Port runtime-agnostic SDK wrappers**
+
+#### Objective
+
+Complete `E02.2.1` by porting the remaining useful runtime-agnostic SDK ergonomics from `cubid-sdk-v2` into the new `@cubid/core` package.
+
+#### Actions Taken
+
+- added normalized `@cubid/core` wrappers for `addStamp`, location fetches, user-data fetch, location search, and email/phone OTP send/verify flows
+- preserved the newer security posture by omitting raw OTP codes from SDK responses even when legacy server payloads contain one
+- added tests for endpoint paths, normalized legacy response shapes, malformed search responses, and safe OTP metadata
+- updated package README and engineering docs to describe the expanded wrapper surface
+
+#### Verification
+
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/core test && pnpm --filter @cubid/core typecheck && pnpm --filter @cubid/core build'`
+
+#### Follow-up
+
+- commit the implementation, then close `E02.2.1` metadata with the implementation commit head

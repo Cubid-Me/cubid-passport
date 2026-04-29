@@ -353,3 +353,178 @@ test("syncIdentitySnapshot combines identity, score, and stamp responses", async
     "/api/v2/score/fetch_score",
   ])
 })
+
+test("additional runtime-agnostic wrappers normalize legacy v2 responses", async () => {
+  const calls: Array<{ body: unknown; path: string }> = []
+  const client = createCubidApiClient({
+    apiKey: "api_key",
+    baseUrl: "https://passport.cubid.me",
+    fetch: async (input, init) => {
+      const path = new URL(String(input)).pathname
+      calls.push({
+        body: JSON.parse(String(init?.body)),
+        path,
+      })
+
+      if (path.endsWith("/identity/add_stamp")) {
+        return createJsonResponse({ success: true })
+      }
+      if (path.endsWith("/fetch_approx_location")) {
+        return createJsonResponse({
+          coordinates: { lat: 43.65, lng: -79.38 },
+          country: "Canada",
+          error: null,
+          placename: "Toronto",
+          pluscode: "87M2",
+          postalcode: "M5H",
+        })
+      }
+      if (path.endsWith("/fetch_exact_location")) {
+        return createJsonResponse({
+          coordinates: { lat: 43.6501, lng: -79.3802 },
+          country: "Canada",
+          error: null,
+          place: { city: "Toronto" },
+        })
+      }
+      if (path.endsWith("/fetch_rough_location")) {
+        return createJsonResponse({
+          coordinates: { lat: 43.6, lng: -79.4 },
+          cubid_country: "Canada",
+          error: null,
+          pluscode: "87M2",
+        })
+      }
+      if (path.endsWith("/fetch_user_data")) {
+        return createJsonResponse({
+          coordinates: { lat: 43.65, lng: -79.38 },
+          country: "Canada",
+          error: null,
+          name: "Cubid User",
+          placename: "Toronto",
+        })
+      }
+      if (path.endsWith("/search-location")) {
+        return createJsonResponse([{ name: "Toronto" }, "fallback"])
+      }
+
+      throw new Error(`Unexpected path ${path}`)
+    },
+  })
+
+  await assert.doesNotReject(() =>
+    client.addStamp({
+      pageId: "7",
+      stampData: { identity: "user@example.com" },
+      stampType: "email",
+      userId: "dapp_user_123",
+    })
+  )
+  const approx = await client.fetchApproxLocation({ userId: "dapp_user_123" })
+  const exact = await client.fetchExactLocation({ userId: "dapp_user_123" })
+  const rough = await client.fetchRoughLocation({ userId: "dapp_user_123" })
+  const userData = await client.fetchUserData({ userId: "dapp_user_123" })
+  const results = await client.searchLocation({ locationInput: "Toronto" })
+
+  assert.equal(approx.placeName, "Toronto")
+  assert.equal(approx.postalCode, "M5H")
+  assert.deepEqual(exact.place, { city: "Toronto" })
+  assert.equal(rough.country, "Canada")
+  assert.equal(userData.name, "Cubid User")
+  assert.deepEqual(results, [{ name: "Toronto" }, { value: "fallback" }])
+  assert.deepEqual(calls.map((call) => call.path), [
+    "/api/v2/identity/add_stamp",
+    "/api/v2/identity/fetch_approx_location",
+    "/api/v2/identity/fetch_exact_location",
+    "/api/v2/identity/fetch_rough_location",
+    "/api/v2/identity/fetch_user_data",
+    "/api/v2/search-location",
+  ])
+  assert.deepEqual(calls[0]?.body, {
+    page_id: 7,
+    stampData: { identity: "user@example.com" },
+    stamp_type: "email",
+    user_data: { uuid: "dapp_user_123" },
+  })
+})
+
+test("OTP wrappers normalize safe response metadata without returning OTP codes", async () => {
+  const paths: string[] = []
+  const client = createCubidApiClient({
+    apiKey: "api_key",
+    baseUrl: "https://passport.cubid.me",
+    fetch: async (input) => {
+      const path = new URL(String(input)).pathname
+      paths.push(path)
+
+      if (path.endsWith("/email/send_otp")) {
+        return createJsonResponse({
+          data: {
+            dappId: 42,
+            email: "user@example.com",
+            otp: 1234,
+            sent: true,
+          },
+        })
+      }
+      if (path.endsWith("/email/verify_otp")) {
+        return createJsonResponse({
+          data: {
+            dappId: 42,
+            email: "user@example.com",
+            is_verified: true,
+          },
+        })
+      }
+      if (path.endsWith("/twillio/send-otp")) {
+        return createJsonResponse({ data: { status: "sent" } })
+      }
+      if (path.endsWith("/twillio/verify-otp")) {
+        return createJsonResponse({ data: { status: "approved" } })
+      }
+
+      throw new Error(`Unexpected path ${path}`)
+    },
+  })
+
+  const emailSent = await client.sendEmailOtp({ email: "user@example.com" })
+  const emailVerified = await client.verifyEmailOtp({
+    email: "user@example.com",
+    otp: 1234,
+  })
+  const phoneSent = await client.sendPhoneOtp({ phone: "+15555550123" })
+  const phoneVerified = await client.verifyPhoneOtp({
+    otp: "654321",
+    phone: "+15555550123",
+  })
+
+  assert.equal(emailSent.sent, true)
+  assert.equal("otp" in emailSent, false)
+  assert.equal(emailVerified.isVerified, true)
+  assert.equal(phoneSent.status, "sent")
+  assert.equal(phoneVerified.isVerified, true)
+  assert.deepEqual(paths, [
+    "/api/v2/email/send_otp",
+    "/api/v2/email/verify_otp",
+    "/api/v2/twillio/send-otp",
+    "/api/v2/twillio/verify-otp",
+  ])
+})
+
+test("searchLocation rejects malformed successful payloads", async () => {
+  const client = createCubidApiClient({
+    apiKey: "api_key",
+    baseUrl: "https://passport.cubid.me",
+    fetch: async () => createJsonResponse({ results: [] }),
+  })
+
+  await assert.rejects(
+    () => client.searchLocation({ locationInput: "Toronto" }),
+    (error) => {
+      assert.ok(error instanceof CubidApiError)
+      assert.equal(error.code, "MALFORMED_RESPONSE")
+      assert.equal(error.endpoint, "search-location")
+      return true
+    }
+  )
+})

@@ -15,6 +15,8 @@ tests.
   server-facing identity sync helpers
 - Identity helpers: `ensureUserByEmail`, `fetchIdentity`, `fetchScore`,
   `fetchStamps`, and `syncIdentitySnapshot`
+- Additional wrappers: `addStamp`, location fetches, user-data fetch, location
+  search, and email/phone OTP send/verify helpers
 - Response model: SDK-friendly camelCase fields with the original server
   payload retained in `raw` for migration and debugging
 - Error model: `CubidApiError` includes category, optional code, optional
@@ -23,6 +25,9 @@ tests.
 Malformed successful responses must throw `CubidApiError` with
 `code: "MALFORMED_RESPONSE"` so integrators do not accidentally depend on
 partial or unsafe response shapes.
+
+OTP helpers must not expose raw OTP values. They normalize only delivery and
+verification metadata even if a legacy server payload contains a code.
 
 ## Publishing
 

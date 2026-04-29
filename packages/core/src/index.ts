@@ -161,6 +161,107 @@ export type CubidFetchStampsResponse = {
   raw: Record<string, unknown>
 }
 
+export type CubidCoordinates = {
+  lat: number
+  lng: number
+}
+
+export type CubidFetchApproxLocationResponse = {
+  coordinates?: CubidCoordinates
+  country?: string | null
+  error: unknown
+  placeName?: string | null
+  plusCode?: string | null
+  postalCode?: string | null
+  raw: Record<string, unknown>
+}
+
+export type CubidFetchExactLocationResponse = {
+  coordinates?: CubidCoordinates
+  country?: string | null
+  error: unknown
+  place?: unknown
+  raw: Record<string, unknown>
+}
+
+export type CubidFetchRoughLocationResponse = {
+  coordinates?: CubidCoordinates
+  country?: unknown
+  error: unknown
+  plusCode?: string | null
+  raw: Record<string, unknown>
+}
+
+export type CubidFetchUserDataResponse = {
+  coordinates?: CubidCoordinates
+  country?: string | null
+  error: unknown
+  name?: string | null
+  placeName?: string | null
+  raw: Record<string, unknown>
+}
+
+export type CubidSearchLocationInput = {
+  locationInput: string
+}
+
+export type CubidSearchLocationResponse = Array<Record<string, unknown>>
+
+export type CubidAddStampInput = {
+  pageId: number | string
+  stampData: Record<string, unknown>
+  stampType: string
+  userId: string
+}
+
+export type CubidAddStampResponse = {
+  raw: Record<string, unknown>
+  success: boolean
+}
+
+export type CubidSendEmailOtpInput = {
+  email: string
+}
+
+export type CubidSendEmailOtpResponse = {
+  dappId?: number | string
+  email?: string | null
+  raw: Record<string, unknown>
+  sent: boolean
+}
+
+export type CubidVerifyEmailOtpInput = {
+  email: string
+  otp: number | string
+}
+
+export type CubidVerifyEmailOtpResponse = {
+  dappId?: number | string
+  email?: string | null
+  isVerified: boolean
+  raw: Record<string, unknown>
+}
+
+export type CubidSendPhoneOtpInput = {
+  phone: string
+}
+
+export type CubidSendPhoneOtpResponse = {
+  raw: Record<string, unknown>
+  status?: string | null
+}
+
+export type CubidVerifyPhoneOtpInput = {
+  otp: number | string
+  phone: string
+}
+
+export type CubidVerifyPhoneOtpResponse = {
+  isVerified: boolean
+  raw: Record<string, unknown>
+  status?: string | null
+}
+
 export type CubidIdentitySnapshotInput = {
   userId: string
 }
@@ -174,18 +275,46 @@ export type CubidIdentitySnapshot = {
 }
 
 export type CubidApiClient = {
+  addStamp(input: CubidAddStampInput): Promise<CubidAddStampResponse>
   createUser(input: CubidCreateUserInput): Promise<CubidCreateUserResponse>
   ensureUserByEmail(
     input: CubidEnsureUserByEmailInput
   ): Promise<CubidEnsureUserByEmailResponse>
+  fetchApproxLocation(
+    input: CubidFetchIdentityInput
+  ): Promise<CubidFetchApproxLocationResponse>
+  fetchExactLocation(
+    input: CubidFetchIdentityInput
+  ): Promise<CubidFetchExactLocationResponse>
   fetchIdentity(
     input: CubidFetchIdentityInput
   ): Promise<CubidFetchIdentityResponse>
+  fetchRoughLocation(
+    input: CubidFetchIdentityInput
+  ): Promise<CubidFetchRoughLocationResponse>
   fetchScore(input: CubidFetchScoreInput): Promise<CubidFetchScoreResponse>
   fetchStamps(input: CubidFetchStampsInput): Promise<CubidFetchStampsResponse>
+  fetchUserData(
+    input: CubidFetchIdentityInput
+  ): Promise<CubidFetchUserDataResponse>
+  searchLocation(
+    input: CubidSearchLocationInput
+  ): Promise<CubidSearchLocationResponse>
+  sendEmailOtp(
+    input: CubidSendEmailOtpInput
+  ): Promise<CubidSendEmailOtpResponse>
+  sendPhoneOtp(
+    input: CubidSendPhoneOtpInput
+  ): Promise<CubidSendPhoneOtpResponse>
   syncIdentitySnapshot(
     input: CubidIdentitySnapshotInput
   ): Promise<CubidIdentitySnapshot>
+  verifyEmailOtp(
+    input: CubidVerifyEmailOtpInput
+  ): Promise<CubidVerifyEmailOtpResponse>
+  verifyPhoneOtp(
+    input: CubidVerifyPhoneOtpInput
+  ): Promise<CubidVerifyPhoneOtpResponse>
 }
 
 type CubidRequestBody = Record<string, unknown>
@@ -304,6 +433,21 @@ const asNumber = (value: unknown): number | undefined =>
 
 const asBoolean = (value: unknown): boolean | undefined =>
   typeof value === "boolean" ? value : undefined
+
+const asCoordinates = (value: unknown): CubidCoordinates | undefined => {
+  if (!isRecord(value)) {
+    return undefined
+  }
+
+  const lat = value.lat
+  const lng = value.lng
+
+  if (typeof lat !== "number" || typeof lng !== "number") {
+    return undefined
+  }
+
+  return { lat, lng }
+}
 
 const assertRecord = (
   value: unknown,
@@ -533,6 +677,199 @@ const normalizeStamps = (
   }
 }
 
+const normalizeApproxLocation = (
+  payload: unknown,
+  requestId?: string | null,
+  status?: number
+): CubidFetchApproxLocationResponse => {
+  const record = assertRecord(
+    payload,
+    "identity/fetch_approx_location",
+    requestId,
+    status
+  )
+
+  return {
+    coordinates: asCoordinates(record.coordinates),
+    country: asString(record.country),
+    error: record.error ?? null,
+    placeName: asString(record.placename),
+    plusCode: asString(record.pluscode),
+    postalCode: asString(record.postalcode),
+    raw: record,
+  }
+}
+
+const normalizeExactLocation = (
+  payload: unknown,
+  requestId?: string | null,
+  status?: number
+): CubidFetchExactLocationResponse => {
+  const record = assertRecord(
+    payload,
+    "identity/fetch_exact_location",
+    requestId,
+    status
+  )
+
+  return {
+    coordinates: asCoordinates(record.coordinates),
+    country: asString(record.country),
+    error: record.error ?? null,
+    place: record.place,
+    raw: record,
+  }
+}
+
+const normalizeRoughLocation = (
+  payload: unknown,
+  requestId?: string | null,
+  status?: number
+): CubidFetchRoughLocationResponse => {
+  const record = assertRecord(
+    payload,
+    "identity/fetch_rough_location",
+    requestId,
+    status
+  )
+
+  return {
+    coordinates: asCoordinates(record.coordinates),
+    country: record.country ?? record.cubid_country ?? null,
+    error: record.error ?? null,
+    plusCode: asString(record.pluscode),
+    raw: record,
+  }
+}
+
+const normalizeUserData = (
+  payload: unknown,
+  requestId?: string | null,
+  status?: number
+): CubidFetchUserDataResponse => {
+  const record = assertRecord(payload, "identity/fetch_user_data", requestId, status)
+
+  return {
+    coordinates: asCoordinates(record.coordinates),
+    country: asString(record.country),
+    error: record.error ?? null,
+    name: asString(record.name),
+    placeName: asString(record.placename),
+    raw: record,
+  }
+}
+
+const normalizeSearchLocation = (
+  payload: unknown,
+  requestId?: string | null,
+  status?: number
+): CubidSearchLocationResponse => {
+  if (!Array.isArray(payload)) {
+    throw new CubidApiError({
+      category: "upstream",
+      code: "MALFORMED_RESPONSE",
+      details: payload,
+      endpoint: "search-location",
+      message: "Malformed response from search-location.",
+      requestId,
+      status,
+    })
+  }
+
+  return payload.map((item) => (isRecord(item) ? item : { value: item }))
+}
+
+const normalizeAddStamp = (
+  payload: unknown,
+  requestId?: string | null,
+  status?: number
+): CubidAddStampResponse => {
+  const record = assertRecord(payload, "identity/add_stamp", requestId, status)
+
+  return {
+    raw: record,
+    success: Boolean(record.success),
+  }
+}
+
+const normalizeEmailOtpSent = (
+  payload: unknown,
+  requestId?: string | null,
+  status?: number
+): CubidSendEmailOtpResponse => {
+  const record = assertRecord(payload, "email/send_otp", requestId, status)
+  const data = isRecord(record.data) ? record.data : record
+
+  return {
+    dappId:
+      typeof data.dappId === "number" || typeof data.dappId === "string"
+        ? data.dappId
+        : undefined,
+    email: asString(data.email),
+    raw: record,
+    sent: data.sent === undefined ? true : Boolean(data.sent),
+  }
+}
+
+const normalizeEmailOtpVerified = (
+  payload: unknown,
+  requestId?: string | null,
+  status?: number
+): CubidVerifyEmailOtpResponse => {
+  const record = assertRecord(payload, "email/verify_otp", requestId, status)
+  const data = isRecord(record.data) ? record.data : record
+
+  return {
+    dappId:
+      typeof data.dappId === "number" || typeof data.dappId === "string"
+        ? data.dappId
+        : undefined,
+    email: asString(data.email),
+    isVerified: Boolean(data.is_verified),
+    raw: record,
+  }
+}
+
+const normalizePhoneOtpSent = (
+  payload: unknown,
+  requestId?: string | null,
+  status?: number
+): CubidSendPhoneOtpResponse => {
+  if (typeof payload === "string") {
+    return {
+      raw: { message: payload },
+      status: payload,
+    }
+  }
+
+  const record = assertRecord(payload, "twillio/send-otp", requestId, status)
+  const data = isRecord(record.data) ? record.data : record
+
+  return {
+    raw: record,
+    status: asString(data.status) ?? asString(data.message),
+  }
+}
+
+const normalizePhoneOtpVerified = (
+  payload: unknown,
+  requestId?: string | null,
+  status?: number
+): CubidVerifyPhoneOtpResponse => {
+  const record = assertRecord(payload, "twillio/verify-otp", requestId, status)
+  const data = isRecord(record.data) ? record.data : record
+  const verificationStatus = asString(data.status)
+
+  return {
+    isVerified:
+      Boolean(data.is_verified) ||
+      verificationStatus === "approved" ||
+      verificationStatus === "verified",
+    raw: record,
+    status: verificationStatus,
+  }
+}
+
 export const createCubidApiClient = (
   options: CubidApiClientOptions
 ): CubidApiClient => {
@@ -558,6 +895,37 @@ export const createCubidApiClient = (
   }
 
   return {
+    addStamp(input) {
+      const userId = assertNonEmptyString(
+        input.userId,
+        "userId",
+        "identity/add_stamp"
+      )
+      const stampType = assertNonEmptyString(
+        input.stampType,
+        "stampType",
+        "identity/add_stamp"
+      )
+
+      return makeRequest<CubidAddStampResponse>(
+        fetchImpl,
+        baseUrl,
+        "/api/v2/identity/add_stamp",
+        {
+          page_id:
+            typeof input.pageId === "string"
+              ? Number(input.pageId) || input.pageId
+              : input.pageId,
+          stamp_type: stampType,
+          stampData: input.stampData,
+          user_data: { uuid: userId },
+        },
+        "identity/add_stamp",
+        normalizeAddStamp,
+        headers
+      )
+    },
+
     createUser(input) {
       const dappId = input.dappId ?? options.dappId
       if (dappId === undefined) {
@@ -616,6 +984,42 @@ export const createCubidApiClient = (
       }
     },
 
+    fetchApproxLocation(input) {
+      const userId = assertNonEmptyString(
+        input.userId,
+        "userId",
+        "identity/fetch_approx_location"
+      )
+
+      return makeRequest<CubidFetchApproxLocationResponse>(
+        fetchImpl,
+        baseUrl,
+        "/api/v2/identity/fetch_approx_location",
+        withCredentials({ user_id: userId }),
+        "identity/fetch_approx_location",
+        normalizeApproxLocation,
+        headers
+      )
+    },
+
+    fetchExactLocation(input) {
+      const userId = assertNonEmptyString(
+        input.userId,
+        "userId",
+        "identity/fetch_exact_location"
+      )
+
+      return makeRequest<CubidFetchExactLocationResponse>(
+        fetchImpl,
+        baseUrl,
+        "/api/v2/identity/fetch_exact_location",
+        withCredentials({ user_id: userId }),
+        "identity/fetch_exact_location",
+        normalizeExactLocation,
+        headers
+      )
+    },
+
     fetchIdentity(input) {
       const userId = assertNonEmptyString(
         input.userId,
@@ -632,6 +1036,24 @@ export const createCubidApiClient = (
         }),
         "identity/fetch_identity",
         normalizeIdentity,
+        headers
+      )
+    },
+
+    fetchRoughLocation(input) {
+      const userId = assertNonEmptyString(
+        input.userId,
+        "userId",
+        "identity/fetch_rough_location"
+      )
+
+      return makeRequest<CubidFetchRoughLocationResponse>(
+        fetchImpl,
+        baseUrl,
+        "/api/v2/identity/fetch_rough_location",
+        withCredentials({ user_id: userId }),
+        "identity/fetch_rough_location",
+        normalizeRoughLocation,
         headers
       )
     },
@@ -676,6 +1098,70 @@ export const createCubidApiClient = (
       )
     },
 
+    fetchUserData(input) {
+      const userId = assertNonEmptyString(
+        input.userId,
+        "userId",
+        "identity/fetch_user_data"
+      )
+
+      return makeRequest<CubidFetchUserDataResponse>(
+        fetchImpl,
+        baseUrl,
+        "/api/v2/identity/fetch_user_data",
+        withCredentials({ user_id: userId }),
+        "identity/fetch_user_data",
+        normalizeUserData,
+        headers
+      )
+    },
+
+    searchLocation(input) {
+      const locationInput = assertNonEmptyString(
+        input.locationInput,
+        "locationInput",
+        "search-location"
+      )
+
+      return makeRequest<CubidSearchLocationResponse>(
+        fetchImpl,
+        baseUrl,
+        "/api/v2/search-location",
+        withCredentials({ location_input: locationInput }),
+        "search-location",
+        normalizeSearchLocation,
+        headers
+      )
+    },
+
+    sendEmailOtp(input) {
+      const email = assertNonEmptyString(input.email, "email", "email/send_otp")
+
+      return makeRequest<CubidSendEmailOtpResponse>(
+        fetchImpl,
+        baseUrl,
+        "/api/v2/email/send_otp",
+        withCredentials({ email }),
+        "email/send_otp",
+        normalizeEmailOtpSent,
+        headers
+      )
+    },
+
+    sendPhoneOtp(input) {
+      const phone = assertNonEmptyString(input.phone, "phone", "twillio/send-otp")
+
+      return makeRequest<CubidSendPhoneOtpResponse>(
+        fetchImpl,
+        baseUrl,
+        "/api/v2/twillio/send-otp",
+        withCredentials({ phone }),
+        "twillio/send-otp",
+        normalizePhoneOtpSent,
+        headers
+      )
+    },
+
     async syncIdentitySnapshot(input) {
       const userId = assertNonEmptyString(
         input.userId,
@@ -695,6 +1181,60 @@ export const createCubidApiClient = (
         syncedAt: new Date().toISOString(),
         userId,
       }
+    },
+
+    verifyEmailOtp(input) {
+      const email = assertNonEmptyString(
+        input.email,
+        "email",
+        "email/verify_otp"
+      )
+      const otp = String(input.otp).trim()
+      if (!otp) {
+        throw new CubidApiError({
+          category: "validation",
+          code: "INVALID_INPUT",
+          endpoint: "email/verify_otp",
+          message: "otp is required.",
+        })
+      }
+
+      return makeRequest<CubidVerifyEmailOtpResponse>(
+        fetchImpl,
+        baseUrl,
+        "/api/v2/email/verify_otp",
+        withCredentials({ email, otp }),
+        "email/verify_otp",
+        normalizeEmailOtpVerified,
+        headers
+      )
+    },
+
+    verifyPhoneOtp(input) {
+      const phone = assertNonEmptyString(
+        input.phone,
+        "phone",
+        "twillio/verify-otp"
+      )
+      const otpCode = String(input.otp).trim()
+      if (!otpCode) {
+        throw new CubidApiError({
+          category: "validation",
+          code: "INVALID_INPUT",
+          endpoint: "twillio/verify-otp",
+          message: "otp is required.",
+        })
+      }
+
+      return makeRequest<CubidVerifyPhoneOtpResponse>(
+        fetchImpl,
+        baseUrl,
+        "/api/v2/twillio/verify-otp",
+        withCredentials({ otpCode, phone }),
+        "twillio/verify-otp",
+        normalizePhoneOtpVerified,
+        headers
+      )
     },
   }
 }

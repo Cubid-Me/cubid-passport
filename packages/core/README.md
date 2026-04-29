@@ -78,15 +78,28 @@ endpoints:
 
 - `createUser`
 - `ensureUserByEmail`
+- `addStamp`
 - `fetchIdentity`
 - `fetchScore`
 - `fetchStamps`
+- `fetchApproxLocation`
+- `fetchExactLocation`
+- `fetchRoughLocation`
+- `fetchUserData`
+- `searchLocation`
+- `sendEmailOtp`
+- `verifyEmailOtp`
+- `sendPhoneOtp`
+- `verifyPhoneOtp`
 - `syncIdentitySnapshot`
 
 Responses use SDK-friendly camelCase fields while retaining the original
 server payload in `raw` for migration/debugging. Malformed successful responses
 throw `CubidApiError` with `code: "MALFORMED_RESPONSE"` instead of returning an
 unsafe partial shape.
+
+OTP helpers intentionally return delivery or verification metadata only. They
+never expose raw OTP values, even if a legacy server payload includes one.
 
 Profile-completion flows and React components are intentionally deferred to
 later SDK tasks.
