@@ -3010,3 +3010,29 @@ Mark `E02.2.1` completed after the additional runtime-agnostic SDK wrappers and 
 #### Follow-up
 
 - publish the branch for review or proceed to E02.4 package validation/docs if the SDK surface is ready for broader release work
+
+### session: v105
+
+- timestamp: 2026-04-29T17:41:47Z
+- agent: **OpenAI Codex**
+- branch: **codex/e02-2-core-identity-sync**
+- head: **`5626b19`**
+- session name: **Start E02.4 Deno and integration DX**
+
+#### Objective
+
+Start E02.4 to add Deno/Supabase Edge validation, integration guidance, examples, and stability notes for `@cubid/core` before publication.
+
+#### Actions Taken
+
+- marked `E02.4` started on the current SDK feature branch
+- inspected existing package scripts, CI, docs, and local Deno availability
+- selected local source Deno validation plus JSR dry-run validation because `@cubid/core` is not yet published on JSR
+
+#### Verification
+
+- confirmed the repo is clean before E02.4 implementation changes
+
+#### Follow-up
+
+- add package-level Deno checks, CI wiring, integration docs, examples, and closeout metadata
