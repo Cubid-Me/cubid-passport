@@ -559,6 +559,17 @@ Package `@cubid/core` as the required public integration foundation that works c
 
 Make `@cubid/core` easier to adopt by exposing a small, typed, high-level server integration surface instead of forcing every app to compose low-level Cubid route calls by hand. The package should provide stable helpers such as `ensureUserByEmail`, `fetchIdentity`, `fetchScore`, and `fetchStamps`, plus an optional normalized identity snapshot result for systems that want one typed view of Cubid user state. As part of this, explicitly document the current “resolve or create by email” semantics so integrators know whether the operation is idempotent, what canonical user identifier is returned, what happens when the user already exists, and which failures are retry-safe. Add structured error modeling for auth/config failures, validation problems, transient upstream errors, rate limits, and identity-not-found versus not-yet-verified states.
 
+### E02.2.1 Port the best runtime-agnostic SDK ergonomics from `cubid-sdk-v2`
+
+- Status: Not started
+- Timestamp started: TBD
+- Timestamp completed: TBD
+- Feature branch: TBD
+- Head: TBD
+- Session-log reference(s): TBD
+
+Use the older `/Users/botmaster/src/cubid/cubid-sdk-v2/packages/api` implementation as a comparison source when expanding `@cubid/core`, but do not copy it blindly. Cherry-pick the stronger developer ergonomics: normalized camelCase response models, malformed-response detection, endpoint-aware error metadata, optional custom headers if still safe, and broader low-level wrappers for `addStamp`, location, user-data, search-location, and OTP routes where those routes remain part of the supported API story. Keep the newer `@cubid/core` security posture: no plaintext OTP exposure, no framework or Node-only assumptions, no broad legacy defaults that obscure the target origin, and no chain or React dependencies. The success condition is that `@cubid/core` becomes more pleasant and safer to consume without inheriting old package naming, insecure response shapes, or deprecated route assumptions.
+
 ### E02.3 Publish `@cubid/react` and chain SDK packages with profile-completion primitives
 
 - Status: Not started
@@ -569,6 +580,17 @@ Make `@cubid/core` easier to adopt by exposing a small, typed, high-level server
 - Session-log reference(s): TBD
 
 Turn the browser-side and ecosystem-specific integration layers into publishable packages that downstream apps can consume without local tarballs or repo-coupled wrappers. `@cubid/react` should own React hooks, components, AllowPage integration helpers, and profile-completion primitives, while chain packages such as `@cubid/evm`, `@cubid/wagmi`, `@cubid/solana`, `@cubid/cardano`, `@cubid/sui`, and `@cubid/near` isolate wallet and signing dependencies. The React flow should make inline phone capture, provider/stamp connection, and post-return refresh patterns easy without each app owning Cubid OAuth and callback complexity. Provide primitives such as a `PhoneOtpForm`, provider connect buttons or hooks, success/failure/cancel callbacks, and helpers that report available, verified, and missing recommended credentials in one normalized shape.
+
+### E02.3.1 Adapt the older web2, React, and wallet SDK prototypes into the new package model
+
+- Status: Not started
+- Timestamp started: TBD
+- Timestamp completed: TBD
+- Feature branch: TBD
+- Head: TBD
+- Session-log reference(s): TBD
+
+Review `/Users/botmaster/src/cubid/cubid-sdk-v2/packages/web2`, `web2-react`, and `web3` as prototype material for the new `@cubid/react` and chain-package ecosystem. Preserve the useful boundaries: headless AllowPage URL builders and callback-state helpers, provider stamp normalization, verified-stamp persistence callbacks, simple phone/email completion forms, provider connect buttons, and wallet adapter interfaces that keep chain-specific dependencies outside React and core. Translate them into the new target package names instead of reviving `@cubid/web2`, `@cubid/web2-react`, or `@cubid/web3`. Avoid copying bare prototype UI as final design; use the callback and adapter contracts as the valuable part. This todo should produce package-ready primitives that support downstream profile-completion flows without leaking OAuth, wallet, or chain complexity into application code.
 
 ### E02.4 Add Deno validation, integration guides, examples, and stability notes
 

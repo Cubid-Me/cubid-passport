@@ -2827,3 +2827,28 @@ Address Copilot review comments on PR #150 for `@cubid/core` base URL validation
 #### Follow-up
 
 - push the Copilot review fixes, reply to and resolve the review threads, then re-check PR CI and review state
+
+### session: v98
+
+- timestamp: 2026-04-29T16:07:20Z
+- agent: **OpenAI Codex**
+- branch: **codex/e02-2-core-identity-sync**
+- head: **`397c376`**
+- session name: **Capture SDK v2 cherry-pick roadmap follow-ups**
+
+#### Objective
+
+Commit the todo-only roadmap update that preserves the useful SDK comparison insights before starting E02.2 implementation work.
+
+#### Actions Taken
+
+- added `E02.2.1` to direct future `@cubid/core` work toward normalized responses, malformed-response handling, endpoint-aware errors, and selected low-level wrappers from the older SDK
+- added `E02.3.1` to preserve useful web2, React, and wallet adapter prototype ideas while translating them into the new target package model
+
+#### Verification
+
+- reviewed `agent-context/todo.md` diff for roadmap-only scope
+
+#### Follow-up
+
+- commit the roadmap-only update, then mark `E02.2` started on this branch with a separate session-log entry and commit
