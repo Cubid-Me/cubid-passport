@@ -261,13 +261,23 @@ const makeRequest = async <Result>(
   path: string,
   body: CubidRequestBody
 ): Promise<Result> => {
-  const response = await fetchImpl(`${baseUrl}${path}`, {
-    body: JSON.stringify(body),
-    headers: {
-      "content-type": "application/json",
-    },
-    method: "POST",
-  })
+  let response: Response
+  try {
+    response = await fetchImpl(`${baseUrl}${path}`, {
+      body: JSON.stringify(body),
+      headers: {
+        "content-type": "application/json",
+      },
+      method: "POST",
+    })
+  } catch (error) {
+    throw new CubidApiError({
+      category: "upstream",
+      details: error,
+      message: "Cubid API request failed before receiving a response.",
+    })
+  }
+
   const requestId = response.headers.get("x-request-id")
   const payload = await safeJson(response)
 

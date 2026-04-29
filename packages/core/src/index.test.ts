@@ -136,6 +136,32 @@ test("HTTP failures map to structured CubidApiError values", async () => {
   )
 })
 
+test("transport failures map to structured CubidApiError values", async () => {
+  const client = createCubidApiClient({
+    apiKey: "api_key",
+    baseUrl: "https://passport.cubid.me",
+    fetch: async () => {
+      throw new TypeError("network unavailable")
+    },
+  })
+
+  await assert.rejects(
+    () => client.fetchScore({ userId: "dapp_user_123" }),
+    (error) => {
+      assert.ok(error instanceof CubidApiError)
+      assert.equal(error.category, "upstream")
+      assert.equal(error.status, undefined)
+      assert.equal(error.requestId, undefined)
+      assert.equal(
+        error.message,
+        "Cubid API request failed before receiving a response."
+      )
+      assert.ok(error.details instanceof TypeError)
+      return true
+    }
+  )
+})
+
 test("createUser requires a dapp id without leaking the API key", async () => {
   const client = createCubidApiClient({
     apiKey: "very-secret-api-key",

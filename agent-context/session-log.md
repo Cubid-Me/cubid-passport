@@ -2776,3 +2776,28 @@ Rename the unpublished foundation package from `@cubid/api` to `@cubid/core` and
 #### Follow-up
 
 - configure npm Trusted Publishing and JSR linking for `@cubid/core`, then publish through the manual GitHub Actions workflow after this branch is merged
+
+### session: v96
+
+- timestamp: 2026-04-29T08:37:08Z
+- agent: **OpenAI Codex**
+- branch: **codex/e02-1-cubid-api-package**
+- head: **`2f277d5`**
+- session name: **Address PR 150 Codex transport-error review**
+
+#### Objective
+
+Address the Codex review comment on PR #150 about preserving the `@cubid/core` structured error contract for network-level fetch failures.
+
+#### Actions Taken
+
+- wrapped rejected `fetch` calls in `makeRequest` as `CubidApiError` with `upstream` category before any `Response` exists
+- added focused test coverage for transport failures so SDK consumers can reliably catch `CubidApiError`
+
+#### Verification
+
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/core test && pnpm --filter @cubid/core typecheck && pnpm --filter @cubid/core build && pnpm --filter @cubid/core pack:dry-run && pnpm --filter @cubid/core jsr:dry-run && pnpm check:core-package && pnpm test && pnpm typecheck && pnpm build && pnpm lint'`
+
+#### Follow-up
+
+- push the review fix, comment with the solution, resolve the Codex thread, and re-check PR CI
