@@ -3286,3 +3286,29 @@ Mark E03 completed after the shared actor self-identification contracts, MCP tru
 #### Follow-up
 
 - publish the branch for review, then consider a later runtime slice for persistence and UI onboarding for agent and organization actors
+
+### session: v111
+
+- timestamp: 2026-04-29T19:10:46Z
+- agent: **OpenAI Codex**
+- branch: **codex/e03-actor-identity-model**
+- head: **`df7761f`**
+- session name: **Start E04 actor onboarding persistence**
+
+#### Objective
+
+Start E04 as the runtime persistence and onboarding slice for human, agent, and organization self-identification, building on the E03 shared actor identity contracts.
+
+#### Actions Taken
+
+- marked `E04` started in `agent-context/todo.md`
+- kept the work on the existing E03 feature branch because this slice is stacked directly on the actor identity model contracts
+- scoped E04 to authenticated Passport persistence, Profile onboarding, and documentation for self-identified actor types rather than full global onboarding redesign
+
+#### Verification
+
+- confirmed the repository was clean before E04 metadata changes
+
+#### Follow-up
+
+- add actor profile persistence, authenticated Passport APIs, Profile UI onboarding, tests, docs, and closeout metadata
