@@ -27,7 +27,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "rm -rf dist && pnpm exec tsc -p tsconfig.build.json",
+    "build": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\" && pnpm exec tsc -p tsconfig.build.json",
     "lint": "pnpm exec tsc --noEmit -p tsconfig.json",
     "typecheck": "pnpm exec tsc --noEmit -p tsconfig.json",
     "test": "pnpm exec tsx --test src/*.test.ts",

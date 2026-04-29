@@ -33,6 +33,49 @@ test("createCubidApiClient rejects invalid configuration safely", () => {
       error.category === "config" &&
       !error.message.includes("api_")
   )
+
+  assert.throws(
+    () =>
+      createCubidApiClient({
+        apiKey: "key",
+        baseUrl: "file://localhost/tmp/cubid",
+      }),
+    (error) =>
+      error instanceof CubidApiError &&
+      error.category === "config" &&
+      error.message.includes("HTTPS")
+  )
+})
+
+test("createCubidApiClient allows HTTP only for loopback development hosts", async () => {
+  const inputs: Array<string | URL> = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    new URL("http://[::1]:3000"),
+  ]
+
+  for (const baseUrl of inputs) {
+    const client = createCubidApiClient({
+      apiKey: "api_key",
+      baseUrl,
+      fetch: async () => createJsonResponse({ cubid_score: 1 }),
+    })
+
+    const response = await client.fetchScore({ userId: "dapp_user_123" })
+    assert.deepEqual(response, { cubid_score: 1 })
+  }
+
+  assert.throws(
+    () =>
+      createCubidApiClient({
+        apiKey: "api_key",
+        baseUrl: "http://example.com",
+      }),
+    (error) =>
+      error instanceof CubidApiError &&
+      error.category === "config" &&
+      error.message.includes("loopback")
+  )
 })
 
 test("createUser posts legacy v2 payload with credentials", async () => {

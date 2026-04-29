@@ -156,11 +156,18 @@ const normalizeBaseUrl = (baseUrl: string | URL): string => {
     })
   }
 
-  if (parsed.protocol !== "https:" && parsed.hostname !== "localhost") {
+  const isLoopbackHost =
+    parsed.hostname === "localhost" ||
+    parsed.hostname === "127.0.0.1" ||
+    parsed.hostname === "[::1]"
+  const isAllowedProtocol =
+    parsed.protocol === "https:" || (parsed.protocol === "http:" && isLoopbackHost)
+
+  if (!isAllowedProtocol) {
     throw new CubidApiError({
       category: "config",
       message:
-        "Cubid API baseUrl must use HTTPS, except for localhost development.",
+        "Cubid API baseUrl must use HTTPS, except for loopback development hosts over HTTP.",
     })
   }
 

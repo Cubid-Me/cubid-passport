@@ -2801,3 +2801,29 @@ Address the Codex review comment on PR #150 about preserving the `@cubid/core` s
 #### Follow-up
 
 - push the review fix, comment with the solution, resolve the Codex thread, and re-check PR CI
+
+### session: v97
+
+- timestamp: 2026-04-29T08:38:53Z
+- agent: **OpenAI Codex**
+- branch: **codex/e02-1-cubid-api-package**
+- head: **`baa7758`**
+- session name: **Address PR 150 Copilot SDK polish comments**
+
+#### Objective
+
+Address Copilot review comments on PR #150 for `@cubid/core` base URL validation and cross-platform package builds.
+
+#### Actions Taken
+
+- tightened `baseUrl` validation so only HTTPS is allowed generally and HTTP is allowed only for loopback development hosts
+- added tests for loopback HTTP allowance, public HTTP rejection, and non-HTTP protocol rejection
+- replaced the `rm -rf dist` package build cleanup with a cross-platform Node `fs.rmSync` cleanup command
+
+#### Verification
+
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/core test && pnpm --filter @cubid/core typecheck && pnpm --filter @cubid/core build && pnpm --filter @cubid/core pack:dry-run && pnpm --filter @cubid/core jsr:dry-run && pnpm check:core-package && pnpm test && pnpm typecheck && pnpm build && pnpm lint'`
+
+#### Follow-up
+
+- push the Copilot review fixes, reply to and resolve the review threads, then re-check PR CI and review state
