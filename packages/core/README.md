@@ -1,6 +1,6 @@
-# `@cubid/api`
+# `@cubid/core`
 
-Runtime-agnostic Cubid API client for server-side integrations.
+Runtime-agnostic Cubid foundation client for server-side integrations.
 
 This package is intentionally small and standards-only. It does not import
 React, Next.js, Firebase, Supabase, Node built-ins, or browser-only helpers.
@@ -10,18 +10,18 @@ client can run in Node, Deno, Supabase Edge Functions, workers, and tests.
 ## Install
 
 ```sh
-npm install @cubid/api
+npm install @cubid/core
 ```
 
 ```ts
 // Deno / Supabase Edge, after the package is published to JSR.
-import { createCubidApiClient } from "jsr:@cubid/api"
+import { createCubidApiClient } from "jsr:@cubid/core"
 ```
 
 ## Basic Usage
 
 ```ts
-import { createCubidApiClient } from "@cubid/api"
+import { createCubidApiClient } from "@cubid/core"
 
 const cubid = createCubidApiClient({
   baseUrl: "https://passport.cubid.me",
@@ -44,7 +44,7 @@ Pass `fetch` explicitly when a runtime or test harness provides its own
 instrumented fetch implementation.
 
 ```ts
-import { createCubidApiClient } from "jsr:@cubid/api"
+import { createCubidApiClient } from "jsr:@cubid/core"
 
 const cubid = createCubidApiClient({
   baseUrl: Deno.env.get("CUBID_API_BASE_URL") ?? "https://passport.cubid.me",
@@ -98,6 +98,6 @@ The npm Trusted Publisher should be configured as:
 
 The JSR package should be linked to:
 
-- Package: `@cubid/api`
+- Package: `@cubid/core`
 - Repository: `Cubid-Me/cubid-passport`
 - Workflow: `.github/workflows/publish.yml`

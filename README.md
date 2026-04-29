@@ -1,6 +1,6 @@
 # Cubid Monorepo
 
-This repository is the umbrella monorepo for Cubid platform work. It now contains two active application workspaces, `@cubid/passport` and `@cubid/admin`, plus the first shared packages that normalize cross-app config and type contracts.
+This repository is the umbrella monorepo for Cubid platform work. It contains active Passport, Admin, and OIDC workspaces plus shared packages for configuration, domain contracts, and the public `@cubid/core` SDK foundation.
 
 The original Passport hackathon walkthrough is here:
 [YouTube demo](https://www.youtube.com/watch?v=Um1-IB7lmNg)
@@ -9,12 +9,13 @@ The original Passport hackathon walkthrough is here:
 
 - `apps/passport`: Next.js 14 app for passwordless identity onboarding, Gitcoin Passport stamp collection, dapp allow flows, and minting a Gitcoin Passport score onto NEAR as a soulbound token
 - `apps/admin`: Next.js 13 canary admin control plane for app configuration, page management, webhook management, API key rotation, and authenticated admin APIs backed by Firebase bearer-token verification and server-side Supabase access
+- `packages/core`: public runtime-agnostic `@cubid/core` package for API wrappers, shared SDK types, and structured client errors
 - `packages/config`: shared server-side environment helper package
 - `packages/types`: shared client-safe and server-safe type contracts
 
 ## Local Setup
 
-Use Node 20 and `pnpm`.
+Use Node 24 and `pnpm`.
 
 ```bash
 pnpm install
@@ -78,6 +79,7 @@ Known Admin env variables include:
 - `apps/passport/`: live Passport application workspace
 - `apps/admin/`: imported Admin control-plane workspace
 - `packages/config/`: shared env-loading helpers and monorepo config conventions
+- `packages/core/`: public `@cubid/core` SDK foundation
 - `packages/types/`: shared type contracts reused across workspaces
 - `agent-context/`: execution roadmap, session logs, and feature notes
 - `docs/engineering/`: architecture docs, operating model docs, and migration guidance
@@ -89,3 +91,9 @@ Known Admin env variables include:
 - stabilize the two-app monorepo contract across Passport and Admin
 - extract the next layer of shared packages once both apps are running from one workspace graph
 - add the dedicated OIDC service and shared identity packages
+
+## Agent And SDK Guidance
+
+- Product and protocol context lives in [agent-context/cubid-backgrounder.md](agent-context/cubid-backgrounder.md).
+- Public SDK/package boundaries live in [docs/engineering/sdk-package-target-state.md](docs/engineering/sdk-package-target-state.md).
+- Official public packages build toward `@cubid/core`, `@cubid/react`, and isolated chain-specific packages.

@@ -1,6 +1,6 @@
-# Cubid API Package
+# Cubid Core Package
 
-`@cubid/api` is the foundation package for external Cubid integrations. It is
+`@cubid/core` is the foundation package for external Cubid integrations. It is
 runtime-agnostic by design: no React, Next.js, Firebase, Supabase, Node-only
 APIs, or browser-only helpers. The package uses standard `fetch` and plain JSON
 contracts so it can run in Node, Deno, Supabase Edge Functions, workers, and
@@ -8,7 +8,7 @@ tests.
 
 ## E02.1 Contract
 
-- Package name: `@cubid/api`
+- Package name: `@cubid/core`
 - Initial version: `0.1.0`
 - Runtime target: ESM, standards-only
 - Initial surface: low-level wrappers for current Passport v2 routes
@@ -30,7 +30,7 @@ npm Trusted Publisher setup:
 
 JSR setup:
 
-- Scope/package: `@cubid/api`
+- Scope/package: `@cubid/core`
 - Linked GitHub repository: `Cubid-Me/cubid-passport`
 - Workflow: `.github/workflows/publish.yml`
 

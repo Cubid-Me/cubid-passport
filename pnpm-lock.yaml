@@ -542,18 +542,6 @@ importers:
         specifier: 5.2.2
         version: 5.2.2
 
-  packages/api:
-    devDependencies:
-      '@types/node':
-        specifier: ^24.0.0
-        version: 24.12.2
-      tsx:
-        specifier: ^4.20.6
-        version: 4.21.0
-      typescript:
-        specifier: 5.2.2
-        version: 5.2.2
-
   packages/auth:
     dependencies:
       zod:
@@ -583,6 +571,18 @@ importers:
         version: 5.2.2
 
   packages/config:
+    devDependencies:
+      '@types/node':
+        specifier: ^24.0.0
+        version: 24.12.2
+      tsx:
+        specifier: ^4.20.6
+        version: 4.21.0
+      typescript:
+        specifier: 5.2.2
+        version: 5.2.2
+
+  packages/core:
     devDependencies:
       '@types/node':
         specifier: ^24.0.0

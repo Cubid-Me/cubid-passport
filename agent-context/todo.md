@@ -532,34 +532,23 @@ Take the backgrounder’s core ideas seriously by making app-scoped identity and
 - Timestamp started: 2026-04-28T08:28:44Z
 - Timestamp completed: TBD
 - Feature branch: codex/e02-1-cubid-api-package
-- Head: ba0b51c
-- Session-log reference(s): session: v94
+- Head: 452874b
+- Session-log reference(s): session: v94, session: v95
 
-Turn the current mixed bag of legacy routes into a coherent developer platform. Define the canonical REST API v2 surface for app onboarding, user creation, score lookup, identity queries, consent status, claim retrieval, and webhook registration. Build first-party packages on top of those stable contracts so integrators stop depending on internal UI code, local tarballs, or undocumented route behavior. That now explicitly includes a dual-target `@cubid/api` package that works from both npm and JSR, plus publishable `@cubid/web2` and `@cubid/web2-react` packages for browser and React integrations. Standardize webhook events around meaningful protocol events such as consent granted, claim updated, score changed, stamp blacklisted, and subject revoked, with signed payloads and replay protection. Add versioning and compatibility rules so downstream apps can rely on Cubid as infrastructure rather than reverse-engineering a moving target.
+Turn the current mixed bag of legacy routes into a coherent developer platform. Define the canonical REST API v2 surface for app onboarding, user creation, score lookup, identity queries, consent status, claim retrieval, and webhook registration. Build first-party packages on top of those stable contracts so integrators stop depending on internal UI code, local tarballs, or undocumented route behavior. That now explicitly includes a dual-target `@cubid/core` package that works from both npm and JSR, plus a publishable SDK ecosystem for React and chain-specific integrations: `@cubid/react`, `@cubid/evm`, `@cubid/wagmi`, `@cubid/solana`, `@cubid/cardano`, `@cubid/sui`, and `@cubid/near`. Standardize webhook events around meaningful protocol events such as consent granted, claim updated, score changed, stamp blacklisted, and subject revoked, with signed payloads and replay protection. Add versioning and compatibility rules so downstream apps can rely on Cubid as infrastructure rather than reverse-engineering a moving target.
 
-### E02.1 Publish `@cubid/api` as a dual-target runtime-agnostic package
+### E02.1 Publish `@cubid/core` as a dual-target runtime-agnostic package
 
 - Status: Started
 - Timestamp started: 2026-04-28T08:28:44Z
 - Timestamp completed: TBD
 - Feature branch: codex/e02-1-cubid-api-package
-- Head: ba0b51c
-- Session-log reference(s): session: v94
+- Head: 452874b
+- Session-log reference(s): session: v94, session: v95
 
-Package `@cubid/api` as a real public integration surface that works cleanly from both npm and JSR, so downstream apps can import `@cubid/api` in Next.js and `jsr:@cubid/api` in Supabase Edge or other Deno runtimes without mirrors, tarballs, or path hacks. Keep the package strictly runtime-agnostic: no React, no browser-only helpers, and no Node-only assumptions beyond standards already available in modern runtimes. All request logic should rely on `fetch`, `RequestInit`, `Headers`, and plain JSON contracts, with callers able to inject `fetch` and server-held credentials explicitly. The output of this todo is a package layout, export map, build/publish setup, and usage contract that makes Cubid’s core API client feel native in both Node and Deno environments.
+Package `@cubid/core` as the required public integration foundation that works cleanly from both npm and JSR, so downstream apps can import `@cubid/core` in Next.js and `jsr:@cubid/core` in Supabase Edge or other Deno runtimes without mirrors, tarballs, or path hacks. Keep the package strictly runtime-agnostic: no React, no browser-only helpers, no Node-only assumptions, no chain SDKs, and no wagmi. All request logic should rely on `fetch`, `RequestInit`, `Headers`, and plain JSON contracts, with callers able to inject `fetch` and server-held credentials explicitly. The output of this todo is a package layout, export map, build/publish setup, and usage contract that makes Cubid’s core API client feel native in both Node and Deno environments.
 
-### E02.2 Add a stable server-facing identity sync contract to `@cubid/api`
-
-- Status: Not started
-- Timestamp started: TBD
-- Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
-
-Make `@cubid/api` easier to adopt by exposing a small, typed, high-level server integration surface instead of forcing every app to compose low-level Cubid route calls by hand. The package should provide stable helpers such as `ensureUserByEmail`, `fetchIdentity`, `fetchScore`, and `fetchStamps`, plus an optional normalized identity snapshot result for systems that want one typed view of Cubid user state. As part of this, explicitly document the current “resolve or create by email” semantics so integrators know whether the operation is idempotent, what canonical user identifier is returned, what happens when the user already exists, and which failures are retry-safe. Add structured error modeling for auth/config failures, validation problems, transient upstream errors, rate limits, and identity-not-found versus not-yet-verified states.
-
-### E02.3 Publish `@cubid/web2` and `@cubid/web2-react` with profile-completion primitives
+### E02.2 Add a stable server-facing identity sync contract to `@cubid/core`
 
 - Status: Not started
 - Timestamp started: TBD
@@ -568,7 +557,18 @@ Make `@cubid/api` easier to adopt by exposing a small, typed, high-level server 
 - Head: TBD
 - Session-log reference(s): TBD
 
-Turn the browser-side integration layer into publishable packages that downstream apps can consume without local tarballs or repo-coupled wrappers. `@cubid/web2` should own the web-facing protocol helpers and normalized client contracts, while `@cubid/web2-react` should add a clean extended-profile-completion flow for React applications. That flow should make inline phone capture, provider/stamp connection, and post-return refresh patterns easy to implement without each app owning Cubid OAuth and callback complexity. Provide primitives such as a `PhoneOtpForm`, provider connect buttons or hooks, success/failure/cancel callbacks, and helpers that report available, verified, and missing recommended credentials in one normalized shape. The goal is a small opinionated SDK surface that accelerates real integrations rather than exposing internal Passport implementation details.
+Make `@cubid/core` easier to adopt by exposing a small, typed, high-level server integration surface instead of forcing every app to compose low-level Cubid route calls by hand. The package should provide stable helpers such as `ensureUserByEmail`, `fetchIdentity`, `fetchScore`, and `fetchStamps`, plus an optional normalized identity snapshot result for systems that want one typed view of Cubid user state. As part of this, explicitly document the current “resolve or create by email” semantics so integrators know whether the operation is idempotent, what canonical user identifier is returned, what happens when the user already exists, and which failures are retry-safe. Add structured error modeling for auth/config failures, validation problems, transient upstream errors, rate limits, and identity-not-found versus not-yet-verified states.
+
+### E02.3 Publish `@cubid/react` and chain SDK packages with profile-completion primitives
+
+- Status: Not started
+- Timestamp started: TBD
+- Timestamp completed: TBD
+- Feature branch: TBD
+- Head: TBD
+- Session-log reference(s): TBD
+
+Turn the browser-side and ecosystem-specific integration layers into publishable packages that downstream apps can consume without local tarballs or repo-coupled wrappers. `@cubid/react` should own React hooks, components, AllowPage integration helpers, and profile-completion primitives, while chain packages such as `@cubid/evm`, `@cubid/wagmi`, `@cubid/solana`, `@cubid/cardano`, `@cubid/sui`, and `@cubid/near` isolate wallet and signing dependencies. The React flow should make inline phone capture, provider/stamp connection, and post-return refresh patterns easy without each app owning Cubid OAuth and callback complexity. Provide primitives such as a `PhoneOtpForm`, provider connect buttons or hooks, success/failure/cancel callbacks, and helpers that report available, verified, and missing recommended credentials in one normalized shape.
 
 ### E02.4 Add Deno validation, integration guides, examples, and stability notes
 
@@ -579,7 +579,7 @@ Turn the browser-side integration layer into publishable packages that downstrea
 - Head: TBD
 - Session-log reference(s): TBD
 
-Back the published packages with the DX and compatibility work needed for real external adoption. Add CI that proves `@cubid/api` is importable in Deno and usable in a Supabase-Edge-like environment, including a smoke import from the JSR form and a Deno-focused validation step in the normal package workflow. Write a dedicated integration guide for Next.js plus Supabase Edge that covers browser versus server usage, secret handling, phone OTP, provider handoff flows, and the post-return refresh pattern. Add copy-paste examples for resolving a Cubid user from an authenticated email, syncing an identity snapshot in an Edge Function, rendering linked or pending credential states in React, and collecting phone plus provider stamps after signup. Close with versioned API stability notes so downstream apps understand Cubid’s compatibility guarantees and deprecation posture.
+Back the published packages with the DX and compatibility work needed for real external adoption. Add CI that proves `@cubid/core` is importable in Deno and usable in a Supabase-Edge-like environment, including a smoke import from the JSR form and a Deno-focused validation step in the normal package workflow. Write a dedicated integration guide for Next.js plus Supabase Edge that covers browser versus server usage, secret handling, phone OTP, provider handoff flows, and the post-return refresh pattern. Add copy-paste examples for resolving a Cubid user from an authenticated email, syncing an identity snapshot in an Edge Function, rendering linked or pending credential states in React, and collecting phone plus provider stamps after signup. Close with versioned API stability notes so downstream apps understand Cubid’s compatibility guarantees and deprecation posture.
 
 ### E03. Add agent and organization identity support, including MCP-compatible interfaces
 

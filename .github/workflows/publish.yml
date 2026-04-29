@@ -4,12 +4,12 @@ on:
   workflow_dispatch:
     inputs:
       publish_npm:
-        description: "Publish @cubid/api to npm using Trusted Publishing"
+        description: "Publish @cubid/core to npm using Trusted Publishing"
         required: true
         default: false
         type: boolean
       publish_jsr:
-        description: "Publish @cubid/api to JSR using trusted publishing"
+        description: "Publish @cubid/core to JSR using trusted publishing"
         required: true
         default: false
         type: boolean
@@ -19,7 +19,7 @@ permissions:
   id-token: write
 
 jobs:
-  publish-api:
+  publish-core:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -40,19 +40,19 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Validate @cubid/api
+      - name: Validate @cubid/core
         run: |
-          pnpm --filter @cubid/api test
-          pnpm --filter @cubid/api typecheck
-          pnpm --filter @cubid/api build
-          pnpm --filter @cubid/api pack:dry-run
-          pnpm --filter @cubid/api jsr:dry-run
+          pnpm --filter @cubid/core test
+          pnpm --filter @cubid/core typecheck
+          pnpm --filter @cubid/core build
+          pnpm --filter @cubid/core pack:dry-run
+          pnpm --filter @cubid/core jsr:dry-run
 
-      - name: Publish @cubid/api to npm
+      - name: Publish @cubid/core to npm
         if: ${{ inputs.publish_npm }}
-        run: npm publish --workspace @cubid/api --access public --provenance
+        run: npm publish --workspace @cubid/core --access public --provenance
 
-      - name: Publish @cubid/api to JSR
+      - name: Publish @cubid/core to JSR
         if: ${{ inputs.publish_jsr }}
-        working-directory: packages/api
+        working-directory: packages/core
         run: pnpm dlx jsr publish

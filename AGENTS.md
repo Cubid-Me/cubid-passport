@@ -16,13 +16,16 @@ At the start of a new session, inspect and summarize the relevant work from:
 
 1. `todo.md` files inside any active `agent-context/` feature folders
 2. larger implementation notes or planned feature folders inside `agent-context/`
-3. open GitHub issues or PR comments when repository access is available
+3. `agent-context/cubid-backgrounder.md` for product and protocol principles
+4. `docs/engineering/sdk-package-target-state.md` before SDK/package work
+5. open GitHub issues or PR comments when repository access is available
 
 ## Repository Map
 
 - `apps/passport/`: live Passport app workspace containing the App Router UI, `pages/api` handlers, app config, shared components, hooks, and frontend support files
 - `apps/admin/`: admin control-plane workspace containing the admin UI shell, `pages/api/admin` handlers, Firebase bearer-token verification, and server-side Supabase access
 - `packages/config/`: shared environment helper package for server-side runtime configuration
+- `packages/core/`: public runtime-agnostic `@cubid/core` SDK foundation for API wrappers, shared SDK types, and structured client errors
 - `packages/types/`: shared type contracts that can be consumed by multiple workspaces
 - `apps/passport/public/`: Passport static assets
 - `agent-context/`: session logging, feature notes, and small local follow-ups
@@ -43,3 +46,4 @@ At the start of a new session, inspect and summarize the relevant work from:
 - Keep cleanup-only changes separate from feature work whenever practical.
 - Treat deprecated and v2-only database tables as quarantine surfaces. Do not build new features on them, refactor them, migrate them, drop them, or otherwise work on them unless a specific future todo explicitly names that cleanup. This includes `wallet_list`, `wallet_details`, `sui-api-accounts`, `near-api-accounts`, `eth-api-accounts`, `evm_accounts`, `authorized_dapps_deprecated`, `blacklist_deprecated`, and `dapp_stampscores_deprecated`.
 - In every final readout, explicitly report whether a commit was made, whether the repo is clean, and propose the next todo to tackle.
+- For public SDK/package work, build toward `@cubid/core`, `@cubid/react`, and chain-specific packages as described in `docs/engineering/sdk-package-target-state.md`.

@@ -1,302 +1,62 @@
-Here’s a clean, agent-oriented `backgrounder-for-agents.md` you can drop into your repo:
+# Cubid Backgrounder For Agents
+
+Read this before making product, design, architecture, or SDK decisions.
+
+Cubid is a proof-of-personhood and identity protocol. It gives apps a unified,
+privacy-preserving way to verify that users are human, manage identity data, and
+support secure app-scoped interactions without creating cross-app tracking.
+
+Cubid is API-first infrastructure. The product should feel easy for developers,
+SDKs, apps, and agents to consume, while still preserving user control and data
+minimization.
+
+## Who Cubid Serves
+
+- Developers and apps are the primary customer: they need humanity checks,
+  Sybil resistance, identity signals, wallets, secrets, location, webhooks, and
+  reliable APIs.
+- End users are the protected subject: they build reusable identity depth,
+  choose what to disclose, and should not be forced into heavy KYC-style flows.
+- Agents and organizations are future identity classes. They must be identified
+  honestly as non-human or non-person actors and must not masquerade as humans.
+
+## Core Capabilities
+
+- Identity: create users from email, phone, OAuth, wallet, or other supported
+  identifiers; fetch identity data and stamps; provide app-scoped user IDs; and
+  release data through explicit selective disclosure.
+- Humanity and trust: compute humanity scores, detect duplicate or Sybil-like
+  identities, and notify apps when scores or trust signals change.
+- Wallets: generate and manage user wallets across supported ecosystems. Chain
+  logic must remain isolated by ecosystem.
+- Secrets: store and retrieve user-scoped secrets through secure server-side
+  APIs. Advanced encryption/custody helpers belong in dedicated packages when
+  they grow beyond core API wrappers.
+- Location: provide approximate or precise geo data only when permissioned.
+- Comms: emerging capability for reaching users through approved channels such
+  as email, SMS, or other future user-controlled channels.
+
+## Architectural Principles
+
+- API-first: every durable capability should have a clear HTTP/API contract.
+- App-scoped identity: each app gets its own user identifier; never expose raw
+  cross-app identifiers to relying parties.
+- Minimal app storage: integrators should usually store only Cubid `user_id`
+  and fetch current identity, score, and permission state as needed.
+- Selective disclosure: users control which identity data each app can see.
+- Privacy by default: collect less data, expose less data, and assume breaches
+  can happen.
+- Modular but coherent: Cubid is one identity protocol exposed through a small
+  number of focused SDKs, not a grab bag of unrelated utilities.
+
+## Agent Decision Rules
+
+- Prefer protocol and API clarity over app-specific shortcuts.
+- Prefer app-scoped identifiers and consent-aware data release over shared
+  identifiers or broad PII exposure.
+- Do not hardcode identity assumptions, user traits, or cross-app mappings.
+- If a decision conflicts with privacy, user control, or protocol openness,
+  privacy, user control, and openness win.
+- For SDK/package boundaries, use
+  `docs/engineering/sdk-package-target-state.md` as the source of truth.
 
----
-
-# Cubid Backgrounder (for Coding Agents)
-
-This document provides essential context about Cubid.
-**Read this before making product, design, or architecture decisions.**
-
-Cubid is not “just another app.” It is **public-good identity infrastructure** designed to solve proof-of-personhood and Sybil resistance at internet scale.
-
----
-
-## Primary user: who is this for?
-
-### 1. End users (humans)
-
-* People who want to **prove they are unique, real humans**
-* Privacy-conscious users who want **control over their identity data**
-* Users who benefit from **reusable identity across apps**
-
-### 2. Developers / apps (core customer)
-
-* Founders building apps that need:
-
-  * One-person-one-account
-  * Bot resistance
-  * Fair distribution (airdrops, voting, UBI, etc.)
-
-### 3. Secondary identities
-
-* **Agents (AI systems)** → can identify themselves explicitly as non-human
-* **Organizations** → can have identities distinct from humans
-
-👉 Key idea:
-Humans are the *audience*, but **developers are the primary customers**.
-
----
-
-## Primary goal: what must they do?
-
-### For users
-
-* Build a **Cubid identity (“passport”)**
-* Add and verify **stamps** (email, phone, wallet, etc.)
-* Grant **selective access** to apps via the Allow Page
-* Increase their **personhood score**
-
-### For apps
-
-* Integrate Cubid via:
-
-  * API (REST)
-  * React SDK
-  * MCP (Model Context Protocol) for agents
-* Use Cubid to:
-
-  * Create users
-  * Query identity + score
-  * Enforce access / trust rules
-
-👉 Core action loop:
-
-1. App creates user
-2. User authorizes data sharing
-3. App queries score / identity
-4. App adapts behavior
-
----
-
-## Business goal: what does success look like?
-
-Success is **not** page views or engagement.
-
-Success = **adoption of the protocol**
-
-### Key indicators:
-
-* # of integrated apps
-* # of verified users (high score)
-* # of identity interactions (API usage)
-* Reduction in:
-
-  * Bots
-  * Fake accounts
-  * Sybil attacks
-
-### Strategic outcome:
-
-* Cubid becomes the **default identity + trust layer of the internet**
-
-👉 Important:
-Cubid is **infrastructure**, not a destination product. 
-
----
-
-## Content: what is real copy/data?
-
-### Real data (source of truth)
-
-* Stamps (email, phone, wallet, etc.)
-* Score (probabilistic proof-of-personhood)
-* Permissions (what user shares with each app)
-* Webhook events (identity changes)
-
-### Generated / derived data
-
-* “Human score”
-* Boolean checks (e.g. is_human, is_adult)
-* App-specific scoring overlays
-
-### Not real / should not be hardcoded
-
-* Identity assumptions
-* Cross-app identifiers
-* Persistent user PII in app databases
-
-👉 Principle:
-Apps should **store only `user_id`** and fetch everything else dynamically.
-
----
-
-## Brand signals: colours / logo / type / voice
-
-### Brand traits
-
-* **Trustworthy but not institutional**
-* **Technical but accessible**
-* **Privacy-first, user-empowering**
-* **Open ecosystem, not walled garden**
-
-### Voice
-
-* Clear, direct, slightly informal
-* Avoid jargon unless necessary
-* Emphasize:
-
-  * Control
-  * Privacy
-  * Collaboration
-  * Global scale
-
-### Conceptual metaphors
-
-* “Passport”
-* “Stamps”
-* “Score”
-* “Identity you own”
-
-👉 Avoid:
-
-* Corporate KYC tone
-* Surveillance vibes
-* “We own your data” implications
-
----
-
-## Constraints
-
-### Tech stack
-
-* **Frontend:** Next.js
-* **Backend:** Supabase (Postgres + auth + storage)
-* **APIs:** REST (CUBID API v2)
-* **SDK:** React-based
-* **Agent support:** MCP-compatible interfaces
-
----
-
-### Architecture principles
-
-* API-first system
-* Stateless integrations where possible
-* App-scoped user IDs (no global identifiers)
-* Zero-knowledge / minimal disclosure
-* Event-driven (webhooks)
-
----
-
-### Privacy & security (non-negotiable)
-
-* Do NOT store unnecessary user data
-* Always respect:
-
-  * App-scoped identity
-  * User-controlled disclosure
-* Assume:
-
-  * Data minimization is required
-  * Breaches will happen → design defensively
-
----
-
-### Accessibility target
-
-* Aim for **WCAG 2.1 AA minimum**
-* Low-friction onboarding (critical for adoption)
-* Avoid CAPTCHA-like UX unless absolutely necessary
-
----
-
-### Product constraints
-
-* Must work globally
-* Must support:
-
-  * Anonymous users
-  * No-ID users (paperless population)
-* Must remain:
-
-  * Modular
-  * Opt-in
-  * Non-prescriptive
-
----
-
-### Timeline reality
-
-* Current version (non-canonical):
-  [https://passport.cubid.me](https://passport.cubid.me)
-* Expect:
-
-  * Iteration
-  * Incomplete features
-  * Evolving APIs
-
-👉 Build for **change**, not stability.
-
----
-
-## Mental model (critical)
-
-Cubid is:
-
-* ✅ A **protocol**
-* ✅ A **trust network**
-* ✅ A **shared identity layer**
-
-Cubid is NOT:
-
-* ❌ A login system
-* ❌ A social network
-* ❌ A centralized identity provider
-
----
-
-## Key concepts agents must respect
-
-### 1. App-scoped identity
-
-* Same user ≠ same ID across apps
-* Prevents cross-app tracking
-
-### 2. Stamps
-
-* Atomic identity proofs
-* Can be verified, blacklisted, or expired
-
-### 3. Score
-
-* Probabilistic “humanness”
-* Not binary truth
-
-### 4. Selective disclosure
-
-* Users control what each app sees
-
-### 5. Collaboration
-
-* Apps strengthen each other’s trust signals
-
----
-
-## Anti-goals (do NOT build toward)
-
-* Centralized identity ownership
-* Cross-app user tracking
-* Heavy KYC-first flows
-* Friction-heavy onboarding
-* App-specific identity silos
-
----
-
-## If unsure, default to:
-
-* Less data collection
-* More user control
-* API-driven design
-* Composability over rigidity
-* Protocol thinking over product thinking
-
----
-
-If you’re making a decision and it conflicts with:
-
-* privacy → privacy wins
-* user control → user wins
-* protocol openness → openness wins
-
----
-
-EOD
