@@ -1,0 +1,31 @@
+{
+  "name": "@cubid/wagmi",
+  "version": "0.1.0",
+  "description": "wagmi-facing Cubid integration contracts for EVM React apps.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": { ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" } },
+  "files": ["dist", "README.md"],
+  "sideEffects": false,
+  "publishConfig": { "access": "public" },
+  "dependencies": {
+    "@cubid/evm": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": ">=18.2.0",
+    "wagmi": ">=2.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.14",
+    "typescript": "5.2.2"
+  },
+  "scripts": {
+    "build": "pnpm --filter @cubid/evm build && node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\" && pnpm exec tsc -p tsconfig.build.json",
+    "lint": "pnpm --filter @cubid/evm build && pnpm exec tsc --noEmit -p tsconfig.json",
+    "typecheck": "pnpm --filter @cubid/evm build && pnpm exec tsc --noEmit -p tsconfig.json",
+    "test": "echo \"No @cubid/wagmi tests yet\"",
+    "format": "echo \"No format changes required for @cubid/wagmi\"",
+    "format:write": "echo \"No format changes required for @cubid/wagmi\""
+  }
+}

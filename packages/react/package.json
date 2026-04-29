@@ -1,0 +1,44 @@
+{
+  "name": "@cubid/react",
+  "version": "0.1.0",
+  "description": "React primitives for Cubid profile completion, AllowPage handoff, and credential collection flows.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@cubid/core": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": ">=18.2.0",
+    "react-dom": ">=18.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/react": "^18.2.14",
+    "@types/react-dom": "^18.2.6",
+    "tsx": "^4.20.6",
+    "typescript": "5.2.2"
+  },
+  "scripts": {
+    "build": "pnpm --filter @cubid/core build && node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\" && pnpm exec tsc -p tsconfig.build.json",
+    "lint": "pnpm --filter @cubid/core build && pnpm exec tsc --noEmit -p tsconfig.json",
+    "typecheck": "pnpm --filter @cubid/core build && pnpm exec tsc --noEmit -p tsconfig.json",
+    "test": "pnpm exec tsx --test src/*.test.ts",
+    "format": "echo \"No format changes required for @cubid/react\"",
+    "format:write": "echo \"No format changes required for @cubid/react\""
+  }
+}

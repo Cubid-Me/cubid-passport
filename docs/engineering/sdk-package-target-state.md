@@ -60,7 +60,19 @@ but should not accumulate heavy crypto custody dependencies.
 
 ## Current E02 Direction
 
-E02 starts by publishing `@cubid/core` as the dual-target npm/JSR foundation.
-High-level identity sync helpers, React profile-completion primitives, chain SDK
-packages, Deno/Supabase Edge examples, and API stability notes build on that
-foundation in later E02 slices.
+E02 starts by publishing `@cubid/core` as the dual-target npm/JSR foundation,
+then layers in package-ready integration surfaces:
+
+- `@cubid/core` now owns the runtime-agnostic API client, identity sync helpers,
+  normalized responses, Deno validation, and Edge examples.
+- `@cubid/react` owns React-only profile completion primitives, including phone
+  OTP UI, provider connect buttons, AllowPage URL helpers, callback-state
+  helpers, and missing-recommended-credential summaries.
+- Chain package workspaces now exist as dependency-isolated homes for
+  chain-specific wallet/stamp contracts. The first slice keeps them lightweight
+  and does not yet add heavy SDKs or signing implementations.
+- `@cubid/wagmi` is the only package with a wagmi peer boundary. It can add
+  wagmi hooks/connectors later without leaking wagmi into core or React.
+
+Live npm/JSR publication still requires trusted-publisher setup and explicit
+release workflow execution.

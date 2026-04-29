@@ -3116,3 +3116,37 @@ Start the missing E02.3 package slice after confirming E02.2 and E02.4 were alre
 #### Follow-up
 
 - add package-ready React and chain SDK workspaces, tests, docs, validation, and closeout metadata
+
+### session: v115
+
+- timestamp: 2026-04-29T19:38:55Z
+- agent: **OpenAI Codex**
+- branch: **codex/e02-2-core-identity-sync**
+- head: **`789e3a5`**
+- session name: **Implement E02.3 React and chain SDK package foundations**
+
+#### Objective
+
+Implement the missing E02.3 package slice with publishable React profile-completion primitives and chain-specific package boundaries.
+
+#### Actions Taken
+
+- added `@cubid/react` with React provider/hooks, `PhoneOtpForm`, provider connect buttons, AllowPage URL helpers, callback-state helpers, and missing recommended credential summaries
+- added publishable chain package workspaces for `@cubid/evm`, `@cubid/solana`, `@cubid/cardano`, `@cubid/sui`, and `@cubid/near`
+- added `@cubid/wagmi` as the wagmi-only package boundary with EVM stamp-data integration helpers
+- kept heavy chain SDKs out of this first package slice so `@cubid/core` and `@cubid/react` remain cleanly bounded
+- updated the SDK target-state doc with the implemented E02 package layering
+
+#### Verification
+
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/react test && pnpm --filter @cubid/react typecheck && pnpm --filter @cubid/react build'`
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/evm test && pnpm --filter @cubid/evm typecheck && pnpm --filter @cubid/evm build'`
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/solana typecheck && pnpm --filter @cubid/solana build && pnpm --filter @cubid/cardano typecheck && pnpm --filter @cubid/cardano build && pnpm --filter @cubid/sui typecheck && pnpm --filter @cubid/sui build'`
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/near typecheck && pnpm --filter @cubid/near build && pnpm --filter @cubid/wagmi typecheck && pnpm --filter @cubid/wagmi build'`
+- `npx -p node@24 -c 'node --version && pnpm test'`
+- `npx -p node@24 -c 'node --version && pnpm typecheck'`
+- `npx -p node@24 -c 'node --version && pnpm build'`
+
+#### Follow-up
+
+- commit the E02.3 implementation, then mark E02.3 completed with the implementation head
