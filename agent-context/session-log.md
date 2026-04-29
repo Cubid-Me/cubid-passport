@@ -3312,3 +3312,35 @@ Start E04 as the runtime persistence and onboarding slice for human, agent, and 
 #### Follow-up
 
 - add actor profile persistence, authenticated Passport APIs, Profile UI onboarding, tests, docs, and closeout metadata
+
+### session: v112
+
+- timestamp: 2026-04-29T19:18:11Z
+- agent: **OpenAI Codex**
+- branch: **codex/e03-actor-identity-model**
+- head: **`26b17c4`**
+- session name: **Implement E04 actor profile persistence and onboarding**
+
+#### Objective
+
+Add the first runtime persistence and Passport onboarding surface for self-identified human, agent, and organization actors.
+
+#### Actions Taken
+
+- added a locked `public.actor_profiles` migration with one service-role-owned profile per Firebase user
+- added authenticated Passport actor profile get/upsert APIs using the shared Passport API baseline
+- added Passport Profile UI for choosing human, agent, or organization identity type with visible trust-policy copy
+- wired Passport to `@cubid/identity` so runtime responses use the E03 validation-policy contracts
+- added Passport route tests for default human profiles, organization persistence, agent affiliation persistence, and contradictory metadata rejection
+- updated the actor identity engineering doc with E04 persistence, API, and onboarding boundaries
+
+#### Verification
+
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/passport test'`
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/passport typecheck'`
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/identity test && pnpm --filter @cubid/identity typecheck'`
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/passport build'`
+
+#### Follow-up
+
+- mark E04 completed after the implementation commit lands

@@ -32,6 +32,7 @@ type DappUserRow = {
 }
 
 export class MockPassportSupabase {
+  readonly actorProfiles = new Map<string, Record<string, unknown>>()
   readonly buckets = new Map<string, BucketRow>()
   readonly dappApiKeys = new Map<string, DappApiKeyRow>()
   readonly dappUserAccounts: Array<Record<string, unknown>> = []
@@ -168,6 +169,44 @@ export class MockPassportSupabase {
         insert: async (row: Record<string, unknown>) => {
           this.eventInserts.push(row)
           return { error: null }
+        },
+      }
+    }
+
+    if (table === "actor_profiles") {
+      return {
+        select: () => {
+          const filters: Record<string, unknown> = {}
+          const query = {
+            eq: (column: string, value: unknown) => {
+              filters[column] = value
+              return query
+            },
+            maybeSingle: async () => {
+              const row =
+                this.actorProfiles.get(String(filters.firebase_uid)) ?? null
+              return { data: row, error: null }
+            },
+          }
+          return query
+        },
+        upsert: (row: Record<string, unknown>) => {
+          const now = new Date().toISOString()
+          const firebaseUid = String(row.firebase_uid)
+          const existing = this.actorProfiles.get(firebaseUid)
+          const stored = {
+            created_at: existing?.created_at ?? now,
+            id: existing?.id ?? `actor_profile_${this.actorProfiles.size + 1}`,
+            ...existing,
+            ...row,
+            updated_at: row.updated_at ?? now,
+          }
+          this.actorProfiles.set(firebaseUid, stored)
+          return {
+            select: () => ({
+              maybeSingle: async () => ({ data: stored, error: null }),
+            }),
+          }
         },
       }
     }

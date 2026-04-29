@@ -192,6 +192,9 @@ importers:
       '@cubid/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@cubid/identity':
+        specifier: workspace:*
+        version: link:../../packages/identity
       '@cubid/types':
         specifier: workspace:*
         version: link:../../packages/types
