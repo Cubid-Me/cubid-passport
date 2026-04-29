@@ -2984,3 +2984,29 @@ Complete `E02.2.1` by porting the remaining useful runtime-agnostic SDK ergonomi
 #### Follow-up
 
 - commit the implementation, then close `E02.2.1` metadata with the implementation commit head
+
+### session: v104
+
+- timestamp: 2026-04-29T17:31:33Z
+- agent: **OpenAI Codex**
+- branch: **codex/e02-2-core-identity-sync**
+- head: **`e995f0e`**
+- session name: **Close E02.2.1 SDK ergonomics port**
+
+#### Objective
+
+Mark `E02.2.1` completed after the additional runtime-agnostic SDK wrappers and safety tests landed.
+
+#### Actions Taken
+
+- updated `agent-context/todo.md` with the E02.2.1 completion timestamp
+- recorded the implementation commit as the E02.2.1 head
+- attached the start, implementation, and closeout session-log references to the todo
+
+#### Verification
+
+- confirmed the E02.2.1 metadata points at implementation head `e995f0e`
+
+#### Follow-up
+
+- publish the branch for review or proceed to E02.4 package validation/docs if the SDK surface is ready for broader release work
