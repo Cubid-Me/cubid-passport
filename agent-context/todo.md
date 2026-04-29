@@ -616,11 +616,11 @@ Expand the platform beyond human passports in a way that matches the backgrounde
 
 ### E04. Improve global onboarding, accessibility, and low-friction trust progression
 
-- Status: Started
+- Status: Completed
 - Timestamp started: 2026-04-29T19:10:46Z
-- Timestamp completed: TBD
+- Timestamp completed: 2026-04-29T19:18:41Z
 - Feature branch: codex/e03-actor-identity-model
-- Head: df7761f
-- Session-log reference(s): session: v111
+- Head: 4b42692
+- Session-log reference(s): session: v111, session: v112, session: v113
 
 Translate the backgrounder’s product constraints into concrete engineering work. Redesign onboarding and verification journeys so they remain accessible, globally usable, and low-friction for users with limited documentation, limited bandwidth, or limited digital literacy. Establish an accessibility bar of WCAG 2.1 AA across Passport and Admin, including keyboard support, semantic structure, announcement behavior, color contrast, and readable step flows. Replace hard assumptions about phone, email, or wallet availability with progressive trust accumulation so users can start with minimal identity signals and deepen later. This work should include telemetry that measures abandonment at each step without capturing unnecessary personal data. The outcome should be a trust platform that grows identity depth without turning into a heavy KYC product, which is central to the Cubid mission.

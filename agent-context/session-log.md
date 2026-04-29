@@ -3344,3 +3344,29 @@ Add the first runtime persistence and Passport onboarding surface for self-ident
 #### Follow-up
 
 - mark E04 completed after the implementation commit lands
+
+### session: v113
+
+- timestamp: 2026-04-29T19:18:41Z
+- agent: **OpenAI Codex**
+- branch: **codex/e03-actor-identity-model**
+- head: **`4b42692`**
+- session name: **Close E04 actor onboarding persistence**
+
+#### Objective
+
+Close E04 after actor profile persistence, authenticated Passport APIs, Profile onboarding UI, docs, and tests landed.
+
+#### Actions Taken
+
+- marked `E04` completed in `agent-context/todo.md`
+- recorded implementation head `4b42692`
+- attached the E04 start, implementation, and closeout session-log references
+
+#### Verification
+
+- confirmed the E04 implementation commit exists at `4b42692`
+
+#### Follow-up
+
+- publish the stacked E03/E04 branch for review, or continue with the next identity runtime slice if desired
