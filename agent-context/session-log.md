@@ -2852,3 +2852,29 @@ Commit the todo-only roadmap update that preserves the useful SDK comparison ins
 #### Follow-up
 
 - commit the roadmap-only update, then mark `E02.2` started on this branch with a separate session-log entry and commit
+
+### session: v99
+
+- timestamp: 2026-04-29T16:07:42Z
+- agent: **OpenAI Codex**
+- branch: **codex/e02-2-core-identity-sync**
+- head: **`4cf2f89`**
+- session name: **Start E02.2 core identity sync**
+
+#### Objective
+
+Mark `E02.2` started on the new feature branch before implementing the `@cubid/core` high-level identity sync helpers.
+
+#### Actions Taken
+
+- updated `agent-context/todo.md` so `E02.2` is started on `codex/e02-2-core-identity-sync`
+- recorded the roadmap commit SHA as the starting head for the task
+- kept implementation work out of the metadata-start commit
+
+#### Verification
+
+- reviewed the E02.2 metadata fields after editing
+
+#### Follow-up
+
+- implement the `@cubid/core` identity sync helpers, normalized response models, and malformed-response handling guided by `E02.2` and `E02.2.1`
