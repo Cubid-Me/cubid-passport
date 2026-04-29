@@ -51,3 +51,20 @@ JSR setup:
 The publish workflow is manual (`workflow_dispatch`) so maintainers choose when
 to release. Normal CI performs npm pack and JSR dry-runs to catch packaging
 regressions before release.
+
+## Deno And Edge Validation
+
+The package includes a Deno smoke check at
+`packages/core/deno/supabase-edge-smoke.ts`. It imports the TypeScript source
+directly and models a Supabase Edge Function using `Deno.env`, injected `fetch`,
+`ensureUserByEmail`, and `syncIdentitySnapshot`.
+
+Run:
+
+```sh
+pnpm --filter @cubid/core deno:check
+```
+
+This validates Deno/Supabase Edge importability before publication. The
+published JSR import path remains `jsr:@cubid/core` and is documented in
+`docs/engineering/next-supabase-edge-integration-guide.md`.

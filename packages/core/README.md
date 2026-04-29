@@ -104,6 +104,21 @@ never expose raw OTP values, even if a legacy server payload includes one.
 Profile-completion flows and React components are intentionally deferred to
 later SDK tasks.
 
+## Deno Validation
+
+The package includes a Supabase-Edge-style Deno smoke check that imports the
+TypeScript source directly before publish:
+
+```sh
+pnpm --filter @cubid/core deno:check
+```
+
+After trusted publishing is configured and the package is released, Edge
+Functions should import from `jsr:@cubid/core`.
+
+See `docs/engineering/next-supabase-edge-integration-guide.md` for Next.js and
+Supabase Edge examples.
+
 ## Errors
 
 Failed requests throw `CubidApiError` with:

@@ -3036,3 +3036,31 @@ Start E02.4 to add Deno/Supabase Edge validation, integration guidance, examples
 #### Follow-up
 
 - add package-level Deno checks, CI wiring, integration docs, examples, and closeout metadata
+
+### session: v106
+
+- timestamp: 2026-04-29T17:44:44Z
+- agent: **OpenAI Codex**
+- branch: **codex/e02-2-core-identity-sync**
+- head: **`6dbd328`**
+- session name: **Add E02.4 Deno and Edge integration validation**
+
+#### Objective
+
+Add the Deno/Supabase Edge validation and integration guidance needed before publishing `@cubid/core`.
+
+#### Actions Taken
+
+- added a package-level Deno smoke check that imports local `@cubid/core` TypeScript source and models a Supabase Edge Function
+- wired Deno setup into CI and the manual publish workflow, and added `deno:check` to the root core-package validation contract
+- added a Next.js plus Supabase Edge integration guide with copy-paste examples for user resolution, identity snapshots, OTP flows, and post-return refresh
+- updated `@cubid/core` README and engineering docs with Deno validation and JSR usage guidance
+
+#### Verification
+
+- `pnpm --filter @cubid/core deno:check`
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/core test && pnpm --filter @cubid/core typecheck && pnpm --filter @cubid/core deno:check && pnpm --filter @cubid/core build && pnpm --filter @cubid/core pack:dry-run && pnpm --filter @cubid/core jsr:dry-run && pnpm check:core-package'`
+
+#### Follow-up
+
+- commit the E02.4 implementation, then close E02.4 metadata with the implementation head
