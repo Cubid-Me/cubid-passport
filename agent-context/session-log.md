@@ -3233,3 +3233,30 @@ Start E03 to add human, agent, and organization self-identification support with
 #### Follow-up
 
 - implement the shared actor identity model, MCP trust response contracts, minimal OIDC claim definitions, docs, tests, and closeout metadata
+
+### session: v109
+
+- timestamp: 2026-04-29T18:00:37Z
+- agent: **OpenAI Codex**
+- branch: **codex/e03-actor-identity-model**
+- head: **`7e305fc`**
+- session name: **Implement E03 actor identity contracts**
+
+#### Objective
+
+Implement shared human, agent, and organization identity contracts with MCP-compatible trust envelopes while keeping deep validation and humanity scoring focused on humans.
+
+#### Actions Taken
+
+- added `@cubid/identity` actor self-identification types, normalization helpers, validation-policy defaults, score/stamp eligibility helpers, and `cubid-mcp-trust:v1` response contracts
+- added tests proving organizations and agents are self-identified, non-human actors are not personhood-score eligible, and MCP trust responses suppress non-human score contribution
+- added actor self-identification claims to `@cubid/claims` under `cubid:claims`
+- documented the actor identity model and aligned the OIDC architecture doc with the E03 shared-contract boundary
+
+#### Verification
+
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/identity test && pnpm --filter @cubid/identity typecheck && pnpm --filter @cubid/claims test && pnpm --filter @cubid/claims typecheck && pnpm --filter @cubid/identity build && pnpm --filter @cubid/claims build'`
+
+#### Follow-up
+
+- commit the E03 implementation, then mark E03 completed with the implementation head

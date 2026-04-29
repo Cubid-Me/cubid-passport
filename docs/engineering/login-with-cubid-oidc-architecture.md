@@ -176,7 +176,7 @@ The issuer URL stays stable even if the runtime location or deployment platform 
 
 - Human identities are the only first-class end-user subject type in v1.
 - Service clients may authenticate as software clients for Cubid APIs, but they are not end-user identities.
-- Agent and organization subjects are deferred to later roadmap work and are not encoded in B01 human token semantics.
+- Agent and organization runtime subjects are deferred from B01/B02 token issuance, but E03 defines their shared self-identification and claim contracts in `docs/engineering/actor-identity-model.md`.
 
 ## Pairwise Subject Policy
 
@@ -880,7 +880,7 @@ sequenceDiagram
 The following are intentionally not part of B01 or B02 scope:
 
 - passkeys and WebAuthn credential lifecycle
-- agent or organization subject support
+- runtime OIDC login/token issuance for agent or organization subjects
 - broad arbitrary data export to relying parties
 - partner-specific custom claim registry UI and workflows
 - sector identifier grouping across multiple clients under the same owner

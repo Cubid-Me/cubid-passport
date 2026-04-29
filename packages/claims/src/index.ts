@@ -209,6 +209,38 @@ export const CLAIM_DEFINITIONS: readonly OidcClaimDefinition[] = [
     tokenEligible: false,
     userinfoEligible: true,
   },
+  {
+    name: "cubid_actor_type",
+    scopes: ["cubid:claims"],
+    classification: "identity",
+    description: "Self-identified Cubid actor type: human, agent, or organization.",
+    tokenEligible: true,
+    userinfoEligible: true,
+  },
+  {
+    name: "cubid_actor_self_identification",
+    scopes: ["cubid:claims"],
+    classification: "json",
+    description: "Structured self-identification details for agent and organization actors.",
+    tokenEligible: false,
+    userinfoEligible: true,
+  },
+  {
+    name: "cubid_agent_supports_human",
+    scopes: ["cubid:claims"],
+    classification: "boolean",
+    description: "Whether an agent self-identifies as supporting a single human actor.",
+    tokenEligible: true,
+    userinfoEligible: true,
+  },
+  {
+    name: "cubid_organization_kind",
+    scopes: ["cubid:claims"],
+    classification: "identity",
+    description: "Organization self-identification kind such as team, group, network, or formal organization.",
+    tokenEligible: true,
+    userinfoEligible: true,
+  },
 ] as const;
 
 function createDisplayName(claimName: string): string {
