@@ -572,12 +572,12 @@ Use the older `/Users/botmaster/src/cubid/cubid-sdk-v2/packages/api` implementat
 
 ### E02.3 Publish `@cubid/react` and chain SDK packages with profile-completion primitives
 
-- Status: Not started
-- Timestamp started: TBD
+- Status: Started
+- Timestamp started: 2026-04-29T19:27:57Z
 - Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Feature branch: codex/e02-2-core-identity-sync
+- Head: 36f121b
+- Session-log reference(s): session: v114
 
 Turn the browser-side and ecosystem-specific integration layers into publishable packages that downstream apps can consume without local tarballs or repo-coupled wrappers. `@cubid/react` should own React hooks, components, AllowPage integration helpers, and profile-completion primitives, while chain packages such as `@cubid/evm`, `@cubid/wagmi`, `@cubid/solana`, `@cubid/cardano`, `@cubid/sui`, and `@cubid/near` isolate wallet and signing dependencies. The React flow should make inline phone capture, provider/stamp connection, and post-return refresh patterns easy without each app owning Cubid OAuth and callback complexity. Provide primitives such as a `PhoneOtpForm`, provider connect buttons or hooks, success/failure/cancel callbacks, and helpers that report available, verified, and missing recommended credentials in one normalized shape.
 
