@@ -9,6 +9,7 @@ export type CubidEvmStampData = {
   chainId?: number | string
   chainType: "evm"
   identity: string
+  metadata?: Record<string, unknown>
   normalizedAddress: string
   uniquevalue: string
   walletType: "evm"
@@ -29,6 +30,7 @@ export function createEvmStampData(
     chainId: connection.chainId,
     chainType: "evm",
     identity: address,
+    ...(connection.metadata === undefined ? {} : { metadata: connection.metadata }),
     normalizedAddress,
     uniquevalue: address,
     walletType: "evm",

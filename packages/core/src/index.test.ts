@@ -271,7 +271,8 @@ test("ensureUserByEmail resolves the canonical user id through create_user", asy
     },
   })
 
-  const response = await client.ensureUserByEmail({
+  const { ensureUserByEmail } = client
+  const response = await ensureUserByEmail({
     email: " user@example.com ",
   })
 
@@ -339,7 +340,8 @@ test("syncIdentitySnapshot combines identity, score, and stamp responses", async
     },
   })
 
-  const snapshot = await client.syncIdentitySnapshot({
+  const { syncIdentitySnapshot } = client
+  const snapshot = await syncIdentitySnapshot({
     userId: "dapp_user_123",
   })
 

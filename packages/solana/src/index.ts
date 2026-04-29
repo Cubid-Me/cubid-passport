@@ -9,6 +9,7 @@ export function createSolanaStampData(connection: CubidSolanaConnection) {
     address,
     chainType: "solana" as const,
     identity: address,
+    ...(connection.metadata === undefined ? {} : { metadata: connection.metadata }),
     uniquevalue: address,
     walletType: "solana" as const,
   }

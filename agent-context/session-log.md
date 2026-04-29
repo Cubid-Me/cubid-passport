@@ -3177,3 +3177,32 @@ Mark E02.3 and its SDK-v2 adaptation subtask complete after the React and chain 
 #### Follow-up
 
 - publish the E02 branch for review, then configure trusted publishing before any live package release
+
+### session: v117
+
+- timestamp: 2026-04-29T22:49:55Z
+- agent: **OpenAI Codex**
+- branch: **codex/e02-2-core-identity-sync**
+- head: **`592038c`**
+- session name: **Address PR 151 SDK review feedback**
+
+#### Objective
+
+Resolve the actionable Copilot and Codex review comments on PR #151 before continuing the publish workflow.
+
+#### Actions Taken
+
+- removed `this`-dependent SDK helper calls so destructured `@cubid/core` methods remain callable
+- validated callback providers in `@cubid/react`, disabled verified OTP resubmission, and added handled provider-connect errors
+- preserved EVM and Solana connection metadata in stamp payloads so wagmi connector metadata is not dropped
+- added focused regression coverage for destructured core helpers, invalid callback providers, and EVM metadata preservation
+
+#### Verification
+
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/core test && pnpm --filter @cubid/core typecheck'`
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/react test && pnpm --filter @cubid/react typecheck && pnpm --filter @cubid/react build'`
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/evm test && pnpm --filter @cubid/evm typecheck && pnpm --filter @cubid/evm build && pnpm --filter @cubid/solana typecheck && pnpm --filter @cubid/wagmi typecheck'`
+
+#### Follow-up
+
+- commit and push the review fixes, comment with the solutions, resolve the PR threads, and recheck CI

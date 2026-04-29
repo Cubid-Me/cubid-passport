@@ -10,7 +10,10 @@ export function createWagmiEvmStampData(account: CubidWagmiAccount) {
   const connection: CubidEvmConnection = {
     address: account.address,
     chainId: account.chainId,
-    metadata: { connectorId: account.connectorId },
+    metadata:
+      account.connectorId === undefined
+        ? undefined
+        : { connectorId: account.connectorId },
   }
   return {
     ...createEvmStampData(connection),

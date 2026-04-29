@@ -14,4 +14,12 @@ test("@cubid/evm normalizes EVM wallet stamp data", () => {
     uniquevalue: "0xAbC",
     walletType: "evm",
   })
+  assert.deepEqual(
+    createEvmStampData({
+      address: "0xAbC",
+      chainId: 1,
+      metadata: { connectorId: "injected" },
+    }).metadata,
+    { connectorId: "injected" }
+  )
 })

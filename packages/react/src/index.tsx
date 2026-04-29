@@ -174,6 +174,10 @@ export function createCubidCallbackState(state: CubidCallbackState): string {
   return encodeBase64Url(JSON.stringify(state))
 }
 
+function isCubidProfileProvider(value: string): value is CubidProfileProvider {
+  return (CUBID_PROFILE_PROVIDERS as readonly string[]).includes(value)
+}
+
 export function parseCubidCallbackState(encodedState: string): CubidCallbackState {
   const parsed = JSON.parse(decodeBase64Url(encodedState)) as unknown
 
@@ -184,6 +188,9 @@ export function parseCubidCallbackState(encodedState: string): CubidCallbackStat
   const state = parsed as Record<string, unknown>
   if (typeof state.provider !== "string") {
     throw new Error("Cubid callback state is missing the provider.")
+  }
+  if (!isCubidProfileProvider(state.provider)) {
+    throw new Error("Cubid callback state has an unsupported provider.")
   }
 
   return {
@@ -199,7 +206,7 @@ export function parseCubidCallbackState(encodedState: string): CubidCallbackStat
         : undefined,
     nonce: typeof state.nonce === "string" ? state.nonce : undefined,
     pageId: typeof state.pageId === "string" ? state.pageId : undefined,
-    provider: state.provider as CubidProfileProvider,
+    provider: state.provider,
     returnTo: typeof state.returnTo === "string" ? state.returnTo : undefined,
     userId: typeof state.userId === "string" ? state.userId : undefined,
   }
@@ -265,6 +272,9 @@ export function PhoneOtpForm({
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (step === "verified") {
+      return
+    }
     setIsBusy(true)
 
     try {
@@ -319,7 +329,7 @@ export function PhoneOtpForm({
           />
         </>
       ) : null}
-      <button disabled={isBusy} type="submit">
+      <button disabled={isBusy || step === "verified"} type="submit">
         {step === "collect"
           ? "Send phone code"
           : step === "verify"
@@ -339,6 +349,7 @@ export type ProviderConnectButtonProps = Omit<
   authorizationUrl?: string
   navigate?: boolean
   onConnect?: (details: CubidProviderConnectDetails) => Promise<void> | void
+  onError?: (error: unknown) => void
   provider: CubidProfileProvider
 }
 
@@ -348,25 +359,34 @@ export function ProviderConnectButton({
   children,
   navigate = false,
   onConnect,
+  onError,
   provider,
   type = "button",
   ...buttonProps
 }: ProviderConnectButtonProps) {
   async function handleClick() {
-    const url =
-      authorizationUrl ??
-      (authorizationRequest
-        ? buildCubidAuthorizationUrl(authorizationRequest)
-        : undefined)
+    try {
+      const url =
+        authorizationUrl ??
+        (authorizationRequest
+          ? buildCubidAuthorizationUrl(authorizationRequest)
+          : undefined)
 
-    await onConnect?.({
-      provider,
-      state: authorizationRequest?.state,
-      url,
-    })
+      await onConnect?.({
+        provider,
+        state: authorizationRequest?.state,
+        url,
+      })
 
-    if (navigate && url && typeof window !== "undefined") {
-      window.location.assign(url)
+      if (navigate && url && typeof window !== "undefined") {
+        window.location.assign(url)
+      }
+    } catch (error) {
+      if (onError) {
+        onError(error)
+        return
+      }
+      console.error(error)
     }
   }
 

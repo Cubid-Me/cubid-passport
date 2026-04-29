@@ -64,3 +64,21 @@ test("@cubid/react builds AllowPage and provider callback URLs", () => {
   assert.equal(authUrl.includes("client_id=client_123"), true)
   assert.equal(authUrl.includes("scope=read%3Auser+user%3Aemail"), true)
 })
+
+test("@cubid/react rejects callback state with unsupported providers", () => {
+  const state = createCubidCallbackState({
+    provider: "github",
+    userId: "user_123",
+  })
+  const payload = JSON.parse(
+    Buffer.from(state, "base64url").toString("utf8")
+  ) as Record<string, unknown>
+  const invalidState = Buffer.from(
+    JSON.stringify({ ...payload, provider: "not-a-provider" })
+  ).toString("base64url")
+
+  assert.throws(
+    () => parseCubidCallbackState(invalidState),
+    /unsupported provider/
+  )
+})

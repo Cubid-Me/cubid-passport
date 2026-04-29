@@ -894,7 +894,7 @@ export const createCubidApiClient = (
     }
   }
 
-  return {
+  const client: CubidApiClient = {
     addStamp(input) {
       const userId = assertNonEmptyString(
         input.userId,
@@ -961,7 +961,7 @@ export const createCubidApiClient = (
         "email",
         "ensure_user_by_email"
       )
-      const created = await this.createUser({
+      const created = await client.createUser({
         dappId: input.dappId,
         email,
       })
@@ -1169,9 +1169,9 @@ export const createCubidApiClient = (
         "sync_identity_snapshot"
       )
       const [identity, score, stamps] = await Promise.all([
-        this.fetchIdentity({ userId }),
-        this.fetchScore({ userId }),
-        this.fetchStamps({ userId }),
+        client.fetchIdentity({ userId }),
+        client.fetchScore({ userId }),
+        client.fetchStamps({ userId }),
       ])
 
       return {
@@ -1237,4 +1237,6 @@ export const createCubidApiClient = (
       )
     },
   }
+
+  return client
 }
