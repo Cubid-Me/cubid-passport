@@ -572,23 +572,23 @@ Use the older `/Users/botmaster/src/cubid/cubid-sdk-v2/packages/api` implementat
 
 ### E02.3 Publish `@cubid/react` and chain SDK packages with profile-completion primitives
 
-- Status: Started
+- Status: Completed
 - Timestamp started: 2026-04-29T19:27:57Z
-- Timestamp completed: TBD
+- Timestamp completed: 2026-04-29T19:39:33Z
 - Feature branch: codex/e02-2-core-identity-sync
-- Head: 36f121b
-- Session-log reference(s): session: v114
+- Head: b7b6c36
+- Session-log reference(s): session: v114, session: v115, session: v116
 
 Turn the browser-side and ecosystem-specific integration layers into publishable packages that downstream apps can consume without local tarballs or repo-coupled wrappers. `@cubid/react` should own React hooks, components, AllowPage integration helpers, and profile-completion primitives, while chain packages such as `@cubid/evm`, `@cubid/wagmi`, `@cubid/solana`, `@cubid/cardano`, `@cubid/sui`, and `@cubid/near` isolate wallet and signing dependencies. The React flow should make inline phone capture, provider/stamp connection, and post-return refresh patterns easy without each app owning Cubid OAuth and callback complexity. Provide primitives such as a `PhoneOtpForm`, provider connect buttons or hooks, success/failure/cancel callbacks, and helpers that report available, verified, and missing recommended credentials in one normalized shape.
 
 ### E02.3.1 Adapt the older web2, React, and wallet SDK prototypes into the new package model
 
-- Status: Not started
-- Timestamp started: TBD
-- Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Status: Completed
+- Timestamp started: 2026-04-29T19:27:57Z
+- Timestamp completed: 2026-04-29T19:39:33Z
+- Feature branch: codex/e02-2-core-identity-sync
+- Head: b7b6c36
+- Session-log reference(s): session: v114, session: v115, session: v116
 
 Review `/Users/botmaster/src/cubid/cubid-sdk-v2/packages/web2`, `web2-react`, and `web3` as prototype material for the new `@cubid/react` and chain-package ecosystem. Preserve the useful boundaries: headless AllowPage URL builders and callback-state helpers, provider stamp normalization, verified-stamp persistence callbacks, simple phone/email completion forms, provider connect buttons, and wallet adapter interfaces that keep chain-specific dependencies outside React and core. Translate them into the new target package names instead of reviving `@cubid/web2`, `@cubid/web2-react`, or `@cubid/web3`. Avoid copying bare prototype UI as final design; use the callback and adapter contracts as the valuable part. This todo should produce package-ready primitives that support downstream profile-completion flows without leaking OAuth, wallet, or chain complexity into application code.
 
