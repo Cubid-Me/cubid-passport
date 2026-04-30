@@ -25,7 +25,7 @@
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "check:api-security": "bash ./scripts/check-api-security-regressions.sh",
-    "check:core-package": "pnpm --filter @cubid/core build && pnpm --filter @cubid/core pack:dry-run && pnpm --filter @cubid/core jsr:dry-run",
+    "check:core-package": "pnpm --filter @cubid/core deno:check && pnpm --filter @cubid/core build && pnpm --filter @cubid/core pack:dry-run && pnpm --filter @cubid/core jsr:dry-run",
     "check:secrets": "node ./scripts/check-operational-secrets.mjs",
     "format": "turbo run format",
     "format:write": "turbo run format:write"

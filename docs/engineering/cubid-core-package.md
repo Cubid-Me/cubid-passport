@@ -6,14 +6,28 @@ APIs, or browser-only helpers. The package uses standard `fetch` and plain JSON
 contracts so it can run in Node, Deno, Supabase Edge Functions, workers, and
 tests.
 
-## E02.1 Contract
+## Current Contract
 
 - Package name: `@cubid/core`
 - Initial version: `0.1.0`
 - Runtime target: ESM, standards-only
-- Initial surface: low-level wrappers for current Passport v2 routes
-- Deferred to E02.2: `ensureUserByEmail`, identity snapshot helpers, and
-  normalized high-level sync flows
+- Surface: normalized wrappers for current Passport v2 routes plus
+  server-facing identity sync helpers
+- Identity helpers: `ensureUserByEmail`, `fetchIdentity`, `fetchScore`,
+  `fetchStamps`, and `syncIdentitySnapshot`
+- Additional wrappers: `addStamp`, location fetches, user-data fetch, location
+  search, and email/phone OTP send/verify helpers
+- Response model: SDK-friendly camelCase fields with the original server
+  payload retained in `raw` for migration and debugging
+- Error model: `CubidApiError` includes category, optional code, optional
+  endpoint, request ID, status, and parsed details
+
+Malformed successful responses must throw `CubidApiError` with
+`code: "MALFORMED_RESPONSE"` so integrators do not accidentally depend on
+partial or unsafe response shapes.
+
+OTP helpers must not expose raw OTP values. They normalize only delivery and
+verification metadata even if a legacy server payload contains a code.
 
 ## Publishing
 
@@ -37,3 +51,20 @@ JSR setup:
 The publish workflow is manual (`workflow_dispatch`) so maintainers choose when
 to release. Normal CI performs npm pack and JSR dry-runs to catch packaging
 regressions before release.
+
+## Deno And Edge Validation
+
+The package includes a Deno smoke check at
+`packages/core/deno/supabase-edge-smoke.ts`. It imports the TypeScript source
+directly and models a Supabase Edge Function using `Deno.env`, injected `fetch`,
+`ensureUserByEmail`, and `syncIdentitySnapshot`.
+
+Run:
+
+```sh
+pnpm --filter @cubid/core deno:check
+```
+
+This validates Deno/Supabase Edge importability before publication. The
+published JSR import path remains `jsr:@cubid/core` and is documented in
+`docs/engineering/next-supabase-edge-integration-guide.md`.

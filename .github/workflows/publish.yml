@@ -37,6 +37,11 @@ jobs:
           cache: pnpm
           registry-url: https://registry.npmjs.org
 
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
@@ -44,6 +49,7 @@ jobs:
         run: |
           pnpm --filter @cubid/core test
           pnpm --filter @cubid/core typecheck
+          pnpm --filter @cubid/core deno:check
           pnpm --filter @cubid/core build
           pnpm --filter @cubid/core pack:dry-run
           pnpm --filter @cubid/core jsr:dry-run

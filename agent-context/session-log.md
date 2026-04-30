@@ -2827,3 +2827,382 @@ Address Copilot review comments on PR #150 for `@cubid/core` base URL validation
 #### Follow-up
 
 - push the Copilot review fixes, reply to and resolve the review threads, then re-check PR CI and review state
+
+### session: v98
+
+- timestamp: 2026-04-29T16:07:20Z
+- agent: **OpenAI Codex**
+- branch: **codex/e02-2-core-identity-sync**
+- head: **`397c376`**
+- session name: **Capture SDK v2 cherry-pick roadmap follow-ups**
+
+#### Objective
+
+Commit the todo-only roadmap update that preserves the useful SDK comparison insights before starting E02.2 implementation work.
+
+#### Actions Taken
+
+- added `E02.2.1` to direct future `@cubid/core` work toward normalized responses, malformed-response handling, endpoint-aware errors, and selected low-level wrappers from the older SDK
+- added `E02.3.1` to preserve useful web2, React, and wallet adapter prototype ideas while translating them into the new target package model
+
+#### Verification
+
+- reviewed `agent-context/todo.md` diff for roadmap-only scope
+
+#### Follow-up
+
+- commit the roadmap-only update, then mark `E02.2` started on this branch with a separate session-log entry and commit
+
+### session: v99
+
+- timestamp: 2026-04-29T16:07:42Z
+- agent: **OpenAI Codex**
+- branch: **codex/e02-2-core-identity-sync**
+- head: **`4cf2f89`**
+- session name: **Start E02.2 core identity sync**
+
+#### Objective
+
+Mark `E02.2` started on the new feature branch before implementing the `@cubid/core` high-level identity sync helpers.
+
+#### Actions Taken
+
+- updated `agent-context/todo.md` so `E02.2` is started on `codex/e02-2-core-identity-sync`
+- recorded the roadmap commit SHA as the starting head for the task
+- kept implementation work out of the metadata-start commit
+
+#### Verification
+
+- reviewed the E02.2 metadata fields after editing
+
+#### Follow-up
+
+- implement the `@cubid/core` identity sync helpers, normalized response models, and malformed-response handling guided by `E02.2` and `E02.2.1`
+
+### session: v100
+
+- timestamp: 2026-04-29T16:40:48Z
+- agent: **OpenAI Codex**
+- branch: **codex/e02-2-core-identity-sync**
+- head: **`f47e98a`**
+- session name: **Implement E02.2 core identity helpers**
+
+#### Objective
+
+Implement the `@cubid/core` E02.2 server-facing identity sync helpers with normalized response models and safer malformed-response handling.
+
+#### Actions Taken
+
+- added normalized camelCase response models for create-user, identity, score, and stamp responses while retaining raw payloads for debugging
+- added `ensureUserByEmail` and `syncIdentitySnapshot` to the runtime-agnostic client
+- expanded `CubidApiError` with optional code and endpoint metadata, including `MALFORMED_RESPONSE` and `NETWORK_ERROR`
+- updated package tests, README guidance, and the engineering package contract doc for the new helper surface
+
+#### Verification
+
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/core test && pnpm --filter @cubid/core typecheck && pnpm --filter @cubid/core build'`
+
+#### Follow-up
+
+- commit the implementation, then close out E02.2 metadata with the implementation commit head
+
+### session: v101
+
+- timestamp: 2026-04-29T16:41:13Z
+- agent: **OpenAI Codex**
+- branch: **codex/e02-2-core-identity-sync**
+- head: **`2727a8e`**
+- session name: **Close E02.2 metadata**
+
+#### Objective
+
+Mark `E02.2` completed after the `@cubid/core` identity sync helper implementation and focused validation landed.
+
+#### Actions Taken
+
+- updated `agent-context/todo.md` with the E02.2 completion timestamp
+- recorded the implementation commit as the E02.2 head
+- attached the start, implementation, and closeout session-log references to the todo
+
+#### Verification
+
+- confirmed the E02.2 metadata points at implementation head `2727a8e`
+
+#### Follow-up
+
+- continue with `E02.2.1` to port additional runtime-agnostic ergonomics from `cubid-sdk-v2`, or publish the current branch for review first
+
+### session: v102
+
+- timestamp: 2026-04-29T17:27:43Z
+- agent: **OpenAI Codex**
+- branch: **codex/e02-2-core-identity-sync**
+- head: **`b78ae9e`**
+- session name: **Start E02.2.1 SDK ergonomics port**
+
+#### Objective
+
+Start the follow-on SDK ergonomics slice that ports the remaining runtime-agnostic, security-compatible helpers from `cubid-sdk-v2` into `@cubid/core`.
+
+#### Actions Taken
+
+- marked `E02.2.1` started on the current feature branch
+- inspected the older SDK API client and current Passport v2 routes for wrapper compatibility
+- confirmed the port should focus on `addStamp`, location/user-data/search, and safe OTP response helpers without exposing plaintext OTP values
+
+#### Verification
+
+- reviewed `agent-context/todo.md` metadata and current package route coverage before implementation
+
+#### Follow-up
+
+- add the compatible wrappers, tests, docs, and closeout metadata for `E02.2.1`
+
+### session: v103
+
+- timestamp: 2026-04-29T17:31:12Z
+- agent: **OpenAI Codex**
+- branch: **codex/e02-2-core-identity-sync**
+- head: **`10bdeb8`**
+- session name: **Port runtime-agnostic SDK wrappers**
+
+#### Objective
+
+Complete `E02.2.1` by porting the remaining useful runtime-agnostic SDK ergonomics from `cubid-sdk-v2` into the new `@cubid/core` package.
+
+#### Actions Taken
+
+- added normalized `@cubid/core` wrappers for `addStamp`, location fetches, user-data fetch, location search, and email/phone OTP send/verify flows
+- preserved the newer security posture by omitting raw OTP codes from SDK responses even when legacy server payloads contain one
+- added tests for endpoint paths, normalized legacy response shapes, malformed search responses, and safe OTP metadata
+- updated package README and engineering docs to describe the expanded wrapper surface
+
+#### Verification
+
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/core test && pnpm --filter @cubid/core typecheck && pnpm --filter @cubid/core build'`
+
+#### Follow-up
+
+- commit the implementation, then close `E02.2.1` metadata with the implementation commit head
+
+### session: v104
+
+- timestamp: 2026-04-29T17:31:33Z
+- agent: **OpenAI Codex**
+- branch: **codex/e02-2-core-identity-sync**
+- head: **`e995f0e`**
+- session name: **Close E02.2.1 SDK ergonomics port**
+
+#### Objective
+
+Mark `E02.2.1` completed after the additional runtime-agnostic SDK wrappers and safety tests landed.
+
+#### Actions Taken
+
+- updated `agent-context/todo.md` with the E02.2.1 completion timestamp
+- recorded the implementation commit as the E02.2.1 head
+- attached the start, implementation, and closeout session-log references to the todo
+
+#### Verification
+
+- confirmed the E02.2.1 metadata points at implementation head `e995f0e`
+
+#### Follow-up
+
+- publish the branch for review or proceed to E02.4 package validation/docs if the SDK surface is ready for broader release work
+
+### session: v105
+
+- timestamp: 2026-04-29T17:41:47Z
+- agent: **OpenAI Codex**
+- branch: **codex/e02-2-core-identity-sync**
+- head: **`5626b19`**
+- session name: **Start E02.4 Deno and integration DX**
+
+#### Objective
+
+Start E02.4 to add Deno/Supabase Edge validation, integration guidance, examples, and stability notes for `@cubid/core` before publication.
+
+#### Actions Taken
+
+- marked `E02.4` started on the current SDK feature branch
+- inspected existing package scripts, CI, docs, and local Deno availability
+- selected local source Deno validation plus JSR dry-run validation because `@cubid/core` is not yet published on JSR
+
+#### Verification
+
+- confirmed the repo is clean before E02.4 implementation changes
+
+#### Follow-up
+
+- add package-level Deno checks, CI wiring, integration docs, examples, and closeout metadata
+
+### session: v106
+
+- timestamp: 2026-04-29T17:44:44Z
+- agent: **OpenAI Codex**
+- branch: **codex/e02-2-core-identity-sync**
+- head: **`6dbd328`**
+- session name: **Add E02.4 Deno and Edge integration validation**
+
+#### Objective
+
+Add the Deno/Supabase Edge validation and integration guidance needed before publishing `@cubid/core`.
+
+#### Actions Taken
+
+- added a package-level Deno smoke check that imports local `@cubid/core` TypeScript source and models a Supabase Edge Function
+- wired Deno setup into CI and the manual publish workflow, and added `deno:check` to the root core-package validation contract
+- added a Next.js plus Supabase Edge integration guide with copy-paste examples for user resolution, identity snapshots, OTP flows, and post-return refresh
+- updated `@cubid/core` README and engineering docs with Deno validation and JSR usage guidance
+
+#### Verification
+
+- `pnpm --filter @cubid/core deno:check`
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/core test && pnpm --filter @cubid/core typecheck && pnpm --filter @cubid/core deno:check && pnpm --filter @cubid/core build && pnpm --filter @cubid/core pack:dry-run && pnpm --filter @cubid/core jsr:dry-run && pnpm check:core-package'`
+
+#### Follow-up
+
+- commit the E02.4 implementation, then close E02.4 metadata with the implementation head
+
+### session: v107
+
+- timestamp: 2026-04-29T17:45:07Z
+- agent: **OpenAI Codex**
+- branch: **codex/e02-2-core-identity-sync**
+- head: **`9fe5a52`**
+- session name: **Close E02.4 integration DX**
+
+#### Objective
+
+Mark `E02.4` completed after the Deno validation, CI wiring, and integration docs landed.
+
+#### Actions Taken
+
+- updated `agent-context/todo.md` with the E02.4 completion timestamp
+- recorded the implementation commit as the E02.4 head
+- attached the start, implementation, and closeout session-log references to the todo
+
+#### Verification
+
+- confirmed the E02.4 metadata points at implementation head `9fe5a52`
+
+#### Follow-up
+
+- publish the branch for review, then configure trusted npm/JSR publishing once merged
+
+### session: v114
+
+- timestamp: 2026-04-29T19:27:57Z
+- agent: **OpenAI Codex**
+- branch: **codex/e02-2-core-identity-sync**
+- head: **`36f121b`**
+- session name: **Start E02.3 React and chain SDK packages**
+
+#### Objective
+
+Start the missing E02.3 package slice after confirming E02.2 and E02.4 were already completed on this branch.
+
+#### Actions Taken
+
+- verified `E02.2` and `E02.4` are completed in the E02 branch metadata and backed by implementation commits
+- confirmed `E02.3` remains unimplemented and marked it started
+- scoped the implementation to publishable `@cubid/react` profile-completion primitives plus chain-package boundaries that keep chain dependencies out of `@cubid/core`
+
+#### Verification
+
+- inspected `agent-context/todo.md`, `agent-context/session-log.md`, and git history for E02 evidence
+
+#### Follow-up
+
+- add package-ready React and chain SDK workspaces, tests, docs, validation, and closeout metadata
+
+### session: v115
+
+- timestamp: 2026-04-29T19:38:55Z
+- agent: **OpenAI Codex**
+- branch: **codex/e02-2-core-identity-sync**
+- head: **`789e3a5`**
+- session name: **Implement E02.3 React and chain SDK package foundations**
+
+#### Objective
+
+Implement the missing E02.3 package slice with publishable React profile-completion primitives and chain-specific package boundaries.
+
+#### Actions Taken
+
+- added `@cubid/react` with React provider/hooks, `PhoneOtpForm`, provider connect buttons, AllowPage URL helpers, callback-state helpers, and missing recommended credential summaries
+- added publishable chain package workspaces for `@cubid/evm`, `@cubid/solana`, `@cubid/cardano`, `@cubid/sui`, and `@cubid/near`
+- added `@cubid/wagmi` as the wagmi-only package boundary with EVM stamp-data integration helpers
+- kept heavy chain SDKs out of this first package slice so `@cubid/core` and `@cubid/react` remain cleanly bounded
+- updated the SDK target-state doc with the implemented E02 package layering
+
+#### Verification
+
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/react test && pnpm --filter @cubid/react typecheck && pnpm --filter @cubid/react build'`
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/evm test && pnpm --filter @cubid/evm typecheck && pnpm --filter @cubid/evm build'`
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/solana typecheck && pnpm --filter @cubid/solana build && pnpm --filter @cubid/cardano typecheck && pnpm --filter @cubid/cardano build && pnpm --filter @cubid/sui typecheck && pnpm --filter @cubid/sui build'`
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/near typecheck && pnpm --filter @cubid/near build && pnpm --filter @cubid/wagmi typecheck && pnpm --filter @cubid/wagmi build'`
+- `npx -p node@24 -c 'node --version && pnpm test'`
+- `npx -p node@24 -c 'node --version && pnpm typecheck'`
+- `npx -p node@24 -c 'node --version && pnpm build'`
+
+#### Follow-up
+
+- commit the E02.3 implementation, then mark E02.3 completed with the implementation head
+
+### session: v116
+
+- timestamp: 2026-04-29T19:39:33Z
+- agent: **OpenAI Codex**
+- branch: **codex/e02-2-core-identity-sync**
+- head: **`b7b6c36`**
+- session name: **Close E02.3 SDK package foundations**
+
+#### Objective
+
+Mark E02.3 and its SDK-v2 adaptation subtask complete after the React and chain package foundations landed.
+
+#### Actions Taken
+
+- updated `agent-context/todo.md` to mark `E02.3` completed
+- updated `E02.3.1` as completed because the implemented package slice used the older web2, React, and wallet SDK prototypes as source material for the new package model
+- recorded implementation head `b7b6c36` and attached the E02.3 start, implementation, and closeout session references
+
+#### Verification
+
+- confirmed implementation head `b7b6c36` exists
+- relied on the E02.3 validation recorded in `session: v115`
+
+#### Follow-up
+
+- publish the E02 branch for review, then configure trusted publishing before any live package release
+
+### session: v117
+
+- timestamp: 2026-04-29T22:49:55Z
+- agent: **OpenAI Codex**
+- branch: **codex/e02-2-core-identity-sync**
+- head: **`592038c`**
+- session name: **Address PR 151 SDK review feedback**
+
+#### Objective
+
+Resolve the actionable Copilot and Codex review comments on PR #151 before continuing the publish workflow.
+
+#### Actions Taken
+
+- removed `this`-dependent SDK helper calls so destructured `@cubid/core` methods remain callable
+- validated callback providers in `@cubid/react`, disabled verified OTP resubmission, and added handled provider-connect errors
+- preserved EVM and Solana connection metadata in stamp payloads so wagmi connector metadata is not dropped
+- added focused regression coverage for destructured core helpers, invalid callback providers, and EVM metadata preservation
+
+#### Verification
+
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/core test && pnpm --filter @cubid/core typecheck'`
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/react test && pnpm --filter @cubid/react typecheck && pnpm --filter @cubid/react build'`
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/evm test && pnpm --filter @cubid/evm typecheck && pnpm --filter @cubid/evm build && pnpm --filter @cubid/solana typecheck && pnpm --filter @cubid/wagmi typecheck'`
+
+#### Follow-up
+
+- commit and push the review fixes, comment with the solutions, resolve the PR threads, and recheck CI
