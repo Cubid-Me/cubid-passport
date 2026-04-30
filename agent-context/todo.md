@@ -502,12 +502,12 @@ Extract the core Cubid concepts into shared packages with stable interfaces: ide
 
 ### D02. Refactor Passport and Admin into feature modules with thin UI shells
 
-- Status: Not started
-- Timestamp started: TBD
+- Status: Started
+- Timestamp started: 2026-04-30T23:29:43Z
 - Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Feature branch: codex/e01-app-scoped-identity-disclosure
+- Head: 2e91522
+- Session-log reference(s): session: v133
 
 Break apart the giant orchestration components and page files into feature modules that own one domain slice at a time. In Passport, that means separate modules for authentication, allow flows, stamp providers, wallet flows, profile, and on-chain minting. In Admin, it should mean separate modules for client management, claim registry, user review, app integrations, and operational tooling. Each feature should contain its UI, form state, route loaders, and server interaction layer, while shared components remain presentation-focused. As part of this, reduce `localStorage` dependence for security-sensitive flow state and replace it with signed server state, typed query contracts, or dedicated session storage where appropriate. This todo is about maintainability as much as security: thinner shells make OIDC, passkeys, and policy work much easier to implement correctly.
 

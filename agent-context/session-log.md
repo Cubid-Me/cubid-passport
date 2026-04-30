@@ -1,3 +1,29 @@
+### session: v133
+
+- timestamp: 2026-04-30T23:29:43Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-app-scoped-identity-disclosure**
+- head: **`2e91522`**
+- session name: **Start D02 feature-module refactor**
+
+#### Objective
+
+Start D02 on the current branch and keep the first refactor bounded to thin feature modules around existing Passport and Admin behavior.
+
+#### Actions Taken
+
+- marked `D02` started in `agent-context/todo.md`
+- scoped the implementation to extracting Passport Allow/OIDC consent and Admin OIDC Ops module boundaries without changing product behavior
+- kept larger UI modernization and localStorage removal as future narrower follow-ups
+
+#### Verification
+
+- confirmed the branch was clean before starting D02 metadata changes
+
+#### Follow-up
+
+- implement feature modules, run focused typechecks, and close D02 metadata if the extracted boundaries land cleanly
+
 ### session: v132
 
 - timestamp: 2026-04-30T23:28:46Z
