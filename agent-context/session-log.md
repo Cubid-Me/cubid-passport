@@ -1,3 +1,31 @@
+### session: v134
+
+- timestamp: 2026-04-30T23:32:09Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-app-scoped-identity-disclosure**
+- head: **`2418c44`**
+- session name: **Implement D02 feature-module extraction**
+
+#### Objective
+
+Land a bounded D02 refactor that moves behavior-preserving Passport and Admin orchestration into feature-owned modules.
+
+#### Actions Taken
+
+- extracted Passport Allow Page OIDC consent rendering into `features/allow/OidcConsentPanel`
+- extracted legacy Allow Page browser-state helpers into `features/allow/legacyAllowState`
+- extracted Admin OIDC Ops API calls, rate-tier constants, and API error mapping into `features/oidc-ops/api`
+- kept product behavior unchanged and avoided broad UI modernization in this slice
+
+#### Verification
+
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/passport typecheck && pnpm --filter @cubid/admin typecheck'`
+- `git diff --check`
+
+#### Follow-up
+
+- continue with narrower feature-module follow-ups for Profile, stamp providers, client management, and webhook administration if needed
+
 ### session: v133
 
 - timestamp: 2026-04-30T23:29:43Z
