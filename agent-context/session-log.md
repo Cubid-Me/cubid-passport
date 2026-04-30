@@ -3263,6 +3263,33 @@ Resolve the actionable Copilot and Codex review comments on PR #152 before conti
 
 - commit and push the PR review fixes, reply to and resolve review threads, then re-check PR state
 
+### session: v120
+
+- timestamp: 2026-04-30T09:05:06Z
+- agent: **OpenAI Codex**
+- branch: **codex/e02-1-core-publishing-setup**
+- head: **`339dcf3`**
+- session name: **Close E02.1 repo-side core publishing setup**
+
+#### Objective
+
+Close the repo-side E02.1 package setup while keeping the npm/JSR account-owner first release as an explicit follow-up.
+
+#### Actions Taken
+
+- marked E02.1 completed against the repo-side publishing setup commit
+- added `E02.1.1` for the registry-side first release and trusted-publisher activation steps that require human npm/JSR ownership
+- kept live package publication out of this commit because `@cubid/core` is not yet published and registry setup requires account-owner action
+
+#### Verification
+
+- confirmed E02.1 now points at setup commit `339dcf3`
+- confirmed E02.1.1 captures the remaining npm/JSR release work as a separate todo
+
+#### Follow-up
+
+- open a PR for the publishing setup, merge to `dev`, then have a Cubid npm/JSR owner complete E02.1.1 using the runbook
+
 ### session: v119
 
 - timestamp: 2026-04-30T09:03:20Z
