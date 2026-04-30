@@ -1,3 +1,31 @@
+### session: v127
+
+- timestamp: 2026-04-30T21:42:23Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-app-scoped-identity-disclosure**
+- head: **`2e6d13f`**
+- session name: **Implement E01 disclosure foundation**
+
+#### Objective
+
+Land the first E01 foundation slice for app-scoped identity and selective disclosure without rewriting existing Passport or OIDC flows in one broad pass.
+
+#### Actions Taken
+
+- extended `@cubid/identity` with app-scoped subject derivation, selective-disclosure grant contracts, raw identifier guards, claim normalization, and claim-value filtering helpers
+- added focused identity package tests for app-scoped subject stability, cross-app separation, disclosure normalization, raw identifier rejection, and active-grant filtering
+- added service-role-only Supabase tables for app-scoped subjects, disclosure grants, and disclosure audit events
+- documented the E01 target contract and runtime adoption sequence in `docs/engineering/app-scoped-identity-selective-disclosure.md`
+
+#### Verification
+
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/identity test && pnpm --filter @cubid/identity typecheck && pnpm --filter @cubid/identity build'`
+- `git diff --check`
+
+#### Follow-up
+
+- wire Allow Page and OIDC consent persistence into the shared disclosure grant service in the next E01 slice
+
 ### session: v126
 
 - timestamp: 2026-04-30T21:38:40Z

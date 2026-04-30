@@ -1,0 +1,105 @@
+# App-Scoped Identity and Selective Disclosure
+
+Last updated: 2026-04-30
+Status: E01 foundation
+
+## Purpose
+
+Cubid should behave like identity protocol infrastructure, not a shared user
+database for relying parties. Apps should receive stable identifiers and
+consented claims that are scoped to their relationship with the subject. They
+should not receive raw Cubid user IDs, internal human subject keys, Firebase
+UIDs, dapp user UUIDs, token hashes, or other values that enable cross-app
+tracking.
+
+E01 makes this explicit by introducing a shared app-scoped identity and
+selective-disclosure contract that can be reused by the Allow Page, OIDC
+consent, SDK-facing API routes, and webhook payload filtering.
+
+## Source Of Truth
+
+`@cubid/identity` owns the pure domain contract:
+
+- `deriveAppScopedSubject`: derives an opaque per-app subject from an app
+  identifier, actor type, stable subject key, and server-held secret.
+- `SelectiveDisclosureRequest`: describes what an app or OIDC client is asking
+  to receive.
+- `SelectiveDisclosureGrant`: records the normalized scope and claim set that a
+  subject approved for a specific app-scoped subject.
+- `filterDisclosedClaimValues`: releases only values covered by an active grant.
+- raw identifier claim guards: prevent accidental release of internal IDs.
+
+The database migration `20260430214000_app_scoped_identity_disclosure.sql`
+creates the first persistence layer:
+
+- `public.app_scoped_subjects`
+- `public.selective_disclosure_grants`
+- `public.selective_disclosure_events`
+
+All three tables are service-role-only. Browser, dapp, and authenticated
+Supabase clients must go through Passport, Admin, or OIDC server routes.
+
+## App-Scoped Subject Rules
+
+An app-scoped subject is opaque and stable for one app or client. It is derived
+from:
+
+- app identifier, such as `dapp:<id>` or `oidc:<client_id>`
+- actor type: `human`, `agent`, or `organization`
+- stable subject key
+- the app-scoped subject master secret
+
+The same human, agent, or organization gets different public subject values at
+different apps. The same app gets a stable value for the same subject unless a
+future rotation migration intentionally changes the derivation contract.
+
+OIDC pairwise `sub` remains the OIDC-specific subject identifier. E01's
+app-scoped subject contract is broader: it also covers Allow Page, REST APIs,
+SDKs, and webhook filtering.
+
+## Disclosure Grant Rules
+
+A disclosure grant is the durable record of what a subject allowed one app to
+receive. Grants include:
+
+- source: `allow_page`, `oidc`, `api`, or `webhook`
+- normalized granted scopes
+- normalized granted claims with data classification
+- policy and consent version
+- grant fingerprint
+- revocation metadata
+
+Claims must be classified as one of:
+
+- `identity`
+- `hashed`
+- `boolean`
+- `score`
+- `json`
+
+Internal identifiers are never valid disclosure claims. If a downstream app
+needs a stable ID, it receives the app-scoped subject or OIDC pairwise `sub`,
+not raw Cubid storage identifiers.
+
+## Runtime Adoption Sequence
+
+E01 foundation does not rewrite every route in one pass. The intended adoption
+sequence is:
+
+1. Use `@cubid/identity` disclosure helpers in new API and webhook code.
+2. Route Allow Page stamp permissions through `selective_disclosure_grants`.
+3. Mirror OIDC consent records into disclosure grants or make OIDC consume the
+   disclosure grant service directly.
+4. Update SDK-facing identity routes to return only app-scoped subject and
+   granted claims.
+5. Use disclosure grants to filter webhook payloads.
+6. Add user-facing disclosure history and revocation views that cover both OIDC
+   and non-OIDC app grants.
+
+## Non-Goals In This Slice
+
+- No destructive migration of legacy `stamp_dappuser_permissions`.
+- No breaking change to the existing v2 identity routes.
+- No full Allow Page redesign.
+- No live deployment, backfill, or production migration execution.
+- No new browser-readable Supabase grants.
