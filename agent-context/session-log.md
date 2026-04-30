@@ -1,3 +1,28 @@
+### session: v128
+
+- timestamp: 2026-04-30T21:42:48Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-app-scoped-identity-disclosure**
+- head: **`96ac1ff`**
+- session name: **Update E01 implementation metadata**
+
+#### Objective
+
+Point the in-progress E01 todo at the first implementation head after the app-scoped disclosure foundation landed.
+
+#### Actions Taken
+
+- updated `E01` metadata to reference implementation commit `96ac1ff`
+- added the E01 foundation session-log reference while keeping E01 open for route adoption work
+
+#### Verification
+
+- confirmed implementation commit `96ac1ff` contains the shared identity helpers, migration, tests, and engineering doc
+
+#### Follow-up
+
+- continue E01 by wiring Allow Page and OIDC consent persistence into the new disclosure grant contract
+
 ### session: v127
 
 - timestamp: 2026-04-30T21:42:23Z
