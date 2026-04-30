@@ -517,12 +517,12 @@ Parallelization note: This section can run in parallel with `B`, `C`, and `D` on
 
 ### E01. Rebuild app-scoped identity and selective disclosure as first-class platform services
 
-- Status: Not started
-- Timestamp started: TBD
+- Status: Started
+- Timestamp started: 2026-04-30T21:38:40Z
 - Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Feature branch: codex/e01-app-scoped-identity-disclosure
+- Head: 64c0da4
+- Session-log reference(s): session: v126
 
 Take the backgrounder’s core ideas seriously by making app-scoped identity and selective disclosure explicit platform capabilities instead of incidental behavior buried in Passport flows. Build a consent and disclosure service that owns per-app subject identifiers, claim release decisions, stamp-sharing permissions, and revocation behavior. Relying parties should never need raw cross-app identifiers or unnecessary PII; they should request scopes and receive only the allowed app-scoped values. This service should back the Allow Page, the OIDC consent model, SDK calls, and webhook payload filtering. Treat it as a foundational protocol service with strong typing, auditability, and user-visible history, not just a UX screen. Finishing this todo would align Cubid much more closely with the backgrounder’s privacy, protocol, and anti-tracking principles.
 

@@ -1,3 +1,29 @@
+### session: v126
+
+- timestamp: 2026-04-30T21:38:40Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-app-scoped-identity-disclosure**
+- head: **`64c0da4`**
+- session name: **Start E01 app-scoped identity and disclosure**
+
+#### Objective
+
+Start E01 as the platform slice for first-class app-scoped identity and selective disclosure.
+
+#### Actions Taken
+
+- created the E01 feature branch from the current clean roadmap-metadata head
+- marked `E01` started in `agent-context/todo.md`
+- scoped the work to consent/disclosure services, app-scoped subject identifiers, claim-release decisions, revocation behavior, and user-visible/auditable history
+
+#### Verification
+
+- confirmed the branch was clean before updating E01 metadata
+
+#### Follow-up
+
+- inspect the current Allow Page, OIDC consent, SDK-facing routes, webhook filtering, and shared identity packages before implementing the first E01 service slice
+
 ### session: v125
 
 - timestamp: 2026-04-30T21:34:05Z
