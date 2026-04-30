@@ -1,3 +1,31 @@
+### session: v136
+
+- timestamp: 2026-04-30T23:33:11Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-app-scoped-identity-disclosure**
+- head: **`6dcb43c`**
+- session name: **Reconcile C02 with completed security baseline**
+
+#### Objective
+
+Reconcile the stale C02 todo against the completed C03.4/C03.5 work that already removed the live generic Supabase CRUD surface.
+
+#### Actions Taken
+
+- verified `/api/supabase/select`, `/insert`, `/update`, and `/delete` now return `410 endpoint_removed`
+- verified first-party `/api/supabase/*` references are limited to tests and commented historical code
+- marked C02 as superseded by C03.4/C03.5 in `agent-context/todo.md`
+- updated the API security baseline doc so it no longer claims C02 owns final replacement of generic Supabase CRUD
+
+#### Verification
+
+- reviewed current route handlers, repo references, C03 session-log entries, and Passport route tests for hard-disabled behavior
+- planned follow-up validation with `git diff --check`
+
+#### Follow-up
+
+- treat any remaining direct Supabase table access as feature-specific repository cleanup rather than a public generic CRUD replacement task
+
 ### session: v135
 
 - timestamp: 2026-04-30T23:32:30Z

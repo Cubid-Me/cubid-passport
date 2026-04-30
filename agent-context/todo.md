@@ -286,12 +286,14 @@ Perform a full secrets incident response sweep, not just a cleanup patch. Invent
 
 ### C02. Replace generic Supabase CRUD endpoints with typed domain services
 
-- Status: Not started
-- Timestamp started: TBD
-- Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Status: Superseded by C03.4/C03.5
+- Timestamp started: 2026-04-26T21:45:17-0400
+- Timestamp completed: 2026-04-30T23:33:11Z
+- Feature branch: codex/c03-api-security-baseline
+- Head: 3ef1410
+- Session-log reference(s): session: v71, session: v72, session: v136
+
+Superseded on 2026-04-30: the C03.4 and C03.5 security-baseline work replaced first-party `/api/supabase/*` usage with typed Passport-owned routes under `/api/passport/data/*`, hard-disabled the legacy generic CRUD endpoints with `410 endpoint_removed` responses, and added Passport tests covering the disabled behavior. This todo remains as historical context for why arbitrary table-oriented CRUD is no longer an acceptable public API pattern. Any remaining direct Supabase access should be handled as ordinary server-side repository/module cleanup under future feature-specific todos, not as a live public CRUD replacement task.
 
 Remove the current pattern of exposing arbitrary table access through generic API wrappers. Replace it with explicit service functions and route handlers for concrete use cases such as user lookup, stamp creation, permission grants, score retrieval, client registration, and consent reads. Every service boundary should validate input, constrain output shape, and apply authorization rules based on actor type and app ownership. Introduce shared repository or service modules for `users`, `stamps`, `dapp_users`, permissions, claims, sessions, and clients so both Passport and Admin stop reaching directly into tables with ad hoc selectors. This will improve security, make code easier to reason about, and prepare the codebase for monorepo-wide testing. The success condition is that direct arbitrary CRUD by table name disappears from the public API surface.
 
