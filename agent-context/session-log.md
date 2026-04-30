@@ -1,3 +1,29 @@
+### session: v135
+
+- timestamp: 2026-04-30T23:32:30Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-app-scoped-identity-disclosure**
+- head: **`fedad4a`**
+- session name: **Close D02 feature-module metadata**
+
+#### Objective
+
+Close D02 after the first Passport and Admin feature-module extraction landed and passed focused validation.
+
+#### Actions Taken
+
+- marked `D02` completed in `agent-context/todo.md`
+- recorded implementation head `fedad4a`
+- attached the D02 start, implementation, and closeout session-log references
+
+#### Verification
+
+- relied on the focused D02 validation recorded in `session: v134`
+
+#### Follow-up
+
+- create narrower future todos if more feature modules need extraction beyond the first Allow/OIDC Ops boundary
+
 ### session: v134
 
 - timestamp: 2026-04-30T23:32:09Z
