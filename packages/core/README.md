@@ -4,6 +4,10 @@ Runtime-agnostic Cubid foundation client for server-side integrations.
 
 Licensed under Apache-2.0.
 
+This copy is a historical implementation snapshot retained in the private
+`cubid-passport` repo for migration context. The canonical public SDK source and
+publication home is `/Users/botmaster/src/cubid/cubid-sdk-v2`.
+
 This package is intentionally small and standards-only. It does not import
 React, Next.js, Firebase, Supabase, Node built-ins, or browser-only helpers.
 All requests use `fetch`, `RequestInit`, `Headers`, and plain JSON so the same
@@ -138,23 +142,5 @@ Error messages never include API key material.
 
 ## Publishing
 
-This package is designed for npm Trusted Publishing and JSR trusted publishing
-through GitHub Actions. Do not publish with a local npm user token.
-
-The npm Trusted Publisher should be configured as:
-
-- Provider: GitHub Actions
-- Organization/user: `Cubid-Me`
-- Repository: `cubid-passport`
-- Workflow filename: `publish.yml`
-- Environment: blank unless a protected release environment is intentionally
-  added
-
-The JSR package should be linked to:
-
-- Package: `@cubid/core`
-- Repository: `Cubid-Me/cubid-passport`
-- Workflow: `.github/workflows/publish.yml`
-
-See `docs/engineering/core-publishing-runbook.md` in the repository for the
-full npm/JSR setup checklist and first-version bootstrap notes.
+Do not publish this package from `cubid-passport`. Publish `@cubid/core` only
+from the canonical public SDK repo at `/Users/botmaster/src/cubid/cubid-sdk-v2`.

@@ -3263,6 +3263,34 @@ Resolve the actionable Copilot and Codex review comments on PR #152 before conti
 
 - commit and push the PR review fixes, reply to and resolve review threads, then re-check PR state
 
+### session: v123
+
+- timestamp: 2026-04-30T15:23:55Z
+- agent: **OpenAI Codex**
+- branch: **dev**
+- head: **`8e9a4fe`**
+- session name: **Mark SDK work ingested into public repo**
+
+#### Objective
+
+Validate the repo-side cleanup after `@cubid/core` moved to the public SDK repo, remove the remaining private-repo publication path, and commit the boundary documentation updates.
+
+#### Actions Taken
+
+- reviewed dirty roadmap and engineering-doc changes that mark E02 SDK todos as ingested into `/Users/botmaster/src/cubid/cubid-sdk-v2`
+- removed the manual package publishing workflow from `cubid-passport`
+- updated README, AGENTS, package docs, and SDK target-state docs so future agents treat `cubid-sdk-v2` as the canonical public SDK implementation and publication home
+- retained `packages/core` as a historical implementation snapshot for migration context while removing its npm `publishConfig`
+
+#### Verification
+
+- `npx -p node@24 -c 'node --version && pnpm check:core-snapshot && pnpm lint && pnpm typecheck && pnpm test && pnpm build'`
+- `git diff --check`
+
+#### Follow-up
+
+- commit the private-repo cleanup, then continue public SDK publication work from `cubid-sdk-v2`
+
 ### session: v122
 
 - timestamp: 2026-04-30T12:33:37Z
