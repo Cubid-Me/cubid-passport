@@ -1,3 +1,29 @@
+### session: v132
+
+- timestamp: 2026-04-30T23:28:46Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-app-scoped-identity-disclosure**
+- head: **`544af88`**
+- session name: **Document SDK repo coordination rules**
+
+#### Objective
+
+Update repo-agent guidance so future work respects the separation between this private app/backend repo and the public Cubid SDK repo.
+
+#### Actions Taken
+
+- added startup guidance to check `agent-context/messages-from-cubid-sdk/` for incoming SDK-agent messages
+- documented that public API and SDK implementation belongs in `Cubid-Me/cubid-sdk`, with local checkout `/Users/botmaster/src/cubid/cubid-sdk-v2`
+- documented that SDK-impacting backend changes must be evaluated against the SDK and accompanied by an outbound note in the SDK repo message folder
+
+#### Verification
+
+- planned follow-up validation with `git diff --check`
+
+#### Follow-up
+
+- evaluate this branch's E01/D01 changes for SDK impact and create an outbound SDK-agent note if needed
+
 ### session: v131
 
 - timestamp: 2026-04-30T23:14:04Z
