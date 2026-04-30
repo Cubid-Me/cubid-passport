@@ -10,6 +10,7 @@ tests.
 
 - Package name: `@cubid/core`
 - Initial version: `0.1.0`
+- License: Apache-2.0
 - Runtime target: ESM, standards-only
 - Surface: normalized wrappers for current Passport v2 routes plus
   server-facing identity sync helpers

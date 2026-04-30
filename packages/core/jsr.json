@@ -1,12 +1,13 @@
 {
   "name": "@cubid/core",
   "version": "0.1.0",
-  "license": "UNLICENSED",
+  "license": "Apache-2.0",
   "exports": {
     ".": "./src/index.ts"
   },
   "publish": {
     "include": [
+      "LICENSE",
       "README.md",
       "src/**/*.ts",
       "jsr.json"
