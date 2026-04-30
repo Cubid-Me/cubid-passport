@@ -3263,6 +3263,33 @@ Resolve the actionable Copilot and Codex review comments on PR #152 before conti
 
 - commit and push the PR review fixes, reply to and resolve review threads, then re-check PR state
 
+### session: v121
+
+- timestamp: 2026-04-30T12:18:51Z
+- agent: **OpenAI Codex**
+- branch: **codex/e02-1-core-publishing-setup**
+- head: **`b6b0606`**
+- session name: **Address PR 153 publishing runbook review**
+
+#### Objective
+
+Resolve Copilot review comments on PR #153 by making the publishing runbook less time-bound and moving the release-branch guard earlier in the workflow.
+
+#### Actions Taken
+
+- replaced point-in-time npm/auth status bullets with repeatable verification commands
+- rewrote the agent-first-person runbook section as an impersonal repo-side task checklist
+- moved the publish branch guard directly after checkout so mistaken release dispatches fail before setup and install work
+
+#### Verification
+
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/core test && pnpm --filter @cubid/core typecheck && pnpm --filter @cubid/core deno:check && pnpm --filter @cubid/core build && pnpm --filter @cubid/core pack:dry-run && pnpm --filter @cubid/core jsr:dry-run'`
+- `git diff --check`
+
+#### Follow-up
+
+- commit, push, reply to the three review threads, and resolve them
+
 ### session: v120
 
 - timestamp: 2026-04-30T09:05:06Z

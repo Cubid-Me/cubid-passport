@@ -4,7 +4,7 @@ This runbook is the operator checklist for publishing `@cubid/core` to npm and
 JSR. The repo is already wired for tokenless publishing from GitHub Actions; the
 remaining setup happens in the npm and JSR account UIs.
 
-## Current State
+## Release Contract
 
 - npm package: `@cubid/core`
 - JSR package: `@cubid/core`
@@ -12,20 +12,30 @@ remaining setup happens in the npm and JSR account UIs.
 - Workflow: `.github/workflows/publish.yml`
 - Release branch: `dev`
 - Release workflow trigger: manual `workflow_dispatch`
-- npm status checked on 2026-04-30: `@cubid/core` is not yet published
-- Local npm status checked on 2026-04-30: this machine is not authenticated
+
+Before a release, verify the current registry and local-auth state instead of
+relying on old notes:
+
+```sh
+npm view @cubid/core version
+npm whoami
+```
+
+If `npm view` returns a 404, the package has not been published yet. If
+`npm whoami` fails, the local machine is not authenticated to npm.
 
 Do not publish from a personal npm account as a routine release path. Official
 Cubid packages should be owned by the npm `cubid` organization and released
 through trusted publishing from GitHub Actions.
 
-## What I Can Do In Repo
+## Repo-Side Tasks
 
-- keep the package runtime-agnostic and publishable
-- run npm pack and JSR dry-runs
-- keep the GitHub Actions workflow ready for trusted publishing
-- open the PR that updates package code, docs, and release automation
-- run the publish workflow after registry setup is complete, if you ask me to
+- Keep the package runtime-agnostic and publishable.
+- Run npm pack and JSR dry-runs to validate release artifacts.
+- Keep the GitHub Actions workflow ready for trusted publishing.
+- Open PRs that update package code, docs, and release automation.
+- After registry setup is complete, run the publish workflow from GitHub
+  Actions.
 
 ## What Needs A Human Account Owner
 
