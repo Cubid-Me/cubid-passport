@@ -3888,3 +3888,34 @@ Close E04 after actor profile persistence, authenticated Passport APIs, Profile 
 #### Follow-up
 
 - publish the stacked E03/E04 branch for review, or continue with the next identity runtime slice if desired
+
+### session: v137
+
+- timestamp: 2026-04-30T23:48:51Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-app-scoped-identity-disclosure**
+- head: **`59cf2a5`**
+- session name: **Wire E01 disclosure grant persistence**
+
+#### Objective
+
+Continue E01 by wiring existing Allow Page and OIDC consent approval paths into the new app-scoped identity and selective-disclosure persistence contract.
+
+#### Actions Taken
+
+- mirrored OIDC consent approval into `app_scoped_subjects`, `selective_disclosure_grants`, and `selective_disclosure_events` without changing OIDC wire responses
+- persisted Allow Page stamp permission grants into the same disclosure contract while keeping legacy `stamp_dappuser_permissions` writes intact
+- added Passport app-scoped subject secret configuration and documented the runtime custody/rotation expectation
+- sent an SDK-impact note to the canonical SDK repo for future public helper alignment
+
+#### Verification
+
+- `pnpm --filter @cubid/oidc typecheck`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/oidc test`
+- `pnpm --filter @cubid/identity test`
+- `pnpm --filter @cubid/passport test` attempted, but local Node 25 still hits the known `buffer-equal-constant-time` / `SlowBuffer` crash before Passport route tests execute; rerun under Node 24 CI/local shell for the final Passport test signal
+
+#### Follow-up
+
+- use the persisted disclosure grants to filter SDK-facing identity routes and webhook payloads in the next E01 slice

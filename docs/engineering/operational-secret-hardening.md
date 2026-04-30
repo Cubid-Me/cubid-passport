@@ -20,7 +20,8 @@ or weak, and be rotated through the owning provider or deployment platform.
 - Passport integrations: `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`,
   `TWILIO_VERIFY_SERVICE_SID`, `SMTP_*`, `INSTAGRAM_CLIENT_SECRET`,
   `FRACTAL_CLIENT_SECRET`, `WLD_CLIENT_SECRET`,
-  `NEAR_ISSUER_PRIVATE_KEY`, `PASSPORT_INTERNAL_API_TOKEN`.
+  `NEAR_ISSUER_PRIVATE_KEY`, `PASSPORT_INTERNAL_API_TOKEN`,
+  `PASSPORT_APP_SCOPED_SUBJECT_SECRET`.
 
 Public `NEXT_PUBLIC_*` Firebase and OAuth client IDs are not private secrets,
 but they still belong in app-local environment files and should not be reused
@@ -36,6 +37,9 @@ as server trust credentials.
 - `OIDC_SIGNING_PRIVATE_JWK_JSON` must be valid JSON and must carry a `kid` or
   be paired with `OIDC_ACTIVE_SIGNING_KID`.
 - `PASSPORT_INTERNAL_API_TOKEN` must be at least 16 characters.
+- `PASSPORT_APP_SCOPED_SUBJECT_SECRET` must be held server-side and should be
+  treated like pairwise subject custody because rotation changes app-scoped
+  subject derivation.
 - Prefer canonical uppercase names. Temporary aliases remain supported for
   existing deployments:
   - `NEAR_ISSUER_PRIVATE_KEY` before `private_key_near`
@@ -75,6 +79,9 @@ does not print secret values.
   runtime env, restart, and smoke-test the specific flow.
 - `PASSPORT_INTERNAL_API_TOKEN`: rotate producers and consumers together,
   then verify internal cron/webhook routes reject the old token.
+- `PASSPORT_APP_SCOPED_SUBJECT_SECRET`: do not rotate casually. Rotation
+  changes Allow Page app-scoped subjects and requires a migration plan for
+  `app_scoped_subjects` and downstream consumers.
 
 ## Incident Response
 

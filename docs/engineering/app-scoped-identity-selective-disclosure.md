@@ -39,6 +39,26 @@ creates the first persistence layer:
 All three tables are service-role-only. Browser, dapp, and authenticated
 Supabase clients must go through Passport, Admin, or OIDC server routes.
 
+## Runtime Adoption
+
+OIDC consent approval now mirrors `oidc_consents` into the shared disclosure
+contract. Each approved or reused consent creates or reuses an
+`app_scoped_subjects` row for `oidc:<client_id>`, then stores the granted scopes
+and classified claims in `selective_disclosure_grants` with source `oidc`.
+OIDC pairwise `sub` remains the protocol-facing identifier, while the shared
+app-scoped subject lets non-OIDC disclosure tooling reason about the same grant.
+
+Allow Page stamp permissions now also create or reuse an app-scoped subject for
+`dapp:<id>` and persist a source `allow_page` disclosure grant for the shared
+stamp scope. Legacy `stamp_dappuser_permissions` remains in place for existing
+reads, but new grants are durably represented in the selective-disclosure
+contract as well.
+
+Passport requires `PASSPORT_APP_SCOPED_SUBJECT_SECRET` for Allow Page subject
+derivation. OIDC currently derives its broader app-scoped subject from the same
+server-held secret used for pairwise subject derivation so the two OIDC subject
+contracts remain tied to the issuer custody boundary.
+
 ## App-Scoped Subject Rules
 
 An app-scoped subject is opaque and stable for one app or client. It is derived
@@ -83,7 +103,7 @@ not raw Cubid storage identifiers.
 
 ## Runtime Adoption Sequence
 
-E01 foundation does not rewrite every route in one pass. The intended adoption
+E01 does not rewrite every route in one pass. Current and remaining adoption
 sequence is:
 
 1. Use `@cubid/identity` disclosure helpers in new API and webhook code.
