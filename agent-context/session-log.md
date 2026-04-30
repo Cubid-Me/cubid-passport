@@ -3234,6 +3234,35 @@ Start E03 to add human, agent, and organization self-identification support with
 
 - implement the shared actor identity model, MCP trust response contracts, minimal OIDC claim definitions, docs, tests, and closeout metadata
 
+### session: v118
+
+- timestamp: 2026-04-30T08:45:06Z
+- agent: **OpenAI Codex**
+- branch: **codex/e03-actor-identity-model**
+- head: **`b5e1f0c`**
+- session name: **Address PR 152 actor identity review feedback**
+
+#### Objective
+
+Resolve the actionable Copilot and Codex review comments on PR #152 before continuing the E03/E04 merge flow.
+
+#### Actions Taken
+
+- defaulted agent self-identification to a standalone affiliation when callers omit affiliation metadata
+- renamed misleading actor normalization test wording and added coverage for the standalone default
+- tightened the actor profile migration grant from `all` to explicit service-role DML privileges
+- switched actor profile API route imports to the Passport path alias
+- fixed Profile actor-profile loading and form behavior so authenticated users without Redux email/phone can load profiles, current form selections drive policy copy, and hidden agent affiliation fields are not submitted after relationship switches
+
+#### Verification
+
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/identity test && pnpm --filter @cubid/identity typecheck && pnpm --filter @cubid/passport test && pnpm --filter @cubid/passport typecheck'`
+- `npx -p node@24 -c 'node --version && pnpm test && pnpm typecheck'`
+
+#### Follow-up
+
+- commit and push the PR review fixes, reply to and resolve review threads, then re-check PR state
+
 ### session: v109
 
 - timestamp: 2026-04-29T18:00:37Z

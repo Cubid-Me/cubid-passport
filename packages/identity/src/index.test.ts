@@ -53,7 +53,7 @@ test("computeConsentFingerprint ignores ordering", () => {
   assert.equal(first, second);
 });
 
-test("normalizeActorSelfIdentification defaults organization kind and strips invalid fields", () => {
+test("normalizeActorSelfIdentification defaults organization kind and trims display names", () => {
   const organization = normalizeActorSelfIdentification({
     actorType: "organization",
     declaredAt: "2026-04-29T00:00:00Z",
@@ -68,6 +68,18 @@ test("normalizeActorSelfIdentification defaults organization kind and strips inv
   assert.equal(organization.displayName, "Cubid Network");
   assert.equal(organization.organizationKind, "other");
   assert.equal(human.organizationKind, null);
+});
+
+test("normalizeActorSelfIdentification defaults agents to standalone affiliation", () => {
+  const agent = normalizeActorSelfIdentification({
+    actorType: "agent",
+    declaredAt: "2026-04-29T00:00:00Z",
+    displayName: "Helper",
+  });
+
+  assert.deepEqual(agent.agentAffiliation, {
+    affiliationType: "standalone",
+  });
 });
 
 test("normalizeActorSelfIdentification rejects contradictory actor metadata", () => {

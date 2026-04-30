@@ -58,5 +58,4 @@ alter table public.actor_profiles enable row level security;
 revoke all on table public.actor_profiles from anon;
 revoke all on table public.actor_profiles from authenticated;
 revoke all on table public.actor_profiles from public;
-grant all on table public.actor_profiles to service_role;
-
+grant select, insert, update, delete on table public.actor_profiles to service_role;

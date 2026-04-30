@@ -172,7 +172,10 @@ export function normalizeActorSelfIdentification(
 
   return {
     actorType: input.actorType,
-    agentAffiliation: input.actorType === "agent" ? input.agentAffiliation ?? null : null,
+    agentAffiliation:
+      input.actorType === "agent"
+        ? input.agentAffiliation ?? { affiliationType: "standalone" }
+        : null,
     declaredAt: input.declaredAt ?? new Date().toISOString(),
     displayName: input.displayName?.trim() || null,
     organizationKind: input.actorType === "organization" ? input.organizationKind ?? "other" : null,

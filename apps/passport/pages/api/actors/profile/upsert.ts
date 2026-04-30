@@ -1,10 +1,10 @@
 import type { NextApiRequest, NextApiResponse } from "next"
 
-import { upsertPassportActorProfile } from "../../../../lib/server/actorProfiles"
+import { upsertPassportActorProfile } from "@/lib/server/actorProfiles"
 import {
   handlePassportRoute,
   passportSchemas,
-} from "../../../../lib/server/passportApi"
+} from "@/lib/server/passportApi"
 
 const actorProfileSchema = passportSchemas.z.object({
   actorType: passportSchemas.z.enum(["human", "agent", "organization"]),
@@ -56,4 +56,3 @@ export default async function handler(
     }
   )
 }
-

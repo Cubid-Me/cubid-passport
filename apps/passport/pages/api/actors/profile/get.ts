@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next"
 
-import { getPassportActorProfile } from "../../../../lib/server/actorProfiles"
-import { handlePassportRoute } from "../../../../lib/server/passportApi"
+import { getPassportActorProfile } from "@/lib/server/actorProfiles"
+import { handlePassportRoute } from "@/lib/server/passportApi"
 
 export default async function handler(
   req: NextApiRequest,
@@ -22,4 +22,3 @@ export default async function handler(
     }
   )
 }
-

@@ -125,6 +125,30 @@ const agentAffiliationLabels = {
   standalone: "Standalone agent",
 }
 
+const actorValidationPolicies = {
+  agent: {
+    description:
+      "Agents self-identify and may claim stamps, but do not receive bespoke personhood validation by default.",
+    personhoodScoreEligible: false,
+    stampClaimEligible: true,
+    validationIntensity: "limited_generic",
+  },
+  human: {
+    description:
+      "Humans are the primary proof-of-personhood subject and receive deep validation and scoring.",
+    personhoodScoreEligible: true,
+    stampClaimEligible: true,
+    validationIntensity: "deep_human",
+  },
+  organization: {
+    description:
+      "Organizations include teams, groups, networks, communities, collectives, and formal entities; validation is generic by default.",
+    personhoodScoreEligible: false,
+    stampClaimEligible: true,
+    validationIntensity: "limited_generic",
+  },
+}
+
 const formatList = (values: string[]) => {
   if (!values.length) {
     return "None"
@@ -301,8 +325,7 @@ export const Profile = () => {
   )
 
   const fetchActorProfile = useCallback(async () => {
-    if (!email && !phone) {
-      setActorProfile(null)
+    if (!firebase.auth().currentUser) {
       return
     }
 
@@ -321,7 +344,7 @@ export const Profile = () => {
     } finally {
       setActorProfileLoading(false)
     }
-  }, [applyActorProfileFormState, email, phone, getOidcAuthHeaders])
+  }, [applyActorProfileFormState, getOidcAuthHeaders])
 
   useEffect(() => {
     fetchActorProfile()
@@ -331,17 +354,24 @@ export const Profile = () => {
     setActorProfileSaving(true)
     try {
       const headers = await getOidcAuthHeaders()
+      const agentAffiliation =
+        actorType === "agent"
+          ? {
+              affiliationType: agentAffiliationType,
+              description: agentAffiliationDescription || null,
+              organizationSubjectKey:
+                agentAffiliationType === "organization_supported"
+                  ? agentOrganizationSubjectKey || null
+                  : null,
+              supportedHumanSubjectKey:
+                agentAffiliationType === "human_supported"
+                  ? agentSupportedHumanSubjectKey || null
+                  : null,
+            }
+          : null
       const payload = {
         actorType,
-        agentAffiliation:
-          actorType === "agent"
-            ? {
-                affiliationType: agentAffiliationType,
-                description: agentAffiliationDescription || null,
-                organizationSubjectKey: agentOrganizationSubjectKey || null,
-                supportedHumanSubjectKey: agentSupportedHumanSubjectKey || null,
-              }
-            : null,
+        agentAffiliation,
         displayName: actorDisplayName || null,
         organizationKind: actorType === "organization" ? organizationKind : null,
       }
@@ -543,6 +573,8 @@ export const Profile = () => {
     [fetchOidcConsents, getOidcAuthHeaders]
   )
 
+  const selectedActorPolicy = actorValidationPolicies[actorType]
+
   return (
     <div className="p-3">
       <h1 className="mb-2 text-3xl font-semibold">Profile</h1>
@@ -693,7 +725,11 @@ export const Profile = () => {
                     <p className="text-sm font-medium">Agent relationship</p>
                     <Select
                       value={agentAffiliationType}
-                      onValueChange={setAgentAffiliationType}
+                      onValueChange={(value) => {
+                        setAgentAffiliationType(value)
+                        setAgentSupportedHumanSubjectKey("")
+                        setAgentOrganizationSubjectKey("")
+                      }}
                     >
                       <SelectTrigger aria-label="Agent relationship">
                         <SelectValue placeholder="Choose relationship" />
@@ -766,27 +802,24 @@ export const Profile = () => {
             </div>
             <div className="mt-4 rounded-lg border bg-muted/30 p-3 text-sm">
               <p className="font-semibold">
-                {actorTypeLabels[actorProfile?.actorType ?? actorType]} policy
+                {actorTypeLabels[actorType]} policy
               </p>
               <p className="mt-1 text-muted-foreground">
-                {actorProfile?.validationPolicy?.description ??
-                  "Save your identity type to see its trust policy."}
+                {selectedActorPolicy.description}
               </p>
               <div className="mt-3 grid gap-2 md:grid-cols-3">
                 <span className="rounded-full bg-background px-3 py-2">
-                  Validation:{" "}
-                  {actorProfile?.validationPolicy?.validationIntensity ??
-                    "pending"}
+                  Validation: {selectedActorPolicy.validationIntensity}
                 </span>
                 <span className="rounded-full bg-background px-3 py-2">
                   Personhood score:{" "}
-                  {actorProfile?.validationPolicy?.personhoodScoreEligible
+                  {selectedActorPolicy.personhoodScoreEligible
                     ? "eligible"
                     : "not eligible"}
                 </span>
                 <span className="rounded-full bg-background px-3 py-2">
                   Stamp claims:{" "}
-                  {actorProfile?.validationPolicy?.stampClaimEligible
+                  {selectedActorPolicy.stampClaimEligible
                     ? "available"
                     : "not available"}
                 </span>
