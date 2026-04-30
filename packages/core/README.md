@@ -153,3 +153,6 @@ The JSR package should be linked to:
 - Package: `@cubid/core`
 - Repository: `Cubid-Me/cubid-passport`
 - Workflow: `.github/workflows/publish.yml`
+
+See `docs/engineering/core-publishing-runbook.md` in the repository for the
+full npm/JSR setup checklist and first-version bootstrap notes.

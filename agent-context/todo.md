@@ -539,14 +539,25 @@ Turn the current mixed bag of legacy routes into a coherent developer platform. 
 
 ### E02.1 Publish `@cubid/core` as a dual-target runtime-agnostic package
 
-- Status: Started
+- Status: Completed
 - Timestamp started: 2026-04-28T08:28:44Z
-- Timestamp completed: TBD
-- Feature branch: codex/e02-1-cubid-api-package
-- Head: 452874b
-- Session-log reference(s): session: v94, session: v95
+- Timestamp completed: 2026-04-30T09:05:06Z
+- Feature branch: codex/e02-1-cubid-api-package; codex/e02-1-core-publishing-setup
+- Head: 339dcf3
+- Session-log reference(s): session: v94, session: v95, session: v119, session: v120
 
 Package `@cubid/core` as the required public integration foundation that works cleanly from both npm and JSR, so downstream apps can import `@cubid/core` in Next.js and `jsr:@cubid/core` in Supabase Edge or other Deno runtimes without mirrors, tarballs, or path hacks. Keep the package strictly runtime-agnostic: no React, no browser-only helpers, no Node-only assumptions, no chain SDKs, and no wagmi. All request logic should rely on `fetch`, `RequestInit`, `Headers`, and plain JSON contracts, with callers able to inject `fetch` and server-held credentials explicitly. The output of this todo is a package layout, export map, build/publish setup, and usage contract that makes Cubid’s core API client feel native in both Node and Deno environments.
+
+### E02.1.1 Complete `@cubid/core` registry-side first release
+
+- Status: Not started
+- Timestamp started: TBD
+- Timestamp completed: TBD
+- Feature branch: TBD
+- Head: TBD
+- Session-log reference(s): TBD
+
+Complete the human-owned registry setup and first official `@cubid/core` release after the repo-side package and trusted-publishing workflow have merged to `dev`. Confirm the npm `cubid` organization exists, that the right maintainers belong to the `developers` team, and that `@cubid/core` is owned by the org rather than a personal account. If npm allows trusted-publisher setup before first publication, configure GitHub Actions trusted publishing directly; if not, perform the one-time owner-controlled bootstrap publish from a clean `dev` release commit, then immediately configure trusted publishing and restrict token access. Also create/link the JSR `@cubid/core` package to `Cubid-Me/cubid-passport`, run the manual publish workflow from `dev`, verify npm/JSR installs, and record package URLs plus version metadata.
 
 ### E02.2 Add a stable server-facing identity sync contract to `@cubid/core`
 

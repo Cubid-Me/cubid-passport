@@ -3263,6 +3263,91 @@ Resolve the actionable Copilot and Codex review comments on PR #152 before conti
 
 - commit and push the PR review fixes, reply to and resolve review threads, then re-check PR state
 
+### session: v121
+
+- timestamp: 2026-04-30T12:18:51Z
+- agent: **OpenAI Codex**
+- branch: **codex/e02-1-core-publishing-setup**
+- head: **`b6b0606`**
+- session name: **Address PR 153 publishing runbook review**
+
+#### Objective
+
+Resolve Copilot review comments on PR #153 by making the publishing runbook less time-bound and moving the release-branch guard earlier in the workflow.
+
+#### Actions Taken
+
+- replaced point-in-time npm/auth status bullets with repeatable verification commands
+- rewrote the agent-first-person runbook section as an impersonal repo-side task checklist
+- moved the publish branch guard directly after checkout so mistaken release dispatches fail before setup and install work
+
+#### Verification
+
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/core test && pnpm --filter @cubid/core typecheck && pnpm --filter @cubid/core deno:check && pnpm --filter @cubid/core build && pnpm --filter @cubid/core pack:dry-run && pnpm --filter @cubid/core jsr:dry-run'`
+- `git diff --check`
+
+#### Follow-up
+
+- commit, push, reply to the three review threads, and resolve them
+
+### session: v120
+
+- timestamp: 2026-04-30T09:05:06Z
+- agent: **OpenAI Codex**
+- branch: **codex/e02-1-core-publishing-setup**
+- head: **`339dcf3`**
+- session name: **Close E02.1 repo-side core publishing setup**
+
+#### Objective
+
+Close the repo-side E02.1 package setup while keeping the npm/JSR account-owner first release as an explicit follow-up.
+
+#### Actions Taken
+
+- marked E02.1 completed against the repo-side publishing setup commit
+- added `E02.1.1` for the registry-side first release and trusted-publisher activation steps that require human npm/JSR ownership
+- kept live package publication out of this commit because `@cubid/core` is not yet published and registry setup requires account-owner action
+
+#### Verification
+
+- confirmed E02.1 now points at setup commit `339dcf3`
+- confirmed E02.1.1 captures the remaining npm/JSR release work as a separate todo
+
+#### Follow-up
+
+- open a PR for the publishing setup, merge to `dev`, then have a Cubid npm/JSR owner complete E02.1.1 using the runbook
+
+### session: v119
+
+- timestamp: 2026-04-30T09:03:20Z
+- agent: **OpenAI Codex**
+- branch: **codex/e02-1-core-publishing-setup**
+- head: **`5ac2004`**
+- session name: **Harden core package publishing setup**
+
+#### Objective
+
+Prune stale feature branches and tighten the `@cubid/core` npm/JSR publishing path so registry setup can proceed through official Cubid-owned accounts and GitHub Actions trusted publishing.
+
+#### Actions Taken
+
+- pruned stale local branches from the earlier A/B/C rollout stacks
+- deleted stale remote feature branches for closed/superseded PRs
+- verified `@cubid/core` is not yet published on npm and that the local machine is not authenticated to npm
+- added a release-branch guard and tool-version logging to the manual publish workflow
+- added an operator runbook for npm organization setup, trusted publishing, JSR linking, and the first-version bootstrap decision
+
+#### Verification
+
+- `npm view @cubid/core --json` returned npm 404, confirming the package is not yet published
+- `npm whoami` returned `ENEEDAUTH`, confirming no local npm publish identity is active
+- `pnpm --filter @cubid/core pack:dry-run`
+- `pnpm --filter @cubid/core jsr:dry-run`
+
+#### Follow-up
+
+- merge the publishing setup changes, then have a Cubid npm/JSR owner complete the registry-side setup before running the manual publish workflow from `dev`
+
 ### session: v109
 
 - timestamp: 2026-04-29T18:00:37Z
