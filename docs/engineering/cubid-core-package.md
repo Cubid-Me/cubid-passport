@@ -1,10 +1,10 @@
 # Cubid Core Package
 
 This Passport-repo copy is historical implementation context only. The
-canonical public SDK home is `/Users/botmaster/src/cubid/cubid-sdk-v2`, and
-public package implementation and publication should happen there rather than
-from `cubid-passport`. The private repo no longer carries a manual package
-publish workflow.
+canonical public SDK home is `Cubid-Me/cubid-sdk`, and public package
+implementation and publication should happen there rather than from
+`cubid-passport`. The private repo no longer carries a manual package publish
+workflow.
 
 `@cubid/core` is the foundation package for external Cubid integrations. It is
 runtime-agnostic by design: no React, Next.js, Firebase, Supabase, Node-only
@@ -50,14 +50,14 @@ npm Trusted Publisher setup:
 
 - Provider: GitHub Actions
 - Organization/user: `Cubid-Me`
-- Repository: `cubid-sdk-v2`
+- Repository: `cubid-sdk`
 - Workflow filename: `publish.yml`
 - Environment: blank unless release approvals are added intentionally
 
 JSR setup:
 
 - Scope/package: `@cubid/core`
-- Linked GitHub repository: `Cubid-Me/cubid-sdk-v2`
+- Linked GitHub repository: `Cubid-Me/cubid-sdk`
 - Workflow: `.github/workflows/publish.yml`
 
 The publish workflow is manual (`workflow_dispatch`) so maintainers choose when

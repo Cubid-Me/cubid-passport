@@ -5,9 +5,9 @@ Next.js server and from Supabase Edge Functions. `@cubid/core` is
 runtime-agnostic: keep it on the server, inject `fetch` when useful, and never
 ship Cubid dapp API keys to browser bundles.
 
-The live public package source for this guide is
-`/Users/botmaster/src/cubid/cubid-sdk-v2`. Keep `cubid-passport` private and do
-not treat it as the package implementation or publication source.
+The live public package source for this guide is `Cubid-Me/cubid-sdk`. Keep
+`cubid-passport` private and do not treat it as the package implementation or
+publication source.
 
 ## Server-Side Next.js Usage
 

@@ -3263,6 +3263,32 @@ Resolve the actionable Copilot and Codex review comments on PR #152 before conti
 
 - commit and push the PR review fixes, reply to and resolve review threads, then re-check PR state
 
+### session: v124
+
+- timestamp: 2026-04-30T21:17:54Z
+- agent: **OpenAI Codex**
+- branch: **codex/sdk-ingestion-private-repo-cleanup**
+- head: **`7bbdc41`**
+- session name: **Point SDK docs at canonical public repo**
+
+#### Objective
+
+Align the private-repo SDK docs with the canonical public SDK repository name before committing the follow-up doc cleanup.
+
+#### Actions Taken
+
+- updated the SDK publishing and integration docs to point at `Cubid-Me/cubid-sdk`
+- kept the change scoped to documentation references only
+- left the larger SDK ingestion cleanup in the prior commit unchanged
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- commit the four engineering-doc files plus this session-log entry
+
 ### session: v123
 
 - timestamp: 2026-04-30T15:23:55Z

@@ -1,8 +1,8 @@
 # `@cubid/core` Publishing Runbook
 
 This Passport-repo copy is historical context only. The canonical public SDK
-home is `/Users/botmaster/src/cubid/cubid-sdk-v2`, and package publication
-must happen from that repo rather than from `cubid-passport`.
+home is `Cubid-Me/cubid-sdk`, and package publication must happen from that
+repo rather than from `cubid-passport`.
 
 `cubid-passport` no longer has a manual package-publish workflow. Keep it that
 way unless the SDK canonical home decision changes explicitly.
@@ -11,8 +11,8 @@ way unless the SDK canonical home decision changes explicitly.
 
 - npm package: `@cubid/core`
 - JSR package: `@cubid/core`
-- GitHub repository: `Cubid-Me/cubid-sdk-v2`
-- Workflow: `.github/workflows/publish.yml` in `cubid-sdk-v2`
+- GitHub repository: `Cubid-Me/cubid-sdk`
+- Workflow: `.github/workflows/publish.yml` in `cubid-sdk`
 - Release branch: `main`
 - Release workflow trigger: manual `workflow_dispatch`
 
@@ -58,7 +58,7 @@ official Cubid org accounts, not an agent-owned or personal workaround.
    Publishing:
    - Provider: `GitHub Actions`
    - Organization or user: `Cubid-Me`
-   - Repository: `cubid-sdk-v2`
+   - Repository: `cubid-sdk`
    - Workflow filename: `publish.yml`
    - Environment name: leave blank
 7. In the package settings, set publishing access to require 2FA and disallow
@@ -95,7 +95,7 @@ npm automation token in this repository.
 2. Create or open scope `@cubid`.
 3. Create or open package `@cubid/core`.
 4. In the package settings, link the GitHub repository:
-   - Repository: `Cubid-Me/cubid-sdk-v2`
+   - Repository: `Cubid-Me/cubid-sdk`
    - Workflow: `.github/workflows/publish.yml`
 5. Keep tokenless GitHub Actions publishing as the release path.
 
@@ -105,7 +105,7 @@ linked to the repository.
 ## Release Steps After Setup
 
 1. Ensure the release commit is merged to `main`.
-2. Open GitHub Actions for `Cubid-Me/cubid-sdk-v2`.
+2. Open GitHub Actions for `Cubid-Me/cubid-sdk`.
 3. Select workflow `Publish Packages`.
 4. Click `Run workflow`.
 5. Select branch `main`.

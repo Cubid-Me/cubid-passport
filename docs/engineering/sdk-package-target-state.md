@@ -4,9 +4,9 @@ This document defines the target public SDK ecosystem for Cubid. It complements
 the agent backgrounder by translating the product principles into package
 boundaries, dependency rules, and publishing ownership.
 
-The canonical public SDK home is `/Users/botmaster/src/cubid/cubid-sdk-v2`.
-`cubid-passport` remains the private backend and identity-provider repo; it
-should not be the package publication source.
+The canonical public SDK home is `Cubid-Me/cubid-sdk`. `cubid-passport`
+remains the private backend and identity-provider repo; it should not be the
+package publication source.
 
 ## Package Ecosystem
 
