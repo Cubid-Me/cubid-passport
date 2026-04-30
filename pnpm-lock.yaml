@@ -195,6 +195,9 @@ importers:
       '@cubid/identity':
         specifier: workspace:*
         version: link:../../packages/identity
+      '@cubid/stamps':
+        specifier: workspace:*
+        version: link:../../packages/stamps
       '@cubid/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -663,6 +666,18 @@ importers:
 
   packages/solana:
     devDependencies:
+      typescript:
+        specifier: 5.2.2
+        version: 5.2.2
+
+  packages/stamps:
+    devDependencies:
+      '@types/node':
+        specifier: ^24.0.0
+        version: 24.12.2
+      tsx:
+        specifier: ^4.19.4
+        version: 4.21.0
       typescript:
         specifier: 5.2.2
         version: 5.2.2

@@ -1,12 +1,11 @@
 import type { NextApiRequest, NextApiResponse } from "next"
+import { getStampTypeId } from "@cubid/stamps"
 
 import {
   handlePassportRoute,
   passportSchemas,
 } from "@/lib/server/passportApi"
 import { getPassportSupabase } from "@/lib/server/supabase"
-
-import { stampsWithId } from "./../utils/stampKey"
 
 const mappedUserIdentifiers: Record<string, string> = {
   email: "email",
@@ -80,7 +79,7 @@ export default async function handler(
         const identifier = userIdentifiers[key as keyof typeof userIdentifiers]
         if (identifier) {
           uniqueValue = identifier
-          stampType = (stampsWithId as Record<string, number>)[value] ?? null
+          stampType = getStampTypeId(value)
           break
         }
       }

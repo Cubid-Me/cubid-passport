@@ -1,3 +1,31 @@
+### session: v130
+
+- timestamp: 2026-04-30T23:13:38Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-app-scoped-identity-disclosure**
+- head: **`26ef1e3`**
+- session name: **Implement D01 shared stamps package**
+
+#### Objective
+
+Extract the duplicated Passport stamp registry and app-safe stamp helpers into a shared domain package as the first D01 implementation slice.
+
+#### Actions Taken
+
+- added `@cubid/stamps` with canonical stamp type IDs, reverse lookup helpers, stamp permission validation, and app-safe disclosed stamp normalization
+- switched Passport server routes, utility exports, and stamp UI barrels away from local duplicated stamp maps
+- added `@cubid/stamps` as a Passport workspace dependency and refreshed the pnpm lockfile
+- preserved legacy import surfaces such as `pages/api/utils/stampKey.ts` and `lib/stampInsertion.ts` as thin compatibility re-exports
+
+#### Verification
+
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/stamps test && pnpm --filter @cubid/stamps typecheck && pnpm --filter @cubid/stamps build && pnpm --filter @cubid/passport typecheck'`
+- `git diff --check`
+
+#### Follow-up
+
+- continue D01 by extracting score/event/client-app contracts or by wiring E01 disclosure grants into Allow Page and OIDC consent persistence
+
 ### session: v129
 
 - timestamp: 2026-04-30T23:09:49Z

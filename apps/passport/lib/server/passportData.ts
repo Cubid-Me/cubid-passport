@@ -1,35 +1,10 @@
 import { getRequiredEnv } from "@cubid/config"
 import { ApiSecurityError } from "@cubid/auth/server"
+import { STAMP_TYPE_IDS, getStampTypeId } from "@cubid/stamps"
 
 import { encode_data } from "@/lib/encode_data"
 
 import { getPassportSupabase } from "./supabase"
-
-const STAMP_TYPE_IDS: Record<string, number> = {
-  facebook: 1,
-  github: 2,
-  google: 3,
-  twitter: 4,
-  discord: 5,
-  poh: 6,
-  iah: 7,
-  brightid: 8,
-  gitcoin: 9,
-  instagram: 10,
-  phone: 11,
-  gooddollar: 12,
-  email: 13,
-  evm: 14,
-  near: 15,
-  "near-wallet": 15,
-  fractal: 17,
-  worldcoin: 26,
-  telegram: 27,
-  solana: 53,
-  "lens-protocol": 66,
-  farcaster: 68,
-  address: 70,
-}
 
 const toRecord = (value: unknown) => {
   if (typeof value === "object" && value !== null) {
@@ -312,7 +287,7 @@ export const passportDataCommands = {
     userUuid?: string
   }) {
     const supabase = getPassportSupabase()
-    const stampTypeId = STAMP_TYPE_IDS[input.stampType]
+    const stampTypeId = getStampTypeId(input.stampType)
 
     if (!stampTypeId) {
       throw new ApiSecurityError(

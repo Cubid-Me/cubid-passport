@@ -5,19 +5,12 @@ import {
   passportSchemas,
 } from "@/lib/server/passportApi"
 import { getPassportSupabase } from "@/lib/server/supabase"
-
-import { stampsWithId } from "../../utils/stampKey"
+import { getStampTypeName } from "@cubid/stamps"
 
 const schema = passportSchemas.z.object({
   apikey: passportSchemas.z.string().min(1),
   user_id: passportSchemas.z.string().min(1),
 })
-
-const swapKeyValue = (input: Record<string, number>) => {
-  return Object.fromEntries(
-    Object.entries(input).map(([key, value]) => [value, key])
-  ) as Record<number, string>
-}
 
 export default async function handler(
   req: NextApiRequest,
@@ -56,7 +49,6 @@ export default async function handler(
         throw stampError
       }
 
-      const swapped = swapKeyValue(stampsWithId)
       const allStamps = await Promise.all(
         (stampData ?? []).map(async (item: any) => {
           const { data: permissionData, error } = await supabase
@@ -75,7 +67,7 @@ export default async function handler(
             ...item,
             emailForVerification: dappUsers[0]?.users.email,
             permAvailable: Boolean(permissionData?.[0]),
-            stamptype_string: swapped[item.stamptype],
+            stamptype_string: getStampTypeName(Number(item.stamptype)),
           }
         })
       )

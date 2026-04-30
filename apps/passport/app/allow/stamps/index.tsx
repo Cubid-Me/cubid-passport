@@ -4,6 +4,7 @@
 "use client"
 
 import React, { useCallback, useEffect, useState } from "react"
+import { stampsWithId } from "@cubid/stamps"
 import axios from "axios"
 import dayjs from "dayjs"
 import { useSelector } from "react-redux"
@@ -110,25 +111,7 @@ const socialDataToMap = [
   },
 ]
 
-export const stampsWithId = {
-  facebook: 1,
-  github: 2,
-  google: 3,
-  twitter: 4,
-  discord: 5,
-  poh: 6,
-  iah: 7,
-  brightid: 8,
-  gitcoin: 9,
-  instagram: 10,
-  phone: 11,
-  gooddollar: 12,
-  "near-wallet": 15,
-  fractal: 17,
-  evm: 14,
-  email: 13,
-  solana: 53
-}
+export { stampsWithId }
 
 export const Stamps = ({
   supabaseUser,

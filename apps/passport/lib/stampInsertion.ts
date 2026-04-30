@@ -1,35 +1,13 @@
 // @ts-nocheck
+import { stampsWithId } from "@cubid/stamps"
+
 import { encode_data } from "./encode_data"
 import { supabase } from "./supabase"
 import { webhook_call } from "./webhook_call"
 
 import { createPassportStamp } from "@/lib/passportDataApi"
 
-export const stampsWithId = {
-    facebook: 1,
-    github: 2,
-    google: 3,
-    twitter: 4,
-    discord: 5,
-    poh: 6,
-    iah: 7,
-    brightid: 8,
-    gitcoin: 9,
-    instagram: 10,
-    phone: 11,
-    gooddollar: 12,
-    "near-wallet": 15,
-    fractal: 17,
-    evm: 14,
-    email: 13,
-    solana: 53,
-    telegram: 27,
-    worldcoin: 26,
-    near: 15,
-    "lens-protocol": 66,
-    'farcaster': 68,
-    'address': 70
-}
+export { stampsWithId }
 
 
 export const insertStamp = async ({ stampData, user_data, stamp_type, app_id, is_auth = false }: { is_auth: boolean, app_id: number, stampData: any, user_data: { user_id: number, uuid: string }, stamp_type: keyof typeof stampsWithId, is_auth?: boolean }) => {

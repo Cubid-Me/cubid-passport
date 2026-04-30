@@ -3,6 +3,7 @@
 "use client"
 
 import React, { useCallback, useEffect, useState } from "react"
+import { stampsWithId } from "@cubid/stamps"
 import { useWeb3Modal } from "@web3modal/wagmi/react"
 import axios from "axios"
 import dayjs from "dayjs"
@@ -110,28 +111,7 @@ const socialDataToMap = [
   },
 ]
 
-export const stampsWithId = {
-  facebook: 1,
-  github: 2,
-  google: 3,
-  twitter: 4,
-  discord: 5,
-  poh: 6,
-  iah: 7,
-  brightid: 8,
-  gitcoin: 9,
-  instagram: 10,
-  phone: 11,
-  gooddollar: 12,
-  "near-wallet": 15,
-  fractal: 17,
-  evm: 14,
-  worldcoin: 26,
-  telegram: 27,
-  solana: 53,
-  'lens-protocol': 66,
-  'farcaster': 68
-}
+export { stampsWithId }
 
 export const Stamps = () => {
   const worldcoinClientId = process.env.NEXT_PUBLIC_WLD_CLIENT_ID ?? ""
