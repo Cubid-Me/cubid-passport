@@ -74,6 +74,81 @@ type PasskeyDeviceSummary = {
   updatedAt: string
 }
 
+type ActorProfileSummary = {
+  actorType: "human" | "agent" | "organization"
+  agentAffiliation: {
+    affiliationType: "standalone" | "human_supported" | "organization_supported"
+    description?: string | null
+    organizationSubjectKey?: string | null
+    supportedHumanSubjectKey?: string | null
+  } | null
+  createdAt: string | null
+  displayName: string | null
+  organizationKind:
+    | "formal_organization"
+    | "team"
+    | "group"
+    | "network"
+    | "community"
+    | "collective"
+    | "other"
+    | null
+  updatedAt: string | null
+  validationPolicy: {
+    description: string
+    personhoodScoreEligible: boolean
+    socialStampConflictPrevention: boolean
+    stampClaimEligible: boolean
+    validationIntensity: "deep_human" | "limited_generic" | "none"
+  }
+}
+
+const actorTypeLabels = {
+  agent: "Agent",
+  human: "Human",
+  organization: "Organization",
+}
+
+const organizationKindLabels = {
+  collective: "Collective",
+  community: "Community",
+  formal_organization: "Formal organization",
+  group: "Group",
+  network: "Network",
+  other: "Other",
+  team: "Team",
+}
+
+const agentAffiliationLabels = {
+  human_supported: "Supports one human",
+  organization_supported: "Belongs to an organization",
+  standalone: "Standalone agent",
+}
+
+const actorValidationPolicies = {
+  agent: {
+    description:
+      "Agents self-identify and may claim stamps, but do not receive bespoke personhood validation by default.",
+    personhoodScoreEligible: false,
+    stampClaimEligible: true,
+    validationIntensity: "limited_generic",
+  },
+  human: {
+    description:
+      "Humans are the primary proof-of-personhood subject and receive deep validation and scoring.",
+    personhoodScoreEligible: true,
+    stampClaimEligible: true,
+    validationIntensity: "deep_human",
+  },
+  organization: {
+    description:
+      "Organizations include teams, groups, networks, communities, collectives, and formal entities; validation is generic by default.",
+    personhoodScoreEligible: false,
+    stampClaimEligible: true,
+    validationIntensity: "limited_generic",
+  },
+}
+
 const formatList = (values: string[]) => {
   if (!values.length) {
     return "None"
@@ -110,6 +185,26 @@ export const Profile = () => {
   const [revokingConsentId, setRevokingConsentId] = useState<string | null>(
     null
   )
+  const [actorProfile, setActorProfile] = useState<ActorProfileSummary | null>(
+    null
+  )
+  const [actorProfileLoading, setActorProfileLoading] = useState(false)
+  const [actorProfileSaving, setActorProfileSaving] = useState(false)
+  const [actorType, setActorType] = useState<
+    "human" | "agent" | "organization"
+  >("human")
+  const [actorDisplayName, setActorDisplayName] = useState("")
+  const [organizationKind, setOrganizationKind] =
+    useState<NonNullable<ActorProfileSummary["organizationKind"]>>("other")
+  const [agentAffiliationType, setAgentAffiliationType] = useState<
+    NonNullable<ActorProfileSummary["agentAffiliation"]>["affiliationType"]
+  >("standalone")
+  const [agentSupportedHumanSubjectKey, setAgentSupportedHumanSubjectKey] =
+    useState("")
+  const [agentOrganizationSubjectKey, setAgentOrganizationSubjectKey] =
+    useState("")
+  const [agentAffiliationDescription, setAgentAffiliationDescription] =
+    useState("")
 
   const fetchStamps = useCallback(async () => {
     if (email) {
@@ -206,6 +301,106 @@ export const Profile = () => {
       Authorization: `Bearer ${token}`,
     }
   }, [])
+
+  const applyActorProfileFormState = useCallback(
+    (profile: ActorProfileSummary) => {
+      setActorProfile(profile)
+      setActorType(profile.actorType)
+      setActorDisplayName(profile.displayName ?? "")
+      setOrganizationKind(profile.organizationKind ?? "other")
+      setAgentAffiliationType(
+        profile.agentAffiliation?.affiliationType ?? "standalone"
+      )
+      setAgentSupportedHumanSubjectKey(
+        profile.agentAffiliation?.supportedHumanSubjectKey ?? ""
+      )
+      setAgentOrganizationSubjectKey(
+        profile.agentAffiliation?.organizationSubjectKey ?? ""
+      )
+      setAgentAffiliationDescription(
+        profile.agentAffiliation?.description ?? ""
+      )
+    },
+    []
+  )
+
+  const fetchActorProfile = useCallback(async () => {
+    if (!firebase.auth().currentUser) {
+      return
+    }
+
+    setActorProfileLoading(true)
+    try {
+      const headers = await getOidcAuthHeaders()
+      const { data } = await axios.post<{ data: ActorProfileSummary }>(
+        "/api/actors/profile/get",
+        {},
+        { headers }
+      )
+      applyActorProfileFormState(data.data)
+    } catch (error) {
+      console.error(error)
+      toast.error("Failed to load identity type")
+    } finally {
+      setActorProfileLoading(false)
+    }
+  }, [applyActorProfileFormState, getOidcAuthHeaders])
+
+  useEffect(() => {
+    fetchActorProfile()
+  }, [fetchActorProfile])
+
+  const saveActorProfile = useCallback(async () => {
+    setActorProfileSaving(true)
+    try {
+      const headers = await getOidcAuthHeaders()
+      const agentAffiliation =
+        actorType === "agent"
+          ? {
+              affiliationType: agentAffiliationType,
+              description: agentAffiliationDescription || null,
+              organizationSubjectKey:
+                agentAffiliationType === "organization_supported"
+                  ? agentOrganizationSubjectKey || null
+                  : null,
+              supportedHumanSubjectKey:
+                agentAffiliationType === "human_supported"
+                  ? agentSupportedHumanSubjectKey || null
+                  : null,
+            }
+          : null
+      const payload = {
+        actorType,
+        agentAffiliation,
+        displayName: actorDisplayName || null,
+        organizationKind: actorType === "organization" ? organizationKind : null,
+      }
+      const { data } = await axios.post<{ data: ActorProfileSummary }>(
+        "/api/actors/profile/upsert",
+        payload,
+        { headers }
+      )
+      applyActorProfileFormState(data.data)
+      toast.success("Identity type saved")
+    } catch (error: any) {
+      console.error(error)
+      toast.error(
+        error?.response?.data?.error?.message ?? "Failed to save identity type"
+      )
+    } finally {
+      setActorProfileSaving(false)
+    }
+  }, [
+    actorDisplayName,
+    actorType,
+    agentAffiliationDescription,
+    agentAffiliationType,
+    agentOrganizationSubjectKey,
+    agentSupportedHumanSubjectKey,
+    applyActorProfileFormState,
+    getOidcAuthHeaders,
+    organizationKind,
+  ])
 
   const fetchPasskeyDevices = useCallback(async () => {
     if (!email && !phone) {
@@ -378,6 +573,8 @@ export const Profile = () => {
     [fetchOidcConsents, getOidcAuthHeaders]
   )
 
+  const selectedActorPolicy = actorValidationPolicies[actorType]
+
   return (
     <div className="p-3">
       <h1 className="mb-2 text-3xl font-semibold">Profile</h1>
@@ -459,6 +656,197 @@ export const Profile = () => {
                 <SelectItem value="sp">Spanish</SelectItem>
               </SelectContent>
             </Select>
+          </CardContent>
+        </Card>
+
+        <Card className="md:col-span-2">
+          <CardHeader>
+            <CardTitle>Identity type</CardTitle>
+            <CardDescription>
+              Tell Cubid whether this account represents a human, an agent, or
+              an organization. Humans receive the deepest proof-of-personhood
+              scoring; agents and organizations can still claim stamps so those
+              accounts are not double-counted for human scores.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="text-sm font-medium" htmlFor="actor-display-name">
+                  Display name
+                </label>
+                <Input
+                  id="actor-display-name"
+                  value={actorDisplayName}
+                  onChange={(event) => setActorDisplayName(event.target.value)}
+                  placeholder="Name shown in Cubid trust contexts"
+                />
+              </div>
+              <div>
+                <p className="text-sm font-medium">Account represents</p>
+                <Select value={actorType} onValueChange={setActorType}>
+                  <SelectTrigger aria-label="Account represents">
+                    <SelectValue placeholder="Choose identity type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(actorTypeLabels).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {actorType === "organization" && (
+                <div>
+                  <p className="text-sm font-medium">Organization kind</p>
+                  <Select
+                    value={organizationKind}
+                    onValueChange={setOrganizationKind}
+                  >
+                    <SelectTrigger aria-label="Organization kind">
+                      <SelectValue placeholder="Choose organization kind" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(organizationKindLabels).map(
+                        ([value, label]) => (
+                          <SelectItem key={value} value={value}>
+                            {label}
+                          </SelectItem>
+                        )
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              {actorType === "agent" && (
+                <>
+                  <div>
+                    <p className="text-sm font-medium">Agent relationship</p>
+                    <Select
+                      value={agentAffiliationType}
+                      onValueChange={(value) => {
+                        setAgentAffiliationType(value)
+                        setAgentSupportedHumanSubjectKey("")
+                        setAgentOrganizationSubjectKey("")
+                      }}
+                    >
+                      <SelectTrigger aria-label="Agent relationship">
+                        <SelectValue placeholder="Choose relationship" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(agentAffiliationLabels).map(
+                          ([value, label]) => (
+                            <SelectItem key={value} value={value}>
+                              {label}
+                            </SelectItem>
+                          )
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {agentAffiliationType === "human_supported" && (
+                    <div>
+                      <label
+                        className="text-sm font-medium"
+                        htmlFor="agent-human-subject"
+                      >
+                        Supported human reference
+                      </label>
+                      <Input
+                        id="agent-human-subject"
+                        value={agentSupportedHumanSubjectKey}
+                        onChange={(event) =>
+                          setAgentSupportedHumanSubjectKey(event.target.value)
+                        }
+                        placeholder="Optional human subject reference"
+                      />
+                    </div>
+                  )}
+                  {agentAffiliationType === "organization_supported" && (
+                    <div>
+                      <label
+                        className="text-sm font-medium"
+                        htmlFor="agent-organization-subject"
+                      >
+                        Organization reference
+                      </label>
+                      <Input
+                        id="agent-organization-subject"
+                        value={agentOrganizationSubjectKey}
+                        onChange={(event) =>
+                          setAgentOrganizationSubjectKey(event.target.value)
+                        }
+                        placeholder="Optional organization reference"
+                      />
+                    </div>
+                  )}
+                  <div className="md:col-span-2">
+                    <label
+                      className="text-sm font-medium"
+                      htmlFor="agent-affiliation-description"
+                    >
+                      Relationship note
+                    </label>
+                    <Input
+                      id="agent-affiliation-description"
+                      value={agentAffiliationDescription}
+                      onChange={(event) =>
+                        setAgentAffiliationDescription(event.target.value)
+                      }
+                      placeholder="Optional context for this agent"
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+            <div className="mt-4 rounded-lg border bg-muted/30 p-3 text-sm">
+              <p className="font-semibold">
+                {actorTypeLabels[actorType]} policy
+              </p>
+              <p className="mt-1 text-muted-foreground">
+                {selectedActorPolicy.description}
+              </p>
+              <div className="mt-3 grid gap-2 md:grid-cols-3">
+                <span className="rounded-full bg-background px-3 py-2">
+                  Validation: {selectedActorPolicy.validationIntensity}
+                </span>
+                <span className="rounded-full bg-background px-3 py-2">
+                  Personhood score:{" "}
+                  {selectedActorPolicy.personhoodScoreEligible
+                    ? "eligible"
+                    : "not eligible"}
+                </span>
+                <span className="rounded-full bg-background px-3 py-2">
+                  Stamp claims:{" "}
+                  {selectedActorPolicy.stampClaimEligible
+                    ? "available"
+                    : "not available"}
+                </span>
+              </div>
+            </div>
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <Button
+                disabled={actorProfileSaving || actorProfileLoading}
+                onClick={saveActorProfile}
+              >
+                {actorProfileSaving ? "Saving..." : "Save identity type"}
+              </Button>
+              <Button
+                disabled={actorProfileLoading}
+                onClick={fetchActorProfile}
+                variant="outline"
+              >
+                {actorProfileLoading ? "Refreshing..." : "Refresh"}
+              </Button>
+              <p className="text-xs text-muted-foreground" aria-live="polite">
+                {actorProfile?.updatedAt
+                  ? `Last updated ${dayjs(actorProfile.updatedAt).format(
+                      "YYYY-MM-DD HH:mm"
+                    )}`
+                  : "No saved identity type yet."}
+              </p>
+            </div>
           </CardContent>
         </Card>
 

@@ -3,6 +3,8 @@ import test from "node:test"
 
 import { hashDappApiKey } from "@cubid/auth/server"
 
+import actorProfileGetHandler from "../pages/api/actors/profile/get"
+import actorProfileUpsertHandler from "../pages/api/actors/profile/upsert"
 import consentListHandler from "../pages/api/oidc/consents/list"
 import supabaseSelectHandler from "../pages/api/supabase/select"
 import sendOtpHandler from "../pages/api/twillio/send-otp"
@@ -60,6 +62,17 @@ const addDappAuth = (supabase: MockPassportSupabase) => {
   return apiKey
 }
 
+const addFirebaseUserAuth = () => {
+  setPassportFirebaseAdminAuthForTests({
+    verifyIdToken: async () =>
+      ({
+        email: "person@example.com",
+        name: "Test Person",
+        uid: "firebase_actor_123",
+      }) as never,
+  })
+}
+
 test("legacy Passport Supabase select endpoint is hard-disabled with a request id", async () => {
   const supabase = new MockPassportSupabase()
   setPassportSupabaseForTests(supabase as never)
@@ -110,6 +123,135 @@ test("Passport OIDC consent list uses the shared user baseline for missing beare
       requestId: res.headers["x-request-id"],
     },
   })
+})
+
+test("Passport actor profile get defaults signed-in users to human", async () => {
+  const supabase = new MockPassportSupabase()
+  setPassportSupabaseForTests(supabase as never)
+  addFirebaseUserAuth()
+
+  const req = createApiRequest({
+    body: {},
+    headers: {
+      authorization: "Bearer firebase-test-token",
+      origin: "https://passport.cubid.me",
+    },
+    url: "/api/actors/profile/get",
+  })
+  const res = createApiResponse()
+
+  await actorProfileGetHandler(req, res)
+
+  assert.equal(res.statusCode, 200)
+  assert.equal(res.headers["x-request-id"]?.startsWith("passport_"), true)
+  const data = (res.body as DataResponse<Record<string, unknown>>).data
+  assert.equal(data.actorType, "human")
+  assert.equal(data.displayName, "Test Person")
+  assert.equal(
+    (data.validationPolicy as Record<string, unknown>).personhoodScoreEligible,
+    true
+  )
+})
+
+test("Passport actor profile upsert persists organization self-identification", async () => {
+  const supabase = new MockPassportSupabase()
+  setPassportSupabaseForTests(supabase as never)
+  addFirebaseUserAuth()
+
+  const req = createApiRequest({
+    body: {
+      actorType: "organization",
+      displayName: "Garden Network",
+      organizationKind: "network",
+    },
+    headers: {
+      authorization: "Bearer firebase-test-token",
+      origin: "https://passport.cubid.me",
+    },
+    url: "/api/actors/profile/upsert",
+  })
+  const res = createApiResponse()
+
+  await actorProfileUpsertHandler(req, res)
+
+  assert.equal(res.statusCode, 200)
+  const data = (res.body as DataResponse<Record<string, unknown>>).data
+  assert.equal(data.actorType, "organization")
+  assert.equal(data.organizationKind, "network")
+  assert.equal(
+    (data.validationPolicy as Record<string, unknown>).personhoodScoreEligible,
+    false
+  )
+  const stored = supabase.actorProfiles.get("firebase_actor_123")
+  assert.equal(stored?.actor_type, "organization")
+  assert.equal(stored?.organization_kind, "network")
+  assert.equal(stored?.firebase_uid, "firebase_actor_123")
+})
+
+test("Passport actor profile upsert persists agent affiliation without score eligibility", async () => {
+  const supabase = new MockPassportSupabase()
+  setPassportSupabaseForTests(supabase as never)
+  addFirebaseUserAuth()
+
+  const req = createApiRequest({
+    body: {
+      actorType: "agent",
+      agentAffiliation: {
+        affiliationType: "human_supported",
+        description: "Scheduling assistant",
+        supportedHumanSubjectKey: "human_subject_reference",
+      },
+      displayName: "Scheduling Agent",
+    },
+    headers: {
+      authorization: "Bearer firebase-test-token",
+      origin: "https://passport.cubid.me",
+    },
+    url: "/api/actors/profile/upsert",
+  })
+  const res = createApiResponse()
+
+  await actorProfileUpsertHandler(req, res)
+
+  assert.equal(res.statusCode, 200)
+  const data = (res.body as DataResponse<Record<string, unknown>>).data
+  assert.equal(data.actorType, "agent")
+  assert.equal(
+    (data.agentAffiliation as Record<string, unknown>).affiliationType,
+    "human_supported"
+  )
+  assert.equal(
+    (data.validationPolicy as Record<string, unknown>).personhoodScoreEligible,
+    false
+  )
+  const stored = supabase.actorProfiles.get("firebase_actor_123")
+  assert.equal(stored?.agent_affiliation_type, "human_supported")
+  assert.equal(stored?.supported_human_subject_key, "human_subject_reference")
+})
+
+test("Passport actor profile rejects contradictory self-identification", async () => {
+  const supabase = new MockPassportSupabase()
+  setPassportSupabaseForTests(supabase as never)
+  addFirebaseUserAuth()
+
+  const req = createApiRequest({
+    body: {
+      actorType: "human",
+      organizationKind: "team",
+    },
+    headers: {
+      authorization: "Bearer firebase-test-token",
+      origin: "https://passport.cubid.me",
+    },
+    url: "/api/actors/profile/upsert",
+  })
+  const res = createApiResponse()
+
+  await actorProfileUpsertHandler(req, res)
+
+  assert.equal(res.statusCode, 400)
+  assert.equal((res.body as { error: { code: string } }).error.code, "invalid_request")
+  assert.equal(supabase.actorProfiles.size, 0)
 })
 
 test("Passport OTP send rejects malformed payloads with the shared envelope", async () => {

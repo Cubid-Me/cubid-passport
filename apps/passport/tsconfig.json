@@ -11,6 +11,9 @@
       ],
       "@cubid/config": [
         "../../packages/config/src/index.ts"
+      ],
+      "@cubid/identity": [
+        "../../packages/identity/src/index.ts"
       ]
     },
     "plugins": [

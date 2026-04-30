@@ -605,22 +605,22 @@ Back the published packages with the DX and compatibility work needed for real e
 
 ### E03. Add agent and organization identity support, including MCP-compatible interfaces
 
-- Status: Not started
-- Timestamp started: TBD
-- Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Status: Completed
+- Timestamp started: 2026-04-29T17:57:47Z
+- Timestamp completed: 2026-04-29T18:01:00Z
+- Feature branch: codex/e03-actor-identity-model
+- Head: 7437c4c
+- Session-log reference(s): session: v108, session: v109, session: v110
 
 Expand the platform beyond human passports in a way that matches the backgrounder without diluting the human proof-of-personhood core. Define how non-human actors such as agents and organizations are represented, authenticated, disclosed, and clearly labeled so they never masquerade as human identities. Build this into the shared identity domain model, the OIDC subject model where appropriate, and the developer API contracts. Add MCP-compatible integration surfaces so agent systems can query Cubid trust signals and identify themselves through supported protocols. The implementation should preserve app-scoped identity, consent boundaries, and data minimization, while making explicit which signals are human-only, agent-only, or organization-only. This todo gives Cubid a broader protocol footprint while staying honest about what personhood and trust mean in different actor classes.
 
 ### E04. Improve global onboarding, accessibility, and low-friction trust progression
 
-- Status: Not started
-- Timestamp started: TBD
-- Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Status: Completed
+- Timestamp started: 2026-04-29T19:10:46Z
+- Timestamp completed: 2026-04-29T19:18:41Z
+- Feature branch: codex/e03-actor-identity-model
+- Head: 4b42692
+- Session-log reference(s): session: v111, session: v112, session: v113
 
 Translate the backgrounder’s product constraints into concrete engineering work. Redesign onboarding and verification journeys so they remain accessible, globally usable, and low-friction for users with limited documentation, limited bandwidth, or limited digital literacy. Establish an accessibility bar of WCAG 2.1 AA across Passport and Admin, including keyboard support, semantic structure, announcement behavior, color contrast, and readable step flows. Replace hard assumptions about phone, email, or wallet availability with progressive trust accumulation so users can start with minimal identity signals and deepen later. This work should include telemetry that measures abandonment at each step without capturing unnecessary personal data. The outcome should be a trust platform that grows identity depth without turning into a heavy KYC product, which is central to the Cubid mission.

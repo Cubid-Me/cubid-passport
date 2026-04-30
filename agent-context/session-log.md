@@ -3206,3 +3206,196 @@ Resolve the actionable Copilot and Codex review comments on PR #151 before conti
 #### Follow-up
 
 - commit and push the review fixes, comment with the solutions, resolve the PR threads, and recheck CI
+
+### session: v108
+
+- timestamp: 2026-04-29T17:57:47Z
+- agent: **OpenAI Codex**
+- branch: **codex/e03-actor-identity-model**
+- head: **`397c376`**
+- session name: **Start E03 actor identity model**
+
+#### Objective
+
+Start E03 to add human, agent, and organization self-identification support with MCP-compatible trust interfaces while preserving human proof-of-personhood as the primary validation focus.
+
+#### Actions Taken
+
+- created a fresh E03 branch from `dev`
+- marked `E03` started in `agent-context/todo.md`
+- inspected `@cubid/identity`, `@cubid/claims`, OIDC contracts, and existing docs to place the actor model in shared domain packages rather than app-local code
+- locked the implementation direction: humans receive deep validation/scoring; agents and organizations are represented and can claim stamps, but receive limited generic validation by default
+
+#### Verification
+
+- confirmed the branch starts from current `dev` and the repository was clean before E03 metadata changes
+
+#### Follow-up
+
+- implement the shared actor identity model, MCP trust response contracts, minimal OIDC claim definitions, docs, tests, and closeout metadata
+
+### session: v118
+
+- timestamp: 2026-04-30T08:45:06Z
+- agent: **OpenAI Codex**
+- branch: **codex/e03-actor-identity-model**
+- head: **`b5e1f0c`**
+- session name: **Address PR 152 actor identity review feedback**
+
+#### Objective
+
+Resolve the actionable Copilot and Codex review comments on PR #152 before continuing the E03/E04 merge flow.
+
+#### Actions Taken
+
+- defaulted agent self-identification to a standalone affiliation when callers omit affiliation metadata
+- renamed misleading actor normalization test wording and added coverage for the standalone default
+- tightened the actor profile migration grant from `all` to explicit service-role DML privileges
+- switched actor profile API route imports to the Passport path alias
+- fixed Profile actor-profile loading and form behavior so authenticated users without Redux email/phone can load profiles, current form selections drive policy copy, and hidden agent affiliation fields are not submitted after relationship switches
+
+#### Verification
+
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/identity test && pnpm --filter @cubid/identity typecheck && pnpm --filter @cubid/passport test && pnpm --filter @cubid/passport typecheck'`
+- `npx -p node@24 -c 'node --version && pnpm test && pnpm typecheck'`
+
+#### Follow-up
+
+- commit and push the PR review fixes, reply to and resolve review threads, then re-check PR state
+
+### session: v109
+
+- timestamp: 2026-04-29T18:00:37Z
+- agent: **OpenAI Codex**
+- branch: **codex/e03-actor-identity-model**
+- head: **`7e305fc`**
+- session name: **Implement E03 actor identity contracts**
+
+#### Objective
+
+Implement shared human, agent, and organization identity contracts with MCP-compatible trust envelopes while keeping deep validation and humanity scoring focused on humans.
+
+#### Actions Taken
+
+- added `@cubid/identity` actor self-identification types, normalization helpers, validation-policy defaults, score/stamp eligibility helpers, and `cubid-mcp-trust:v1` response contracts
+- added tests proving organizations and agents are self-identified, non-human actors are not personhood-score eligible, and MCP trust responses suppress non-human score contribution
+- added actor self-identification claims to `@cubid/claims` under `cubid:claims`
+- documented the actor identity model and aligned the OIDC architecture doc with the E03 shared-contract boundary
+
+#### Verification
+
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/identity test && pnpm --filter @cubid/identity typecheck && pnpm --filter @cubid/claims test && pnpm --filter @cubid/claims typecheck && pnpm --filter @cubid/identity build && pnpm --filter @cubid/claims build'`
+
+#### Follow-up
+
+- commit the E03 implementation, then mark E03 completed with the implementation head
+
+### session: v110
+
+- timestamp: 2026-04-29T18:01:00Z
+- agent: **OpenAI Codex**
+- branch: **codex/e03-actor-identity-model**
+- head: **`7437c4c`**
+- session name: **Close E03 actor identity model**
+
+#### Objective
+
+Mark E03 completed after the shared actor self-identification contracts, MCP trust envelope, claims, docs, and tests landed.
+
+#### Actions Taken
+
+- updated `agent-context/todo.md` with the E03 completion timestamp
+- recorded the implementation commit as the E03 head
+- attached the start, implementation, and closeout session-log references to the todo
+
+#### Verification
+
+- confirmed E03 metadata points at implementation head `7437c4c`
+
+#### Follow-up
+
+- publish the branch for review, then consider a later runtime slice for persistence and UI onboarding for agent and organization actors
+
+### session: v111
+
+- timestamp: 2026-04-29T19:10:46Z
+- agent: **OpenAI Codex**
+- branch: **codex/e03-actor-identity-model**
+- head: **`df7761f`**
+- session name: **Start E04 actor onboarding persistence**
+
+#### Objective
+
+Start E04 as the runtime persistence and onboarding slice for human, agent, and organization self-identification, building on the E03 shared actor identity contracts.
+
+#### Actions Taken
+
+- marked `E04` started in `agent-context/todo.md`
+- kept the work on the existing E03 feature branch because this slice is stacked directly on the actor identity model contracts
+- scoped E04 to authenticated Passport persistence, Profile onboarding, and documentation for self-identified actor types rather than full global onboarding redesign
+
+#### Verification
+
+- confirmed the repository was clean before E04 metadata changes
+
+#### Follow-up
+
+- add actor profile persistence, authenticated Passport APIs, Profile UI onboarding, tests, docs, and closeout metadata
+
+### session: v112
+
+- timestamp: 2026-04-29T19:18:11Z
+- agent: **OpenAI Codex**
+- branch: **codex/e03-actor-identity-model**
+- head: **`26b17c4`**
+- session name: **Implement E04 actor profile persistence and onboarding**
+
+#### Objective
+
+Add the first runtime persistence and Passport onboarding surface for self-identified human, agent, and organization actors.
+
+#### Actions Taken
+
+- added a locked `public.actor_profiles` migration with one service-role-owned profile per Firebase user
+- added authenticated Passport actor profile get/upsert APIs using the shared Passport API baseline
+- added Passport Profile UI for choosing human, agent, or organization identity type with visible trust-policy copy
+- wired Passport to `@cubid/identity` so runtime responses use the E03 validation-policy contracts
+- added Passport route tests for default human profiles, organization persistence, agent affiliation persistence, and contradictory metadata rejection
+- updated the actor identity engineering doc with E04 persistence, API, and onboarding boundaries
+
+#### Verification
+
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/passport test'`
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/passport typecheck'`
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/identity test && pnpm --filter @cubid/identity typecheck'`
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/passport build'`
+
+#### Follow-up
+
+- mark E04 completed after the implementation commit lands
+
+### session: v113
+
+- timestamp: 2026-04-29T19:18:41Z
+- agent: **OpenAI Codex**
+- branch: **codex/e03-actor-identity-model**
+- head: **`4b42692`**
+- session name: **Close E04 actor onboarding persistence**
+
+#### Objective
+
+Close E04 after actor profile persistence, authenticated Passport APIs, Profile onboarding UI, docs, and tests landed.
+
+#### Actions Taken
+
+- marked `E04` completed in `agent-context/todo.md`
+- recorded implementation head `4b42692`
+- attached the E04 start, implementation, and closeout session-log references
+
+#### Verification
+
+- confirmed the E04 implementation commit exists at `4b42692`
+
+#### Follow-up
+
+- publish the stacked E03/E04 branch for review, or continue with the next identity runtime slice if desired

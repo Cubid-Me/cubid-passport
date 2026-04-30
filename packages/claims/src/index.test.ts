@@ -29,6 +29,15 @@ test("getClaimDefinition returns metadata for known claims", () => {
   assert.equal(definition?.tokenEligible, true);
 });
 
+test("actor self-identification claims are available through cubid:claims", () => {
+  const claims = getClaimsForScopes(["cubid:claims"]);
+
+  assert.equal(claims.includes("cubid_actor_type"), true);
+  assert.equal(claims.includes("cubid_actor_self_identification"), true);
+  assert.equal(getClaimDefinition("cubid_agent_supports_human")?.classification, "boolean");
+  assert.equal(getClaimDefinition("cubid_organization_kind")?.tokenEligible, true);
+});
+
 test("createSeededClaimRegistryRecord overlays seeded claim metadata", () => {
   const seeded = createSeededClaimRegistryRecord({
     name: "custom_claim",
