@@ -1,3 +1,29 @@
+### session: v129
+
+- timestamp: 2026-04-30T23:09:49Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-app-scoped-identity-disclosure**
+- head: **`a30878a`**
+- session name: **Start D01 shared domain extraction**
+
+#### Objective
+
+Start D01 on the current E01 branch so the app-scoped disclosure work can share canonical identity, stamps, and claims domain primitives.
+
+#### Actions Taken
+
+- marked `D01` started in `agent-context/todo.md`
+- scoped the first implementation slice to extracting duplicated stamp registry and permission-domain helpers into a shared `@cubid/stamps` package
+- kept the broader Passport/Admin feature-module refactor out of scope for this D01 slice
+
+#### Verification
+
+- confirmed the branch was clean before starting D01 metadata changes
+
+#### Follow-up
+
+- add the shared stamps package, switch duplicated Passport stamp maps to it, validate focused package/app checks, then update D01 metadata
+
 ### session: v128
 
 - timestamp: 2026-04-30T21:42:48Z
