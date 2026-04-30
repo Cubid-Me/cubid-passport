@@ -1,3 +1,31 @@
+### session: v125
+
+- timestamp: 2026-04-30T21:34:05Z
+- agent: **OpenAI Codex**
+- branch: **codex/sdk-ingestion-private-repo-cleanup**
+- head: **`055e888`**
+- session name: **Reconcile completed roadmap metadata**
+
+#### Objective
+
+Clean up stale roadmap metadata for B02, B04, C05, and E02 after the implementation and SDK-ingestion work had already landed.
+
+#### Actions Taken
+
+- marked the B02 parent and B02.3 through B02.5 as completed to match their recorded completion timestamps and implementation sessions
+- marked the B04 parent as completed now that B04.1 through B04.4 are all closed
+- marked the C05 parent as completed while keeping deployment-gated follow-ups open as separate todos
+- changed E02 parent and child statuses from the stale local `cubid-sdk-v2` wording to `Ingested into cubid-sdk`, pointing future SDK work at `Cubid-Me/cubid-sdk`
+
+#### Verification
+
+- reviewed `agent-context/todo.md` and `agent-context/session-log.md` evidence for the target sections
+- planned follow-up validation with `git diff --check` after editing
+
+#### Follow-up
+
+- commit the metadata-only cleanup once diff validation passes
+
 ### session: v64
 
 - timestamp: 2026-04-26T17:53:38-0400

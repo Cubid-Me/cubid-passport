@@ -79,7 +79,7 @@ Import the parallel `cubid-admin` repository into the monorepo as `apps/admin` a
 
 Parallelization note: Start after `A01`. This section can run in parallel with `C`, `D`, and `E`, but its implementation should target the monorepo contracts created in section `A`.
 
-Implementation assessment as of 2026-04-19: Section B now has the backend relying-party loop needed for a TCOIN prototype, including `/token`, signed JWTs, `/userinfo`, `/revoke`, `/logout`, active JWKS derivation, access-token persistence, and repo-side TCOIN seeding/configuration. `B01`, `B02.1`, `B02.2`, `B02.3`, `B02.4`, `B02.5`, and `B03` are complete; `B04` has backend passkey foundations in place. Remaining Section B launch work is now narrower: apply migrations and deploy real environments, complete the Passport/Admin consent operations follow-up in `B02.5.1`, and continue the open B04 Passport passkey UI/device lifecycle slices. Do not treat Login with Cubid as broadly production-launched until the live issuer, secrets, DNS, and TCOIN relying-party configuration are verified outside the repo.
+Implementation assessment as of 2026-04-30: Section B has the repo-side Login with Cubid implementation slices completed, including the OIDC relying-party loop, issuer controls, Passport/Admin consent operations, claim-policy controls, and passkey UX/device lifecycle work. Remaining Section B launch work is operational rather than roadmap-build metadata: apply migrations, provision secrets, deploy stable issuer environments, configure DNS, and verify TCOIN relying-party settings outside the repo. Do not treat Login with Cubid as broadly production-launched until the live issuer, secrets, DNS, and relying-party configuration are verified in the target environments.
 
 ### B01. Design the OIDC and trust architecture for Login with Cubid
 
@@ -95,12 +95,12 @@ Produce a concrete identity architecture for "Login with Cubid" before building 
 
 ### B02. Implement the OIDC issuer service in the monorepo
 
-- Status: Started
+- Status: Completed
 - Timestamp started: 2026-04-15T20:16:30-0400
-- Timestamp completed: TBD
-- Feature branch: codex/b02-oidc-foundation
-- Head: e89af74
-- Session-log reference(s): sessions v14-v16
+- Timestamp completed: 2026-04-20T13:52:22-0400
+- Feature branch: codex/b02-5-1-oidc-ops
+- Head: 230a203
+- Session-log reference(s): sessions v14-v16, session: v40, session: v41, session: v51
 
 Create a dedicated OIDC service workspace, likely `services/oidc`, rather than embedding protocol behavior inside Passport UI code. Implement discovery, authorization, token, JWKS, userinfo, client registration or client management hooks, session handling, logout behavior, and audit-ready token issuance. Back the service with shared auth and domain packages from the monorepo instead of duplicating user, stamp, or consent logic. Design it as a clean server application with strong runtime validation, typed configuration, proper key management, and explicit boundaries between public endpoints and internal administrative operations. Passport should become a relying-party and consent experience, while Admin manages issuer metadata and policies. This service becomes the durable platform center of "Login with Cubid" and should be built so other apps, SDKs, and agents can rely on it without depending on Passport internals.
 
@@ -128,7 +128,7 @@ Implement the browser-facing first half of the Authorization Code + PKCE flow. `
 
 ### B02.3 Finish the TCOIN Authorization Code + PKCE token loop
 
-- Status: Started
+- Status: Completed
 - Timestamp started: 2026-04-19T21:43:28-0400
 - Timestamp completed: 2026-04-19T21:46:40-0400
 - Feature branch: codex/b02-relying-party-completion
@@ -139,7 +139,7 @@ Finish the blocking relying-party loop for a real TCOIN "Sign in with Cubid" opt
 
 ### B02.4 Prepare and configure a TCOIN-ready issuer environment
 
-- Status: Started
+- Status: Completed
 - Timestamp started: 2026-04-19T21:43:28-0400
 - Timestamp completed: 2026-04-19T21:46:40-0400
 - Feature branch: codex/b02-relying-party-completion
@@ -150,7 +150,7 @@ Make the issuer repo-ready for use outside local development without performing 
 
 ### B02.5 Add production issuer controls, revocation, and observability
 
-- Status: Started
+- Status: Completed
 - Timestamp started: 2026-04-19T21:43:28-0400
 - Timestamp completed: 2026-04-19T21:46:40-0400
 - Feature branch: codex/b02-relying-party-completion
@@ -216,12 +216,12 @@ Extend the existing Admin tab shell with a claims and policies area that lets op
 
 ### B04. Add passkey support to Login with Cubid
 
-- Status: Started
+- Status: Completed
 - Timestamp started: 2026-04-16T09:09:36-04:00
-- Timestamp completed: TBD
-- Feature branch: codex/b04-passkeys-core
-- Head: 1a36f1f
-- Session-log reference(s): session: v23, session: v24, session: v25, session: v26
+- Timestamp completed: 2026-04-21T03:33:11-0400
+- Feature branch: codex/b04-4-passkey-lifecycle-stepup
+- Head: 94068c1
+- Session-log reference(s): session: v23, session: v24, session: v25, session: v26, session: v53, session: v57, session: v58, session: v59, session: v60
 
 Implement WebAuthn-based passkeys as a first-class authentication method for "Login with Cubid" rather than another side flow bolted onto the app. Support registration, authentication, recovery fallback strategy, device lifecycle management, and risk-aware step-up behavior for sensitive admin actions. Passport should expose a clean user experience for creating and using passkeys, while the shared auth service owns the credential ceremonies, challenge generation, attestation policy, and credential storage. Admin should be able to see passkey status and policy constraints for debugging and support. Make sure passkeys work with app-scoped identity rules and with the OIDC session model so they are a durable platform credential, not a one-off browser convenience. This todo should explicitly include rollout sequencing and migration paths from email or phone-based login.
 
@@ -410,12 +410,12 @@ Move email OTP storage from plaintext `email_otp.otp` values to short-lived hash
 
 ### C05. Envelope-encrypt retrievable secrets with Supabase Vault
 
-- Status: Started
+- Status: Completed
 - Timestamp started: 2026-04-27T15:31:54-0400
-- Timestamp completed: TBD
+- Timestamp completed: 2026-04-27T22:41:24Z
 - Feature branch: codex/c04-c06-secrets-hardening-split
-- Head: 21c5d7b
-- Session-log reference(s): TBD
+- Head: f3e8b02
+- Session-log reference(s): session: v79, session: v81, session: v83, session: v84, session: v86, session: v87
 
 Create the retrievable-secret custody track for values Cubid must later recover in order to perform a server-side action. Use envelope encryption with data-key secrets managed in Supabase Vault as the default implementation model. Each encrypted row should carry ciphertext, nonce or IV, authentication tag, algorithm, key identifier, key version, purpose, and enough authenticated context to prevent ciphertext swapping across tenants or users. Decryption must happen only in server-side code after explicit actor authorization, with request IDs and audit/security events for sensitive access, rotation, and failure cases. This track should produce a target-state document for encrypted database secrets, a reusable server helper, migration patterns for legacy plaintext columns, and tests proving decrypted values never appear in generic API responses, Admin lists, logs, or error envelopes.
 
@@ -528,103 +528,103 @@ Take the backgrounder’s core ideas seriously by making app-scoped identity and
 
 ### E02. Productize the developer platform: REST API v2, React SDK, and webhook contracts
 
-- Status: Started
+- Status: Ingested into cubid-sdk
 - Timestamp started: 2026-04-28T08:28:44Z
-- Timestamp completed: TBD
-- Feature branch: codex/e02-1-cubid-api-package
-- Head: 452874b
-- Session-log reference(s): session: v94, session: v95
+- Timestamp completed: 2026-04-30T14:00:53Z
+- Feature branch: Cubid-Me/cubid-sdk public SDK repository
+- Head: see Cubid-Me/cubid-sdk SDK repo history
+- Session-log reference(s): session: v94, session: v95, session: v99, session: v100, session: v101, session: v102, session: v103, session: v104, session: v105, session: v106, session: v107, session: v114, session: v115, session: v116, session: v119, session: v120, session: v123; Cubid-Me/cubid-sdk session: s01-core-adoption
 
 Turn the current mixed bag of legacy routes into a coherent developer platform. Define the canonical REST API v2 surface for app onboarding, user creation, score lookup, identity queries, consent status, claim retrieval, and webhook registration. Build first-party packages on top of those stable contracts so integrators stop depending on internal UI code, local tarballs, or undocumented route behavior. That now explicitly includes a dual-target `@cubid/core` package that works from both npm and JSR, plus a publishable SDK ecosystem for React and chain-specific integrations: `@cubid/react`, `@cubid/evm`, `@cubid/wagmi`, `@cubid/solana`, `@cubid/cardano`, `@cubid/sui`, and `@cubid/near`. Standardize webhook events around meaningful protocol events such as consent granted, claim updated, score changed, stamp blacklisted, and subject revoked, with signed payloads and replay protection. Add versioning and compatibility rules so downstream apps can rely on Cubid as infrastructure rather than reverse-engineering a moving target.
 
 ### E02.1 Publish `@cubid/core` as a dual-target runtime-agnostic package
 
-- Status: Ingested into cubid-sdk-v2
+- Status: Ingested into cubid-sdk
 - Timestamp started: 2026-04-28T08:28:44Z
 - Timestamp completed: 2026-04-30T14:00:53Z
-- Feature branch: /Users/botmaster/src/cubid/cubid-sdk-v2 local checkout missing `.git`; canonical SDK branch/head unavailable locally
-- Head: unavailable locally in `/Users/botmaster/src/cubid/cubid-sdk-v2` because `.git` is missing
-- Session-log reference(s): session: v94, session: v95, session: v119, session: v120; /Users/botmaster/src/cubid/cubid-sdk-v2/agent-context/session-log.md session: s01-core-adoption
+- Feature branch: Cubid-Me/cubid-sdk public SDK repository
+- Head: see Cubid-Me/cubid-sdk SDK repo history
+- Session-log reference(s): session: v94, session: v95, session: v119, session: v120; Cubid-Me/cubid-sdk session: s01-core-adoption
 
-Ingested into `/Users/botmaster/src/cubid/cubid-sdk-v2` on 2026-04-30; do not continue SDK publication work from `cubid-passport`.
+Ingested into `Cubid-Me/cubid-sdk` on 2026-04-30; do not continue SDK publication work from `cubid-passport`.
 
 Package `@cubid/core` as the required public integration foundation that works cleanly from both npm and JSR, so downstream apps can import `@cubid/core` in Next.js and `jsr:@cubid/core` in Supabase Edge or other Deno runtimes without mirrors, tarballs, or path hacks. Keep the package strictly runtime-agnostic: no React, no browser-only helpers, no Node-only assumptions, no chain SDKs, and no wagmi. All request logic should rely on `fetch`, `RequestInit`, `Headers`, and plain JSON contracts, with callers able to inject `fetch` and server-held credentials explicitly. The output of this todo is a package layout, export map, build/publish setup, and usage contract that makes Cubid’s core API client feel native in both Node and Deno environments.
 
 ### E02.1.1 Complete `@cubid/core` registry-side first release
 
-- Status: Ingested into cubid-sdk-v2
+- Status: Ingested into cubid-sdk
 - Timestamp started: TBD
 - Timestamp completed: 2026-04-30T14:00:53Z
-- Feature branch: /Users/botmaster/src/cubid/cubid-sdk-v2 local checkout missing `.git`; execute remaining publish work there after Git is restored
-- Head: unavailable locally in `/Users/botmaster/src/cubid/cubid-sdk-v2` because `.git` is missing
-- Session-log reference(s): /Users/botmaster/src/cubid/cubid-sdk-v2/agent-context/session-log.md session: s01-core-adoption
+- Feature branch: Cubid-Me/cubid-sdk public SDK repository
+- Head: see Cubid-Me/cubid-sdk SDK repo history
+- Session-log reference(s): Cubid-Me/cubid-sdk session: s01-core-adoption
 
-Ingested into `/Users/botmaster/src/cubid/cubid-sdk-v2` on 2026-04-30; do not continue registry-side `@cubid/core` release work from `cubid-passport`.
+Ingested into `Cubid-Me/cubid-sdk` on 2026-04-30; do not continue registry-side `@cubid/core` release work from `cubid-passport`.
 
-Complete the human-owned registry setup and first official `@cubid/core` release from the canonical public SDK repo, not from `cubid-passport`. Confirm the npm `cubid` organization exists, that the right maintainers belong to the `developers` team, and that `@cubid/core` is owned by the org rather than a personal account. If npm allows trusted-publisher setup before first publication, configure GitHub Actions trusted publishing from `cubid-sdk-v2` directly; if not, perform the one-time owner-controlled bootstrap publish from a clean SDK-repo release commit, then immediately configure trusted publishing and restrict token access. Also create/link the JSR `@cubid/core` package to `Cubid-Me/cubid-sdk-v2`, run the SDK repo's manual publish workflow, verify npm/JSR installs, and record package URLs plus version metadata in the SDK repo.
+Complete the human-owned registry setup and first official `@cubid/core` release from the canonical public SDK repo, not from `cubid-passport`. Confirm the npm `cubid` organization exists, that the right maintainers belong to the `developers` team, and that `@cubid/core` is owned by the org rather than a personal account. If npm allows trusted-publisher setup before first publication, configure GitHub Actions trusted publishing from `Cubid-Me/cubid-sdk` directly; if not, perform the one-time owner-controlled bootstrap publish from a clean SDK-repo release commit, then immediately configure trusted publishing and restrict token access. Also create/link the JSR `@cubid/core` package to `Cubid-Me/cubid-sdk`, run the SDK repo's manual publish workflow, verify npm/JSR installs, and record package URLs plus version metadata in the SDK repo.
 
 ### E02.2 Add a stable server-facing identity sync contract to `@cubid/core`
 
-- Status: Ingested into cubid-sdk-v2
+- Status: Ingested into cubid-sdk
 - Timestamp started: 2026-04-29T16:07:42Z
 - Timestamp completed: 2026-04-30T14:00:53Z
-- Feature branch: /Users/botmaster/src/cubid/cubid-sdk-v2 local checkout missing `.git`; canonical SDK branch/head unavailable locally
-- Head: unavailable locally in `/Users/botmaster/src/cubid/cubid-sdk-v2` because `.git` is missing
-- Session-log reference(s): session: v99, session: v100, session: v101; /Users/botmaster/src/cubid/cubid-sdk-v2/agent-context/session-log.md session: s01-core-adoption
+- Feature branch: Cubid-Me/cubid-sdk public SDK repository
+- Head: see Cubid-Me/cubid-sdk SDK repo history
+- Session-log reference(s): session: v99, session: v100, session: v101; Cubid-Me/cubid-sdk session: s01-core-adoption
 
-Ingested into `/Users/botmaster/src/cubid/cubid-sdk-v2` on 2026-04-30; future SDK-facing identity-sync work should continue there rather than in `cubid-passport`.
+Ingested into `Cubid-Me/cubid-sdk` on 2026-04-30; future SDK-facing identity-sync work should continue there rather than in `cubid-passport`.
 
 Make `@cubid/core` easier to adopt by exposing a small, typed, high-level server integration surface instead of forcing every app to compose low-level Cubid route calls by hand. The package should provide stable helpers such as `ensureUserByEmail`, `fetchIdentity`, `fetchScore`, and `fetchStamps`, plus an optional normalized identity snapshot result for systems that want one typed view of Cubid user state. As part of this, explicitly document the current “resolve or create by email” semantics so integrators know whether the operation is idempotent, what canonical user identifier is returned, what happens when the user already exists, and which failures are retry-safe. Add structured error modeling for auth/config failures, validation problems, transient upstream errors, rate limits, and identity-not-found versus not-yet-verified states.
 
 ### E02.2.1 Port the best runtime-agnostic SDK ergonomics from `cubid-sdk-v2`
 
-- Status: Ingested into cubid-sdk-v2
+- Status: Ingested into cubid-sdk
 - Timestamp started: 2026-04-29T17:27:43Z
 - Timestamp completed: 2026-04-30T14:00:53Z
-- Feature branch: /Users/botmaster/src/cubid/cubid-sdk-v2 local checkout missing `.git`; canonical SDK branch/head unavailable locally
-- Head: unavailable locally in `/Users/botmaster/src/cubid/cubid-sdk-v2` because `.git` is missing
-- Session-log reference(s): session: v102, session: v103, session: v104; /Users/botmaster/src/cubid/cubid-sdk-v2/agent-context/session-log.md session: s01-core-adoption
+- Feature branch: Cubid-Me/cubid-sdk public SDK repository
+- Head: see Cubid-Me/cubid-sdk SDK repo history
+- Session-log reference(s): session: v102, session: v103, session: v104; Cubid-Me/cubid-sdk session: s01-core-adoption
 
-Ingested into `/Users/botmaster/src/cubid/cubid-sdk-v2` on 2026-04-30; use this Passport todo as historical context only.
+Ingested into `Cubid-Me/cubid-sdk` on 2026-04-30; use this Passport todo as historical context only.
 
 Use the older `/Users/botmaster/src/cubid/cubid-sdk-v2/packages/api` implementation as a comparison source when expanding `@cubid/core`, but do not copy it blindly. Cherry-pick the stronger developer ergonomics: normalized camelCase response models, malformed-response detection, endpoint-aware error metadata, optional custom headers if still safe, and broader low-level wrappers for `addStamp`, location, user-data, search-location, and OTP routes where those routes remain part of the supported API story. Keep the newer `@cubid/core` security posture: no plaintext OTP exposure, no framework or Node-only assumptions, no broad legacy defaults that obscure the target origin, and no chain or React dependencies. The success condition is that `@cubid/core` becomes more pleasant and safer to consume without inheriting old package naming, insecure response shapes, or deprecated route assumptions.
 
 ### E02.3 Publish `@cubid/react` and chain SDK packages with profile-completion primitives
 
-- Status: Ingested into cubid-sdk-v2
+- Status: Ingested into cubid-sdk
 - Timestamp started: 2026-04-29T19:27:57Z
 - Timestamp completed: 2026-04-30T14:00:53Z
-- Feature branch: /Users/botmaster/src/cubid/cubid-sdk-v2 local checkout missing `.git`; canonical SDK branch/head unavailable locally
-- Head: unavailable locally in `/Users/botmaster/src/cubid/cubid-sdk-v2` because `.git` is missing
-- Session-log reference(s): session: v114, session: v115, session: v116; /Users/botmaster/src/cubid/cubid-sdk-v2/agent-context/session-log.md session: s01-core-adoption
+- Feature branch: Cubid-Me/cubid-sdk public SDK repository
+- Head: see Cubid-Me/cubid-sdk SDK repo history
+- Session-log reference(s): session: v114, session: v115, session: v116; Cubid-Me/cubid-sdk session: s01-core-adoption
 
-Ingested into `/Users/botmaster/src/cubid/cubid-sdk-v2` on 2026-04-30; continue React and chain package publication work there, not from `cubid-passport`.
+Ingested into `Cubid-Me/cubid-sdk` on 2026-04-30; continue React and chain package publication work there, not from `cubid-passport`.
 
 Turn the browser-side and ecosystem-specific integration layers into publishable packages that downstream apps can consume without local tarballs or repo-coupled wrappers. `@cubid/react` should own React hooks, components, AllowPage integration helpers, and profile-completion primitives, while chain packages such as `@cubid/evm`, `@cubid/wagmi`, `@cubid/solana`, `@cubid/cardano`, `@cubid/sui`, and `@cubid/near` isolate wallet and signing dependencies. The React flow should make inline phone capture, provider/stamp connection, and post-return refresh patterns easy without each app owning Cubid OAuth and callback complexity. Provide primitives such as a `PhoneOtpForm`, provider connect buttons or hooks, success/failure/cancel callbacks, and helpers that report available, verified, and missing recommended credentials in one normalized shape.
 
 ### E02.3.1 Adapt the older web2, React, and wallet SDK prototypes into the new package model
 
-- Status: Ingested into cubid-sdk-v2
+- Status: Ingested into cubid-sdk
 - Timestamp started: 2026-04-29T19:27:57Z
 - Timestamp completed: 2026-04-30T14:00:53Z
-- Feature branch: /Users/botmaster/src/cubid/cubid-sdk-v2 local checkout missing `.git`; canonical SDK branch/head unavailable locally
-- Head: unavailable locally in `/Users/botmaster/src/cubid/cubid-sdk-v2` because `.git` is missing
-- Session-log reference(s): session: v114, session: v115, session: v116; /Users/botmaster/src/cubid/cubid-sdk-v2/agent-context/session-log.md session: s01-core-adoption
+- Feature branch: Cubid-Me/cubid-sdk public SDK repository
+- Head: see Cubid-Me/cubid-sdk SDK repo history
+- Session-log reference(s): session: v114, session: v115, session: v116; Cubid-Me/cubid-sdk session: s01-core-adoption
 
-Ingested into `/Users/botmaster/src/cubid/cubid-sdk-v2` on 2026-04-30; keep this Passport note as prototype provenance only.
+Ingested into `Cubid-Me/cubid-sdk` on 2026-04-30; keep this Passport note as prototype provenance only.
 
 Review `/Users/botmaster/src/cubid/cubid-sdk-v2/packages/web2`, `web2-react`, and `web3` as prototype material for the new `@cubid/react` and chain-package ecosystem. Preserve the useful boundaries: headless AllowPage URL builders and callback-state helpers, provider stamp normalization, verified-stamp persistence callbacks, simple phone/email completion forms, provider connect buttons, and wallet adapter interfaces that keep chain-specific dependencies outside React and core. Translate them into the new target package names instead of reviving `@cubid/web2`, `@cubid/web2-react`, or `@cubid/web3`. Avoid copying bare prototype UI as final design; use the callback and adapter contracts as the valuable part. This todo should produce package-ready primitives that support downstream profile-completion flows without leaking OAuth, wallet, or chain complexity into application code.
 
 ### E02.4 Add Deno validation, integration guides, examples, and stability notes
 
-- Status: Ingested into cubid-sdk-v2
+- Status: Ingested into cubid-sdk
 - Timestamp started: 2026-04-29T17:41:47Z
 - Timestamp completed: 2026-04-30T14:00:53Z
-- Feature branch: /Users/botmaster/src/cubid/cubid-sdk-v2 local checkout missing `.git`; canonical SDK branch/head unavailable locally
-- Head: unavailable locally in `/Users/botmaster/src/cubid/cubid-sdk-v2` because `.git` is missing
-- Session-log reference(s): session: v105, session: v106, session: v107; /Users/botmaster/src/cubid/cubid-sdk-v2/agent-context/session-log.md session: s01-core-adoption
+- Feature branch: Cubid-Me/cubid-sdk public SDK repository
+- Head: see Cubid-Me/cubid-sdk SDK repo history
+- Session-log reference(s): session: v105, session: v106, session: v107; Cubid-Me/cubid-sdk session: s01-core-adoption
 
-Ingested into `/Users/botmaster/src/cubid/cubid-sdk-v2` on 2026-04-30; continue Deno, publishing, and public-integration guidance there rather than from `cubid-passport`.
+Ingested into `Cubid-Me/cubid-sdk` on 2026-04-30; continue Deno, publishing, and public-integration guidance there rather than from `cubid-passport`.
 
 Back the published packages with the DX and compatibility work needed for real external adoption. Add CI that proves `@cubid/core` is importable in Deno and usable in a Supabase-Edge-like environment, including a smoke import from the JSR form and a Deno-focused validation step in the normal package workflow. Write a dedicated integration guide for Next.js plus Supabase Edge that covers browser versus server usage, secret handling, phone OTP, provider handoff flows, and the post-return refresh pattern. Add copy-paste examples for resolving a Cubid user from an authenticated email, syncing an identity snapshot in an Edge Function, rendering linked or pending credential states in React, and collecting phone plus provider stamps after signup. Close with versioned API stability notes so downstream apps understand Cubid’s compatibility guarantees and deprecation posture.
 
