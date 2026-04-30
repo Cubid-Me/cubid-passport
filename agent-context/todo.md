@@ -491,12 +491,12 @@ Parallelization note: This section can run in parallel with `B`, `C`, and `E` af
 
 ### D01. Create shared domain packages for identity, stamps, permissions, and claims
 
-- Status: Started
+- Status: Completed
 - Timestamp started: 2026-04-30T23:09:49Z
-- Timestamp completed: TBD
+- Timestamp completed: 2026-04-30T23:14:04Z
 - Feature branch: codex/e01-app-scoped-identity-disclosure
-- Head: a30878a
-- Session-log reference(s): session: v129
+- Head: b3d5539
+- Session-log reference(s): session: v129, session: v130, session: v131
 
 Extract the core Cubid concepts into shared packages with stable interfaces: identity subjects, app-scoped users, stamps, stamp permissions, scores, claims, consents, and client apps. Move duplicated constants like stamp registries and shared hashing or derivation logic into these packages so both Passport and Admin depend on one canonical implementation. Each package should separate pure domain logic from persistence adapters, making it possible to test business rules without booting the full app stack. This is also the right place to define event payload contracts, claim shapes, subject identifiers, and shared types used by the OIDC service. Do not over-abstract everything at once; focus on the concepts already duplicated or clearly central to platform behavior. The outcome should be fewer magic numbers, fewer duplicate mappings, and more trustworthy reuse across the monorepo.
 

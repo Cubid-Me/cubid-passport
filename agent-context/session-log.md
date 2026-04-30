@@ -1,3 +1,30 @@
+### session: v131
+
+- timestamp: 2026-04-30T23:14:04Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-app-scoped-identity-disclosure**
+- head: **`b3d5539`**
+- session name: **Close D01 shared domain package metadata**
+
+#### Objective
+
+Close D01 after the identity, claims, and stamps shared package boundaries exist and Passport consumes the extracted stamp registry.
+
+#### Actions Taken
+
+- marked `D01` completed in `agent-context/todo.md`
+- recorded implementation head `b3d5539`
+- attached the D01 start, implementation, and closeout session-log references
+
+#### Verification
+
+- confirmed `@cubid/identity`, `@cubid/claims`, and `@cubid/stamps` now provide the requested shared domain package boundary
+- relied on the focused D01 validation recorded in `session: v130`
+
+#### Follow-up
+
+- extract persistence adapters and feature modules later under narrower follow-up todos rather than broadening D01
+
 ### session: v130
 
 - timestamp: 2026-04-30T23:13:38Z
