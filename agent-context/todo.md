@@ -542,9 +542,9 @@ Turn the current mixed bag of legacy routes into a coherent developer platform. 
 - Status: Started
 - Timestamp started: 2026-04-28T08:28:44Z
 - Timestamp completed: TBD
-- Feature branch: codex/e02-1-cubid-api-package
+- Feature branch: codex/e02-1-cubid-api-package; codex/e02-1-core-publishing-setup
 - Head: 452874b
-- Session-log reference(s): session: v94, session: v95
+- Session-log reference(s): session: v94, session: v95, session: v119
 
 Package `@cubid/core` as the required public integration foundation that works cleanly from both npm and JSR, so downstream apps can import `@cubid/core` in Next.js and `jsr:@cubid/core` in Supabase Edge or other Deno runtimes without mirrors, tarballs, or path hacks. Keep the package strictly runtime-agnostic: no React, no browser-only helpers, no Node-only assumptions, no chain SDKs, and no wagmi. All request logic should rely on `fetch`, `RequestInit`, `Headers`, and plain JSON contracts, with callers able to inject `fetch` and server-held credentials explicitly. The output of this todo is a package layout, export map, build/publish setup, and usage contract that makes Cubid’s core API client feel native in both Node and Deno environments.
 

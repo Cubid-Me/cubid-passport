@@ -3263,6 +3263,37 @@ Resolve the actionable Copilot and Codex review comments on PR #152 before conti
 
 - commit and push the PR review fixes, reply to and resolve review threads, then re-check PR state
 
+### session: v119
+
+- timestamp: 2026-04-30T09:03:20Z
+- agent: **OpenAI Codex**
+- branch: **codex/e02-1-core-publishing-setup**
+- head: **`5ac2004`**
+- session name: **Harden core package publishing setup**
+
+#### Objective
+
+Prune stale feature branches and tighten the `@cubid/core` npm/JSR publishing path so registry setup can proceed through official Cubid-owned accounts and GitHub Actions trusted publishing.
+
+#### Actions Taken
+
+- pruned stale local branches from the earlier A/B/C rollout stacks
+- deleted stale remote feature branches for closed/superseded PRs
+- verified `@cubid/core` is not yet published on npm and that the local machine is not authenticated to npm
+- added a release-branch guard and tool-version logging to the manual publish workflow
+- added an operator runbook for npm organization setup, trusted publishing, JSR linking, and the first-version bootstrap decision
+
+#### Verification
+
+- `npm view @cubid/core --json` returned npm 404, confirming the package is not yet published
+- `npm whoami` returned `ENEEDAUTH`, confirming no local npm publish identity is active
+- `pnpm --filter @cubid/core pack:dry-run`
+- `pnpm --filter @cubid/core jsr:dry-run`
+
+#### Follow-up
+
+- merge the publishing setup changes, then have a Cubid npm/JSR owner complete the registry-side setup before running the manual publish workflow from `dev`
+
 ### session: v109
 
 - timestamp: 2026-04-29T18:00:37Z

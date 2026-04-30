@@ -45,6 +45,21 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Verify release branch
+        if: ${{ inputs.publish_npm || inputs.publish_jsr }}
+        run: |
+          if [ "$GITHUB_REF" != "refs/heads/dev" ]; then
+            echo "Package releases must be dispatched from the dev branch. Current ref: $GITHUB_REF"
+            exit 1
+          fi
+
+      - name: Print publish tool versions
+        run: |
+          node --version
+          npm --version
+          pnpm --version
+          deno --version
+
       - name: Validate @cubid/core
         run: |
           pnpm --filter @cubid/core test

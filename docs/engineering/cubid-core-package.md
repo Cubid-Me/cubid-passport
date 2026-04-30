@@ -34,6 +34,11 @@ verification metadata even if a legacy server payload contains a code.
 Use trusted publishing only. Do not publish this package with a local npm user
 or a long-lived npm token.
 
+The operator checklist lives in
+`docs/engineering/core-publishing-runbook.md`. Use that runbook for the first
+registry setup, first-version bootstrap decision, and manual GitHub Actions
+release flow.
+
 npm Trusted Publisher setup:
 
 - Provider: GitHub Actions
