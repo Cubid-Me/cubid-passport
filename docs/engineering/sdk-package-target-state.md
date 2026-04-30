@@ -11,6 +11,10 @@ Official packages are published under the npm org `@cubid/*`, owned by the
 uses trusted publishing from GitHub Actions; do not publish official packages
 from personal npm accounts or long-lived local tokens.
 
+Public SDK packages should use explicit package-level licenses. `@cubid/core`
+is Apache-2.0; app and service workspaces in this monorepo are not automatically
+covered by that SDK package license.
+
 Target packages:
 
 - `@cubid/core`: required runtime-agnostic foundation

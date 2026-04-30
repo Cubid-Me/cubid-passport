@@ -2,6 +2,8 @@
 
 Runtime-agnostic Cubid foundation client for server-side integrations.
 
+Licensed under Apache-2.0.
+
 This package is intentionally small and standards-only. It does not import
 React, Next.js, Firebase, Supabase, Node built-ins, or browser-only helpers.
 All requests use `fetch`, `RequestInit`, `Headers`, and plain JSON so the same

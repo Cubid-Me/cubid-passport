@@ -3263,6 +3263,34 @@ Resolve the actionable Copilot and Codex review comments on PR #152 before conti
 
 - commit and push the PR review fixes, reply to and resolve review threads, then re-check PR state
 
+### session: v122
+
+- timestamp: 2026-04-30T12:33:37Z
+- agent: **OpenAI Codex**
+- branch: **codex/e02-1-core-apache-license**
+- head: **`a4201e6`**
+- session name: **Add Apache-2.0 license to core SDK**
+
+#### Objective
+
+Add an explicit Apache-2.0 license to the public `@cubid/core` SDK package without relicensing the private monorepo apps and services.
+
+#### Actions Taken
+
+- created a fresh feature branch from updated `dev`
+- changed `@cubid/core` npm and JSR metadata from `UNLICENSED` to `Apache-2.0`
+- added a package-local Apache-2.0 license file to the published SDK artifact set
+- updated SDK docs and publishing runbook copy to state the package-level license boundary
+
+#### Verification
+
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/core test && pnpm --filter @cubid/core typecheck && pnpm --filter @cubid/core deno:check && pnpm --filter @cubid/core build && pnpm --filter @cubid/core pack:dry-run && pnpm --filter @cubid/core jsr:dry-run'`
+- `git diff --check`
+
+#### Follow-up
+
+- commit and publish the license change through a PR to `dev`
+
 ### session: v121
 
 - timestamp: 2026-04-30T12:18:51Z

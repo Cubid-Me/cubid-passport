@@ -135,9 +135,8 @@ npm view @cubid/core
 Also confirm JSR shows `@cubid/core` and that a Deno/Supabase Edge import can
 use `jsr:@cubid/core`.
 
-## Known Decision: License
+## License
 
-`@cubid/core` is currently marked `UNLICENSED`. That is technically
-publishable, but it is not friendly to external adoption. Before a broad
-developer launch, choose an explicit SDK license such as MIT or Apache-2.0 and
-apply it intentionally. Do not invent that license during routine maintenance.
+`@cubid/core` is licensed as Apache-2.0. The license applies to the public SDK
+package in `packages/core`, not automatically to every app or service in this
+private monorepo.
