@@ -1,3 +1,325 @@
+### session: v136
+
+- timestamp: 2026-04-30T23:33:11Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-app-scoped-identity-disclosure**
+- head: **`6dcb43c`**
+- session name: **Reconcile C02 with completed security baseline**
+
+#### Objective
+
+Reconcile the stale C02 todo against the completed C03.4/C03.5 work that already removed the live generic Supabase CRUD surface.
+
+#### Actions Taken
+
+- verified `/api/supabase/select`, `/insert`, `/update`, and `/delete` now return `410 endpoint_removed`
+- verified first-party `/api/supabase/*` references are limited to tests and commented historical code
+- marked C02 as superseded by C03.4/C03.5 in `agent-context/todo.md`
+- updated the API security baseline doc so it no longer claims C02 owns final replacement of generic Supabase CRUD
+
+#### Verification
+
+- reviewed current route handlers, repo references, C03 session-log entries, and Passport route tests for hard-disabled behavior
+- planned follow-up validation with `git diff --check`
+
+#### Follow-up
+
+- treat any remaining direct Supabase table access as feature-specific repository cleanup rather than a public generic CRUD replacement task
+
+### session: v135
+
+- timestamp: 2026-04-30T23:32:30Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-app-scoped-identity-disclosure**
+- head: **`fedad4a`**
+- session name: **Close D02 feature-module metadata**
+
+#### Objective
+
+Close D02 after the first Passport and Admin feature-module extraction landed and passed focused validation.
+
+#### Actions Taken
+
+- marked `D02` completed in `agent-context/todo.md`
+- recorded implementation head `fedad4a`
+- attached the D02 start, implementation, and closeout session-log references
+
+#### Verification
+
+- relied on the focused D02 validation recorded in `session: v134`
+
+#### Follow-up
+
+- create narrower future todos if more feature modules need extraction beyond the first Allow/OIDC Ops boundary
+
+### session: v134
+
+- timestamp: 2026-04-30T23:32:09Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-app-scoped-identity-disclosure**
+- head: **`2418c44`**
+- session name: **Implement D02 feature-module extraction**
+
+#### Objective
+
+Land a bounded D02 refactor that moves behavior-preserving Passport and Admin orchestration into feature-owned modules.
+
+#### Actions Taken
+
+- extracted Passport Allow Page OIDC consent rendering into `features/allow/OidcConsentPanel`
+- extracted legacy Allow Page browser-state helpers into `features/allow/legacyAllowState`
+- extracted Admin OIDC Ops API calls, rate-tier constants, and API error mapping into `features/oidc-ops/api`
+- kept product behavior unchanged and avoided broad UI modernization in this slice
+
+#### Verification
+
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/passport typecheck && pnpm --filter @cubid/admin typecheck'`
+- `git diff --check`
+
+#### Follow-up
+
+- continue with narrower feature-module follow-ups for Profile, stamp providers, client management, and webhook administration if needed
+
+### session: v133
+
+- timestamp: 2026-04-30T23:29:43Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-app-scoped-identity-disclosure**
+- head: **`2e91522`**
+- session name: **Start D02 feature-module refactor**
+
+#### Objective
+
+Start D02 on the current branch and keep the first refactor bounded to thin feature modules around existing Passport and Admin behavior.
+
+#### Actions Taken
+
+- marked `D02` started in `agent-context/todo.md`
+- scoped the implementation to extracting Passport Allow/OIDC consent and Admin OIDC Ops module boundaries without changing product behavior
+- kept larger UI modernization and localStorage removal as future narrower follow-ups
+
+#### Verification
+
+- confirmed the branch was clean before starting D02 metadata changes
+
+#### Follow-up
+
+- implement feature modules, run focused typechecks, and close D02 metadata if the extracted boundaries land cleanly
+
+### session: v132
+
+- timestamp: 2026-04-30T23:28:46Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-app-scoped-identity-disclosure**
+- head: **`544af88`**
+- session name: **Document SDK repo coordination rules**
+
+#### Objective
+
+Update repo-agent guidance so future work respects the separation between this private app/backend repo and the public Cubid SDK repo.
+
+#### Actions Taken
+
+- added startup guidance to check `agent-context/messages-from-cubid-sdk/` for incoming SDK-agent messages
+- documented that public API and SDK implementation belongs in `Cubid-Me/cubid-sdk`, with local checkout `/Users/botmaster/src/cubid/cubid-sdk-v2`
+- documented that SDK-impacting backend changes must be evaluated against the SDK and accompanied by an outbound note in the SDK repo message folder
+
+#### Verification
+
+- planned follow-up validation with `git diff --check`
+
+#### Follow-up
+
+- evaluate this branch's E01/D01 changes for SDK impact and create an outbound SDK-agent note if needed
+
+### session: v131
+
+- timestamp: 2026-04-30T23:14:04Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-app-scoped-identity-disclosure**
+- head: **`b3d5539`**
+- session name: **Close D01 shared domain package metadata**
+
+#### Objective
+
+Close D01 after the identity, claims, and stamps shared package boundaries exist and Passport consumes the extracted stamp registry.
+
+#### Actions Taken
+
+- marked `D01` completed in `agent-context/todo.md`
+- recorded implementation head `b3d5539`
+- attached the D01 start, implementation, and closeout session-log references
+
+#### Verification
+
+- confirmed `@cubid/identity`, `@cubid/claims`, and `@cubid/stamps` now provide the requested shared domain package boundary
+- relied on the focused D01 validation recorded in `session: v130`
+
+#### Follow-up
+
+- extract persistence adapters and feature modules later under narrower follow-up todos rather than broadening D01
+
+### session: v130
+
+- timestamp: 2026-04-30T23:13:38Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-app-scoped-identity-disclosure**
+- head: **`26ef1e3`**
+- session name: **Implement D01 shared stamps package**
+
+#### Objective
+
+Extract the duplicated Passport stamp registry and app-safe stamp helpers into a shared domain package as the first D01 implementation slice.
+
+#### Actions Taken
+
+- added `@cubid/stamps` with canonical stamp type IDs, reverse lookup helpers, stamp permission validation, and app-safe disclosed stamp normalization
+- switched Passport server routes, utility exports, and stamp UI barrels away from local duplicated stamp maps
+- added `@cubid/stamps` as a Passport workspace dependency and refreshed the pnpm lockfile
+- preserved legacy import surfaces such as `pages/api/utils/stampKey.ts` and `lib/stampInsertion.ts` as thin compatibility re-exports
+
+#### Verification
+
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/stamps test && pnpm --filter @cubid/stamps typecheck && pnpm --filter @cubid/stamps build && pnpm --filter @cubid/passport typecheck'`
+- `git diff --check`
+
+#### Follow-up
+
+- continue D01 by extracting score/event/client-app contracts or by wiring E01 disclosure grants into Allow Page and OIDC consent persistence
+
+### session: v129
+
+- timestamp: 2026-04-30T23:09:49Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-app-scoped-identity-disclosure**
+- head: **`a30878a`**
+- session name: **Start D01 shared domain extraction**
+
+#### Objective
+
+Start D01 on the current E01 branch so the app-scoped disclosure work can share canonical identity, stamps, and claims domain primitives.
+
+#### Actions Taken
+
+- marked `D01` started in `agent-context/todo.md`
+- scoped the first implementation slice to extracting duplicated stamp registry and permission-domain helpers into a shared `@cubid/stamps` package
+- kept the broader Passport/Admin feature-module refactor out of scope for this D01 slice
+
+#### Verification
+
+- confirmed the branch was clean before starting D01 metadata changes
+
+#### Follow-up
+
+- add the shared stamps package, switch duplicated Passport stamp maps to it, validate focused package/app checks, then update D01 metadata
+
+### session: v128
+
+- timestamp: 2026-04-30T21:42:48Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-app-scoped-identity-disclosure**
+- head: **`96ac1ff`**
+- session name: **Update E01 implementation metadata**
+
+#### Objective
+
+Point the in-progress E01 todo at the first implementation head after the app-scoped disclosure foundation landed.
+
+#### Actions Taken
+
+- updated `E01` metadata to reference implementation commit `96ac1ff`
+- added the E01 foundation session-log reference while keeping E01 open for route adoption work
+
+#### Verification
+
+- confirmed implementation commit `96ac1ff` contains the shared identity helpers, migration, tests, and engineering doc
+
+#### Follow-up
+
+- continue E01 by wiring Allow Page and OIDC consent persistence into the new disclosure grant contract
+
+### session: v127
+
+- timestamp: 2026-04-30T21:42:23Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-app-scoped-identity-disclosure**
+- head: **`2e6d13f`**
+- session name: **Implement E01 disclosure foundation**
+
+#### Objective
+
+Land the first E01 foundation slice for app-scoped identity and selective disclosure without rewriting existing Passport or OIDC flows in one broad pass.
+
+#### Actions Taken
+
+- extended `@cubid/identity` with app-scoped subject derivation, selective-disclosure grant contracts, raw identifier guards, claim normalization, and claim-value filtering helpers
+- added focused identity package tests for app-scoped subject stability, cross-app separation, disclosure normalization, raw identifier rejection, and active-grant filtering
+- added service-role-only Supabase tables for app-scoped subjects, disclosure grants, and disclosure audit events
+- documented the E01 target contract and runtime adoption sequence in `docs/engineering/app-scoped-identity-selective-disclosure.md`
+
+#### Verification
+
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/identity test && pnpm --filter @cubid/identity typecheck && pnpm --filter @cubid/identity build'`
+- `git diff --check`
+
+#### Follow-up
+
+- wire Allow Page and OIDC consent persistence into the shared disclosure grant service in the next E01 slice
+
+### session: v126
+
+- timestamp: 2026-04-30T21:38:40Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-app-scoped-identity-disclosure**
+- head: **`64c0da4`**
+- session name: **Start E01 app-scoped identity and disclosure**
+
+#### Objective
+
+Start E01 as the platform slice for first-class app-scoped identity and selective disclosure.
+
+#### Actions Taken
+
+- created the E01 feature branch from the current clean roadmap-metadata head
+- marked `E01` started in `agent-context/todo.md`
+- scoped the work to consent/disclosure services, app-scoped subject identifiers, claim-release decisions, revocation behavior, and user-visible/auditable history
+
+#### Verification
+
+- confirmed the branch was clean before updating E01 metadata
+
+#### Follow-up
+
+- inspect the current Allow Page, OIDC consent, SDK-facing routes, webhook filtering, and shared identity packages before implementing the first E01 service slice
+
+### session: v125
+
+- timestamp: 2026-04-30T21:34:05Z
+- agent: **OpenAI Codex**
+- branch: **codex/sdk-ingestion-private-repo-cleanup**
+- head: **`055e888`**
+- session name: **Reconcile completed roadmap metadata**
+
+#### Objective
+
+Clean up stale roadmap metadata for B02, B04, C05, and E02 after the implementation and SDK-ingestion work had already landed.
+
+#### Actions Taken
+
+- marked the B02 parent and B02.3 through B02.5 as completed to match their recorded completion timestamps and implementation sessions
+- marked the B04 parent as completed now that B04.1 through B04.4 are all closed
+- marked the C05 parent as completed while keeping deployment-gated follow-ups open as separate todos
+- changed E02 parent and child statuses from the stale local `cubid-sdk-v2` wording to `Ingested into cubid-sdk`, pointing future SDK work at `Cubid-Me/cubid-sdk`
+
+#### Verification
+
+- reviewed `agent-context/todo.md` and `agent-context/session-log.md` evidence for the target sections
+- planned follow-up validation with `git diff --check` after editing
+
+#### Follow-up
+
+- commit the metadata-only cleanup once diff validation passes
+
 ### session: v64
 
 - timestamp: 2026-04-26T17:53:38-0400
@@ -3263,6 +3585,60 @@ Resolve the actionable Copilot and Codex review comments on PR #152 before conti
 
 - commit and push the PR review fixes, reply to and resolve review threads, then re-check PR state
 
+### session: v124
+
+- timestamp: 2026-04-30T21:17:54Z
+- agent: **OpenAI Codex**
+- branch: **codex/sdk-ingestion-private-repo-cleanup**
+- head: **`7bbdc41`**
+- session name: **Point SDK docs at canonical public repo**
+
+#### Objective
+
+Align the private-repo SDK docs with the canonical public SDK repository name before committing the follow-up doc cleanup.
+
+#### Actions Taken
+
+- updated the SDK publishing and integration docs to point at `Cubid-Me/cubid-sdk`
+- kept the change scoped to documentation references only
+- left the larger SDK ingestion cleanup in the prior commit unchanged
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- commit the four engineering-doc files plus this session-log entry
+
+### session: v123
+
+- timestamp: 2026-04-30T15:23:55Z
+- agent: **OpenAI Codex**
+- branch: **dev**
+- head: **`8e9a4fe`**
+- session name: **Mark SDK work ingested into public repo**
+
+#### Objective
+
+Validate the repo-side cleanup after `@cubid/core` moved to the public SDK repo, remove the remaining private-repo publication path, and commit the boundary documentation updates.
+
+#### Actions Taken
+
+- reviewed dirty roadmap and engineering-doc changes that mark E02 SDK todos as ingested into `/Users/botmaster/src/cubid/cubid-sdk-v2`
+- removed the manual package publishing workflow from `cubid-passport`
+- updated README, AGENTS, package docs, and SDK target-state docs so future agents treat `cubid-sdk-v2` as the canonical public SDK implementation and publication home
+- retained `packages/core` as a historical implementation snapshot for migration context while removing its npm `publishConfig`
+
+#### Verification
+
+- `npx -p node@24 -c 'node --version && pnpm check:core-snapshot && pnpm lint && pnpm typecheck && pnpm test && pnpm build'`
+- `git diff --check`
+
+#### Follow-up
+
+- commit the private-repo cleanup, then continue public SDK publication work from `cubid-sdk-v2`
+
 ### session: v122
 
 - timestamp: 2026-04-30T12:33:37Z
@@ -3512,3 +3888,102 @@ Close E04 after actor profile persistence, authenticated Passport APIs, Profile 
 #### Follow-up
 
 - publish the stacked E03/E04 branch for review, or continue with the next identity runtime slice if desired
+
+### session: v137
+
+- timestamp: 2026-04-30T23:48:51Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-app-scoped-identity-disclosure**
+- head: **`59cf2a5`**
+- session name: **Wire E01 disclosure grant persistence**
+
+#### Objective
+
+Continue E01 by wiring existing Allow Page and OIDC consent approval paths into the new app-scoped identity and selective-disclosure persistence contract.
+
+#### Actions Taken
+
+- mirrored OIDC consent approval into `app_scoped_subjects`, `selective_disclosure_grants`, and `selective_disclosure_events` without changing OIDC wire responses
+- persisted Allow Page stamp permission grants into the same disclosure contract while keeping legacy `stamp_dappuser_permissions` writes intact
+- added Passport app-scoped subject secret configuration and documented the runtime custody/rotation expectation
+- sent an SDK-impact note to the canonical SDK repo for future public helper alignment
+
+#### Verification
+
+- `pnpm --filter @cubid/oidc typecheck`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/oidc test`
+- `pnpm --filter @cubid/identity test`
+- `pnpm --filter @cubid/passport test` attempted, but local Node 25 still hits the known `buffer-equal-constant-time` / `SlowBuffer` crash before Passport route tests execute; rerun under Node 24 CI/local shell for the final Passport test signal
+
+#### Follow-up
+
+- use the persisted disclosure grants to filter SDK-facing identity routes and webhook payloads in the next E01 slice
+
+### session: v138
+
+- timestamp: 2026-05-01T00:00:56Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-app-scoped-identity-disclosure**
+- head: **`59a74d4`**
+- session name: **Enforce E01 disclosure grants on SDK and webhook surfaces**
+
+#### Objective
+
+Continue E01 by using persisted selective-disclosure grants to filter dapp-facing identity, score, and webhook surfaces.
+
+#### Actions Taken
+
+- added a Passport disclosure-grant helper that loads active app-scoped subject grants and evaluates disclosed stamp claims
+- filtered v2 identity and legacy dapp identity routes so only disclosed stamp values and disclosed email/phone fields are returned
+- filtered dapp score and score-detail routes so undisclosed credentials do not contribute to app-visible score outputs
+- gated internal webhook delivery on active disclosure grants so undisclosed stamp events are not sent to dapp subscriptions
+- added focused Passport tests for active/revoked disclosure grant filtering and updated engineering docs
+- sent an SDK-impact note to the canonical SDK repo for normalized privacy-limited result handling
+
+#### Verification
+
+- `pnpm --filter @cubid/passport typecheck`
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/passport test'`
+- `pnpm --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- define and implement explicit grant taxonomy for location, profile, and other non-stamp identity claims before filtering those routes
+- consider adding app-visible normalized states such as `notGranted`, `notVerified`, and `notFound` in the public SDK
+
+### session: v139
+
+- timestamp: 2026-05-01T00:42:54Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-app-scoped-identity-disclosure**
+- head: **`015b373`**
+- session name: **Address PR 155 disclosure and app-scoped identity review comments**
+
+#### Objective
+
+Address Copilot and Codex review feedback on PR #155 before returning the branch to review.
+
+#### Actions Taken
+
+- preserved legacy stamp permission visibility while app-scoped disclosure grants roll out
+- replaced read-then-insert subject creation paths with idempotent upserts
+- batched disclosure grant loading for webhook and expired-cron fanout paths
+- revoked matching selective disclosure grants when Passport OIDC consent is revoked
+- rolled back newly inserted stamp permission rows when disclosure grant persistence fails
+- validated dapp user ownership before returning Cubid score details
+- removed local machine SDK path references from public-facing docs
+
+#### Verification
+
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/oidc typecheck`
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/passport test'`
+- `pnpm --filter @cubid/oidc test`
+- `pnpm --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- push the review-fix commit, confirm CI, then reply to and resolve the addressed PR #155 review threads

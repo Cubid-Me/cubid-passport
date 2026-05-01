@@ -1,21 +1,22 @@
 'use client';
 
-import axios from 'axios';
 import dayjs from 'dayjs';
 import useAuth from 'hooks/useAuth';
-import { authedPost } from 'lib/api';
 import React, { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 
+import {
+  RATE_LIMIT_TIERS,
+  getApiErrorMessage,
+  loadOidcOpsOverview,
+  updateOidcOpsClient,
+  type RateLimitTier,
+} from '../../features/oidc-ops/api';
 import type {
   OidcOpsAuditEvent,
   OidcOpsClientSummary,
   OidcOpsOverviewPayload,
 } from './shared';
-
-type RateLimitTier = 'starter' | 'trusted' | 'internal';
-
-const RATE_LIMIT_TIERS: RateLimitTier[] = ['starter', 'trusted', 'internal'];
 
 const formatList = (values: readonly string[]) => {
   if (values.length === 0) {
@@ -31,28 +32,6 @@ const formatDate = (value: string | null) => {
   }
 
   return dayjs(value).format('YYYY-MM-DD HH:mm');
-};
-
-const getApiErrorMessage = (error: unknown, fallback: string) => {
-  if (axios.isAxiosError(error)) {
-    const payload = error.response?.data;
-    if (typeof payload === 'object' && payload !== null) {
-      const apiError = (payload as { error?: unknown; message?: unknown })
-        .error;
-      const apiMessage = (payload as { error?: unknown; message?: unknown })
-        .message;
-
-      if (typeof apiError === 'string' && apiError.trim()) {
-        return apiError;
-      }
-
-      if (typeof apiMessage === 'string' && apiMessage.trim()) {
-        return apiMessage;
-      }
-    }
-  }
-
-  return error instanceof Error ? error.message : fallback;
 };
 
 const MetricCard = ({ label, value }: { label: string; value: number }) => (
@@ -371,11 +350,7 @@ export default function OidcOps() {
     }
 
     try {
-      const response = await authedPost<{ data: OidcOpsOverviewPayload }>(
-        '/api/admin/oidc/operations/overview',
-        {}
-      );
-      setOverview(response.data.data);
+      setOverview(await loadOidcOpsOverview());
     } catch {
       toast.error('Failed to load OIDC operations overview');
     } finally {
@@ -407,10 +382,7 @@ export default function OidcOps() {
 
     setUpdatingClientId(clientId);
     try {
-      await authedPost('/api/admin/oidc/clients/update-ops', {
-        clientId,
-        ...patch,
-      });
+      await updateOidcOpsClient(clientId, patch);
       toast.success('OIDC client updated');
       await loadOverview(true);
     } catch (error) {

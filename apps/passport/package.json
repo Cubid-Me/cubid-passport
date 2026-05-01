@@ -21,6 +21,7 @@
     "@cubid/auth": "workspace:*",
     "@cubid/config": "workspace:*",
     "@cubid/identity": "workspace:*",
+    "@cubid/stamps": "workspace:*",
     "@cubid/types": "workspace:*",
     "@ethersproject/bignumber": "^5.7.0",
     "@farcaster/auth-kit": "^0.6.0",

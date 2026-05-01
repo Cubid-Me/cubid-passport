@@ -1,35 +1,15 @@
 import { getRequiredEnv } from "@cubid/config"
 import { ApiSecurityError } from "@cubid/auth/server"
+import {
+  createSelectiveDisclosureGrant,
+  deriveAppScopedSubject,
+  type DisclosureClaimDescriptor,
+} from "@cubid/identity"
+import { STAMP_TYPE_IDS, getStampTypeId, getStampTypeName } from "@cubid/stamps"
 
 import { encode_data } from "@/lib/encode_data"
 
 import { getPassportSupabase } from "./supabase"
-
-const STAMP_TYPE_IDS: Record<string, number> = {
-  facebook: 1,
-  github: 2,
-  google: 3,
-  twitter: 4,
-  discord: 5,
-  poh: 6,
-  iah: 7,
-  brightid: 8,
-  gitcoin: 9,
-  instagram: 10,
-  phone: 11,
-  gooddollar: 12,
-  email: 13,
-  evm: 14,
-  near: 15,
-  "near-wallet": 15,
-  fractal: 17,
-  worldcoin: 26,
-  telegram: 27,
-  solana: 53,
-  "lens-protocol": 66,
-  farcaster: 68,
-  address: 70,
-}
 
 const toRecord = (value: unknown) => {
   if (typeof value === "object" && value !== null) {
@@ -47,6 +27,230 @@ const getConfiguredPassportDappId = () => {
   }
 
   return Number(value)
+}
+
+type DappUserDisclosureRow = {
+  dapp_id: number | string
+  user_id: number | string
+  uuid: string
+}
+
+type StampDisclosureRow = {
+  id: number | string
+  stamptype: number | string
+}
+
+type AppScopedSubjectDisclosureRow = {
+  app_scoped_subject: string
+  id: string
+}
+
+type SelectiveDisclosureGrantRow = {
+  id: string
+}
+
+const getAppScopedSubjectSecret = () =>
+  getRequiredEnv("PASSPORT_APP_SCOPED_SUBJECT_SECRET")
+
+const getOrCreateDappAppScopedSubject = async (input: {
+  dappUser: DappUserDisclosureRow
+}) => {
+  const appIdentifier = `dapp:${input.dappUser.dapp_id}`
+  const derived = deriveAppScopedSubject(
+    {
+      actorType: "human",
+      appIdentifier,
+      derivationVersion: "v1",
+      subjectKey: `cubid_user:${input.dappUser.user_id}`,
+    },
+    getAppScopedSubjectSecret()
+  )
+  const supabase = getPassportSupabase()
+
+  const { data, error } = await supabase
+    .from("app_scoped_subjects")
+    .upsert({
+      app_identifier: appIdentifier,
+      app_scoped_subject: derived.appScopedSubject,
+      cubid_user_id: input.dappUser.user_id,
+      dapp_id: input.dappUser.dapp_id,
+      dapp_user_uuid: input.dappUser.uuid,
+      derivation_version: derived.derivationVersion,
+      metadata: { source: "allow_page" },
+      subject_type: "human",
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "app_identifier,app_scoped_subject" })
+    .select("id,app_scoped_subject")
+    .maybeSingle()
+
+  if (error) {
+    throw error
+  }
+
+  if (!data) {
+    throw new Error("Failed to upsert Allow Page app-scoped subject")
+  }
+
+  return data as AppScopedSubjectDisclosureRow
+}
+
+const persistAllowPageDisclosureGrant = async (input: {
+  appScopedSubject: AppScopedSubjectDisclosureRow
+  dappUser: DappUserDisclosureRow
+  stamp: StampDisclosureRow
+}) => {
+  const supabase = getPassportSupabase()
+  const appIdentifier = `dapp:${input.dappUser.dapp_id}`
+  const stampTypeId = Number(input.stamp.stamptype)
+  const stampTypeName = getStampTypeName(stampTypeId)
+  const requestedClaims: DisclosureClaimDescriptor[] = [
+    {
+      claim: `stamp:${stampTypeName}`,
+      dataClass: "json",
+      purpose: "Allow Page stamp sharing",
+      required: false,
+    },
+  ]
+  const grant = createSelectiveDisclosureGrant({
+    appIdentifier,
+    appScopedSubject: input.appScopedSubject.app_scoped_subject,
+    decision: "grant",
+    policyVersion: "allow-page:v1",
+    requestedClaims,
+    requestedScopes: ["cubid:stamps"],
+    source: "allow_page",
+  })
+
+  const { data: existing, error: existingError } = await supabase
+    .from("selective_disclosure_grants")
+    .select("id")
+    .eq("app_scoped_subject_id", input.appScopedSubject.id)
+    .eq("dapp_id", input.dappUser.dapp_id)
+    .eq("grant_fingerprint", grant.grantFingerprint)
+    .eq("status", "active")
+    .maybeSingle()
+
+  if (existingError) {
+    throw existingError
+  }
+
+  if (existing) {
+    return existing as SelectiveDisclosureGrantRow
+  }
+
+  const { data, error } = await supabase
+    .from("selective_disclosure_grants")
+    .insert({
+      app_scoped_subject_id: input.appScopedSubject.id,
+      consent_version: 1,
+      dapp_id: input.dappUser.dapp_id,
+      granted_at: grant.grantedAt,
+      granted_claims: grant.grantedClaims,
+      granted_scopes: grant.grantedScopes,
+      grant_fingerprint: grant.grantFingerprint,
+      metadata: {
+        stamp_id: input.stamp.id,
+        stamp_type: stampTypeName,
+      },
+      policy_version: grant.policyVersion,
+      source: grant.source,
+      status: grant.status,
+    })
+    .select("id")
+    .maybeSingle()
+
+  if (error) {
+    throw error
+  }
+
+  if (!data) {
+    throw new Error("Failed to persist Allow Page disclosure grant")
+  }
+
+  const disclosureGrant = data as SelectiveDisclosureGrantRow
+  const { error: eventError } = await supabase
+    .from("selective_disclosure_events")
+    .insert({
+      actor_identifier: input.appScopedSubject.app_scoped_subject,
+      actor_type: "user",
+      app_scoped_subject_id: input.appScopedSubject.id,
+      details: {
+        dapp_id: input.dappUser.dapp_id,
+        stamp_id: input.stamp.id,
+        stamp_type: stampTypeName,
+      },
+      disclosure_grant_id: disclosureGrant.id,
+      event_type: "disclosure.granted",
+      outcome: "success",
+    })
+
+  if (eventError) {
+    throw eventError
+  }
+
+  return disclosureGrant
+}
+
+const persistAllowPageDisclosureForStampPermission = async (input: {
+  dappUserId: string
+  stampId: number | string
+}) => {
+  const supabase = getPassportSupabase()
+  const [dappUserResponse, stampResponse] = await Promise.all([
+    supabase
+      .from("dapp_users")
+      .select("uuid,dapp_id,user_id")
+      .eq("uuid", input.dappUserId)
+      .maybeSingle(),
+    supabase
+      .from("stamps")
+      .select("id,stamptype")
+      .eq("id", input.stampId)
+      .maybeSingle(),
+  ])
+
+  if (dappUserResponse.error) {
+    throw dappUserResponse.error
+  }
+
+  if (stampResponse.error) {
+    throw stampResponse.error
+  }
+
+  if (!dappUserResponse.data || !stampResponse.data) {
+    throw new Error("Cannot persist disclosure grant without dapp user and stamp records")
+  }
+
+  const appScopedSubject = await getOrCreateDappAppScopedSubject({
+    dappUser: dappUserResponse.data as DappUserDisclosureRow,
+  })
+  return persistAllowPageDisclosureGrant({
+    appScopedSubject,
+    dappUser: dappUserResponse.data as DappUserDisclosureRow,
+    stamp: stampResponse.data as StampDisclosureRow,
+  })
+}
+
+const rollbackStampPermission = async (input: {
+  dappUserId: string
+  permissionId?: number | string | null
+  stampId: number | string
+}) => {
+  const supabase = getPassportSupabase()
+  let query = supabase.from("stamp_dappuser_permissions").delete()
+
+  if (input.permissionId !== null && input.permissionId !== undefined) {
+    query = query.eq("id", input.permissionId)
+  } else {
+    query = query
+      .eq("dappuser_id", input.dappUserId)
+      .eq("stamp_id", input.stampId)
+  }
+
+  const { error } = await query
+  if (error) {
+    throw error
+  }
 }
 
 const invokeInternalWebhookTrigger = async (input: {
@@ -312,7 +516,7 @@ export const passportDataCommands = {
     userUuid?: string
   }) {
     const supabase = getPassportSupabase()
-    const stampTypeId = STAMP_TYPE_IDS[input.stampType]
+    const stampTypeId = getStampTypeId(input.stampType)
 
     if (!stampTypeId) {
       throw new ApiSecurityError(
@@ -440,7 +644,7 @@ export const passportDataCommands = {
     }
 
     if (insertedStamp?.id && dappUserId) {
-      const { error: permissionError } = await supabase
+      const { data: permissionRow, error: permissionError } = await supabase
         .from("stamp_dappuser_permissions")
         .insert({
           can_delete: true,
@@ -449,9 +653,25 @@ export const passportDataCommands = {
           dappuser_id: dappUserId,
           stamp_id: insertedStamp.id,
         })
+        .select("*")
+        .maybeSingle()
 
       if (permissionError) {
         throw permissionError
+      }
+
+      try {
+        await persistAllowPageDisclosureForStampPermission({
+          dappUserId,
+          stampId: insertedStamp.id,
+        })
+      } catch (persistError) {
+        await rollbackStampPermission({
+          dappUserId,
+          permissionId: toRecord(permissionRow).id as number | string | null,
+          stampId: insertedStamp.id,
+        })
+        throw persistError
       }
     }
 
@@ -555,7 +775,8 @@ export const passportDataCommands = {
   },
 
   async grantStampPermission(input: { dappUserId: string; stampId: number }) {
-    const { data, error } = await getPassportSupabase()
+    const supabase = getPassportSupabase()
+    const { data, error } = await supabase
       .from("stamp_dappuser_permissions")
       .insert({
         can_delete: true,
@@ -569,6 +790,20 @@ export const passportDataCommands = {
 
     if (error) {
       throw error
+    }
+
+    try {
+      await persistAllowPageDisclosureForStampPermission({
+        dappUserId: input.dappUserId,
+        stampId: input.stampId,
+      })
+    } catch (persistError) {
+      await rollbackStampPermission({
+        dappUserId: input.dappUserId,
+        permissionId: toRecord(data).id as number | string | null,
+        stampId: input.stampId,
+      })
+      throw persistError
     }
 
     return data

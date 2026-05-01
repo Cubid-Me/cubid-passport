@@ -1,16 +1,19 @@
 # `@cubid/core` Publishing Runbook
 
-This runbook is the operator checklist for publishing `@cubid/core` to npm and
-JSR. The repo is already wired for tokenless publishing from GitHub Actions; the
-remaining setup happens in the npm and JSR account UIs.
+This Passport-repo copy is historical context only. The canonical public SDK
+home is `Cubid-Me/cubid-sdk`, and package publication must happen from that
+repo rather than from `cubid-passport`.
+
+`cubid-passport` no longer has a manual package-publish workflow. Keep it that
+way unless the SDK canonical home decision changes explicitly.
 
 ## Release Contract
 
 - npm package: `@cubid/core`
 - JSR package: `@cubid/core`
-- GitHub repository: `Cubid-Me/cubid-passport`
-- Workflow: `.github/workflows/publish.yml`
-- Release branch: `dev`
+- GitHub repository: `Cubid-Me/cubid-sdk`
+- Workflow: `.github/workflows/publish.yml` in `cubid-sdk`
+- Release branch: `main`
 - Release workflow trigger: manual `workflow_dispatch`
 
 Before a release, verify the current registry and local-auth state instead of
@@ -55,7 +58,7 @@ official Cubid org accounts, not an agent-owned or personal workaround.
    Publishing:
    - Provider: `GitHub Actions`
    - Organization or user: `Cubid-Me`
-   - Repository: `cubid-passport`
+   - Repository: `cubid-sdk`
    - Workflow filename: `publish.yml`
    - Environment name: leave blank
 7. In the package settings, set publishing access to require 2FA and disallow
@@ -67,10 +70,10 @@ npm's trusted-publisher UI is package-settings based. If npm does not let you
 configure Trusted Publishing before the first package version exists, use this
 bootstrap path:
 
-1. Make sure this publishing setup PR has merged to `dev`.
+1. Make sure this publishing setup PR has merged to `main`.
 2. Use the official npm org owner account, not an agent or personal automation
    token.
-3. Publish version `0.1.0` once from the clean `dev` release commit with:
+3. Publish version `0.1.0` once from the clean `main` release commit with:
 
    ```sh
    pnpm --filter @cubid/core build
@@ -92,7 +95,7 @@ npm automation token in this repository.
 2. Create or open scope `@cubid`.
 3. Create or open package `@cubid/core`.
 4. In the package settings, link the GitHub repository:
-   - Repository: `Cubid-Me/cubid-passport`
+   - Repository: `Cubid-Me/cubid-sdk`
    - Workflow: `.github/workflows/publish.yml`
 5. Keep tokenless GitHub Actions publishing as the release path.
 
@@ -101,17 +104,17 @@ linked to the repository.
 
 ## Release Steps After Setup
 
-1. Ensure the release commit is merged to `dev`.
-2. Open GitHub Actions for `Cubid-Me/cubid-passport`.
+1. Ensure the release commit is merged to `main`.
+2. Open GitHub Actions for `Cubid-Me/cubid-sdk`.
 3. Select workflow `Publish Packages`.
 4. Click `Run workflow`.
-5. Select branch `dev`.
+5. Select branch `main`.
 6. Set `publish_npm` and/or `publish_jsr` to `true`.
 7. Run the workflow.
 8. Confirm the workflow passes and the package pages show the new version.
 
 The workflow fails intentionally if a publish is dispatched from any branch
-other than `dev`.
+other than `main`.
 
 ## Verification Commands
 

@@ -6,6 +6,10 @@ import {
   handlePassportRoute,
   passportSchemas,
 } from "@/lib/server/passportApi"
+import {
+  isStampDisclosed,
+  loadDappDisclosureGrantsForStamp,
+} from "@/lib/server/disclosureGrants"
 import { getPassportSupabase } from "@/lib/server/supabase"
 import { resolveWebhookSigningSecret } from "@/lib/server/webhookSigningSecrets"
 
@@ -66,8 +70,22 @@ export default async function handler(
             throw dappUserError
           }
 
+          const grantSetsByDappUser = await loadDappDisclosureGrantsForStamp(
+            supabase,
+            (dappUsers ?? []).map((dappUser) => ({
+              dappId: dappUser.dapp_id,
+              dappUserUuid: dappUser.uuid,
+            })),
+            stampRow
+          )
+
           await Promise.all(
             (dappUsers ?? []).map(async (dappUser) => {
+              const disclosureGrants = grantSetsByDappUser.get(dappUser.uuid)
+              if (!isStampDisclosed(disclosureGrants, stampRow)) {
+                return
+              }
+
               const { data: webhookSubscriptions, error: webhookError } =
                 await supabase
                   .from("dapp_webhook_subscriptions")

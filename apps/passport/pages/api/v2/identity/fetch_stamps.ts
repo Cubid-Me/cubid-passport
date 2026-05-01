@@ -4,20 +4,19 @@ import {
   handlePassportRoute,
   passportSchemas,
 } from "@/lib/server/passportApi"
+import { ApiSecurityError } from "@cubid/auth/server"
+import {
+  filterDisclosedStamps,
+  isStampTypeDisclosed,
+  loadDappDisclosureGrants,
+} from "@/lib/server/disclosureGrants"
 import { getPassportSupabase } from "@/lib/server/supabase"
-
-import { stampsWithId } from "../../utils/stampKey"
+import { getStampTypeName } from "@cubid/stamps"
 
 const schema = passportSchemas.z.object({
   apikey: passportSchemas.z.string().min(1),
   user_id: passportSchemas.z.string().min(1),
 })
-
-const swapKeyValue = (input: Record<string, number>) => {
-  return Object.fromEntries(
-    Object.entries(input).map(([key, value]) => [value, key])
-  ) as Record<number, string>
-}
 
 export default async function handler(
   req: NextApiRequest,
@@ -32,7 +31,7 @@ export default async function handler(
       rateLimitGroup: "passport_dapp_read",
       route: "v2.identity.fetch_stamps",
     },
-    async ({ body }) => {
+    async ({ body, context }) => {
       const supabase = getPassportSupabase()
       const { data: dappUsers, error: dappUsersError } = await supabase
         .from("dapp_users")
@@ -43,46 +42,40 @@ export default async function handler(
         throw dappUsersError
       }
 
-      if (!dappUsers?.length) {
-        return res.status(404).json({ error: "User not found" })
+      const dappUser = dappUsers?.[0]
+      if (!dappUser || String(dappUser.dapp_id) !== String(context.dapp.id)) {
+        throw new ApiSecurityError(
+          404,
+          "not_found",
+          "User not found for this dapp."
+        )
       }
 
       const { data: stampData, error: stampError } = await supabase
         .from("stamps")
         .select("*")
-        .eq("created_by_user_id", dappUsers[0]?.users.id)
+        .eq("created_by_user_id", dappUser.users.id)
 
       if (stampError) {
         throw stampError
       }
 
-      const swapped = swapKeyValue(stampsWithId)
-      const allStamps = await Promise.all(
-        (stampData ?? []).map(async (item: any) => {
-          const { data: permissionData, error } = await supabase
-            .from("stamp_dappuser_permissions")
-            .select("*")
-            .match({
-              dappuser_id: body.user_id,
-              stamp_id: item.id,
-            })
-
-          if (error) {
-            throw error
-          }
-
-          return {
-            ...item,
-            emailForVerification: dappUsers[0]?.users.email,
-            permAvailable: Boolean(permissionData?.[0]),
-            stamptype_string: swapped[item.stamptype],
-          }
-        })
-      )
+      const disclosureGrants = await loadDappDisclosureGrants(supabase, {
+        dappId: context.dapp.id,
+        dappUserUuid: body.user_id,
+      })
+      const emailDisclosed = isStampTypeDisclosed(disclosureGrants, "email")
+      const allStamps = filterDisclosedStamps(disclosureGrants, stampData ?? [])
+        .map((item: any) => ({
+          ...item,
+          emailForVerification: emailDisclosed ? dappUser.users.email : null,
+          permAvailable: true,
+          stamptype_string: getStampTypeName(Number(item.stamptype)),
+        }))
 
       return res.status(200).json({
         all_stamps: allStamps,
-        email: dappUsers[0]?.users.email,
+        email: emailDisclosed ? dappUser.users.email : null,
       })
     }
   )

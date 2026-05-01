@@ -1,12 +1,11 @@
 import type { NextApiRequest, NextApiResponse } from "next"
+import { getStampTypeId } from "@cubid/stamps"
 
 import {
   handlePassportRoute,
   passportSchemas,
 } from "@/lib/server/passportApi"
 import { getPassportSupabase } from "@/lib/server/supabase"
-
-import { stampsWithId } from "./../utils/stampKey"
 
 const cyrb53 = (str: string, seed = 0) => {
   let h1 = 0xdeadbeef ^ seed
@@ -142,10 +141,12 @@ export default async function handler(
         user_id = newUser?.[0]?.id ?? null
       }
 
-      const stampIdToAssign =
-        (stampsWithId as Record<string, number>)[
-          body.phone ? "phone" : body.evm ? "evm" : "email"
-        ]
+      const stampIdToAssign = getStampTypeId(
+        body.phone ? "phone" : body.evm ? "evm" : "email"
+      )
+      if (!stampIdToAssign) {
+        return res.status(400).json({ error: "No valid identifier provided" })
+      }
       const { data: newStamp, error: newStampError } = await supabase
         .from("stamps")
         .insert({

@@ -187,9 +187,9 @@ Rules:
 
 ### Generic Supabase routes
 
-- `/api/supabase/*` must be locked down under the shared baseline during C03.
-- They are no longer allowed to behave as unauthenticated arbitrary CRUD endpoints.
-- C02 still owns their final replacement with typed domain services.
+- `/api/supabase/*` is no longer a supported arbitrary CRUD surface.
+- C03.4 replaced first-party app usage with typed Passport-owned routes under `/api/passport/data/*`.
+- C03.5 added regression coverage for the hard-disabled legacy endpoints, so C02 is superseded by the completed C03.4/C03.5 security-baseline slices.
 
 ## C03.4 Implementation Notes
 

@@ -5,6 +5,10 @@ Next.js server and from Supabase Edge Functions. `@cubid/core` is
 runtime-agnostic: keep it on the server, inject `fetch` when useful, and never
 ship Cubid dapp API keys to browser bundles.
 
+The live public package source for this guide is `Cubid-Me/cubid-sdk`. Keep
+`cubid-passport` private and do not treat it as the package implementation or
+publication source.
+
 ## Server-Side Next.js Usage
 
 Use `@cubid/core` from route handlers, server actions, or backend-only modules.
@@ -123,4 +127,3 @@ return {
 runtime-agnostic imports, structured `CubidApiError`, and the high-level helper
 names introduced in E02.2. Breaking changes before `1.0` must be documented in
 the package README and this guide before publication.
-

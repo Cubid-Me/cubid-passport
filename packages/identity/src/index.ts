@@ -1,6 +1,17 @@
 import { createHash, createHmac, randomBytes } from "node:crypto";
 
 const DERIVATION_CONTEXT = "cubid-sub:v1";
+const APP_SCOPED_DERIVATION_CONTEXT = "cubid-app-sub:v1";
+
+const RAW_IDENTIFIER_CLAIMS = new Set([
+  "cubid_user_id",
+  "dapp_user_uuid",
+  "firebase_uid",
+  "human_subject_key",
+  "internal_user_id",
+  "session_id",
+  "token_hash",
+]);
 
 export const CUBID_ACTOR_TYPES = ["human", "agent", "organization"] as const;
 
@@ -25,6 +36,10 @@ export type CubidOrganizationKind = (typeof CUBID_ORGANIZATION_KINDS)[number];
 export type CubidAgentAffiliationType = (typeof CUBID_AGENT_AFFILIATION_TYPES)[number];
 
 export type ConsentClassification = "identity" | "hashed" | "boolean" | "score" | "json";
+export type AppScopedSubjectType = CubidActorType;
+export type DisclosureGrantStatus = "active" | "revoked";
+export type DisclosureGrantSource = "allow_page" | "oidc" | "api" | "webhook";
+export type DisclosureDecision = "grant" | "deny";
 
 export interface CubidAgentAffiliation {
   affiliationType: CubidAgentAffiliationType;
@@ -113,6 +128,49 @@ export interface PairwiseSubjectDerivationOutput {
   subjectType: "pairwise_human";
 }
 
+export interface AppScopedSubjectDerivationInput {
+  derivationVersion: "v1";
+  appIdentifier: string;
+  actorType: AppScopedSubjectType;
+  subjectKey: string;
+}
+
+export interface AppScopedSubjectDerivationOutput {
+  derivationVersion: "v1";
+  appScopedSubject: string;
+  subjectType: AppScopedSubjectType;
+}
+
+export interface DisclosureClaimDescriptor {
+  claim: string;
+  dataClass: ConsentClassification;
+  required: boolean;
+  purpose: string | null;
+}
+
+export interface SelectiveDisclosureRequest {
+  appIdentifier: string;
+  appScopedSubject: string;
+  requestedScopes: string[];
+  requestedClaims: DisclosureClaimDescriptor[];
+  policyVersion: string;
+  source: DisclosureGrantSource;
+}
+
+export interface SelectiveDisclosureGrant {
+  grantFingerprint: string;
+  appIdentifier: string;
+  appScopedSubject: string;
+  grantedScopes: string[];
+  grantedClaims: DisclosureClaimDescriptor[];
+  status: DisclosureGrantStatus;
+  policyVersion: string;
+  source: DisclosureGrantSource;
+  grantedAt: string;
+  revokedAt: string | null;
+  revokedBy: "user" | "operator" | "system" | null;
+}
+
 export interface CubidConsentRecord {
   consentId: string;
   humanSubjectKey: string;
@@ -130,6 +188,26 @@ export interface CubidConsentRecord {
   revokedAt: string | null;
   revokedBy: "user" | "operator" | null;
   source: "passport";
+}
+
+function normalizeUniqueStrings(values: readonly string[]): string[] {
+  return [...new Set(values.map((value) => value.trim()).filter(Boolean))].sort();
+}
+
+function normalizeAppIdentifier(appIdentifier: string): string {
+  const normalized = appIdentifier.trim();
+  if (!normalized) {
+    throw new Error("App identifier is required.");
+  }
+  return normalized;
+}
+
+function normalizeSubjectKey(subjectKey: string): string {
+  const normalized = subjectKey.trim();
+  if (!normalized) {
+    throw new Error("Subject key is required.");
+  }
+  return normalized;
 }
 
 function base64UrlEncode(buffer: Uint8Array): string {
@@ -279,10 +357,112 @@ export function derivePairwiseSubject(
   };
 }
 
+export function deriveAppScopedSubject(
+  input: AppScopedSubjectDerivationInput,
+  masterSecret: string,
+): AppScopedSubjectDerivationOutput {
+  if (!masterSecret.trim()) {
+    throw new Error("App-scoped subject master secret is required.");
+  }
+
+  const appIdentifier = normalizeAppIdentifier(input.appIdentifier);
+  const subjectKey = normalizeSubjectKey(input.subjectKey);
+  const payload = [
+    APP_SCOPED_DERIVATION_CONTEXT,
+    appIdentifier,
+    input.actorType,
+    subjectKey,
+  ].join("|");
+  const digest = createHmac("sha256", masterSecret).update(payload).digest();
+
+  return {
+    appScopedSubject: base64UrlEncode(digest),
+    derivationVersion: "v1",
+    subjectType: input.actorType,
+  };
+}
+
 export function computeConsentFingerprint(grantedScopes: readonly string[], grantedClaims: readonly string[]): string {
   const normalizedScopes = [...new Set(grantedScopes)].sort().join(" ");
   const normalizedClaims = [...new Set(grantedClaims)].sort().join(" ");
   const payload = `${normalizedScopes}|${normalizedClaims}`;
 
   return base64UrlEncode(createHash("sha256").update(payload).digest());
+}
+
+export function normalizeDisclosureClaimDescriptors(
+  claims: readonly DisclosureClaimDescriptor[],
+): DisclosureClaimDescriptor[] {
+  const byClaim = new Map<string, DisclosureClaimDescriptor>();
+
+  for (const claim of claims) {
+    const claimName = claim.claim.trim();
+    if (!claimName) {
+      throw new Error("Disclosure claim name is required.");
+    }
+    if (RAW_IDENTIFIER_CLAIMS.has(claimName)) {
+      throw new Error(`Raw cross-app identifier claim is not disclosable: ${claimName}`);
+    }
+
+    byClaim.set(claimName, {
+      claim: claimName,
+      dataClass: claim.dataClass,
+      purpose: claim.purpose?.trim() || null,
+      required: claim.required,
+    });
+  }
+
+  return [...byClaim.values()].sort((left, right) => left.claim.localeCompare(right.claim));
+}
+
+export function createSelectiveDisclosureGrant(
+  input: SelectiveDisclosureRequest & {
+    decision: DisclosureDecision;
+    grantedAt?: string;
+  },
+): SelectiveDisclosureGrant {
+  const requestedClaims = normalizeDisclosureClaimDescriptors(input.requestedClaims);
+  const grantedClaims = input.decision === "grant" ? requestedClaims : [];
+  const grantedScopes = input.decision === "grant"
+    ? normalizeUniqueStrings(input.requestedScopes)
+    : [];
+  const claimNames = grantedClaims.map((claim) => claim.claim);
+
+  return {
+    appIdentifier: normalizeAppIdentifier(input.appIdentifier),
+    appScopedSubject: normalizeSubjectKey(input.appScopedSubject),
+    grantedAt: input.grantedAt ?? new Date().toISOString(),
+    grantedClaims,
+    grantedScopes,
+    grantFingerprint: computeConsentFingerprint(grantedScopes, claimNames),
+    policyVersion: input.policyVersion.trim() || "unversioned",
+    revokedAt: null,
+    revokedBy: null,
+    source: input.source,
+    status: input.decision === "grant" ? "active" : "revoked",
+  };
+}
+
+export function filterDisclosedClaimValues(
+  grant: Pick<SelectiveDisclosureGrant, "grantedClaims" | "status">,
+  availableClaims: Readonly<Record<string, unknown>>,
+): Record<string, unknown> {
+  if (grant.status !== "active") {
+    return {};
+  }
+
+  const result: Record<string, unknown> = {};
+  for (const claim of grant.grantedClaims) {
+    if (RAW_IDENTIFIER_CLAIMS.has(claim.claim)) {
+      continue;
+    }
+    if (Object.prototype.hasOwnProperty.call(availableClaims, claim.claim)) {
+      result[claim.claim] = availableClaims[claim.claim];
+    }
+  }
+  return result;
+}
+
+export function isRawIdentifierClaim(claimName: string): boolean {
+  return RAW_IDENTIFIER_CLAIMS.has(claimName.trim());
 }

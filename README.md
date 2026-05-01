@@ -1,6 +1,6 @@
 # Cubid Monorepo
 
-This repository is the umbrella monorepo for Cubid platform work. It contains active Passport, Admin, and OIDC workspaces plus shared packages for configuration, domain contracts, and the public `@cubid/core` SDK foundation.
+This repository is the private umbrella monorepo for Cubid platform work. It contains active Passport, Admin, and OIDC workspaces plus shared packages for configuration and domain contracts. Public SDK package work now belongs in the canonical SDK repo, `Cubid-Me/cubid-sdk`; local checkout paths are developer-specific.
 
 The original Passport hackathon walkthrough is here:
 [YouTube demo](https://www.youtube.com/watch?v=Um1-IB7lmNg)
@@ -9,9 +9,9 @@ The original Passport hackathon walkthrough is here:
 
 - `apps/passport`: Next.js 14 app for passwordless identity onboarding, Gitcoin Passport stamp collection, dapp allow flows, and minting a Gitcoin Passport score onto NEAR as a soulbound token
 - `apps/admin`: Next.js 13 canary admin control plane for app configuration, page management, webhook management, API key rotation, and authenticated admin APIs backed by Firebase bearer-token verification and server-side Supabase access
-- `packages/core`: public runtime-agnostic `@cubid/core` package for API wrappers, shared SDK types, and structured client errors
 - `packages/config`: shared server-side environment helper package
 - `packages/types`: shared client-safe and server-safe type contracts
+- `packages/core`: historical `@cubid/core` implementation snapshot retained for migration context; do not publish SDK packages from this repo
 
 ## Local Setup
 
@@ -79,7 +79,7 @@ Known Admin env variables include:
 - `apps/passport/`: live Passport application workspace
 - `apps/admin/`: imported Admin control-plane workspace
 - `packages/config/`: shared env-loading helpers and monorepo config conventions
-- `packages/core/`: public `@cubid/core` SDK foundation
+- `packages/core/`: historical `@cubid/core` SDK snapshot; canonical public SDK work lives in `Cubid-Me/cubid-sdk`
 - `packages/types/`: shared type contracts reused across workspaces
 - `agent-context/`: execution roadmap, session logs, and feature notes
 - `docs/engineering/`: architecture docs, operating model docs, and migration guidance
@@ -95,5 +95,5 @@ Known Admin env variables include:
 ## Agent And SDK Guidance
 
 - Product and protocol context lives in [agent-context/cubid-backgrounder.md](agent-context/cubid-backgrounder.md).
-- Public SDK/package boundaries live in [docs/engineering/sdk-package-target-state.md](docs/engineering/sdk-package-target-state.md).
-- Official public packages build toward `@cubid/core`, `@cubid/react`, and isolated chain-specific packages.
+- Public SDK/package boundaries live in [docs/engineering/sdk-package-target-state.md](docs/engineering/sdk-package-target-state.md), but implementation and publication now happen from `Cubid-Me/cubid-sdk`.
+- Do not publish `@cubid/core`, `@cubid/react`, or chain SDK packages from this private repo.

@@ -382,6 +382,41 @@ export const revokePassportOidcConsent = async (
     throw refreshTokenResponse.error
   }
 
+  const { error: disclosureRevokeError } = await supabase
+    .from("selective_disclosure_grants")
+    .update({
+      revoked_at: revokedAt,
+      revoked_by: "user",
+      status: "revoked",
+      updated_at: revokedAt,
+    })
+    .eq("oidc_client_id", consent.client_id)
+    .eq("metadata->>oidc_consent_id", consentId)
+    .eq("status", "active")
+
+  if (disclosureRevokeError) {
+    throw disclosureRevokeError
+  }
+
+  const { error: disclosureEventError } = await supabase
+    .from("selective_disclosure_events")
+    .insert({
+      actor_identifier: consent.human_subject_key,
+      actor_type: "user",
+      details: {
+        oidc_client_id: consent.client_id,
+        oidc_consent_id: consentId,
+        revoked_by: "user",
+      },
+      event_type: "disclosure.revoked",
+      outcome: "success",
+      request_id: requestId,
+    })
+
+  if (disclosureEventError) {
+    throw disclosureEventError
+  }
+
   const { error: auditError } = await supabase.from("oidc_audit_logs").insert({
     log_id: `audit_${randomUUID()}`,
     client_id: consent.client_id,

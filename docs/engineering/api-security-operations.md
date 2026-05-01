@@ -204,6 +204,7 @@ Checks:
 
 - `PASSPORT_CORS_ALLOWED_ORIGINS`
 - `PASSPORT_INTERNAL_API_TOKEN`
+- `PASSPORT_APP_SCOPED_SUBJECT_SECRET`
 - `SUPABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`
 - Firebase Admin server credentials for bearer-token verification

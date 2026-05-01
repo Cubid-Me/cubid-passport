@@ -14,6 +14,11 @@ import { WagmiConfig } from "wagmi"
 import { config as passportWagmiConfig } from "../../config/web3Config"
 import { useSelectStampPerm } from '../../lib/insert_stamp_perm'
 import { listPassportStampsByUser } from "@/lib/passportDataApi"
+import { OidcConsentPanel } from "@/features/allow/OidcConsentPanel"
+import {
+  persistLegacyAllowParams,
+  restoreLegacyAllowUrlIfNeeded,
+} from "@/features/allow/legacyAllowState"
 
 import { Stamps } from "./stamps"
 import { OptionalInfo } from "./steps/optional_info"
@@ -46,15 +51,12 @@ const AllowPage = () => {
       return
     }
 
-    if (uuid) {
-      localStorage.setItem("allow-uuid", uuid)
-    }
-    if (colormode) {
-      setTheme(colormode)
-    }
-    if (page_id) {
-      localStorage.setItem("page_id", page_id)
-    }
+    persistLegacyAllowParams({
+      colormode,
+      pageId: page_id,
+      setTheme,
+      uuid,
+    })
   }, [isOidcConsentFlow, uuid, setTheme, colormode, page_id])
 
   const fetchAllStamps = useCallback(async (userId: any) => {
@@ -121,14 +123,12 @@ const AllowPage = () => {
     }
 
     setTimeout(() => {
-      if (localStorage.getItem("allow_url")) {
-        if (
-          window.location.href === `${window.location.origin}/allow` ||
-          window.location.href === `${window.location.origin}/allow#`
-        ) {
-          push(`/allow?${localStorage.getItem("allow_url")}`)
-          localStorage.removeItem("allow_url")
-        }
+      const redirectTo = restoreLegacyAllowUrlIfNeeded(
+        window.location.href,
+        window.location.origin
+      )
+      if (redirectTo) {
+        push(redirectTo)
       }
     }, 2000)
   }, [isOidcConsentFlow, push])
@@ -194,80 +194,13 @@ const AllowPage = () => {
   }
 
   if (isOidcConsentFlow) {
-    if (loading) {
-      return (
-        <div className="flex h-[100vh] w-[100vw] items-center justify-center dark:bg-gray-900 dark:text-white">
-          <p>Loading consent request...</p>
-        </div>
-      )
-    }
-
-    if (!oidcConsentChallenge) {
-      return (
-        <div className="flex h-[100vh] w-[100vw] items-center justify-center dark:bg-gray-900 dark:text-white">
-          <p>Invalid or expired consent challenge.</p>
-        </div>
-      )
-    }
-
     return (
-      <div className="min-h-[100vh] bg-background px-4 py-16 text-foreground">
-        <div className="mx-auto max-w-2xl rounded-xl border bg-card p-8 shadow-sm">
-          <p className="text-sm uppercase tracking-[0.2em] text-muted-foreground">
-            Login with Cubid
-          </p>
-          <h1 className="mt-3 text-3xl font-semibold">
-            Share Cubid data with {oidcConsentChallenge?.client?.client_name}
-          </h1>
-          <p className="mt-3 text-sm text-muted-foreground">
-            Review the requested access before finishing sign-in.
-          </p>
-
-          <div className="mt-8 grid gap-6 md:grid-cols-2">
-            <div className="rounded-lg border p-4">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                Requested scopes
-              </h2>
-              <ul className="mt-3 space-y-2 text-sm">
-                {(oidcConsentChallenge?.requested_scopes ?? []).map((scope: string) => (
-                  <li key={scope} className="rounded bg-muted px-3 py-2">
-                    {scope}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="rounded-lg border p-4">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                Requested claims
-              </h2>
-              <ul className="mt-3 space-y-2 text-sm">
-                {(oidcConsentChallenge?.requestedClaims ?? []).map((claim: string) => (
-                  <li key={claim} className="rounded bg-muted px-3 py-2">
-                    {claim}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-
-          <div className="mt-8 flex flex-wrap gap-3">
-            <button
-              className="rounded-lg border border-red-200 px-4 py-2 text-sm text-red-700 disabled:opacity-60"
-              disabled={oidcSubmitting}
-              onClick={() => finalizeOidcConsent("reject")}
-            >
-              Deny
-            </button>
-            <button
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white disabled:opacity-60"
-              disabled={oidcSubmitting}
-              onClick={() => finalizeOidcConsent("approve")}
-            >
-              Approve and continue
-            </button>
-          </div>
-        </div>
-      </div>
+      <OidcConsentPanel
+        challenge={oidcConsentChallenge}
+        loading={loading}
+        onFinalize={finalizeOidcConsent}
+        submitting={oidcSubmitting}
+      />
     )
   }
 

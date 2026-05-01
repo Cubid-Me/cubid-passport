@@ -1,6 +1,6 @@
 import { CUBID_ACR_VALUES, generateRandomToken, type CubidAcrValue, type OidcAuthorizationRequestContext, type OidcConsentChallenge, type OidcLoginChallenge, type OidcTokenEndpointAuthMethod } from "@cubid/auth";
 import { getClaimDefinition, getClaimsForScopes, isSupportedScope, type OidcScope } from "@cubid/claims";
-import { computeConsentFingerprint, createHumanSubjectKey, derivePairwiseSubject } from "@cubid/identity";
+import { computeConsentFingerprint, createHumanSubjectKey, createSelectiveDisclosureGrant, deriveAppScopedSubject, derivePairwiseSubject, type DisclosureClaimDescriptor } from "@cubid/identity";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createRemoteJWKSet, jwtVerify, type JWTPayload } from "jose";
 
@@ -114,6 +114,15 @@ type PersistedHumanSubjectRow = {
   primary_phone: string | null;
   created_at: string;
   updated_at: string;
+};
+
+type PersistedAppScopedSubjectRow = {
+  id: string;
+  app_scoped_subject: string;
+};
+
+type PersistedSelectiveDisclosureGrantRow = {
+  id: string;
 };
 
 type ChallengeClientSummary = {
@@ -768,6 +777,140 @@ function buildRequestedClaims(row: PersistedAuthorizationRequestRow): string[] {
   return row.requested_claims?.length > 0 ? row.requested_claims : getClaimsForScopes(parseScopeSet(row.scope));
 }
 
+function buildOidcDisclosureClaimDescriptors(requestedClaims: string[]): DisclosureClaimDescriptor[] {
+  return requestedClaims.map((claim) => ({
+    claim,
+    dataClass: getClaimDefinition(claim)?.classification ?? "json",
+    purpose: "OIDC relying-party consent",
+    required: claim === "sub",
+  }));
+}
+
+async function getOrCreateOidcAppScopedSubject(
+  supabase: SupabaseClient,
+  input: {
+    clientId: string;
+    cubidUserId: number | null;
+    humanSubjectKey: string;
+  },
+): Promise<PersistedAppScopedSubjectRow> {
+  const appIdentifier = `oidc:${input.clientId}`;
+  const derived = deriveAppScopedSubject(
+    {
+      actorType: "human",
+      appIdentifier,
+      derivationVersion: "v1",
+      subjectKey: input.humanSubjectKey,
+    },
+    getOidcRuntimeConfig().pairwiseSubjectMasterSecret,
+  );
+
+  const { data, error } = await supabase
+    .from("app_scoped_subjects")
+    .upsert({
+      app_identifier: appIdentifier,
+      app_scoped_subject: derived.appScopedSubject,
+      cubid_user_id: input.cubidUserId,
+      derivation_version: derived.derivationVersion,
+      metadata: { oidc_client_id: input.clientId },
+      subject_type: "human",
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "app_identifier,app_scoped_subject" })
+    .select("id,app_scoped_subject")
+    .maybeSingle();
+
+  if (error || !data) {
+    throw new Error(`Failed to upsert OIDC app-scoped subject: ${error?.message ?? "missing row"}`);
+  }
+
+  return data as PersistedAppScopedSubjectRow;
+}
+
+async function persistOidcDisclosureGrant(
+  supabase: SupabaseClient,
+  input: {
+    appScopedSubject: PersistedAppScopedSubjectRow;
+    clientId: string;
+    consentId: string;
+    consentVersion: number;
+    pairwiseSub: string;
+    requestedClaims: string[];
+    requestedScopes: OidcScope[];
+  },
+): Promise<void> {
+  const appIdentifier = `oidc:${input.clientId}`;
+  const grant = createSelectiveDisclosureGrant({
+    appIdentifier,
+    appScopedSubject: input.appScopedSubject.app_scoped_subject,
+    decision: "grant",
+    policyVersion: "v1",
+    requestedClaims: buildOidcDisclosureClaimDescriptors(input.requestedClaims),
+    requestedScopes: input.requestedScopes,
+    source: "oidc",
+  });
+
+  const { data: existing, error: existingError } = await supabase
+    .from("selective_disclosure_grants")
+    .select("id")
+    .eq("app_scoped_subject_id", input.appScopedSubject.id)
+    .eq("oidc_client_id", input.clientId)
+    .eq("grant_fingerprint", grant.grantFingerprint)
+    .eq("status", "active")
+    .maybeSingle();
+
+  if (existingError) {
+    throw new Error(`Failed to load OIDC disclosure grants: ${existingError.message}`);
+  }
+
+  if (existing) {
+    return;
+  }
+
+  const { data, error } = await supabase
+    .from("selective_disclosure_grants")
+    .insert({
+      app_scoped_subject_id: input.appScopedSubject.id,
+      granted_at: grant.grantedAt,
+      granted_claims: grant.grantedClaims,
+      granted_scopes: grant.grantedScopes,
+      grant_fingerprint: grant.grantFingerprint,
+      metadata: {
+        oidc_consent_id: input.consentId,
+        pairwise_sub: input.pairwiseSub,
+      },
+      oidc_client_id: input.clientId,
+      policy_version: grant.policyVersion,
+      consent_version: input.consentVersion,
+      source: grant.source,
+      status: grant.status,
+    })
+    .select("id")
+    .maybeSingle();
+
+  if (error || !data) {
+    throw new Error(`Failed to persist OIDC disclosure grant: ${error?.message ?? "missing row"}`);
+  }
+
+  const disclosureGrant = data as PersistedSelectiveDisclosureGrantRow;
+  const { error: eventError } = await supabase.from("selective_disclosure_events").insert({
+    actor_identifier: input.appScopedSubject.app_scoped_subject,
+    actor_type: "user",
+    app_scoped_subject_id: input.appScopedSubject.id,
+    details: {
+      oidc_client_id: input.clientId,
+      oidc_consent_id: input.consentId,
+      scopes: grant.grantedScopes,
+    },
+    disclosure_grant_id: disclosureGrant.id,
+    event_type: "disclosure.granted",
+    outcome: "success",
+  });
+
+  if (eventError) {
+    throw new Error(`Failed to persist OIDC disclosure event: ${eventError.message}`);
+  }
+}
+
 async function findMatchingConsent(supabase: SupabaseClient, humanSubjectKey: string, clientId: string, requestedScopes: OidcScope[], requestedClaims: string[]): Promise<PersistedConsentRow | null> {
   const { data, error } = await supabase.from("oidc_consents").select("*").eq("human_subject_key", humanSubjectKey).eq("client_id", clientId).is("revoked_at", null).order("consent_version", { ascending: false });
 
@@ -791,6 +934,11 @@ async function createOrReuseConsentGrant(supabase: SupabaseClient, requestRow: P
   const requestedScopes = parseScopeSet(requestRow.scope);
   const requestedClaims = buildRequestedClaims(requestRow);
   const existingConsent = await findMatchingConsent(supabase, sessionRow.human_subject_key, requestRow.client_id, requestedScopes, requestedClaims);
+  const appScopedSubject = await getOrCreateOidcAppScopedSubject(supabase, {
+    clientId: requestRow.client_id,
+    cubidUserId: sessionRow.cubid_user_id,
+    humanSubjectKey: sessionRow.human_subject_key,
+  });
 
   const pairwise = derivePairwiseSubject(
     {
@@ -803,6 +951,16 @@ async function createOrReuseConsentGrant(supabase: SupabaseClient, requestRow: P
   );
 
   if (existingConsent) {
+    await persistOidcDisclosureGrant(supabase, {
+      appScopedSubject,
+      clientId: requestRow.client_id,
+      consentId: existingConsent.consent_id,
+      consentVersion: existingConsent.consent_version,
+      pairwiseSub: pairwise.sub,
+      requestedClaims,
+      requestedScopes,
+    });
+
     return {
       consentId: existingConsent.consent_id,
       consentVersion: existingConsent.consent_version,
@@ -844,6 +1002,16 @@ async function createOrReuseConsentGrant(supabase: SupabaseClient, requestRow: P
   if (error) {
     throw new Error(`Failed to persist OIDC consent grant: ${error.message}`);
   }
+
+  await persistOidcDisclosureGrant(supabase, {
+    appScopedSubject,
+    clientId: requestRow.client_id,
+    consentId,
+    consentVersion: nextVersion,
+    pairwiseSub: pairwise.sub,
+    requestedClaims,
+    requestedScopes,
+  });
 
   return {
     consentId,
