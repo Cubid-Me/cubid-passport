@@ -29,6 +29,8 @@ type LegacyPermissionRow = {
 
 export type DappDisclosureGrantSet = {
   appScopedSubject: string | null
+  grantedClaims: Set<string>
+  grantedScopes: Set<string>
   grantedStampTypes: Set<string>
   hasStampScope: boolean
   legacyGrantedStampIds: Set<string>
@@ -36,10 +38,23 @@ export type DappDisclosureGrantSet = {
 
 const createEmptyDappDisclosureGrants = (): DappDisclosureGrantSet => ({
   appScopedSubject: null,
+  grantedClaims: new Set(),
+  grantedScopes: new Set(),
   grantedStampTypes: new Set(),
   hasStampScope: false,
   legacyGrantedStampIds: new Set(),
 })
+
+export const DISCLOSURE_CLAIMS = {
+  locationApproximate: "location:approximate",
+  locationExact: "location:exact",
+  locationRough: "location:rough",
+  locationWildcard: "location:*",
+  profileName: "profile:name",
+  profileWildcard: "profile:*",
+} as const
+
+export type LocationDisclosureLevel = "rough" | "approximate" | "exact"
 
 export async function loadDappDisclosureGrants(
   supabase: SupabaseClient,
@@ -60,11 +75,17 @@ function mergeGrantRows(
   grants: SelectiveDisclosureGrantRow[],
   legacyPermissions: LegacyPermissionRow[] = []
 ): DappDisclosureGrantSet {
+  const grantedClaims = new Set<string>()
+  const grantedScopes = new Set<string>()
   const grantedStampTypes = new Set<string>()
   let hasStampScope = false
 
   for (const grant of grants) {
-    if ((grant.granted_scopes ?? []).includes("cubid:stamps")) {
+    for (const scope of grant.granted_scopes ?? []) {
+      grantedScopes.add(scope)
+    }
+
+    if (grantedScopes.has("cubid:stamps")) {
       hasStampScope = true
     }
 
@@ -72,6 +93,7 @@ function mergeGrantRows(
       if (typeof claim.claim !== "string") {
         continue
       }
+      grantedClaims.add(claim.claim)
       if (claim.claim === "stamp:*") {
         grantedStampTypes.add("*")
         continue
@@ -84,6 +106,8 @@ function mergeGrantRows(
 
   return {
     appScopedSubject: appScopedSubject?.app_scoped_subject ?? null,
+    grantedClaims,
+    grantedScopes,
     grantedStampTypes,
     hasStampScope,
     legacyGrantedStampIds: new Set(
@@ -92,6 +116,91 @@ function mergeGrantRows(
         .filter((value): value is number | string => value !== null && value !== undefined)
         .map(String)
     ),
+  }
+}
+
+export function hasDisclosedClaim(
+  grants: DappDisclosureGrantSet | undefined,
+  claim: string
+): boolean {
+  if (!grants) {
+    return false
+  }
+
+  if (grants.grantedClaims.has(claim)) {
+    return true
+  }
+
+  const namespace = claim.split(":")[0]
+  return Boolean(namespace && grants.grantedClaims.has(`${namespace}:*`))
+}
+
+export function isProfileNameDisclosed(
+  grants: DappDisclosureGrantSet | undefined
+): boolean {
+  return (
+    hasDisclosedClaim(grants, DISCLOSURE_CLAIMS.profileName) ||
+    Boolean(
+      grants?.grantedScopes.has("profile") ||
+        grants?.grantedScopes.has("cubid:profile")
+    )
+  )
+}
+
+export function isLocationDisclosed(
+  grants: DappDisclosureGrantSet | undefined,
+  level: LocationDisclosureLevel
+): boolean {
+  if (!grants) {
+    return false
+  }
+
+  if (hasDisclosedClaim(grants, DISCLOSURE_CLAIMS.locationWildcard)) {
+    return true
+  }
+
+  const grantedLevels = new Set<LocationDisclosureLevel>()
+  if (hasDisclosedClaim(grants, DISCLOSURE_CLAIMS.locationExact)) {
+    grantedLevels.add("exact")
+    grantedLevels.add("approximate")
+    grantedLevels.add("rough")
+  }
+  if (hasDisclosedClaim(grants, DISCLOSURE_CLAIMS.locationApproximate)) {
+    grantedLevels.add("approximate")
+    grantedLevels.add("rough")
+  }
+  if (hasDisclosedClaim(grants, DISCLOSURE_CLAIMS.locationRough)) {
+    grantedLevels.add("rough")
+  }
+
+  return grantedLevels.has(level)
+}
+
+export function sanitizeDisclosedUserProfile<TUser extends Record<string, any>>(
+  user: TUser | null | undefined,
+  grants: DappDisclosureGrantSet | undefined
+): Record<string, unknown> | null {
+  if (!user) {
+    return null
+  }
+
+  const exactLocationDisclosed = isLocationDisclosed(grants, "exact")
+  const approximateLocationDisclosed = isLocationDisclosed(grants, "approximate")
+  const roughLocationDisclosed = isLocationDisclosed(grants, "rough")
+
+  return {
+    address: exactLocationDisclosed ? user.address ?? null : null,
+    cubid_country:
+      roughLocationDisclosed || approximateLocationDisclosed || exactLocationDisclosed
+        ? user.cubid_country ?? null
+        : null,
+    cubid_postalcode:
+      approximateLocationDisclosed || exactLocationDisclosed
+        ? user.cubid_postalcode ?? null
+        : null,
+    email: isStampTypeDisclosed(grants, "email") ? user.email ?? null : null,
+    nickname: isProfileNameDisclosed(grants) ? user.nickname ?? null : null,
+    phone: isStampTypeDisclosed(grants, "phone") ? user.phone ?? null : null,
   }
 }
 

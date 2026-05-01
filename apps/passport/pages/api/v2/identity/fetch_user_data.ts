@@ -4,6 +4,12 @@ import {
   handlePassportRoute,
   passportSchemas,
 } from "@/lib/server/passportApi"
+import { ApiSecurityError } from "@cubid/auth/server"
+import {
+  isLocationDisclosed,
+  isProfileNameDisclosed,
+  loadDappDisclosureGrants,
+} from "@/lib/server/disclosureGrants"
 import { getPassportSupabase } from "@/lib/server/supabase"
 
 const { OpenLocationCode } = require("open-location-code")
@@ -37,8 +43,9 @@ export default async function handler(
       rateLimitGroup: "passport_dapp_read",
       route: "v2.identity.fetch_user_data",
     },
-    async ({ body }) => {
-      const { data: dappUsers, error } = await getPassportSupabase()
+    async ({ body, context }) => {
+      const supabase = getPassportSupabase()
+      const { data: dappUsers, error } = await supabase
         .from("dapp_users")
         .select("*,users:user_id(*),dapps:dapp_id(*)")
         .eq("uuid", body.user_id)
@@ -47,7 +54,21 @@ export default async function handler(
         throw error
       }
 
-      const address = dappUsers?.[0]?.users?.address
+      const dappUser = dappUsers?.[0]
+      if (!dappUser || String(dappUser.dapp_id) !== String(context.dapp.id)) {
+        throw new ApiSecurityError(
+          404,
+          "not_found",
+          "User not found for this dapp."
+        )
+      }
+
+      const disclosureGrants = await loadDappDisclosureGrants(supabase, {
+        dappId: context.dapp.id,
+        dappUserUuid: body.user_id,
+      })
+      const locationDisclosed = isLocationDisclosed(disclosureGrants, "approximate")
+      const address = locationDisclosed ? dappUser.users?.address : null
       const latitude =
         address?.locationDetails?.geometry?.location?.lat ??
         address?.coordinates?.lat
@@ -73,7 +94,9 @@ export default async function handler(
             : null,
         country: locationDetails?.country ?? null,
         error: null,
-        name: dappUsers?.[0]?.users?.nickname ?? null,
+        name: isProfileNameDisclosed(disclosureGrants)
+          ? dappUser.users?.nickname ?? null
+          : null,
         placename: locationDetails?.formattedAddress
           ? removePlusCode(locationDetails.formattedAddress)
           : null,

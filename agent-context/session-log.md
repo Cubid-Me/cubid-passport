@@ -3987,3 +3987,34 @@ Address Copilot and Codex review feedback on PR #155 before returning the branch
 #### Follow-up
 
 - push the review-fix commit, confirm CI, then reply to and resolve the addressed PR #155 review threads
+
+### session: v140
+
+- timestamp: 2026-05-01T08:03:51Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-disclosure-claim-taxonomy**
+- head: **`63303ad`**
+- session name: **Add E01 profile and location disclosure taxonomy**
+
+#### Objective
+
+Continue E01 by making profile and non-stamp location claims explicit in the selective-disclosure contract, then tighten dapp-facing route filters around those grants.
+
+#### Actions Taken
+
+- added Passport disclosure helpers for `profile:name`, `location:rough`, `location:approximate`, `location:exact`, and wildcard namespace grants
+- sanitized legacy dapp identity user payloads instead of spreading raw user rows back to integrators
+- gated exact, approximate, and rough location routes on matching disclosure claim granularity
+- prevented approximate location responses from returning raw address objects
+- documented the profile/location claim taxonomy and sent an SDK-impact handoff note to the canonical SDK repo
+
+#### Verification
+
+- `pnpm --filter @cubid/passport typecheck`
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/passport test'`
+- `pnpm --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- add user-facing non-OIDC app disclosure history and revocation views so users can inspect and revoke Allow Page grants outside the OIDC consent panel

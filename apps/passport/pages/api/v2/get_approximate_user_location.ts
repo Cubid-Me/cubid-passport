@@ -4,6 +4,11 @@ import {
   handlePassportRoute,
   passportSchemas,
 } from "@/lib/server/passportApi"
+import { ApiSecurityError } from "@cubid/auth/server"
+import {
+  isLocationDisclosed,
+  loadDappDisclosureGrants,
+} from "@/lib/server/disclosureGrants"
 import { getPassportSupabase } from "@/lib/server/supabase"
 
 const schema = passportSchemas.z.object({
@@ -37,9 +42,30 @@ export default async function handler(
         throw error
       }
 
-      const user = data?.[0]?.users
+      const dappUser = data?.[0]
+      if (!dappUser) {
+        throw new ApiSecurityError(
+          404,
+          "not_found",
+          "User not found for this dapp."
+        )
+      }
+
+      const disclosureGrants = await loadDappDisclosureGrants(getPassportSupabase(), {
+        dappId: context.dapp.id,
+        dappUserUuid: body.user_id,
+      })
+      if (!isLocationDisclosed(disclosureGrants, "approximate")) {
+        return res.status(200).json({
+          address: null,
+          cubid_country: null,
+          cubid_postalcode: null,
+        })
+      }
+
+      const user = dappUser.users
       return res.status(200).json({
-        address: user?.address ?? null,
+        address: null,
         cubid_country: user?.cubid_country ?? null,
         cubid_postalcode: user?.cubid_postalcode ?? null,
       })
