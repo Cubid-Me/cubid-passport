@@ -54,6 +54,22 @@ stamp scope. Legacy `stamp_dappuser_permissions` remains in place for existing
 reads, but new grants are durably represented in the selective-disclosure
 contract as well.
 
+SDK-facing Passport identity routes now consult active source `allow_page`
+disclosure grants before returning stamp values to a dapp. Legacy response
+shapes are preserved where practical, but undisclosed stamps are removed from
+the result set and email/phone fields are nulled unless the matching stamp claim
+was granted. This is intentionally stricter than the old table-permission
+behavior: `stamp_dappuser_permissions` remains a legacy compatibility table, but
+it is no longer sufficient by itself for SDK-facing identity disclosure.
+Score and score-detail endpoints also calculate only from disclosed stamps so a
+dapp cannot infer undisclosed credentials from score contributions.
+
+Webhook delivery is also grant-gated. Internal webhook trigger jobs look up the
+dapp user's active disclosure grants before sending credential events to a dapp
+subscription, and skip delivery when the changed stamp has not been disclosed to
+that dapp. The first pass preserves the existing webhook payload shape while
+preventing undisclosed stamp events from being sent.
+
 Passport requires `PASSPORT_APP_SCOPED_SUBJECT_SECRET` for Allow Page subject
 derivation. OIDC currently derives its broader app-scoped subject from the same
 server-held secret used for pairwise subject derivation so the two OIDC subject

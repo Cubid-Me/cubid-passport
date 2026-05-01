@@ -4,7 +4,12 @@ import {
   handlePassportRoute,
   passportSchemas,
 } from "@/lib/server/passportApi"
+import { ApiSecurityError } from "@cubid/auth/server"
 import { getPassportSupabase } from "@/lib/server/supabase"
+import {
+  filterDisclosedStamps,
+  loadDappDisclosureGrants,
+} from "@/lib/server/disclosureGrants"
 import { getStampTypeName } from "@cubid/stamps"
 
 const schema = passportSchemas.z.object({
@@ -36,7 +41,16 @@ export default async function handler(
         throw dappUsersError
       }
 
-      const userId = dappUsers?.[0]?.users?.id
+      const dappUser = dappUsers?.[0]
+      if (!dappUser || String(dappUser.dapp_id) !== String(context.dapp.id)) {
+        throw new ApiSecurityError(
+          404,
+          "not_found",
+          "User not found for this dapp."
+        )
+      }
+
+      const userId = dappUser.users?.id
       const [stampDataResponse, stampPermsResponse] = await Promise.all([
         supabase.from("stamps").select("*").eq("created_by_user_id", userId),
         supabase
@@ -56,7 +70,14 @@ export default async function handler(
         ...(stampPermsResponse.data ?? []).map((item: any) => item.stamptype_id),
         13,
       ]
-      const stampDetails = (stampDataResponse.data ?? [])
+      const disclosureGrants = await loadDappDisclosureGrants(supabase, {
+        dappId: context.dapp.id,
+        dappUserUuid: body.user_id,
+      })
+      const stampDetails = filterDisclosedStamps(
+        disclosureGrants,
+        stampDataResponse.data ?? []
+      )
         .filter((item: any) => allowedStampIds.includes(item.stamptype))
         .map((item: any) => ({
           stamp_type: getStampTypeName(Number(item.stamptype)),

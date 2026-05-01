@@ -3919,3 +3919,36 @@ Continue E01 by wiring existing Allow Page and OIDC consent approval paths into 
 #### Follow-up
 
 - use the persisted disclosure grants to filter SDK-facing identity routes and webhook payloads in the next E01 slice
+
+### session: v138
+
+- timestamp: 2026-05-01T00:00:56Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-app-scoped-identity-disclosure**
+- head: **`59a74d4`**
+- session name: **Enforce E01 disclosure grants on SDK and webhook surfaces**
+
+#### Objective
+
+Continue E01 by using persisted selective-disclosure grants to filter dapp-facing identity, score, and webhook surfaces.
+
+#### Actions Taken
+
+- added a Passport disclosure-grant helper that loads active app-scoped subject grants and evaluates disclosed stamp claims
+- filtered v2 identity and legacy dapp identity routes so only disclosed stamp values and disclosed email/phone fields are returned
+- filtered dapp score and score-detail routes so undisclosed credentials do not contribute to app-visible score outputs
+- gated internal webhook delivery on active disclosure grants so undisclosed stamp events are not sent to dapp subscriptions
+- added focused Passport tests for active/revoked disclosure grant filtering and updated engineering docs
+- sent an SDK-impact note to the canonical SDK repo for normalized privacy-limited result handling
+
+#### Verification
+
+- `pnpm --filter @cubid/passport typecheck`
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/passport test'`
+- `pnpm --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- define and implement explicit grant taxonomy for location, profile, and other non-stamp identity claims before filtering those routes
+- consider adding app-visible normalized states such as `notGranted`, `notVerified`, and `notFound` in the public SDK

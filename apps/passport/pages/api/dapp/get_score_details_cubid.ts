@@ -4,6 +4,10 @@ import {
   handlePassportRoute,
   passportSchemas,
 } from "@/lib/server/passportApi"
+import {
+  filterDisclosedStamps,
+  loadDappDisclosureGrants,
+} from "@/lib/server/disclosureGrants"
 import { getPassportSupabase } from "@/lib/server/supabase"
 
 const schema = passportSchemas.z.object({
@@ -36,6 +40,7 @@ export default async function handler(
 
       const dappId = dappUsersResponse.data?.[0]?.dapp_id
       const userId = dappUsersResponse.data?.[0]?.user_id
+      const dappUserUuid = dappUsersResponse.data?.[0]?.uuid
 
       const [stampDataResponse, scoreDataResponse, stampsListResponse] =
         await Promise.all([
@@ -73,8 +78,16 @@ export default async function handler(
         throw stampScoresResponse.error
       }
 
+      const disclosureGrants = await loadDappDisclosureGrants(supabase, {
+        dappId,
+        dappUserUuid,
+      })
+      const disclosedStamps = filterDisclosedStamps(
+        disclosureGrants,
+        stampsListResponse.data ?? []
+      )
       const stampsToSend = stampDataResponse.data ?? []
-      const allStampIds = (stampsListResponse.data ?? []).map(
+      const allStampIds = disclosedStamps.map(
         (item: any) => item.stamptype
       )
 

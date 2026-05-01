@@ -3,6 +3,10 @@ import type { NextApiRequest, NextApiResponse } from "next"
 import axios from "axios"
 
 import { handlePassportRoute } from "@/lib/server/passportApi"
+import {
+  isStampDisclosed,
+  loadDappDisclosureGrants,
+} from "@/lib/server/disclosureGrants"
 import { getPassportSupabase } from "@/lib/server/supabase"
 import { resolveWebhookSigningSecret } from "@/lib/server/webhookSigningSecrets"
 
@@ -67,6 +71,14 @@ export default async function handler(
           await Promise.all(
             (dappUsers ?? []).map(async (dappUser: any) => {
               const dappId = dappUser?.dapp_id ?? dappUser?.id
+              const disclosureGrants = await loadDappDisclosureGrants(supabase, {
+                dappId,
+                dappUserUuid: dappUser.uuid,
+              })
+              if (!isStampDisclosed(disclosureGrants, stampRows?.[0])) {
+                return
+              }
+
               const { data: webhookRows, error: webhookError } = await supabase
                 .from("dapp_webhook_subscriptions")
                 .select("*")

@@ -4,6 +4,11 @@ import {
   handlePassportRoute,
   passportSchemas,
 } from "@/lib/server/passportApi"
+import { ApiSecurityError } from "@cubid/auth/server"
+import {
+  filterDisclosedStamps,
+  loadDappDisclosureGrants,
+} from "@/lib/server/disclosureGrants"
 import { getPassportSupabase } from "@/lib/server/supabase"
 
 const schema = passportSchemas.z.object({
@@ -24,7 +29,7 @@ export default async function handler(
       rateLimitGroup: "passport_dapp_read",
       route: "v2.score.fetch_score",
     },
-    async ({ body }) => {
+    async ({ body, context }) => {
       const supabase = getPassportSupabase()
       const { data: dappUsers, error: dappUsersError } = await supabase
         .from("dapp_users")
@@ -35,8 +40,17 @@ export default async function handler(
         throw dappUsersError
       }
 
-      const userId = dappUsers?.[0]?.users?.id
-      const dappId = dappUsers?.[0]?.dapp_id
+      const dappUser = dappUsers?.[0]
+      if (!dappUser || String(dappUser.dapp_id) !== String(context.dapp.id)) {
+        throw new ApiSecurityError(
+          404,
+          "not_found",
+          "User not found for this dapp."
+        )
+      }
+
+      const userId = dappUser.users?.id
+      const dappId = dappUser.dapp_id
       const [stampDataResponse, scoreDataResponse] = await Promise.all([
         supabase.from("stamps").select("*").eq("created_by_user_id", userId),
         supabase
@@ -62,7 +76,15 @@ export default async function handler(
         throw stampScoresError
       }
 
-      const cubidScore = (stampDataResponse.data ?? []).reduce(
+      const disclosureGrants = await loadDappDisclosureGrants(supabase, {
+        dappId: context.dapp.id,
+        dappUserUuid: body.user_id,
+      })
+      const disclosedStamps = filterDisclosedStamps(
+        disclosureGrants,
+        stampDataResponse.data ?? []
+      )
+      const cubidScore = disclosedStamps.reduce(
         (total: number, item: any) => {
           const scoreRow = (stampScores ?? []).find(
             (score: any) => score.stamptype_id === item.stamptype
