@@ -6,7 +6,8 @@ Licensed under Apache-2.0.
 
 This copy is a historical implementation snapshot retained in the private
 `cubid-passport` repo for migration context. The canonical public SDK source and
-publication home is `/Users/botmaster/src/cubid/cubid-sdk-v2`.
+publication home is `Cubid-Me/cubid-sdk`; clone that repository locally when
+working on public SDK implementation or release tasks.
 
 This package is intentionally small and standards-only. It does not import
 React, Next.js, Firebase, Supabase, Node built-ins, or browser-only helpers.
@@ -143,4 +144,4 @@ Error messages never include API key material.
 ## Publishing
 
 Do not publish this package from `cubid-passport`. Publish `@cubid/core` only
-from the canonical public SDK repo at `/Users/botmaster/src/cubid/cubid-sdk-v2`.
+from the canonical public SDK repo, `Cubid-Me/cubid-sdk`.

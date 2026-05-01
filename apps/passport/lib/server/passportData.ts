@@ -67,24 +67,9 @@ const getOrCreateDappAppScopedSubject = async (input: {
   )
   const supabase = getPassportSupabase()
 
-  const { data: existing, error: existingError } = await supabase
-    .from("app_scoped_subjects")
-    .select("id,app_scoped_subject")
-    .eq("app_identifier", appIdentifier)
-    .eq("app_scoped_subject", derived.appScopedSubject)
-    .maybeSingle()
-
-  if (existingError) {
-    throw existingError
-  }
-
-  if (existing) {
-    return existing as AppScopedSubjectDisclosureRow
-  }
-
   const { data, error } = await supabase
     .from("app_scoped_subjects")
-    .insert({
+    .upsert({
       app_identifier: appIdentifier,
       app_scoped_subject: derived.appScopedSubject,
       cubid_user_id: input.dappUser.user_id,
@@ -93,7 +78,8 @@ const getOrCreateDappAppScopedSubject = async (input: {
       derivation_version: derived.derivationVersion,
       metadata: { source: "allow_page" },
       subject_type: "human",
-    })
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "app_identifier,app_scoped_subject" })
     .select("id,app_scoped_subject")
     .maybeSingle()
 
@@ -102,7 +88,7 @@ const getOrCreateDappAppScopedSubject = async (input: {
   }
 
   if (!data) {
-    throw new Error("Failed to persist Allow Page app-scoped subject")
+    throw new Error("Failed to upsert Allow Page app-scoped subject")
   }
 
   return data as AppScopedSubjectDisclosureRow
@@ -243,6 +229,28 @@ const persistAllowPageDisclosureForStampPermission = async (input: {
     dappUser: dappUserResponse.data as DappUserDisclosureRow,
     stamp: stampResponse.data as StampDisclosureRow,
   })
+}
+
+const rollbackStampPermission = async (input: {
+  dappUserId: string
+  permissionId?: number | string | null
+  stampId: number | string
+}) => {
+  const supabase = getPassportSupabase()
+  let query = supabase.from("stamp_dappuser_permissions").delete()
+
+  if (input.permissionId !== null && input.permissionId !== undefined) {
+    query = query.eq("id", input.permissionId)
+  } else {
+    query = query
+      .eq("dappuser_id", input.dappUserId)
+      .eq("stamp_id", input.stampId)
+  }
+
+  const { error } = await query
+  if (error) {
+    throw error
+  }
 }
 
 const invokeInternalWebhookTrigger = async (input: {
@@ -636,7 +644,7 @@ export const passportDataCommands = {
     }
 
     if (insertedStamp?.id && dappUserId) {
-      const { error: permissionError } = await supabase
+      const { data: permissionRow, error: permissionError } = await supabase
         .from("stamp_dappuser_permissions")
         .insert({
           can_delete: true,
@@ -645,15 +653,26 @@ export const passportDataCommands = {
           dappuser_id: dappUserId,
           stamp_id: insertedStamp.id,
         })
+        .select("*")
+        .maybeSingle()
 
       if (permissionError) {
         throw permissionError
       }
 
-      await persistAllowPageDisclosureForStampPermission({
-        dappUserId,
-        stampId: insertedStamp.id,
-      })
+      try {
+        await persistAllowPageDisclosureForStampPermission({
+          dappUserId,
+          stampId: insertedStamp.id,
+        })
+      } catch (persistError) {
+        await rollbackStampPermission({
+          dappUserId,
+          permissionId: toRecord(permissionRow).id as number | string | null,
+          stampId: insertedStamp.id,
+        })
+        throw persistError
+      }
     }
 
     await emitStampAddedWebhooks(`${stampTypeId} ${encodedPayload}`)
@@ -773,10 +792,19 @@ export const passportDataCommands = {
       throw error
     }
 
-    await persistAllowPageDisclosureForStampPermission({
-      dappUserId: input.dappUserId,
-      stampId: input.stampId,
-    })
+    try {
+      await persistAllowPageDisclosureForStampPermission({
+        dappUserId: input.dappUserId,
+        stampId: input.stampId,
+      })
+    } catch (persistError) {
+      await rollbackStampPermission({
+        dappUserId: input.dappUserId,
+        permissionId: toRecord(data).id as number | string | null,
+        stampId: input.stampId,
+      })
+      throw persistError
+    }
 
     return data
   },

@@ -60,7 +60,10 @@ shapes are preserved where practical, but undisclosed stamps are removed from
 the result set and email/phone fields are nulled unless the matching stamp claim
 was granted. This is intentionally stricter than the old table-permission
 behavior: `stamp_dappuser_permissions` remains a legacy compatibility table, but
-it is no longer sufficient by itself for SDK-facing identity disclosure.
+new grants are evaluated through the selective-disclosure contract. During the
+rollout period, routes retain a compatibility fallback to existing
+`stamp_dappuser_permissions` rows so pre-migration grants are not silently
+revoked before a production backfill has run.
 Score and score-detail endpoints also calculate only from disclosed stamps so a
 dapp cannot infer undisclosed credentials from score contributions.
 

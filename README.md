@@ -1,6 +1,6 @@
 # Cubid Monorepo
 
-This repository is the private umbrella monorepo for Cubid platform work. It contains active Passport, Admin, and OIDC workspaces plus shared packages for configuration and domain contracts. Public SDK package work now belongs in the canonical SDK repo at `/Users/botmaster/src/cubid/cubid-sdk-v2`.
+This repository is the private umbrella monorepo for Cubid platform work. It contains active Passport, Admin, and OIDC workspaces plus shared packages for configuration and domain contracts. Public SDK package work now belongs in the canonical SDK repo, `Cubid-Me/cubid-sdk`; local checkout paths are developer-specific.
 
 The original Passport hackathon walkthrough is here:
 [YouTube demo](https://www.youtube.com/watch?v=Um1-IB7lmNg)
@@ -79,7 +79,7 @@ Known Admin env variables include:
 - `apps/passport/`: live Passport application workspace
 - `apps/admin/`: imported Admin control-plane workspace
 - `packages/config/`: shared env-loading helpers and monorepo config conventions
-- `packages/core/`: historical `@cubid/core` SDK snapshot; canonical public SDK work lives in `/Users/botmaster/src/cubid/cubid-sdk-v2`
+- `packages/core/`: historical `@cubid/core` SDK snapshot; canonical public SDK work lives in `Cubid-Me/cubid-sdk`
 - `packages/types/`: shared type contracts reused across workspaces
 - `agent-context/`: execution roadmap, session logs, and feature notes
 - `docs/engineering/`: architecture docs, operating model docs, and migration guidance
@@ -95,5 +95,5 @@ Known Admin env variables include:
 ## Agent And SDK Guidance
 
 - Product and protocol context lives in [agent-context/cubid-backgrounder.md](agent-context/cubid-backgrounder.md).
-- Public SDK/package boundaries live in [docs/engineering/sdk-package-target-state.md](docs/engineering/sdk-package-target-state.md), but implementation and publication now happen from `/Users/botmaster/src/cubid/cubid-sdk-v2`.
+- Public SDK/package boundaries live in [docs/engineering/sdk-package-target-state.md](docs/engineering/sdk-package-target-state.md), but implementation and publication now happen from `Cubid-Me/cubid-sdk`.
 - Do not publish `@cubid/core`, `@cubid/react`, or chain SDK packages from this private repo.

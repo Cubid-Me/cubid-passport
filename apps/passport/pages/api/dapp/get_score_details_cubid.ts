@@ -4,6 +4,7 @@ import {
   handlePassportRoute,
   passportSchemas,
 } from "@/lib/server/passportApi"
+import { ApiSecurityError } from "@cubid/auth/server"
 import {
   filterDisclosedStamps,
   loadDappDisclosureGrants,
@@ -38,9 +39,18 @@ export default async function handler(
         throw dappUsersResponse.error
       }
 
-      const dappId = dappUsersResponse.data?.[0]?.dapp_id
-      const userId = dappUsersResponse.data?.[0]?.user_id
-      const dappUserUuid = dappUsersResponse.data?.[0]?.uuid
+      const dappUser = dappUsersResponse.data?.[0]
+      if (!dappUser?.uuid || !dappUser.dapp_id || !dappUser.user_id) {
+        throw new ApiSecurityError(
+          404,
+          "not_found",
+          "User not found for this dapp."
+        )
+      }
+
+      const dappId = dappUser.dapp_id
+      const userId = dappUser.user_id
+      const dappUserUuid = dappUser.uuid
 
       const [stampDataResponse, scoreDataResponse, stampsListResponse] =
         await Promise.all([

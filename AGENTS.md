@@ -17,7 +17,7 @@ At the start of a new session, inspect and summarize the relevant work from:
 1. `todo.md` files inside any active `agent-context/` feature folders
 2. larger implementation notes or planned feature folders inside `agent-context/`
 3. `agent-context/cubid-backgrounder.md` for product and protocol principles
-4. `docs/engineering/sdk-package-target-state.md` before SDK/package work, then move public SDK implementation work to `/Users/botmaster/src/cubid/cubid-sdk-v2`
+4. `docs/engineering/sdk-package-target-state.md` before SDK/package work, then move public SDK implementation work to the canonical `Cubid-Me/cubid-sdk` repo
 5. open GitHub issues or PR comments when repository access is available
 6. dirty files in `agent-context/messages-from-cubid-sdk/`, treating each as an incoming message from the public SDK agents that must be read and addressed in this repo
 
@@ -48,8 +48,8 @@ At the start of a new session, inspect and summarize the relevant work from:
 - Keep cleanup-only changes separate from feature work whenever practical.
 - Treat deprecated and v2-only database tables as quarantine surfaces. Do not build new features on them, refactor them, migrate them, drop them, or otherwise work on them unless a specific future todo explicitly names that cleanup. This includes `wallet_list`, `wallet_details`, `sui-api-accounts`, `near-api-accounts`, `eth-api-accounts`, `evm_accounts`, `authorized_dapps_deprecated`, `blacklist_deprecated`, and `dapp_stampscores_deprecated`.
 - In every final readout, explicitly report whether a commit was made, whether the repo is clean, and propose the next todo to tackle.
-- The open-source API and SDK implementation lives outside this repo in `Cubid-Me/cubid-sdk`; the local working checkout is `/Users/botmaster/src/cubid/cubid-sdk-v2`.
+- The open-source API and SDK implementation lives outside this repo in `Cubid-Me/cubid-sdk`; use your local clone of that repo for SDK implementation work.
 - Do not add public API or SDK implementation code to this repo. `packages/core/` is a historical snapshot retained for migration context only, not a publication target.
 - Before implementing changes here that affect public API shape, SDK behavior, integration docs, app-scoped identity semantics, stamp/claim contracts, or developer-facing compatibility, evaluate the impact on `Cubid-Me/cubid-sdk`.
-- When a change here impacts the public SDK, create a note for the SDK agents in `/Users/botmaster/src/cubid/cubid-sdk-v2/agent-context/messages-from-cubid-passport/` describing the change, expected SDK impact, and any follow-up needed.
+- When a change here impacts the public SDK, create a note for the SDK agents in the SDK repo's `agent-context/messages-from-cubid-passport/` directory describing the change, expected SDK impact, and any follow-up needed.
 - Public SDK agents may leave notes for this repo in `agent-context/messages-from-cubid-sdk/`; when new dirty files appear there, read and address them before continuing related product work.

@@ -805,36 +805,22 @@ async function getOrCreateOidcAppScopedSubject(
     getOidcRuntimeConfig().pairwiseSubjectMasterSecret,
   );
 
-  const { data: existing, error: existingError } = await supabase
-    .from("app_scoped_subjects")
-    .select("id,app_scoped_subject")
-    .eq("app_identifier", appIdentifier)
-    .eq("app_scoped_subject", derived.appScopedSubject)
-    .maybeSingle();
-
-  if (existingError) {
-    throw new Error(`Failed to load OIDC app-scoped subject: ${existingError.message}`);
-  }
-
-  if (existing) {
-    return existing as PersistedAppScopedSubjectRow;
-  }
-
   const { data, error } = await supabase
     .from("app_scoped_subjects")
-    .insert({
+    .upsert({
       app_identifier: appIdentifier,
       app_scoped_subject: derived.appScopedSubject,
       cubid_user_id: input.cubidUserId,
       derivation_version: derived.derivationVersion,
       metadata: { oidc_client_id: input.clientId },
       subject_type: "human",
-    })
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "app_identifier,app_scoped_subject" })
     .select("id,app_scoped_subject")
     .maybeSingle();
 
   if (error || !data) {
-    throw new Error(`Failed to persist OIDC app-scoped subject: ${error?.message ?? "missing row"}`);
+    throw new Error(`Failed to upsert OIDC app-scoped subject: ${error?.message ?? "missing row"}`);
   }
 
   return data as PersistedAppScopedSubjectRow;

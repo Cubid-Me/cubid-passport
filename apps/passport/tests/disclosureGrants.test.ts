@@ -78,3 +78,19 @@ test("loadDappDisclosureGrants denies by default without an app-scoped subject",
   assert.equal(grants.appScopedSubject, null)
   assert.equal(isStampDisclosed(grants, { stamptype: 13 }), false)
 })
+
+test("loadDappDisclosureGrants preserves legacy stamp permissions during rollout", async () => {
+  const supabase = new MockPassportSupabase()
+  supabase.stampPermissions.push({
+    dappuser_id: "legacy_user",
+    stamp_id: 99,
+  })
+
+  const grants = await loadDappDisclosureGrants(supabase as never, {
+    dappId: 42,
+    dappUserUuid: "legacy_user",
+  })
+
+  assert.equal(isStampDisclosed(grants, { id: 99, stamptype: 13 }), true)
+  assert.equal(isStampDisclosed(grants, { id: 100, stamptype: 13 }), false)
+})

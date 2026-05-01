@@ -8,7 +8,7 @@ import {
 } from "@/lib/server/passportApi"
 import {
   isStampDisclosed,
-  loadDappDisclosureGrants,
+  loadDappDisclosureGrantsForStamp,
 } from "@/lib/server/disclosureGrants"
 import { getPassportSupabase } from "@/lib/server/supabase"
 import { resolveWebhookSigningSecret } from "@/lib/server/webhookSigningSecrets"
@@ -70,12 +70,18 @@ export default async function handler(
             throw dappUserError
           }
 
+          const grantSetsByDappUser = await loadDappDisclosureGrantsForStamp(
+            supabase,
+            (dappUsers ?? []).map((dappUser) => ({
+              dappId: dappUser.dapp_id,
+              dappUserUuid: dappUser.uuid,
+            })),
+            stampRow
+          )
+
           await Promise.all(
             (dappUsers ?? []).map(async (dappUser) => {
-              const disclosureGrants = await loadDappDisclosureGrants(supabase, {
-                dappId: dappUser.dapp_id,
-                dappUserUuid: dappUser.uuid,
-              })
+              const disclosureGrants = grantSetsByDappUser.get(dappUser.uuid)
               if (!isStampDisclosed(disclosureGrants, stampRow)) {
                 return
               }

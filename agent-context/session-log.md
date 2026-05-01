@@ -3952,3 +3952,38 @@ Continue E01 by using persisted selective-disclosure grants to filter dapp-facin
 
 - define and implement explicit grant taxonomy for location, profile, and other non-stamp identity claims before filtering those routes
 - consider adding app-visible normalized states such as `notGranted`, `notVerified`, and `notFound` in the public SDK
+
+### session: v139
+
+- timestamp: 2026-05-01T00:42:54Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-app-scoped-identity-disclosure**
+- head: **`015b373`**
+- session name: **Address PR 155 disclosure and app-scoped identity review comments**
+
+#### Objective
+
+Address Copilot and Codex review feedback on PR #155 before returning the branch to review.
+
+#### Actions Taken
+
+- preserved legacy stamp permission visibility while app-scoped disclosure grants roll out
+- replaced read-then-insert subject creation paths with idempotent upserts
+- batched disclosure grant loading for webhook and expired-cron fanout paths
+- revoked matching selective disclosure grants when Passport OIDC consent is revoked
+- rolled back newly inserted stamp permission rows when disclosure grant persistence fails
+- validated dapp user ownership before returning Cubid score details
+- removed local machine SDK path references from public-facing docs
+
+#### Verification
+
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/oidc typecheck`
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/passport test'`
+- `pnpm --filter @cubid/oidc test`
+- `pnpm --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- push the review-fix commit, confirm CI, then reply to and resolve the addressed PR #155 review threads

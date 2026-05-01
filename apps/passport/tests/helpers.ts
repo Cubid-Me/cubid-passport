@@ -46,6 +46,7 @@ export class MockPassportSupabase {
   readonly lastUsedUpdates: number[] = []
   readonly privateKeys: Array<Record<string, unknown>> = []
   readonly selectiveDisclosureGrants: Array<Record<string, unknown>> = []
+  readonly stampPermissions: Array<Record<string, unknown>> = []
   readonly userAccounts: Array<Record<string, unknown>> = []
   private nextEmailOtpId = 1
 
@@ -186,15 +187,22 @@ export class MockPassportSupabase {
           const filters: Record<string, unknown> = {}
           const resolve = () => {
             const rows = this.appScopedSubjects.filter((row) =>
-              Object.entries(filters).every(
-                ([column, value]) => String(row[column]) === String(value)
-              )
+              Object.entries(filters).every(([column, value]) => {
+                if (Array.isArray(value)) {
+                  return value.includes(String(row[column]))
+                }
+                return String(row[column]) === String(value)
+              })
             )
             return { data: rows, error: null }
           }
           const query = {
             eq: (column: string, value: unknown) => {
               filters[column] = value
+              return query
+            },
+            in: (column: string, values: unknown[]) => {
+              filters[column] = values.map(String)
               return query
             },
             maybeSingle: async () => {
@@ -209,6 +217,29 @@ export class MockPassportSupabase {
             ) => Promise.resolve(resolve()).then(resolveThen),
           }
           return query
+        },
+        upsert: (row: Record<string, unknown>) => {
+          const existing = this.appScopedSubjects.find(
+            (candidate) =>
+              candidate.app_identifier === row.app_identifier &&
+              candidate.app_scoped_subject === row.app_scoped_subject
+          )
+          const stored = existing
+            ? Object.assign(existing, row)
+            : {
+                created_at: new Date().toISOString(),
+                id: `app_scoped_subject_${this.appScopedSubjects.length + 1}`,
+                status: "active",
+                ...row,
+              }
+          if (!existing) {
+            this.appScopedSubjects.push(stored)
+          }
+          return {
+            select: () => ({
+              maybeSingle: async () => ({ data: stored, error: null }),
+            }),
+          }
         },
       }
     }
@@ -233,9 +264,12 @@ export class MockPassportSupabase {
           const filters: Record<string, unknown> = {}
           const resolve = () => {
             const rows = this.selectiveDisclosureGrants.filter((row) =>
-              Object.entries(filters).every(
-                ([column, value]) => String(row[column]) === String(value)
-              )
+              Object.entries(filters).every(([column, value]) => {
+                if (Array.isArray(value)) {
+                  return value.includes(String(row[column]))
+                }
+                return String(row[column]) === String(value)
+              })
             )
             return { data: rows, error: null }
           }
@@ -244,9 +278,90 @@ export class MockPassportSupabase {
               filters[column] = value
               return query
             },
+            in: (column: string, values: unknown[]) => {
+              filters[column] = values.map(String)
+              return query
+            },
             maybeSingle: async () => {
               const result = resolve()
               return { data: result.data[0] ?? null, error: null }
+            },
+            then: (
+              resolveThen: (value: {
+                data: Record<string, unknown>[]
+                error: null
+              }) => unknown
+            ) => Promise.resolve(resolve()).then(resolveThen),
+          }
+          return query
+        },
+      }
+    }
+
+    if (table === "stamp_dappuser_permissions") {
+      return {
+        delete: () => {
+          const filters: Record<string, unknown> = {}
+          const query = {
+            eq: (column: string, value: unknown) => {
+              filters[column] = value
+              return query
+            },
+            then: (
+              resolveThen: (value: { error: null }) => unknown
+            ) => {
+              for (let index = this.stampPermissions.length - 1; index >= 0; index -= 1) {
+                const row = this.stampPermissions[index]
+                if (
+                  Object.entries(filters).every(
+                    ([column, value]) => String(row[column]) === String(value)
+                  )
+                ) {
+                  this.stampPermissions.splice(index, 1)
+                }
+              }
+              return Promise.resolve({ error: null }).then(resolveThen)
+            },
+          }
+          return query
+        },
+        insert: (row: Record<string, unknown>) => {
+          const inserted = {
+            id: this.stampPermissions.length + 1,
+            ...row,
+          }
+          this.stampPermissions.push(inserted)
+          return {
+            select: () => ({
+              maybeSingle: async () => ({ data: inserted, error: null }),
+            }),
+          }
+        },
+        select: () => {
+          const filters: Record<string, unknown> = {}
+          const resolve = () => {
+            const rows = this.stampPermissions.filter((row) =>
+              Object.entries(filters).every(([column, value]) => {
+                if (Array.isArray(value)) {
+                  return value.includes(String(row[column]))
+                }
+                return String(row[column]) === String(value)
+              })
+            )
+            return { data: rows, error: null }
+          }
+          const query = {
+            eq: (column: string, value: unknown) => {
+              filters[column] = value
+              return query
+            },
+            in: (column: string, values: unknown[]) => {
+              filters[column] = values.map(String)
+              return query
+            },
+            match: (criteria: Record<string, unknown>) => {
+              Object.assign(filters, criteria)
+              return query
             },
             then: (
               resolveThen: (value: {
