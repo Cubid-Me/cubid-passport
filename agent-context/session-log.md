@@ -4018,3 +4018,33 @@ Continue E01 by making profile and non-stamp location claims explicit in the sel
 #### Follow-up
 
 - add user-facing non-OIDC app disclosure history and revocation views so users can inspect and revoke Allow Page grants outside the OIDC consent panel
+
+### session: v141
+
+- timestamp: 2026-05-01T08:55:58Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-disclosure-claim-taxonomy**
+- head: **`3123f99`**
+- session name: **Add non-OIDC app disclosure grant history and revocation**
+
+#### Objective
+
+Continue E01 by adding user-facing visibility and revocation for Allow Page disclosure grants outside the OIDC consent panel.
+
+#### Actions Taken
+
+- added Passport user APIs for listing and revoking non-OIDC Allow Page disclosure grants
+- added a Profile “App disclosure grants” card showing app, scopes, claims, policy/version metadata, data classifications, and revoked state
+- made Allow Page grant revocation update `selective_disclosure_grants`, emit `selective_disclosure_events`, and remove matching legacy stamp permissions
+- added Passport route coverage for list/revoke behavior and extended the test Supabase mock for disclosure grants
+- updated E01 engineering docs and sent an SDK-impact handoff note to the canonical SDK repo
+
+#### Verification
+
+- `pnpm --filter @cubid/passport typecheck`
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/passport test'`
+- `pnpm --filter @cubid/passport build`
+
+#### Follow-up
+
+- yeet the E01 branch for review when ready, or close E01 metadata after the PR merges if this is the final E01 implementation slice

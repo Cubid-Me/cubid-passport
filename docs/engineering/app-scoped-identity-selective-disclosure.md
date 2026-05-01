@@ -92,6 +92,15 @@ subscription, and skip delivery when the changed stamp has not been disclosed to
 that dapp. The first pass preserves the existing webhook payload shape while
 preventing undisclosed stamp events from being sent.
 
+Passport Profile now exposes non-OIDC Allow Page disclosure history separately
+from OIDC Login with Cubid consent. Users can inspect active and revoked dapp
+grants, see the dapp name, scopes, claims, policy version, grant version, data
+classifications, and grant timestamps, and revoke active Allow Page grants. The
+revocation route updates `selective_disclosure_grants`, writes a
+`selective_disclosure_events` audit event, and removes matching legacy
+`stamp_dappuser_permissions` rows for stamp claims in the revoked grant so the
+temporary compatibility fallback does not preserve access after revocation.
+
 Passport requires `PASSPORT_APP_SCOPED_SUBJECT_SECRET` for Allow Page subject
 derivation. OIDC currently derives its broader app-scoped subject from the same
 server-held secret used for pairwise subject derivation so the two OIDC subject

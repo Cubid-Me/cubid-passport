@@ -47,7 +47,9 @@ export class MockPassportSupabase {
   readonly privateKeys: Array<Record<string, unknown>> = []
   readonly selectiveDisclosureGrants: Array<Record<string, unknown>> = []
   readonly stampPermissions: Array<Record<string, unknown>> = []
+  readonly stamps: Array<Record<string, unknown>> = []
   readonly userAccounts: Array<Record<string, unknown>> = []
+  readonly users = new Map<number, Record<string, unknown>>()
   private nextEmailOtpId = 1
 
   rpc(name: string, params: Record<string, unknown>) {
@@ -127,6 +129,14 @@ export class MockPassportSupabase {
 
   setDappUser(row: DappUserRow) {
     this.dappUsers.set(row.uuid, row)
+  }
+
+  setStamp(row: Record<string, unknown> & { id: number }) {
+    this.stamps.push(row)
+  }
+
+  setUser(row: Record<string, unknown> & { id: number }) {
+    this.users.set(row.id, row)
   }
 
   setEmailOtp(row: EmailOtpRow) {
@@ -295,6 +305,28 @@ export class MockPassportSupabase {
           }
           return query
         },
+        update: (patch: Record<string, unknown>) => {
+          const filters: Record<string, unknown> = {}
+          const query = {
+            eq: (column: string, value: unknown) => {
+              filters[column] = value
+              return query
+            },
+            then: (resolveThen: (value: { error: null }) => unknown) => {
+              for (const row of this.selectiveDisclosureGrants) {
+                if (
+                  Object.entries(filters).every(
+                    ([column, value]) => String(row[column]) === String(value)
+                  )
+                ) {
+                  Object.assign(row, patch)
+                }
+              }
+              return Promise.resolve({ error: null }).then(resolveThen)
+            },
+          }
+          return query
+        },
       }
     }
 
@@ -384,6 +416,15 @@ export class MockPassportSupabase {
       }
     }
 
+    if (table === "selective_disclosure_events") {
+      return {
+        insert: async (row: Record<string, unknown>) => {
+          this.eventInserts.push(row)
+          return { error: null }
+        },
+      }
+    }
+
     if (table === "actor_profiles") {
       return {
         select: () => {
@@ -424,14 +465,109 @@ export class MockPassportSupabase {
 
     if (table === "dapps") {
       return {
-        select: () => ({
-          eq: (_column: string, value: number) => ({
-            maybeSingle: async () => ({
-              data: this.dapps.get(Number(value)) ?? null,
-              error: null,
-            }),
-          }),
-        }),
+        select: () => {
+          const filters: Record<string, unknown> = {}
+          const resolve = () => {
+            const rows = [...this.dapps.values()].filter((row) =>
+              Object.entries(filters).every(([column, value]) => {
+                if (Array.isArray(value)) {
+                  return value.includes(String(row[column]))
+                }
+                return String(row[column]) === String(value)
+              })
+            )
+            return { data: rows, error: null }
+          }
+          const query = {
+            eq: (column: string, value: unknown) => {
+              filters[column] = value
+              return {
+                maybeSingle: async () => ({
+                  data: this.dapps.get(Number(value)) ?? null,
+                  error: null,
+                }),
+              }
+            },
+            in: (column: string, values: unknown[]) => {
+              filters[column] = values.map(String)
+              return query
+            },
+            then: (
+              resolveThen: (value: {
+                data: Record<string, unknown>[]
+                error: null
+              }) => unknown
+            ) => Promise.resolve(resolve()).then(resolveThen),
+          }
+          return query
+        },
+      }
+    }
+
+    if (table === "users") {
+      return {
+        select: () => {
+          const filters: Record<string, unknown> = {}
+          const resolve = () => {
+            const rows = [...this.users.values()].filter((row) =>
+              Object.entries(filters).every(
+                ([column, value]) => String(row[column]) === String(value)
+              )
+            )
+            return { data: rows, error: null }
+          }
+          const query = {
+            eq: (column: string, value: unknown) => {
+              filters[column] = value
+              return query
+            },
+            maybeSingle: async () => {
+              const result = resolve()
+              return { data: result.data[0] ?? null, error: null }
+            },
+          }
+          return query
+        },
+      }
+    }
+
+    if (table === "stamps") {
+      return {
+        select: () => {
+          const filters: Record<string, unknown> = {}
+          const resolve = () => {
+            const rows = this.stamps.filter((row) =>
+              Object.entries(filters).every(([column, value]) => {
+                if (Array.isArray(value)) {
+                  return value.includes(String(row[column]))
+                }
+                return String(row[column]) === String(value)
+              })
+            )
+            return { data: rows, error: null }
+          }
+          const query = {
+            eq: (column: string, value: unknown) => {
+              filters[column] = value
+              return query
+            },
+            in: (column: string, values: unknown[]) => {
+              filters[column] = values.map(String)
+              return query
+            },
+            maybeSingle: async () => {
+              const result = resolve()
+              return { data: result.data[0] ?? null, error: null }
+            },
+            then: (
+              resolveThen: (value: {
+                data: Record<string, unknown>[]
+                error: null
+              }) => unknown
+            ) => Promise.resolve(resolve()).then(resolveThen),
+          }
+          return query
+        },
       }
     }
 

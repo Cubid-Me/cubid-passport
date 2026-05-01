@@ -5,6 +5,8 @@ import { hashDappApiKey } from "@cubid/auth/server"
 
 import actorProfileGetHandler from "../pages/api/actors/profile/get"
 import actorProfileUpsertHandler from "../pages/api/actors/profile/upsert"
+import appDisclosureGrantListHandler from "../pages/api/disclosures/app-grants/list"
+import appDisclosureGrantRevokeHandler from "../pages/api/disclosures/app-grants/revoke"
 import consentListHandler from "../pages/api/oidc/consents/list"
 import supabaseSelectHandler from "../pages/api/supabase/select"
 import sendOtpHandler from "../pages/api/twillio/send-otp"
@@ -123,6 +125,96 @@ test("Passport OIDC consent list uses the shared user baseline for missing beare
       requestId: res.headers["x-request-id"],
     },
   })
+})
+
+test("Passport app disclosure grants list and revoke Allow Page grants", async () => {
+  const supabase = new MockPassportSupabase()
+  setPassportSupabaseForTests(supabase as never)
+  addFirebaseUserAuth()
+  supabase.setUser({ email: "person@example.com", id: 1234 })
+  supabase.setDapp({ appname: "Allow Test App", id: 42 })
+  supabase.appScopedSubjects.push({
+    app_identifier: "dapp:42",
+    app_scoped_subject: "app_subject_42",
+    cubid_user_id: 1234,
+    dapp_id: 42,
+    dapp_user_uuid: "dapp_user_1",
+    id: "subject_1",
+    status: "active",
+  })
+  supabase.selectiveDisclosureGrants.push({
+    app_scoped_subject_id: "subject_1",
+    consent_version: 1,
+    dapp_id: 42,
+    granted_at: "2026-05-01T00:00:00Z",
+    granted_claims: [
+      {
+        claim: "stamp:email",
+        dataClass: "identity",
+        purpose: "Allow Page stamp sharing",
+        required: false,
+      },
+    ],
+    granted_scopes: ["cubid:stamps"],
+    id: "grant_1",
+    policy_version: "allow-page:v1",
+    revoked_at: null,
+    revoked_by: null,
+    source: "allow_page",
+    status: "active",
+  })
+  supabase.setStamp({
+    created_by_user_id: 1234,
+    id: 99,
+    stamptype: 13,
+  })
+  supabase.stampPermissions.push({
+    dappuser_id: "dapp_user_1",
+    stamp_id: 99,
+  })
+
+  const listReq = createApiRequest({
+    body: {},
+    headers: {
+      authorization: "Bearer firebase-token",
+      origin: "https://passport.cubid.me",
+    },
+    url: "/api/disclosures/app-grants/list",
+  })
+  const listRes = createApiResponse()
+  await appDisclosureGrantListHandler(listReq, listRes)
+
+  assert.equal(listRes.statusCode, 200)
+  assert.deepEqual(
+    (listRes.body as DataResponse<Array<{ appName: string; grantId: string }>>)
+      .data.map((grant) => ({
+        appName: grant.appName,
+        grantId: grant.grantId,
+      })),
+    [{ appName: "Allow Test App", grantId: "grant_1" }]
+  )
+
+  const revokeReq = createApiRequest({
+    body: { grantId: "grant_1" },
+    headers: {
+      authorization: "Bearer firebase-token",
+      origin: "https://passport.cubid.me",
+      "x-request-id": "passport_revoke_grant_1",
+    },
+    url: "/api/disclosures/app-grants/revoke",
+  })
+  const revokeRes = createApiResponse()
+  await appDisclosureGrantRevokeHandler(revokeReq, revokeRes)
+
+  assert.equal(revokeRes.statusCode, 200)
+  assert.equal(supabase.selectiveDisclosureGrants[0]?.status, "revoked")
+  assert.equal(supabase.stampPermissions.length, 0)
+  assert.equal(
+    supabase.eventInserts.some(
+      (event) => event.event_type === "disclosure.revoked"
+    ),
+    true
+  )
 })
 
 test("Passport actor profile get defaults signed-in users to human", async () => {

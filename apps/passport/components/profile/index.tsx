@@ -59,6 +59,26 @@ type OidcConsentSummary = {
   revokedBy: "user" | "operator" | null
 }
 
+type AppDisclosureGrantSummary = {
+  appName: string
+  appScopedSubject: string | null
+  claimClassificationSummary: Array<{
+    claim: string
+    dataClass: string
+  }>
+  consentVersion: number
+  dappId: string
+  dappUserUuid: string | null
+  grantId: string
+  grantedAt: string
+  grantedClaims: string[]
+  grantedScopes: string[]
+  policyVersion: string
+  revokedAt: string | null
+  revokedBy: "user" | "operator" | "system" | null
+  source: "allow_page"
+}
+
 type PasskeyDeviceSummary = {
   authenticatorAttachment: string | null
   backupEligible: boolean
@@ -185,6 +205,13 @@ export const Profile = () => {
   const [revokingConsentId, setRevokingConsentId] = useState<string | null>(
     null
   )
+  const [appDisclosureGrants, setAppDisclosureGrants] = useState<
+    AppDisclosureGrantSummary[]
+  >([])
+  const [appDisclosureGrantsLoading, setAppDisclosureGrantsLoading] =
+    useState(false)
+  const [revokingAppDisclosureGrantId, setRevokingAppDisclosureGrantId] =
+    useState<string | null>(null)
   const [actorProfile, setActorProfile] = useState<ActorProfileSummary | null>(
     null
   )
@@ -571,6 +598,63 @@ export const Profile = () => {
       }
     },
     [fetchOidcConsents, getOidcAuthHeaders]
+  )
+
+  const fetchAppDisclosureGrants = useCallback(async () => {
+    if (!email && !phone) {
+      setAppDisclosureGrants([])
+      return
+    }
+
+    setAppDisclosureGrantsLoading(true)
+    try {
+      const headers = await getOidcAuthHeaders()
+      const { data } = await axios.post<{ data: AppDisclosureGrantSummary[] }>(
+        "/api/disclosures/app-grants/list",
+        {},
+        { headers }
+      )
+      setAppDisclosureGrants(data.data ?? [])
+    } catch (error) {
+      console.error(error)
+      toast.error("Failed to load app disclosure grants")
+    } finally {
+      setAppDisclosureGrantsLoading(false)
+    }
+  }, [email, phone, getOidcAuthHeaders])
+
+  useEffect(() => {
+    fetchAppDisclosureGrants()
+  }, [fetchAppDisclosureGrants])
+
+  const revokeAppDisclosureGrant = useCallback(
+    async (grant: AppDisclosureGrantSummary) => {
+      if (
+        !window.confirm(
+          `Revoke Allow Page access for ${grant.appName}? This can remove shared stamp permissions for that app.`
+        )
+      ) {
+        return
+      }
+
+      setRevokingAppDisclosureGrantId(grant.grantId)
+      try {
+        const headers = await getOidcAuthHeaders()
+        await axios.post(
+          "/api/disclosures/app-grants/revoke",
+          { grantId: grant.grantId },
+          { headers }
+        )
+        toast.success("App disclosure grant revoked")
+        await fetchAppDisclosureGrants()
+      } catch (error) {
+        console.error(error)
+        toast.error("Failed to revoke app disclosure grant")
+      } finally {
+        setRevokingAppDisclosureGrantId(null)
+      }
+    },
+    [fetchAppDisclosureGrants, getOidcAuthHeaders]
   )
 
   const selectedActorPolicy = actorValidationPolicies[actorType]
@@ -1030,6 +1114,139 @@ export const Profile = () => {
             </Button>
           </CardContent>
         </Card>
+        <Card className="md:col-span-2">
+          <CardHeader>
+            <CardTitle>App disclosure grants</CardTitle>
+            <CardDescription>
+              Manage non-OIDC apps that received Cubid data through Allow Page
+              sharing. Revoking a grant stops that app from seeing the granted
+              profile, location, or stamp claims through Cubid APIs.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="mb-4 flex justify-end">
+              <Button
+                disabled={appDisclosureGrantsLoading}
+                onClick={fetchAppDisclosureGrants}
+                variant="outline"
+              >
+                {appDisclosureGrantsLoading ? "Refreshing..." : "Refresh"}
+              </Button>
+            </div>
+            {appDisclosureGrantsLoading && appDisclosureGrants.length === 0 && (
+              <p className="text-sm text-muted-foreground">
+                Loading app disclosure grants...
+              </p>
+            )}
+            {!appDisclosureGrantsLoading &&
+              appDisclosureGrants.length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  No non-OIDC app disclosure grants found.
+                </p>
+              )}
+            <div className="space-y-3">
+              {appDisclosureGrants.map((grant) => {
+                const isRevoked = Boolean(grant.revokedAt)
+
+                return (
+                  <div
+                    key={grant.grantId}
+                    className="rounded-lg border bg-background p-4"
+                  >
+                    <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="font-semibold">{grant.appName}</h3>
+                          <span
+                            className={`rounded-full px-2 py-1 text-xs ${
+                              isRevoked
+                                ? "bg-red-100 text-red-700"
+                                : "bg-emerald-100 text-emerald-700"
+                            }`}
+                          >
+                            {isRevoked ? "Revoked" : "Active"}
+                          </span>
+                          <span className="rounded-full bg-muted px-2 py-1 text-xs">
+                            Allow Page
+                          </span>
+                        </div>
+                        <p className="mt-1 break-all text-xs text-muted-foreground">
+                          Dapp {grant.dappId}
+                          {grant.dappUserUuid
+                            ? ` · user ${grant.dappUserUuid}`
+                            : ""}
+                        </p>
+                      </div>
+                      {!isRevoked && (
+                        <Button
+                          disabled={
+                            revokingAppDisclosureGrantId === grant.grantId
+                          }
+                          onClick={() => revokeAppDisclosureGrant(grant)}
+                          variant="outline"
+                        >
+                          {revokingAppDisclosureGrantId === grant.grantId
+                            ? "Revoking..."
+                            : "Revoke access"}
+                        </Button>
+                      )}
+                    </div>
+
+                    <div className="mt-4 grid gap-3 text-sm md:grid-cols-2">
+                      <p>
+                        <span className="text-muted-foreground">Scopes:</span>{" "}
+                        {formatList(grant.grantedScopes)}
+                      </p>
+                      <p>
+                        <span className="text-muted-foreground">Claims:</span>{" "}
+                        {formatList(grant.grantedClaims)}
+                      </p>
+                      <p>
+                        <span className="text-muted-foreground">Policy:</span>{" "}
+                        {grant.policyVersion}
+                      </p>
+                      <p>
+                        <span className="text-muted-foreground">Version:</span>{" "}
+                        {grant.consentVersion}
+                      </p>
+                      <p>
+                        <span className="text-muted-foreground">Granted:</span>{" "}
+                        {dayjs(grant.grantedAt).format("YYYY-MM-DD HH:mm")}
+                      </p>
+                      <p>
+                        <span className="text-muted-foreground">Revoked:</span>{" "}
+                        {grant.revokedAt
+                          ? `${dayjs(grant.revokedAt).format(
+                              "YYYY-MM-DD HH:mm"
+                            )} by ${grant.revokedBy}`
+                          : "No"}
+                      </p>
+                    </div>
+
+                    {grant.claimClassificationSummary.length > 0 && (
+                      <div className="mt-4">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                          Data classifications
+                        </p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {grant.claimClassificationSummary.map((entry) => (
+                            <span
+                              key={`${grant.grantId}-${entry.claim}`}
+                              className="rounded-full bg-muted px-3 py-1 text-xs"
+                            >
+                              {entry.claim}: {entry.dataClass}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
         <Card className="md:col-span-2">
           <CardHeader>
             <CardTitle>Login with Cubid access</CardTitle>
