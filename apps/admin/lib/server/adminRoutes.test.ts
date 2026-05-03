@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 import syncAdminUser from '../../pages/api/admin/auth/sync';
 import metadata from '../../pages/api/admin/metadata';
+import disclosureOpsOverviewRoute from '../../pages/api/admin/disclosures/operations/overview';
 import updateOidcClientOpsRoute from '../../pages/api/admin/oidc/clients/update-ops';
 import rotateKey from '../../pages/api/admin/apps/rotate-key';
 import createWebhook from '../../pages/api/admin/webhooks/create';
@@ -15,6 +16,7 @@ const getOwnedDappIdsMock = jest.fn();
 const getPlatformUserByEmailMock = jest.fn();
 const rotateDappApiKeyMock = jest.fn();
 const updateOidcClientOpsMock = jest.fn();
+const loadDisclosureOpsOverviewMock = jest.fn();
 const normalizeClientOpsUpdateInputMock = jest.fn();
 const encryptWebhookSigningSecretMock = jest.fn();
 
@@ -37,6 +39,11 @@ jest.mock('./oidcOperations', () => ({
   normalizeClientOpsUpdateInput: (...args: unknown[]) =>
     normalizeClientOpsUpdateInputMock(...args),
   updateOidcClientOps: (...args: unknown[]) => updateOidcClientOpsMock(...args),
+}));
+
+jest.mock('./disclosureOperations', () => ({
+  loadDisclosureOpsOverview: (...args: unknown[]) =>
+    loadDisclosureOpsOverviewMock(...args),
 }));
 
 jest.mock('./dappApiKeys', () => ({
@@ -181,6 +188,42 @@ describe('Admin route baseline wiring', () => {
         route: 'admin/oidc/clients/update-ops',
       })
     );
+  });
+
+  it('uses the admin read policy for disclosure operations overview', async () => {
+    prepareAdminApiRequestMock.mockResolvedValue({
+      body: {},
+      context: { supabase: {} },
+      requestId: 'admin_request_disclosure_ops',
+    });
+    loadDisclosureOpsOverviewMock.mockResolvedValue({
+      dapps: [],
+      generatedAt: '2026-05-03T00:00:00.000Z',
+      oidcClients: [],
+      recentEvents: [],
+      totals: {
+        activeGrants: 0,
+        activeSubjects: 0,
+        grantRowsScanned: 0,
+        grantsBySource: {},
+        grantsByStatus: {},
+        recentGrantEvents7d: 0,
+        revokedGrants: 0,
+      },
+    });
+
+    await disclosureOpsOverviewRoute({} as NextApiRequest, createResponse());
+
+    expect(prepareAdminApiRequestMock).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      expect.objectContaining({
+        actor: 'admin',
+        rateLimitGroup: 'admin_read',
+        route: 'admin/disclosures/operations/overview',
+      })
+    );
+    expect(loadDisclosureOpsOverviewMock).toHaveBeenCalledWith({});
   });
 
   it('creates webhook subscriptions with encrypted one-time signing secrets', async () => {

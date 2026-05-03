@@ -4316,3 +4316,33 @@ Complete `E01.1` by adding the production backfill path for legacy stamp permiss
 #### Follow-up
 
 - run the backfill script in production dry-run mode before write mode, then consider `E01.2` for Admin/Ops disclosure visibility
+
+### session: v151
+
+- timestamp: 2026-05-03T17:20:46Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-closeout-reconciliation**
+- head: **`44e6eb5`**
+- session name: **Add disclosure operations visibility**
+
+#### Objective
+
+Complete `E01.2` by adding read-only Admin/Ops visibility for app-scoped subjects, selective-disclosure grants, and disclosure grant/revoke events.
+
+#### Actions Taken
+
+- added a disclosure operations server mapper and Admin overview API under the shared Admin security baseline
+- added a read-only `Disclosure Ops` Admin tab with grant health, dapp summaries, OIDC-client summaries, and redacted recent events
+- added tests for disclosure ops aggregation/redaction and route baseline wiring
+- updated the E01 engineering doc and roadmap metadata to reflect the completed operations visibility slice
+
+#### Verification
+
+- `pnpm --filter @cubid/admin test`
+- `pnpm --filter @cubid/admin typecheck`
+- `pnpm --filter @cubid/admin build`
+- `git diff --check`
+
+#### Follow-up
+
+- yeet the E01 closeout branch for review, then start the next platform slice from `dev`

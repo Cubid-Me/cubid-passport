@@ -541,12 +541,12 @@ Complete the production rollout tail for app-scoped disclosure by backfilling le
 
 ### E01.2 Promote disclosure-grant operations into Admin/Ops visibility
 
-- Status: Not started
-- Timestamp started: TBD
-- Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Status: Completed
+- Timestamp started: 2026-05-03T17:15:29Z
+- Timestamp completed: 2026-05-03T17:20:46Z
+- Feature branch: codex/e01-closeout-reconciliation
+- Head: 44e6eb5
+- Session-log reference(s): session: v151
 
 Add operator visibility for app-scoped subjects and selective-disclosure grants without exposing raw internal identifiers or secret material. Admin should be able to inspect aggregate grant counts, recent grant/revoke events, source split between Allow Page and OIDC, revoked versus active grants, and dapp/client-level disclosure health. Keep controls conservative: read-only observability first, with any operator-driven revocation or repair flow requiring a separate authorization design. This follow-up helps support production rollout and debugging after E01, especially when an integrator reports missing identity, stamp, score, location, or webhook data. It should reuse existing security-event and audit patterns, redact human subject keys and raw Cubid user IDs, and document how operators trace a user-facing revocation from Profile to route filtering and webhook suppression.
 

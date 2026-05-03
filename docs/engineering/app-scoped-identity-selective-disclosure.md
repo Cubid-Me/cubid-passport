@@ -166,11 +166,31 @@ E01 is complete as a first-class platform foundation:
 6. The grant taxonomy now includes stamp, profile, and location claims.
 7. Passport Profile exposes OIDC consent management and separate non-OIDC app
    disclosure grant history/revocation.
+8. Admin exposes read-only disclosure operations visibility for aggregate grant
+   health, source splits, dapp/client summaries, and redacted grant events.
 
-The remaining work is operations visibility, not core E01 implementation.
 `E01.1` added the production backfill script and removed runtime fallback reads
-from `stamp_dappuser_permissions`. `E01.2` owns Admin/Ops visibility for
-app-scoped subjects, disclosure grants, and grant/revoke events.
+from `stamp_dappuser_permissions`. `E01.2` added the Admin read-only
+Disclosure Ops panel and overview API for app-scoped subjects, disclosure
+grants, dapp/OIDC-client health, and grant/revoke events.
+
+## Admin Disclosure Ops
+
+Admin's `Disclosure Ops` tab is intentionally read-only. It loads through
+`POST /api/admin/disclosures/operations/overview`, requires the shared Admin
+API security baseline, and returns:
+
+- total active and revoked disclosure grants
+- active app-scoped subject count
+- grant source and status splits
+- dapp-level active/revoked grant counts and recent grant samples
+- OIDC-client-level active/revoked grant counts and recent grant samples
+- recent disclosure events with raw subject IDs, grant IDs, Cubid user IDs, and
+  dapp user UUIDs redacted from event details
+
+Operator-driven revocation, repair, or data backfill from Admin is out of scope
+until there is a separate authorization design. Production backfills should use
+the Passport server script and normal deployment controls, not a browser UI.
 
 ## Non-Goals In This Slice
 
