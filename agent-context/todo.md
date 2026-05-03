@@ -530,12 +530,12 @@ Take the backgrounder’s core ideas seriously by making app-scoped identity and
 
 ### E01.1 Backfill disclosure grants and retire legacy stamp-permission fallback
 
-- Status: Not started
-- Timestamp started: TBD
-- Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Status: Completed
+- Timestamp started: 2026-05-03T13:49:32Z
+- Timestamp completed: 2026-05-03T13:54:17Z
+- Feature branch: codex/e01-closeout-reconciliation
+- Head: d483ab1
+- Session-log reference(s): session: v150
 
 Complete the production rollout tail for app-scoped disclosure by backfilling legacy `stamp_dappuser_permissions` rows into `selective_disclosure_grants`, validating that active relying-party access is represented in the new grant table, and then removing the temporary compatibility fallback from SDK-facing identity, score, and webhook paths. This should be treated as a deployment-safe migration task, not a product redesign. Add a dry-run script or SQL report that counts legacy permissions by dapp, dapp user, and stamp type; write encrypted or private data nowhere; and confirm revocation semantics still remove access after the fallback is disabled. Once production smoke passes, update the engineering doc and tests so the selective-disclosure contract is the only authorization source for new app-facing stamp release.
 

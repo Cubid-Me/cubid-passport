@@ -10,6 +10,7 @@
     "lint": "pnpm exec next lint",
     "lint:fix": "pnpm exec next lint --fix",
     "preview": "pnpm exec next build && pnpm exec next start",
+    "backfill:disclosure-grants": "pnpm exec tsx scripts/backfill-selective-disclosure-grants.ts",
     "typecheck": "pnpm exec tsc --noEmit -p tsconfig.typecheck.json",
     "test": "pnpm exec tsx --test tests/*.test.ts",
     "format": "pnpm exec prettier --check \"**/*.{ts,tsx,mdx}\" --cache",

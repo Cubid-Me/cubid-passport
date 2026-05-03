@@ -4286,3 +4286,33 @@ Reconcile E01 after PR 156 merged and decide whether the parent app-scoped ident
 #### Follow-up
 
 - tackle `E01.1` next if the priority is production rollout safety, or `E01.2` next if operators need visibility before disabling legacy fallback behavior
+
+### session: v150
+
+- timestamp: 2026-05-03T13:54:17Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-closeout-reconciliation**
+- head: **`d483ab1`**
+- session name: **Retire legacy disclosure fallback**
+
+#### Objective
+
+Complete `E01.1` by adding the production backfill path for legacy stamp permissions and making selective-disclosure grants the only runtime authorization source for app-facing disclosure.
+
+#### Actions Taken
+
+- added a Passport dry-run/write script to backfill `stamp_dappuser_permissions` into `selective_disclosure_grants`
+- removed legacy stamp-permission fallback reads from disclosure grant loading and stamp filtering
+- updated webhook and disclosure tests so SDK-facing and webhook outputs require grant-backed disclosure
+- updated the engineering doc, Passport script contract, roadmap metadata, and SDK handoff note
+
+#### Verification
+
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/passport test'`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- run the backfill script in production dry-run mode before write mode, then consider `E01.2` for Admin/Ops disclosure visibility

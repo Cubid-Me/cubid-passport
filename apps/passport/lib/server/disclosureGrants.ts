@@ -22,18 +22,12 @@ type DappUserGrantLookup = {
   dappUserUuid: string
 }
 
-type LegacyPermissionRow = {
-  dappuser_id?: string | null
-  stamp_id?: number | string | null
-}
-
 export type DappDisclosureGrantSet = {
   appScopedSubject: string | null
   grantedClaims: Set<string>
   grantedScopes: Set<string>
   grantedStampTypes: Set<string>
   hasStampScope: boolean
-  legacyGrantedStampIds: Set<string>
 }
 
 const createEmptyDappDisclosureGrants = (): DappDisclosureGrantSet => ({
@@ -42,7 +36,6 @@ const createEmptyDappDisclosureGrants = (): DappDisclosureGrantSet => ({
   grantedScopes: new Set(),
   grantedStampTypes: new Set(),
   hasStampScope: false,
-  legacyGrantedStampIds: new Set(),
 })
 
 export const DISCLOSURE_CLAIMS = {
@@ -61,19 +54,15 @@ export async function loadDappDisclosureGrants(
   input: {
     dappId: number | string
     dappUserUuid: string
-    legacyStampId?: number | string
   }
 ): Promise<DappDisclosureGrantSet> {
-  const grantsByUser = await loadDappDisclosureGrantsForUsers(supabase, [input], {
-    legacyStampId: input.legacyStampId,
-  })
+  const grantsByUser = await loadDappDisclosureGrantsForUsers(supabase, [input])
   return grantsByUser.get(input.dappUserUuid) ?? createEmptyDappDisclosureGrants()
 }
 
 function mergeGrantRows(
   appScopedSubject: AppScopedSubjectRow | null,
-  grants: SelectiveDisclosureGrantRow[],
-  legacyPermissions: LegacyPermissionRow[] = []
+  grants: SelectiveDisclosureGrantRow[]
 ): DappDisclosureGrantSet {
   const grantedClaims = new Set<string>()
   const grantedScopes = new Set<string>()
@@ -110,12 +99,6 @@ function mergeGrantRows(
     grantedScopes,
     grantedStampTypes,
     hasStampScope,
-    legacyGrantedStampIds: new Set(
-      legacyPermissions
-        .map((row) => row.stamp_id)
-        .filter((value): value is number | string => value !== null && value !== undefined)
-        .map(String)
-    ),
   }
 }
 
@@ -206,11 +189,7 @@ export function sanitizeDisclosedUserProfile<TUser extends Record<string, any>>(
 
 export async function loadDappDisclosureGrantsForUsers(
   supabase: SupabaseClient,
-  users: DappUserGrantLookup[],
-  options: {
-    includeLegacyPermissions?: boolean
-    legacyStampId?: number | string
-  } = {}
+  users: DappUserGrantLookup[]
 ): Promise<Map<string, DappDisclosureGrantSet>> {
   const result = new Map<string, DappDisclosureGrantSet>()
   const uniqueUsers = users.filter(
@@ -276,43 +255,13 @@ export async function loadDappDisclosureGrantsForUsers(
     }
   }
 
-  const legacyPermissionsByUser = new Map<string, LegacyPermissionRow[]>()
-  if (options.includeLegacyPermissions ?? true) {
-    let legacyQuery = supabase
-      .from("stamp_dappuser_permissions")
-      .select("dappuser_id,stamp_id")
-      .in("dappuser_id", dappUserUuids)
-
-    if (options.legacyStampId !== undefined) {
-      legacyQuery = legacyQuery.eq("stamp_id", options.legacyStampId)
-    }
-
-    const { data: legacyPermissions, error: legacyError } = await legacyQuery
-
-    if (legacyError) {
-      throw legacyError
-    }
-
-    for (const permission of (legacyPermissions ?? []) as LegacyPermissionRow[]) {
-      const dappUserUuid = String(permission.dappuser_id ?? "")
-      if (!dappUserUuid) {
-        continue
-      }
-
-      const existing = legacyPermissionsByUser.get(dappUserUuid) ?? []
-      existing.push(permission)
-      legacyPermissionsByUser.set(dappUserUuid, existing)
-    }
-  }
-
   for (const user of uniqueUsers) {
     const subject = subjectsByUser.get(user.dappUserUuid) ?? null
     result.set(
       user.dappUserUuid,
       mergeGrantRows(
         subject,
-        subject ? grantsBySubjectId.get(subject.id) ?? [] : [],
-        legacyPermissionsByUser.get(user.dappUserUuid) ?? []
+        subject ? grantsBySubjectId.get(subject.id) ?? [] : []
       )
     )
   }
@@ -325,10 +274,7 @@ export async function loadDappDisclosureGrantsForStamp(
   users: DappUserGrantLookup[],
   stamp: StampLike | null | undefined
 ): Promise<Map<string, DappDisclosureGrantSet>> {
-  return loadDappDisclosureGrantsForUsers(supabase, users, {
-    legacyStampId:
-      stamp?.id === null || stamp?.id === undefined ? undefined : String(stamp.id),
-  })
+  return loadDappDisclosureGrantsForUsers(supabase, users)
 }
 
 export async function hasActiveSelectiveDisclosureGrants(
@@ -339,7 +285,7 @@ export async function hasActiveSelectiveDisclosureGrants(
   }
 ): Promise<boolean> {
   const grants = await loadDappDisclosureGrants(supabase, input)
-  return grants.hasStampScope || grants.legacyGrantedStampIds.size > 0
+  return grants.hasStampScope
 }
 
 export function isStampTypeDisclosed(
@@ -363,10 +309,6 @@ export function isStampDisclosed(
 ): boolean {
   if (!grants || !stamp) {
     return false
-  }
-
-  if (grants.legacyGrantedStampIds.has(String(stamp.id ?? ""))) {
-    return true
   }
 
   const stampTypeId = Number(stamp.stamptype)

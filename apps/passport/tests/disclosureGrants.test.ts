@@ -82,7 +82,7 @@ test("loadDappDisclosureGrants denies by default without an app-scoped subject",
   assert.equal(isStampDisclosed(grants, { stamptype: 13 }), false)
 })
 
-test("loadDappDisclosureGrants preserves legacy stamp permissions during rollout", async () => {
+test("loadDappDisclosureGrants ignores legacy stamp permissions after backfill cutoff", async () => {
   const supabase = new MockPassportSupabase()
   supabase.stampPermissions.push({
     dappuser_id: "legacy_user",
@@ -94,7 +94,7 @@ test("loadDappDisclosureGrants preserves legacy stamp permissions during rollout
     dappUserUuid: "legacy_user",
   })
 
-  assert.equal(isStampDisclosed(grants, { id: 99, stamptype: 13 }), true)
+  assert.equal(isStampDisclosed(grants, { id: 99, stamptype: 13 }), false)
   assert.equal(isStampDisclosed(grants, { id: 100, stamptype: 13 }), false)
 })
 
@@ -148,7 +148,6 @@ test("sanitizeDisclosedUserProfile removes non-granted profile and location fiel
     grantedScopes: new Set(["cubid:profile", "cubid:location", "cubid:stamps"]),
     grantedStampTypes: new Set(["email"]),
     hasStampScope: true,
-    legacyGrantedStampIds: new Set<string>(),
   }
 
   assert.deepEqual(
