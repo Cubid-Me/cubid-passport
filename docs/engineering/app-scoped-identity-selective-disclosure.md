@@ -1,7 +1,7 @@
 # App-Scoped Identity and Selective Disclosure
 
-Last updated: 2026-04-30
-Status: E01 foundation
+Last updated: 2026-05-03
+Status: E01 implemented; rollout follow-ups tracked in E01.1 and E01.2
 
 ## Purpose
 
@@ -148,21 +148,27 @@ Internal identifiers are never valid disclosure claims. If a downstream app
 needs a stable ID, it receives the app-scoped subject or OIDC pairwise `sub`,
 not raw Cubid storage identifiers.
 
-## Runtime Adoption Sequence
+## Runtime Adoption Status
 
-E01 does not rewrite every route in one pass. Current and remaining adoption
-sequence is:
+E01 is complete as a first-class platform foundation:
 
-1. Use `@cubid/identity` disclosure helpers in new API and webhook code.
-2. Route Allow Page stamp permissions through `selective_disclosure_grants`.
-3. Mirror OIDC consent records into disclosure grants or make OIDC consume the
-   disclosure grant service directly.
-4. Update SDK-facing identity routes to return only app-scoped subject and
-   granted claims.
-5. Use disclosure grants to filter webhook payloads.
-6. Extend the grant taxonomy beyond stamps to profile and location claims.
-7. Add user-facing disclosure history and revocation views that cover both OIDC
-   and non-OIDC app grants.
+1. `@cubid/identity` owns the shared app-scoped subject and disclosure-grant
+   domain helpers.
+2. Allow Page stamp permissions persist source `allow_page` disclosure grants.
+3. OIDC consent approval and revocation mirror into the shared disclosure-grant
+   contract.
+4. SDK-facing Passport identity, stamp, score, profile, and location routes
+   consult disclosure grants before releasing values.
+5. API v3 webhook delivery is disclosure-gated and does not send undisclosed
+   stamp events.
+6. The grant taxonomy now includes stamp, profile, and location claims.
+7. Passport Profile exposes OIDC consent management and separate non-OIDC app
+   disclosure grant history/revocation.
+
+The remaining work is rollout and operations cleanup, not core E01
+implementation. `E01.1` owns production backfill and retirement of the temporary
+legacy `stamp_dappuser_permissions` fallback. `E01.2` owns Admin/Ops visibility
+for app-scoped subjects, disclosure grants, and grant/revoke events.
 
 ## Non-Goals In This Slice
 

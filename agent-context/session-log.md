@@ -4256,3 +4256,33 @@ Address the Codex review finding that failed idempotency records must not re-run
 #### Follow-up
 
 - push the terminal failed-idempotency fix, confirm CI is green, then reply to and resolve the Copilot and Codex review threads
+
+### session: v149
+
+- timestamp: 2026-05-03T13:44:24Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-closeout-reconciliation**
+- head: **`87013e2`**
+- session name: **Close out E01 app-scoped disclosure foundation**
+
+#### Objective
+
+Reconcile E01 after PR 156 merged and decide whether the parent app-scoped identity and selective-disclosure todo should remain open or be split into precise follow-ups.
+
+#### Actions Taken
+
+- verified the merged runtime covers Allow Page grant persistence, OIDC consent mirroring, SDK-facing route filtering, webhook filtering, profile/location claim taxonomy, and user-facing non-OIDC disclosure history/revocation
+- marked E01 completed in the roadmap
+- added `E01.1` for production backfill and retirement of the legacy `stamp_dappuser_permissions` compatibility fallback
+- added `E01.2` for Admin/Ops visibility into app-scoped subjects, disclosure grants, and grant/revoke events
+- updated the E01 engineering doc from foundation/adoption-sequence language to implemented-status language with rollout follow-ups
+
+#### Verification
+
+- `git status -sb`
+- `rg -n "Status: (Started|Not started)|^## [A-Z][0-9]|^### [A-Z][0-9]" agent-context/todo.md`
+- reviewed `docs/engineering/app-scoped-identity-selective-disclosure.md`
+
+#### Follow-up
+
+- tackle `E01.1` next if the priority is production rollout safety, or `E01.2` next if operators need visibility before disabling legacy fallback behavior

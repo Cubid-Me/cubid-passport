@@ -519,14 +519,36 @@ Parallelization note: This section can run in parallel with `B`, `C`, and `D` on
 
 ### E01. Rebuild app-scoped identity and selective disclosure as first-class platform services
 
-- Status: Started
+- Status: Completed
 - Timestamp started: 2026-04-30T21:38:40Z
-- Timestamp completed: TBD
-- Feature branch: codex/e01-app-scoped-identity-disclosure; codex/e01-disclosure-claim-taxonomy
-- Head: 96ac1ff; continued from 63303ad; 3123f99
-- Session-log reference(s): session: v126, session: v127, session: v137, session: v138, session: v140, session: v141
+- Timestamp completed: 2026-05-03T13:44:24Z
+- Feature branch: codex/e01-app-scoped-identity-disclosure; codex/e01-disclosure-claim-taxonomy; codex/e01-closeout-reconciliation
+- Head: 87013e2
+- Session-log reference(s): session: v126, session: v127, session: v137, session: v138, session: v140, session: v141, session: v149
 
 Take the backgrounder’s core ideas seriously by making app-scoped identity and selective disclosure explicit platform capabilities instead of incidental behavior buried in Passport flows. Build a consent and disclosure service that owns per-app subject identifiers, claim release decisions, stamp-sharing permissions, and revocation behavior. Relying parties should never need raw cross-app identifiers or unnecessary PII; they should request scopes and receive only the allowed app-scoped values. This service should back the Allow Page, the OIDC consent model, SDK calls, and webhook payload filtering. Treat it as a foundational protocol service with strong typing, auditability, and user-visible history, not just a UX screen. Finishing this todo would align Cubid much more closely with the backgrounder’s privacy, protocol, and anti-tracking principles.
+
+### E01.1 Backfill disclosure grants and retire legacy stamp-permission fallback
+
+- Status: Not started
+- Timestamp started: TBD
+- Timestamp completed: TBD
+- Feature branch: TBD
+- Head: TBD
+- Session-log reference(s): TBD
+
+Complete the production rollout tail for app-scoped disclosure by backfilling legacy `stamp_dappuser_permissions` rows into `selective_disclosure_grants`, validating that active relying-party access is represented in the new grant table, and then removing the temporary compatibility fallback from SDK-facing identity, score, and webhook paths. This should be treated as a deployment-safe migration task, not a product redesign. Add a dry-run script or SQL report that counts legacy permissions by dapp, dapp user, and stamp type; write encrypted or private data nowhere; and confirm revocation semantics still remove access after the fallback is disabled. Once production smoke passes, update the engineering doc and tests so the selective-disclosure contract is the only authorization source for new app-facing stamp release.
+
+### E01.2 Promote disclosure-grant operations into Admin/Ops visibility
+
+- Status: Not started
+- Timestamp started: TBD
+- Timestamp completed: TBD
+- Feature branch: TBD
+- Head: TBD
+- Session-log reference(s): TBD
+
+Add operator visibility for app-scoped subjects and selective-disclosure grants without exposing raw internal identifiers or secret material. Admin should be able to inspect aggregate grant counts, recent grant/revoke events, source split between Allow Page and OIDC, revoked versus active grants, and dapp/client-level disclosure health. Keep controls conservative: read-only observability first, with any operator-driven revocation or repair flow requiring a separate authorization design. This follow-up helps support production rollout and debugging after E01, especially when an integrator reports missing identity, stamp, score, location, or webhook data. It should reuse existing security-event and audit patterns, redact human subject keys and raw Cubid user IDs, and document how operators trace a user-facing revocation from Profile to route filtering and webhook suppression.
 
 ### E02. Productize the developer platform: API v3 contracts, review, and hardening
 
