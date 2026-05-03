@@ -227,9 +227,10 @@ encryption model. `/api/v3/save_secret` encrypts submissions into
 `private.dapp_user_secrets` using a per-row data key wrapped by the Supabase
 Vault secret `passport_dapp_user_secret_wrapping_key_v1`. Provision this Vault
 secret before enabling v3 writes or running the legacy backfill script. The
-legacy `/api/v2/save_secret` route is preserved for compatibility and continues
-to use `public.dapp_user_secrets`; v3 is the encrypted private-schema custody
-contract.
+legacy `/api/v2/save_secret` route is removed and returns `410 endpoint_removed`.
+The legacy `public.dapp_user_secrets` table is quarantined as service-role
+read-only backfill/audit input; new writes must use v3 encrypted private-schema
+custody.
 
 Webhook signing secrets use the same C05 envelope model because Passport must
 recover them to sign outbound webhook deliveries. Admin-created subscriptions

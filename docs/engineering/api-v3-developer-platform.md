@@ -54,6 +54,9 @@ Purpose: store a retrievable dapp-user secret using the v3 encrypted custody
 model. This is the encrypted replacement for legacy `/api/v2/save_secret`; it
 does not add a public retrieval endpoint.
 
+Legacy `/api/v2/save_secret` is removed and returns `410 endpoint_removed`.
+Callers that need to store dapp-user secrets must migrate to this v3 route.
+
 Request body:
 
 ```json

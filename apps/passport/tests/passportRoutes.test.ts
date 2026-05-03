@@ -599,7 +599,7 @@ test("Passport v2 create_user rejects malformed dapp payloads before execution",
   )
 })
 
-test("Passport v2 save_secret keeps legacy public-table behavior", async () => {
+test("Passport v2 save_secret is removed and never writes plaintext secrets", async () => {
   const supabase = new MockPassportSupabase()
   const apiKey = addDappAuth(supabase)
   const userId = "00000000-0000-4000-8000-000000000041"
@@ -613,6 +613,7 @@ test("Passport v2 save_secret keeps legacy public-table behavior", async () => {
     },
     headers: {
       origin: "https://passport.cubid.me",
+      "x-request-id": "passport_v2_secret_removed",
     },
     url: "/api/v2/save_secret",
   })
@@ -620,12 +621,18 @@ test("Passport v2 save_secret keeps legacy public-table behavior", async () => {
 
   await saveSecretV2Handler(req, res)
 
-  assert.equal(res.statusCode, 200)
-  assert.deepEqual(res.body, { success: true })
-  assert.equal(supabase.dappUserSecrets.length, 1)
+  assert.equal(res.statusCode, 410)
+  assert.equal(res.headers["x-request-id"], "passport_v2_secret_removed")
+  assert.deepEqual(res.body, {
+    error: {
+      code: "endpoint_removed",
+      message:
+        "Legacy plaintext dapp user secret writes have been removed. Use /api/v3/save_secret.",
+      requestId: "passport_v2_secret_removed",
+    },
+  })
+  assert.equal(supabase.dappUserSecrets.length, 0)
   assert.equal(supabase.privateDappUserSecrets.length, 0)
-  assert.equal(supabase.dappUserSecrets[0].secret, "legacy plaintext dapp user secret")
-  assert.equal(supabase.dappUserSecrets[0].secret_sequential_id, 1)
 })
 
 test("Passport v3 save_secret stores only encrypted dapp user secrets", async () => {

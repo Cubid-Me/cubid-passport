@@ -4433,3 +4433,33 @@ Record the implementation commit for `C05.2.1` after the Sui v3 custody slice la
 #### Follow-up
 
 - yeet the C05.2.1 branch for review, then continue with `C05.1.1` or the next API v3 custody hardening slice
+
+### session: v155
+
+- timestamp: 2026-05-03T21:26:52Z
+- agent: **OpenAI Codex**
+- branch: **codex/c05-2-1-sui-v3-custody**
+- head: **`07f9378`**
+- session name: **Quarantine legacy dapp user secret plaintext storage**
+
+#### Objective
+
+Complete `C05.1.1` by quarantining legacy public plaintext dapp-user-secret storage without dropping historical rows that may still need production backfill or audit review.
+
+#### Actions Taken
+
+- changed `/api/v2/save_secret` to return `410 endpoint_removed` instead of writing plaintext rows to `public.dapp_user_secrets`
+- added a Supabase migration that revokes broad access to `public.dapp_user_secrets`, keeps `service_role` read-only access, and rejects new inserts, updates, and deletes
+- updated Passport route tests to prove the v2 endpoint no longer writes plaintext and v3 remains the encrypted write path
+- updated custody/security docs and created a public SDK handoff note because legacy v2 secret writes are no longer supported
+
+#### Verification
+
+- `pnpm --filter @cubid/passport typecheck`
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/passport test'`
+- `pnpm --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- physically remove the legacy public table only after production backfill, audit, and retention/export decisions are complete

@@ -52,9 +52,12 @@ blockchain account, purpose, or key fails.
 - stores `__cubid_encrypted_dapp_user_secret__` in the legacy `secret` column
 - writes a security event without raw secret material
 
-`public.dapp_user_secrets` remains the legacy v2 table. It is intentionally
-left intact while v2 is supported, and new encrypted v3 work must not add
-encrypted columns or new custody behavior to the public table.
+`public.dapp_user_secrets` is a quarantined legacy table retained only so
+already-created plaintext rows can be audited/backfilled into private encrypted
+custody. `/api/v2/save_secret` is removed and must not write new plaintext
+rows. The quarantine migration revokes broad public grants, leaves
+`service_role` with read-only access for backfill/audit, and installs a trigger
+that rejects new inserts, updates, and deletes on the public table.
 
 The required Vault secret is `passport_dapp_user_secret_wrapping_key_v1`. It
 must be a base64 or base64url encoded 32-byte value and must be provisioned
@@ -73,13 +76,14 @@ pnpm --filter @cubid/passport exec tsx scripts/encrypt-dapp-user-secrets.ts --dr
 pnpm --filter @cubid/passport exec tsx scripts/encrypt-dapp-user-secrets.ts
 ```
 
-The script reads plaintext rows from `public.dapp_user_secrets` and inserts
-encrypted copies into `private.dapp_user_secrets`. It reports counts only,
-must never log raw secret values, and does not mutate the legacy public table.
+The script reads plaintext rows from quarantined `public.dapp_user_secrets` and
+inserts encrypted copies into `private.dapp_user_secrets`. It reports counts
+only, must never log raw secret values, and does not mutate the legacy public
+table.
 
-Physical removal or final quarantine of the legacy public table is deferred
-until production smoke confirms current rows are encrypted privately and no
-callers depend on the v2 plaintext table.
+Physical removal of the legacy public table is still deferred until production
+smoke confirms current rows are encrypted privately and retention/export needs
+for legacy rows are resolved.
 
 ## Webhook Signing Secrets
 
