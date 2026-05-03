@@ -4077,3 +4077,31 @@ Update stale E02 roadmap language so it reflects the current split between backe
 #### Follow-up
 
 - implement E02.5 next to inventory and define the canonical API v3 contract in this repo before changing route behavior
+
+### session: v143
+
+- timestamp: 2026-05-03T00:05:30Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-disclosure-claim-taxonomy**
+- head: **`4c1a9ca`**
+- session name: **Define E02.5 API v3 backend contract**
+
+#### Objective
+
+Start and complete E02.5 by inventorying the current API v3 backend routes and locking the canonical contract before changing route behavior.
+
+#### Actions Taken
+
+- checked for incoming SDK-agent messages before API v3 contract work and found none
+- marked E02.5 completed on the current feature branch
+- expanded `docs/engineering/api-v3-developer-platform.md` with route-by-route contracts for `/api/v3/save_secret`, `/api/v3/accounts/generate`, and `/api/v3/accounts/list`
+- documented API v3 dapp authentication, v2 legacy posture, structured error expectations, secret non-exposure rules, and retry/idempotency expectations
+- kept the change documentation-only, so no outbound SDK handoff note was required
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- implement E02.6 next to harden API v3 route behavior against the contract defined in E02.5

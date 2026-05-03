@@ -632,12 +632,12 @@ Back the published packages with the DX and compatibility work needed for real e
 
 ### E02.5 Inventory and define the canonical API v3 backend contract
 
-- Status: Not started
-- Timestamp started: TBD
-- Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Status: Completed
+- Timestamp started: 2026-05-03T00:05:30Z
+- Timestamp completed: 2026-05-03T00:05:30Z
+- Feature branch: codex/e01-disclosure-claim-taxonomy
+- Head: 4c1a9ca
+- Session-log reference(s): session: v143
 
 Create the backend source of truth for Cubid API v3 in `cubid-passport`, centered on `docs/engineering/api-v3-developer-platform.md`. Inventory every current `/api/v3/*` route, including encrypted dapp user secrets and blockchain account custody, and define the minimum canonical request/response contract for each route without moving SDK implementation into this repo. Explicitly classify `/api/v2/*` routes as legacy compatibility unless a specific future todo promotes a route into v3. Record shared expectations for dapp authentication, app-scoped identity, disclosure grants, non-exposure of secret material, structured errors, and idempotency. Before writing the contract, check for incoming SDK-agent notes in `agent-context/messages-from-cubid-sdk/`; after writing it, create outbound SDK notes only if the contract changes public SDK assumptions.
 
