@@ -51,6 +51,9 @@ export class MockPassportSupabase {
   readonly stamps: Array<Record<string, unknown>> = []
   readonly userAccounts: Array<Record<string, unknown>> = []
   readonly users = new Map<number, Record<string, unknown>>()
+  readonly webhookEventDeliveries: Array<Record<string, unknown>> = []
+  readonly webhookEvents: Array<Record<string, unknown>> = []
+  readonly webhookSubscriptions: Array<Record<string, unknown>> = []
   failNextPrivateKeyInsert = false
   private nextEmailOtpId = 1
 
@@ -149,6 +152,14 @@ export class MockPassportSupabase {
       id: row.id ?? this.nextEmailOtpId++,
     })
     this.emailOtps.set(row.email, rows)
+  }
+
+  setWebhookSubscription(row: Record<string, unknown>) {
+    this.webhookSubscriptions.push({
+      id: this.webhookSubscriptions.length + 1,
+      secret_reference_id: `webhook_secret_${this.webhookSubscriptions.length + 1}`,
+      ...row,
+    })
   }
 
   schema(name: string) {
@@ -495,6 +506,133 @@ export class MockPassportSupabase {
       }
     }
 
+    if (table === "dapp_webhook_subscriptions") {
+      return {
+        select: () => {
+          const filters: Record<string, unknown> = {}
+          const resolve = () => {
+            const rows = this.webhookSubscriptions.filter((row) =>
+              Object.entries(filters).every(
+                ([column, value]) => String(row[column]) === String(value)
+              )
+            )
+            return { data: rows, error: null }
+          }
+          const query = {
+            match: (criteria: Record<string, unknown>) => {
+              Object.assign(filters, criteria)
+              return query
+            },
+            then: (
+              resolveThen: (value: {
+                data: Record<string, unknown>[]
+                error: null
+              }) => unknown
+            ) => Promise.resolve(resolve()).then(resolveThen),
+          }
+          return query
+        },
+      }
+    }
+
+    if (table === "webhook_events") {
+      return {
+        insert: (row: Record<string, unknown>) => {
+          const inserted = {
+            created_at: new Date().toISOString(),
+            id: this.webhookEvents.length + 1,
+            ...row,
+          }
+          this.webhookEvents.push(inserted)
+          return {
+            select: () => ({
+              then: (
+                resolveThen: (value: {
+                  data: Record<string, unknown>[]
+                  error: null
+                }) => unknown
+              ) => Promise.resolve({ data: [inserted], error: null }).then(resolveThen),
+            }),
+          }
+        },
+        select: () => {
+          const filters: Record<string, unknown> = {}
+          const resolve = () => {
+            const rows = this.webhookEvents.filter((row) =>
+              Object.entries(filters).every(
+                ([column, value]) => String(row[column]) === String(value)
+              )
+            )
+            return { data: rows, error: null }
+          }
+          const query = {
+            eq: (column: string, value: unknown) => {
+              filters[column] = value
+              return query
+            },
+            match: (criteria: Record<string, unknown>) => {
+              Object.assign(filters, criteria)
+              return query
+            },
+            then: (
+              resolveThen: (value: {
+                data: Record<string, unknown>[]
+                error: null
+              }) => unknown
+            ) => Promise.resolve(resolve()).then(resolveThen),
+          }
+          return query
+        },
+        update: (patch: Record<string, unknown>) => {
+          const filters: Record<string, unknown> = {}
+          const query = {
+            eq: (column: string, value: unknown) => {
+              filters[column] = value
+              return query
+            },
+            select: () => ({
+              then: (
+                resolveThen: (value: {
+                  data: Record<string, unknown>[]
+                  error: null
+                }) => unknown
+              ) => {
+                const updatedRows: Record<string, unknown>[] = []
+                for (const row of this.webhookEvents) {
+                  if (
+                    Object.entries(filters).every(
+                      ([column, value]) => String(row[column]) === String(value)
+                    )
+                  ) {
+                    Object.assign(row, patch)
+                    updatedRows.push(row)
+                  }
+                }
+                return Promise.resolve({
+                  data: updatedRows,
+                  error: null,
+                }).then(resolveThen)
+              },
+            }),
+          }
+          return query
+        },
+      }
+    }
+
+    if (table === "webhook_event_deliveries") {
+      return {
+        insert: async (row: Record<string, unknown>) => {
+          this.webhookEventDeliveries.push({
+            delivered_at: new Date().toISOString(),
+            id: this.webhookEventDeliveries.length + 1,
+            ...row,
+          })
+          return { error: null }
+        },
+      }
+    }
+
     if (table === "selective_disclosure_events") {
       return {
         insert: async (row: Record<string, unknown>) => {
@@ -665,6 +803,21 @@ export class MockPassportSupabase {
                 return { data: null, error: null }
               }
               return { data: { user_id: 1234, ...row }, error: null }
+            },
+            then: (
+              resolveThen: (value: {
+                data: Record<string, unknown>[]
+                error: null
+              }) => unknown
+            ) => {
+              const rows = [...this.dappUsers.values()].filter((row) =>
+                Object.entries(filters).every(
+                  ([column, value]) =>
+                    String((row as Record<string, unknown>)[column]) ===
+                    String(value)
+                )
+              )
+              return Promise.resolve({ data: rows, error: null }).then(resolveThen)
             },
           }
           return query

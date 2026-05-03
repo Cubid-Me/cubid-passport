@@ -654,12 +654,12 @@ Review and harden the active API v3 routes so they are production-grade backend 
 
 ### E02.7 Standardize API v3 webhook contracts
 
-- Status: Not started
-- Timestamp started: TBD
-- Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Status: Completed
+- Timestamp started: 2026-05-03T00:40:34Z
+- Timestamp completed: 2026-05-03T00:40:34Z
+- Feature branch: codex/e01-disclosure-claim-taxonomy
+- Head: 7f8aa93
+- Session-log reference(s): session: v145
 
 Define and harden the API v3 webhook runtime contract so downstream apps can consume Cubid events safely. Review current webhook trigger paths, signing-secret custody, disclosure filtering, retry behavior, and audit/security events, then document the canonical event families for v3: disclosure granted or revoked, stamp or claim updated, score changed, credential blacklisted, subject revoked, and custody/account lifecycle events where appropriate. Standardize signed payload fields, timestamp and nonce or event-id replay protection, delivery attempt metadata, failure recording, and redaction rules. Ensure webhook payloads never bypass app-scoped identity or disclosure grants, and ensure revoked grants stop future delivery. Add representative tests for signature generation, replay-protection inputs, disclosure-filtered payloads, failed delivery bookkeeping, and redaction of internal identifiers.
 

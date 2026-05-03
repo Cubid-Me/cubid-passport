@@ -4137,3 +4137,35 @@ Complete E02.6 by tightening the active API v3 backend routes against the canoni
 #### Follow-up
 
 - implement E02.7 next to standardize API v3 webhook contracts and delivery semantics
+
+### session: v145
+
+- timestamp: 2026-05-03T00:40:34Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-disclosure-claim-taxonomy**
+- head: **`7f8aa93`**
+- session name: **Standardize E02.7 API v3 webhook contracts**
+
+#### Objective
+
+Complete E02.7 by standardizing API v3 webhook payloads, signatures, replay-protection inputs, delivery metadata, disclosure filtering, and SDK coordination.
+
+#### Actions Taken
+
+- added shared API v3 webhook helpers for canonical event names, payload construction, v1 signatures, replay headers, and delivery error classification
+- updated internal webhook trigger paths to deliver v3 protocol payloads with `X-Cubid-Event-Id`, `X-Cubid-Timestamp`, `X-Cubid-Signature-Version`, and `X-Cubid-Signature`
+- added migration fields for webhook event ids, API/payload versions, request bodies, redacted request headers, and signature version metadata
+- preserved disclosure-gated delivery and expanded Passport tests for signed payloads, undisclosed-stamp skips, failure attempts, retry metadata, and redaction of internal identifiers
+- updated the API v3 engineering doc and wrote an SDK-agent handoff note for webhook verification/docs follow-up
+- marked E02.7 completed in the roadmap
+
+#### Verification
+
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/passport test'`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- implement E02.8 next to reconcile SDK-impact notes and close the API v3 developer-platform coordination loop

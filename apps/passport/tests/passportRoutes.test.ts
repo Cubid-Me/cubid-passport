@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 
+import axios from "axios"
 import { hashDappApiKey } from "@cubid/auth/server"
 
 import actorProfileGetHandler from "../pages/api/actors/profile/get"
@@ -19,6 +20,7 @@ import saveSecretV3Handler from "../pages/api/v3/save_secret"
 import webhookTriggerHandler from "../pages/api/cubid-webhook/trigger-url"
 import createUserHandler from "../pages/api/v2/create_user"
 import { hashApiV3IdempotencyRequest } from "../lib/server/apiV3Idempotency"
+import { signApiV3WebhookPayload } from "../lib/server/apiV3Webhooks"
 import { decryptBlockchainPrivateKeyWithKey } from "../lib/server/blockchainAccounts"
 import {
   DAPP_USER_SECRET_LEGACY_SENTINEL,
@@ -46,7 +48,10 @@ type DataResponse<T> = {
   data: T
 }
 
+const originalAxiosPost = axios.post
+
 test.afterEach(() => {
+  axios.post = originalAxiosPost
   setPassportSupabaseForTests(null)
   setPassportFirebaseAdminAuthForTests(null)
   setSendOtpEmailForTests(null)
@@ -1354,4 +1359,174 @@ test("Passport internal webhook trigger rejects missing internal bearer tokens",
     (res.body as { error: { message: string } }).error.message,
     "Missing or invalid internal bearer token."
   )
+})
+
+test("Passport API v3 webhook trigger sends signed disclosure-filtered payloads", async () => {
+  const supabase = new MockPassportSupabase()
+  const dappUserUuid = "00000000-0000-4000-8000-000000000061"
+  supabase.setDappUser({ dapp_id: 42, user_id: 1234, uuid: dappUserUuid })
+  supabase.setStamp({
+    created_by_user_id: 1234,
+    id: 610,
+    stamptype: 13,
+  })
+  supabase.stampPermissions.push({
+    dappuser_id: dappUserUuid,
+    stamp_id: 610,
+  })
+  supabase.setWebhookSubscription({
+    dapp: 42,
+    secret: "webhook-signing-secret",
+    webhook: "credential_added",
+    webhook_url: "https://example.test/webhook",
+  })
+  setPassportSupabaseForTests(supabase as never)
+
+  let deliveredBody = ""
+  let deliveredHeaders: Record<string, string> = {}
+  axios.post = (async (_url: string, body: unknown, config?: unknown) => {
+    deliveredBody = String(body)
+    deliveredHeaders = ((config as { headers?: Record<string, string> })
+      ?.headers ?? {}) as Record<string, string>
+    return { data: "accepted", status: 202 }
+  }) as typeof axios.post
+
+  const req = createApiRequest({
+    body: {
+      stamparray: [610],
+      webhook: "credential_added",
+    },
+    headers: {
+      authorization: "Bearer passport-internal-test-token",
+      "x-request-id": "passport_webhook_v3_1",
+    },
+    url: "/api/cubid-webhook/trigger-url",
+  })
+  const res = createApiResponse()
+
+  await webhookTriggerHandler(req, res)
+
+  assert.equal(res.statusCode, 200)
+  assert.equal(supabase.webhookEvents.length, 1)
+  assert.equal(supabase.webhookEventDeliveries.length, 1)
+
+  const payload = JSON.parse(deliveredBody) as Record<string, unknown>
+  assert.equal(payload.apiVersion, "v3")
+  assert.equal(payload.eventType, "stamp.created")
+  assert.equal(payload.legacyEventType, "credential_added")
+  assert.equal(payload.requestId, "passport_webhook_v3_1")
+  assert.deepEqual(payload.data, { stampId: 610 })
+  assert.deepEqual(payload.subject, { dappUserUuid })
+  assert.equal(JSON.stringify(payload).includes("created_by_user_id"), false)
+  assert.equal(JSON.stringify(payload).includes("human_subject_key"), false)
+
+  const expectedSignature = signApiV3WebhookPayload({
+    body: deliveredBody,
+    eventId: String(payload.eventId),
+    secret: "webhook-signing-secret",
+    timestamp: deliveredHeaders["X-Cubid-Timestamp"],
+  })
+  assert.equal(deliveredHeaders["X-Cubid-Event-Id"], payload.eventId)
+  assert.equal(deliveredHeaders["X-Cubid-Signature"], expectedSignature)
+  assert.equal(deliveredHeaders["X-Cubid-Signature-Version"], "v1")
+
+  assert.equal(supabase.webhookEvents[0].event_id, payload.eventId)
+  assert.equal(supabase.webhookEvents[0].api_version, "v3")
+  assert.equal(supabase.webhookEventDeliveries[0].delivery_status, "succeeded")
+  assert.equal(supabase.webhookEventDeliveries[0].attempt_number, 1)
+  assert.equal(supabase.webhookEventDeliveries[0].event_id, payload.eventId)
+})
+
+test("Passport API v3 webhook trigger skips undisclosed stamps", async () => {
+  const supabase = new MockPassportSupabase()
+  const dappUserUuid = "00000000-0000-4000-8000-000000000062"
+  supabase.setDappUser({ dapp_id: 42, user_id: 1234, uuid: dappUserUuid })
+  supabase.setStamp({
+    created_by_user_id: 1234,
+    id: 620,
+    stamptype: 13,
+  })
+  supabase.setWebhookSubscription({
+    dapp: 42,
+    secret: "webhook-signing-secret",
+    webhook: "credential_added",
+    webhook_url: "https://example.test/webhook",
+  })
+  setPassportSupabaseForTests(supabase as never)
+  let wasDelivered = false
+  axios.post = (async () => {
+    wasDelivered = true
+    return { data: "accepted", status: 202 }
+  }) as typeof axios.post
+
+  await webhookTriggerHandler(
+    createApiRequest({
+      body: {
+        stamparray: [620],
+        webhook: "credential_added",
+      },
+      headers: {
+        authorization: "Bearer passport-internal-test-token",
+      },
+      url: "/api/cubid-webhook/trigger-url",
+    }),
+    createApiResponse()
+  )
+
+  assert.equal(wasDelivered, false)
+  assert.equal(supabase.webhookEvents.length, 0)
+  assert.equal(supabase.webhookEventDeliveries.length, 0)
+})
+
+test("Passport API v3 webhook trigger records failed delivery attempts and retry metadata", async () => {
+  const supabase = new MockPassportSupabase()
+  const dappUserUuid = "00000000-0000-4000-8000-000000000063"
+  supabase.setDappUser({ dapp_id: 42, user_id: 1234, uuid: dappUserUuid })
+  supabase.setStamp({
+    created_by_user_id: 1234,
+    id: 630,
+    stamptype: 13,
+  })
+  supabase.stampPermissions.push({
+    dappuser_id: dappUserUuid,
+    stamp_id: 630,
+  })
+  supabase.setWebhookSubscription({
+    dapp: 42,
+    secret: "webhook-signing-secret",
+    webhook: "credential_removed",
+    webhook_url: "https://example.test/webhook",
+  })
+  setPassportSupabaseForTests(supabase as never)
+  axios.post = (async () => {
+    throw {
+      response: {
+        data: { error: "temporarily unavailable" },
+        status: 503,
+      },
+    }
+  }) as typeof axios.post
+
+  const makeReq = () =>
+    createApiRequest({
+      body: {
+        stamparray: [630],
+        webhook: "credential_removed",
+      },
+      headers: {
+        authorization: "Bearer passport-internal-test-token",
+      },
+      url: "/api/cubid-webhook/trigger-url",
+    })
+
+  await webhookTriggerHandler(makeReq(), createApiResponse())
+  await webhookTriggerHandler(makeReq(), createApiResponse())
+
+  assert.equal(supabase.webhookEvents.length, 1)
+  assert.equal(supabase.webhookEvents[0].retries, 2)
+  assert.equal(supabase.webhookEventDeliveries.length, 2)
+  assert.equal(supabase.webhookEventDeliveries[0].delivery_status, "failed")
+  assert.equal(supabase.webhookEventDeliveries[0].error_category, "server_error")
+  assert.equal(supabase.webhookEventDeliveries[0].attempt_number, 1)
+  assert.equal(supabase.webhookEventDeliveries[1].attempt_number, 2)
 })

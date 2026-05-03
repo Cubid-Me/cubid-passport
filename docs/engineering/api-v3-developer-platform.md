@@ -230,20 +230,51 @@ keys in plaintext.
 
 ## Webhook Contract Target
 
-API v3 webhooks should become protocol events rather than ad hoc table-change
-notifications. The target event families are:
+API v3 webhooks are protocol events rather than ad hoc table-change
+notifications. Current legacy subscription names are preserved for lookup, but
+deliveries use canonical v3 event names:
 
-- disclosure granted or revoked
-- stamp or claim updated
-- score changed
-- credential blacklisted or revoked
-- app-scoped subject revoked
-- custody/account lifecycle events where appropriate
+- `credential_added` -> `stamp.created`
+- `credential_removed` -> `stamp.removed`
+- `credential_expired` -> `credential.expired`
+- `credential_blacklisted` -> `credential.blacklisted`
+- `credential_whitelisted` -> `credential.whitelisted`
+- `score_increase` -> `score.increased`
+- `score_decrease` -> `score.decreased`
 
-Webhook payloads must be signed with encrypted-at-rest webhook signing secrets,
-include replay-protection inputs such as a stable event id and timestamp, record
-delivery attempts, and be filtered through the same app-scoped disclosure
-contract as API responses.
+Delivered payloads use this shape:
+
+```json
+{
+  "apiVersion": "v3",
+  "payloadVersion": "2026-05-03",
+  "eventId": "wh_evt_...",
+  "eventType": "stamp.created",
+  "legacyEventType": "credential_added",
+  "createdAt": "2026-05-03T00:00:00.000Z",
+  "requestId": "passport_...",
+  "dapp": { "id": "42" },
+  "subject": { "dappUserUuid": "00000000-0000-4000-8000-000000000000" },
+  "data": { "stampId": 123 }
+}
+```
+
+Delivery requests include replay-protection headers:
+
+- `X-Cubid-Event-Id`: stable event id for the dapp, event type, dapp user, and
+  stamp.
+- `X-Cubid-Timestamp`: delivery timestamp.
+- `X-Cubid-Signature-Version`: currently `v1`.
+- `X-Cubid-Signature`: `v1=<hex hmac sha256>` over
+  `eventId.timestamp.rawBody` using the subscription signing secret.
+
+Webhook delivery remains disclosure-gated. A stamp event is delivered to a dapp
+only when the corresponding dapp user has an active disclosure grant or legacy
+stamp permission for that stamp during the rollout window. Payloads must not
+include raw Cubid user ids, human subject keys, raw stamp rows, signing secrets,
+or private custody material. Delivery attempts record event id, request body,
+redacted request headers, signature version, status, response code/body, failure
+category, and attempt number in `webhook_event_deliveries`.
 
 ## SDK Coordination
 

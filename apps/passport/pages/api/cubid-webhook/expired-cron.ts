@@ -1,8 +1,13 @@
-import crypto from "crypto"
 import type { NextApiRequest, NextApiResponse } from "next"
 import axios from "axios"
 
 import { handlePassportRoute } from "@/lib/server/passportApi"
+import {
+  buildApiV3WebhookHeaders,
+  buildApiV3WebhookPayload,
+  classifyApiV3WebhookDeliveryError,
+  serializeApiV3WebhookPayload,
+} from "@/lib/server/apiV3Webhooks"
 import {
   isStampDisclosed,
   loadDappDisclosureGrantsForStamp,
@@ -26,10 +31,6 @@ async function fetchOldStamps() {
   return data ?? []
 }
 
-function createSignature(payload: string, secret: string) {
-  return crypto.createHmac("sha256", secret).update(payload).digest("hex")
-}
-
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
@@ -43,7 +44,7 @@ export default async function handler(
       rateLimitGroup: "passport_internal",
       route: "internal.cubid_webhook.expired_cron",
     },
-    async () => {
+    async ({ context }) => {
       const supabase = getPassportSupabase()
       const allStampsToFetch = await fetchOldStamps()
       const webhook = "credential_expired"
@@ -113,34 +114,45 @@ export default async function handler(
                 return
               }
 
-              const signature = createSignature(
-                JSON.stringify({ stampid }),
-                signingSecret
-              )
+              const payload = buildApiV3WebhookPayload({
+                dappId,
+                dappUserUuid: dappUser.uuid,
+                legacyEventType: webhook,
+                requestId: context.requestId,
+                stampId: stampid,
+              })
+              const payloadBody = serializeApiV3WebhookPayload(payload)
+              const headers = buildApiV3WebhookHeaders({
+                body: payloadBody,
+                eventId: payload.eventId,
+                secret: signingSecret,
+              })
 
               let insertedData: any
               const { data: existingEvents, error: existingEventsError } =
                 await supabase
                   .from("webhook_events")
                   .select("*")
-                  .match({
-                    event_type: webhook,
-                    payload: {
-                      stampid,
-                    },
-                  })
+                  .eq("dapp_id", dappId)
+                  .eq("event_id", payload.eventId)
 
               if (existingEventsError) {
                 throw existingEventsError
               }
 
-              if ((webhookRows ?? []).length !== 0) {
+              const attemptNumber = Number(existingEvents?.[0]?.retries ?? 0) + 1
+              if (existingEvents?.[0]) {
                 const { data: updatedEvents, error: updateError } = await supabase
                   .from("webhook_events")
                   .update({
+                    api_version: payload.apiVersion,
+                    dapp_id: dappId,
+                    event_id: payload.eventId,
                     event_type: webhook,
-                    payload: { stampid },
-                    retires: (existingEvents ?? []).length,
+                    last_attempt_at: new Date().toISOString(),
+                    payload,
+                    payload_version: payload.payloadVersion,
+                    retries: attemptNumber,
                   })
                   .eq("id", existingEvents?.[0]?.id)
                   .select("*")
@@ -154,9 +166,14 @@ export default async function handler(
                 const { data: insertedEvents, error: insertError } = await supabase
                   .from("webhook_events")
                   .insert({
+                    api_version: payload.apiVersion,
+                    dapp_id: dappId,
+                    event_id: payload.eventId,
                     event_type: webhook,
-                    payload: { stampid },
-                    retires: (existingEvents ?? []).length,
+                    last_attempt_at: new Date().toISOString(),
+                    payload,
+                    payload_version: payload.payloadVersion,
+                    retries: attemptNumber,
                   })
                   .select("*")
 
@@ -170,22 +187,32 @@ export default async function handler(
               try {
                 const response = await axios.post(
                   targetUrl,
-                  { stampid },
+                  payloadBody,
                   {
-                    headers: {
-                      "X-Cubid-Signature": signature,
-                    },
+                    headers,
                   }
                 )
 
                 const { error: deliveryError } = await supabase
                   .from("webhook_event_deliveries")
                   .insert({
-                    attempt_number: insertedData?.attempt_number,
+                    attempt_number: attemptNumber,
                     delivery_status: "succeeded",
                     dapp_id: dappId,
-                    response_body: response.data,
+                    event_id: payload.eventId,
+                    request_body: payload,
+                    request_headers: {
+                      "X-Cubid-Event-Id": headers["X-Cubid-Event-Id"],
+                      "X-Cubid-Signature-Version":
+                        headers["X-Cubid-Signature-Version"],
+                      "X-Cubid-Timestamp": headers["X-Cubid-Timestamp"],
+                    },
+                    response_body:
+                      typeof response.data === "string"
+                        ? response.data
+                        : JSON.stringify(response.data ?? null),
                     response_status_code: response.status,
+                    signature_version: headers["X-Cubid-Signature-Version"],
                     webhook_event_id: insertedData.id,
                   })
 
@@ -194,12 +221,28 @@ export default async function handler(
                 }
               } catch (error: any) {
                 await supabase.from("webhook_event_deliveries").insert({
-                  attempt_number: insertedData?.attempt_number,
+                  attempt_number: attemptNumber,
                   delivery_status: "failed",
                   dapp_id: dappId,
-                  error_category: error?.response ? "client_error" : "request_error",
-                  response_body: error?.response?.data ?? error?.message ?? error,
+                  error_category: classifyApiV3WebhookDeliveryError(error),
+                  event_id: payload.eventId,
+                  request_body: payload,
+                  request_headers: {
+                    "X-Cubid-Event-Id": headers["X-Cubid-Event-Id"],
+                    "X-Cubid-Signature-Version":
+                      headers["X-Cubid-Signature-Version"],
+                    "X-Cubid-Timestamp": headers["X-Cubid-Timestamp"],
+                  },
+                  response_body:
+                    typeof error?.response?.data === "string"
+                      ? error.response.data
+                      : JSON.stringify(
+                          error?.response?.data ??
+                            error?.message ??
+                            "Unknown error"
+                        ),
                   response_status_code: error?.response?.status ?? null,
+                  signature_version: headers["X-Cubid-Signature-Version"],
                   webhook_event_id: insertedData.id,
                 })
               }
