@@ -287,6 +287,21 @@ Before starting API v3 work in this repo, check
 `agent-context/messages-from-cubid-sdk/` for incoming SDK-agent notes and
 address any relevant requests.
 
+Current E02 coordination status:
+
+- E02.5 was documentation-only and did not require an outbound SDK handoff.
+- E02.6 created
+  `/Users/botmaster/src/cubid/cubid-sdk-v2/agent-context/messages-from-cubid-passport/2026-05-03-e02-6-api-v3-idempotency.md`
+  for the required `Idempotency-Key` write-route contract.
+- E02.7 created
+  `/Users/botmaster/src/cubid/cubid-sdk-v2/agent-context/messages-from-cubid-passport/2026-05-03-e02-7-api-v3-webhooks.md`
+  for the canonical v3 webhook payload/signature contract.
+- As of E02.8, there are no incoming SDK-agent notes in
+  `agent-context/messages-from-cubid-sdk/` in this repo.
+- The outbound SDK handoff notes are intentionally committed or ingested from
+  the SDK repo, not from `cubid-passport`; this repo records the coordination
+  state only.
+
 ## Validation Expectations
 
 API v3 hardening work should add focused Passport tests for:

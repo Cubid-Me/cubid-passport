@@ -4169,3 +4169,32 @@ Complete E02.7 by standardizing API v3 webhook payloads, signatures, replay-prot
 #### Follow-up
 
 - implement E02.8 next to reconcile SDK-impact notes and close the API v3 developer-platform coordination loop
+
+### session: v146
+
+- timestamp: 2026-05-03T00:43:54Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-disclosure-claim-taxonomy**
+- head: **`5b0504b`**
+- session name: **Coordinate E02.8 public SDK impact for API v3**
+
+#### Objective
+
+Close E02.8 by confirming API v3 SDK-impact coordination is recorded without moving public SDK implementation back into `cubid-passport`.
+
+#### Actions Taken
+
+- checked `agent-context/messages-from-cubid-sdk/` and confirmed there were no incoming SDK-agent notes to address
+- confirmed the SDK workspace contains outbound handoff notes for E02.6 idempotency and E02.7 webhook contract changes
+- recorded the SDK coordination ledger in `docs/engineering/api-v3-developer-platform.md`
+- marked E02.8 completed and closed the E02 backend API v3 review/hardening track in the roadmap
+
+#### Verification
+
+- `find agent-context/messages-from-cubid-sdk -type f -maxdepth 2 -print`
+- `git -C /Users/botmaster/src/cubid/cubid-sdk-v2 status --short -- agent-context/messages-from-cubid-passport`
+- `git diff --check`
+
+#### Follow-up
+
+- either yeet this feature branch for review or continue with the next backend-owned developer-platform track after E02

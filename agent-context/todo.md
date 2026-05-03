@@ -530,12 +530,12 @@ Take the backgrounder’s core ideas seriously by making app-scoped identity and
 
 ### E02. Productize the developer platform: API v3 contracts, review, and hardening
 
-- Status: Ingested into cubid-sdk
+- Status: Completed
 - Timestamp started: 2026-04-28T08:28:44Z
-- Timestamp completed: 2026-04-30T14:00:53Z
-- Feature branch: Cubid-Me/cubid-sdk public SDK repository; backend review continues from cubid-passport feature branches
-- Head: see Cubid-Me/cubid-sdk SDK repo history; backend review starts after 00113f3
-- Session-log reference(s): session: v94, session: v95, session: v99, session: v100, session: v101, session: v102, session: v103, session: v104, session: v105, session: v106, session: v107, session: v114, session: v115, session: v116, session: v119, session: v120, session: v123, session: v142; Cubid-Me/cubid-sdk session: s01-core-adoption
+- Timestamp completed: 2026-05-03T00:43:54Z
+- Feature branch: Cubid-Me/cubid-sdk public SDK repository for SDK work; codex/e01-disclosure-claim-taxonomy for backend API v3 review
+- Head: see Cubid-Me/cubid-sdk SDK repo history for SDK work; backend API v3 review completed at 5b0504b
+- Session-log reference(s): session: v94, session: v95, session: v99, session: v100, session: v101, session: v102, session: v103, session: v104, session: v105, session: v106, session: v107, session: v114, session: v115, session: v116, session: v119, session: v120, session: v123, session: v142, session: v143, session: v144, session: v145, session: v146; Cubid-Me/cubid-sdk session: s01-core-adoption
 
 Reframe E02 around the current architecture split. `cubid-passport` owns the backend runtime: API behavior, route contracts, migrations, security, disclosure enforcement, v3 custody routes, and webhook delivery. `Cubid-Me/cubid-sdk` owns public SDK/API client implementation, examples, package publication, and external integration docs. The earlier E02 SDK package work has been ingested into the public SDK repo and remains historical context here. The active backend track is now API v3 review and hardening: inventory the canonical `/api/v3/*` surfaces, document which legacy `/api/v2/*` routes remain compatibility-only, tighten auth/validation/disclosure/idempotency/error behavior, and standardize webhook contracts around signed, replay-safe, disclosure-filtered protocol events. Any SDK-impacting backend change must create a handoff note for the public SDK agents instead of adding SDK code to this repo.
 
@@ -665,12 +665,12 @@ Define and harden the API v3 webhook runtime contract so downstream apps can con
 
 ### E02.8 Coordinate public SDK impact for API v3
 
-- Status: Not started
-- Timestamp started: TBD
-- Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Status: Completed
+- Timestamp started: 2026-05-03T00:43:54Z
+- Timestamp completed: 2026-05-03T00:43:54Z
+- Feature branch: codex/e01-disclosure-claim-taxonomy
+- Head: 5b0504b
+- Session-log reference(s): session: v146
 
 Keep the public SDK repo aligned with API v3 without reintroducing SDK implementation into `cubid-passport`. For every E02.5-E02.7 change that affects public route shape, response semantics, error categories, disclosure states, webhook payloads, examples, or migration guidance, create a concise message in `Cubid-Me/cubid-sdk` under `agent-context/messages-from-cubid-passport/`. The message should identify the backend commit or PR, describe the changed contract, say whether SDK consumers should treat it as additive, breaking, or documentation-only, and list expected SDK follow-ups. Also check `agent-context/messages-from-cubid-sdk/` in this repo before beginning each API v3 hardening slice. This todo closes when all known SDK-impact notes are created and no incoming SDK notes remain unaddressed.
 
