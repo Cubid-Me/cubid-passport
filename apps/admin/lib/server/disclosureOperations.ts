@@ -2,7 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 type AdminSupabaseClient = SupabaseClient;
 
-const MAX_GRANT_ROWS = 5000;
+const MAX_RECENT_GRANT_ROWS = 500;
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
 interface DisclosureGrantRow {
@@ -24,14 +24,6 @@ interface DisclosureGrantRow {
   updated_at: string;
 }
 
-interface AppScopedSubjectRow {
-  app_identifier: string;
-  dapp_id: number | null;
-  id: string;
-  status: string;
-  subject_type: string;
-}
-
 interface DisclosureEventRow {
   actor_identifier: string | null;
   actor_type: string;
@@ -42,14 +34,39 @@ interface DisclosureEventRow {
   request_id: string | null;
 }
 
-interface DappRow {
-  appname: string;
-  id: number;
+interface GrantTotalRow {
+  grant_count: number | string | null;
+  source: string;
+  status: string;
 }
 
-interface OidcClientRow {
+interface ActiveSubjectCountRow {
+  active_subject_count: number | string | null;
+}
+
+interface RecentEventCountRow {
+  event_count: number | string | null;
+}
+
+interface DappSummaryRow {
+  active_grant_count: number | string | null;
+  active_subject_count: number | string | null;
+  app_name: string;
+  dapp_id: number | string;
+  last_granted_at: string | null;
+  last_revoked_at: string | null;
+  revoked_grant_count: number | string | null;
+  sources: unknown;
+}
+
+interface OidcClientSummaryRow {
+  active_grant_count: number | string | null;
   client_id: string;
   client_name: string;
+  last_granted_at: string | null;
+  last_revoked_at: string | null;
+  revoked_grant_count: number | string | null;
+  sources: unknown;
 }
 
 export interface DisclosureOpsEvent {
@@ -105,7 +122,7 @@ export interface DisclosureOpsOverview {
     activeSubjects: number;
     grantsBySource: Record<string, number>;
     grantsByStatus: Record<string, number>;
-    grantRowsScanned: number;
+    recentGrantSamples: number;
     recentGrantEvents7d: number;
     revokedGrants: number;
   };
@@ -141,20 +158,30 @@ const normalizeStringArray = (value: unknown): string[] =>
 const normalizeClaimCount = (value: unknown) =>
   Array.isArray(value) ? value.length : 0;
 
-const increment = (target: Record<string, number>, key: string) => {
-  target[key] = (target[key] ?? 0) + 1;
+const normalizeCount = (value: number | string | null | undefined) => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const parsed = Number.parseInt(value, 10);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  return 0;
 };
 
-const maxTimestamp = (current: string | null, next: string | null) => {
-  if (!next) {
-    return current;
+const normalizeSourceCounts = (value: unknown): Record<string, number> => {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    return {};
   }
 
-  if (!current) {
-    return next;
-  }
-
-  return next > current ? next : current;
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>).map(([source, count]) => [
+      source,
+      normalizeCount(count as number | string | null | undefined),
+    ])
+  );
 };
 
 const mapGrantSample = (row: DisclosureGrantRow): DisclosureOpsGrantSample => ({
@@ -177,145 +204,90 @@ const mapEvent = (row: DisclosureEventRow): DisclosureOpsEvent => ({
   requestId: row.request_id,
 });
 
-const makeDappSummary = (dapp: DappRow): DisclosureOpsDappSummary => ({
-  activeGrantCount: 0,
-  activeSubjectCount: 0,
-  appName: dapp.appname,
-  dappId: dapp.id,
-  lastGrantedAt: null,
-  lastRevokedAt: null,
-  recentGrants: [],
-  revokedGrantCount: 0,
-  sources: {},
-});
-
-const makeOidcClientSummary = (
-  client: OidcClientRow
-): DisclosureOpsOidcClientSummary => ({
-  activeGrantCount: 0,
-  clientId: client.client_id,
-  clientName: client.client_name,
-  lastGrantedAt: null,
-  lastRevokedAt: null,
-  recentGrants: [],
-  revokedGrantCount: 0,
-  sources: {},
-});
-
 export const buildDisclosureOpsOverview = ({
-  clients,
-  dapps,
+  activeSubjectCount,
+  dappSummaries,
   events,
+  grantTotals,
   generatedAt,
-  grants,
-  subjects,
+  oidcClientSummaries,
+  recentEventCount,
+  recentGrants,
 }: {
-  clients: OidcClientRow[];
-  dapps: DappRow[];
+  activeSubjectCount: number;
+  dappSummaries: DappSummaryRow[];
   events: DisclosureEventRow[];
+  grantTotals: GrantTotalRow[];
   generatedAt: string;
-  grants: DisclosureGrantRow[];
-  subjects: AppScopedSubjectRow[];
+  oidcClientSummaries: OidcClientSummaryRow[];
+  recentEventCount: number;
+  recentGrants: DisclosureGrantRow[];
 }): DisclosureOpsOverview => {
-  const dappsById = new Map(dapps.map((dapp) => [dapp.id, dapp]));
-  const clientsById = new Map(clients.map((client) => [client.client_id, client]));
-  const dappSummaries = new Map<number, DisclosureOpsDappSummary>();
-  const clientSummaries = new Map<string, DisclosureOpsOidcClientSummary>();
-  const activeSubjectIdsByDapp = new Map<number, Set<string>>();
-  const activeSubjects = new Set<string>();
   const grantsBySource: Record<string, number> = {};
   const grantsByStatus: Record<string, number> = {};
+  const recentGrantsByDapp = new Map<number, DisclosureOpsGrantSample[]>();
+  const recentGrantsByClient = new Map<string, DisclosureOpsGrantSample[]>();
 
-  for (const subject of subjects) {
-    if (subject.status !== 'active') {
-      continue;
-    }
-
-    activeSubjects.add(subject.id);
-
-    if (subject.dapp_id !== null) {
-      const subjectIds = activeSubjectIdsByDapp.get(subject.dapp_id) ?? new Set();
-      subjectIds.add(subject.id);
-      activeSubjectIdsByDapp.set(subject.dapp_id, subjectIds);
-    }
+  for (const total of grantTotals) {
+    const count = normalizeCount(total.grant_count);
+    grantsBySource[total.source] = (grantsBySource[total.source] ?? 0) + count;
+    grantsByStatus[total.status] = (grantsByStatus[total.status] ?? 0) + count;
   }
 
-  for (const row of grants) {
-    increment(grantsBySource, row.source);
-    increment(grantsByStatus, row.status);
-
+  for (const row of recentGrants) {
     const sample = mapGrantSample(row);
     if (row.dapp_id !== null) {
-      const dapp = dappsById.get(row.dapp_id) ?? {
-        appname: `Dapp ${row.dapp_id}`,
-        id: row.dapp_id,
-      };
-      const summary = dappSummaries.get(row.dapp_id) ?? makeDappSummary(dapp);
-
-      if (row.status === 'active') {
-        summary.activeGrantCount += 1;
-      } else if (row.status === 'revoked') {
-        summary.revokedGrantCount += 1;
+      const samples = recentGrantsByDapp.get(row.dapp_id) ?? [];
+      if (samples.length < 5) {
+        samples.push(sample);
       }
-
-      increment(summary.sources, row.source);
-      summary.lastGrantedAt = maxTimestamp(summary.lastGrantedAt, row.granted_at);
-      summary.lastRevokedAt = maxTimestamp(summary.lastRevokedAt, row.revoked_at);
-      if (summary.recentGrants.length < 5) {
-        summary.recentGrants.push(sample);
-      }
-      dappSummaries.set(row.dapp_id, summary);
+      recentGrantsByDapp.set(row.dapp_id, samples);
     }
 
     if (row.oidc_client_id) {
-      const client = clientsById.get(row.oidc_client_id) ?? {
-        client_id: row.oidc_client_id,
-        client_name: row.oidc_client_id,
-      };
-      const summary =
-        clientSummaries.get(row.oidc_client_id) ?? makeOidcClientSummary(client);
-
-      if (row.status === 'active') {
-        summary.activeGrantCount += 1;
-      } else if (row.status === 'revoked') {
-        summary.revokedGrantCount += 1;
+      const samples = recentGrantsByClient.get(row.oidc_client_id) ?? [];
+      if (samples.length < 5) {
+        samples.push(sample);
       }
-
-      increment(summary.sources, row.source);
-      summary.lastGrantedAt = maxTimestamp(summary.lastGrantedAt, row.granted_at);
-      summary.lastRevokedAt = maxTimestamp(summary.lastRevokedAt, row.revoked_at);
-      if (summary.recentGrants.length < 5) {
-        summary.recentGrants.push(sample);
-      }
-      clientSummaries.set(row.oidc_client_id, summary);
+      recentGrantsByClient.set(row.oidc_client_id, samples);
     }
   }
 
-  for (const [dappId, summary] of dappSummaries) {
-    summary.activeSubjectCount = activeSubjectIdsByDapp.get(dappId)?.size ?? 0;
-  }
-
-  const since = new Date(
-    new Date(generatedAt).getTime() - SEVEN_DAYS_MS
-  ).toISOString();
-
   return {
-    dapps: [...dappSummaries.values()].sort(
+    dapps: dappSummaries.map((row) => ({
+      activeGrantCount: normalizeCount(row.active_grant_count),
+      activeSubjectCount: normalizeCount(row.active_subject_count),
+      appName: row.app_name,
+      dappId: Number(row.dapp_id),
+      lastGrantedAt: row.last_granted_at,
+      lastRevokedAt: row.last_revoked_at,
+      recentGrants: recentGrantsByDapp.get(Number(row.dapp_id)) ?? [],
+      revokedGrantCount: normalizeCount(row.revoked_grant_count),
+      sources: normalizeSourceCounts(row.sources),
+    })).sort(
       (left, right) => right.activeGrantCount - left.activeGrantCount
     ),
     generatedAt,
-    oidcClients: [...clientSummaries.values()].sort(
+    oidcClients: oidcClientSummaries.map((row) => ({
+      activeGrantCount: normalizeCount(row.active_grant_count),
+      clientId: row.client_id,
+      clientName: row.client_name,
+      lastGrantedAt: row.last_granted_at,
+      lastRevokedAt: row.last_revoked_at,
+      recentGrants: recentGrantsByClient.get(row.client_id) ?? [],
+      revokedGrantCount: normalizeCount(row.revoked_grant_count),
+      sources: normalizeSourceCounts(row.sources),
+    })).sort(
       (left, right) => right.activeGrantCount - left.activeGrantCount
     ),
     recentEvents: events.map(mapEvent).slice(0, 50),
     totals: {
       activeGrants: grantsByStatus.active ?? 0,
-      activeSubjects: activeSubjects.size,
+      activeSubjects: activeSubjectCount,
       grantsBySource,
       grantsByStatus,
-      grantRowsScanned: grants.length,
-      recentGrantEvents7d: events.filter((event) => event.created_at >= since)
-        .length,
+      recentGrantEvents7d: recentEventCount,
+      recentGrantSamples: recentGrants.length,
       revokedGrants: grantsByStatus.revoked ?? 0,
     },
   };
@@ -325,12 +297,17 @@ export const loadDisclosureOpsOverview = async (
   supabase: AdminSupabaseClient
 ): Promise<DisclosureOpsOverview> => {
   const generatedAt = new Date().toISOString();
+  const since = new Date(
+    new Date(generatedAt).getTime() - SEVEN_DAYS_MS
+  ).toISOString();
   const [
-    grantsResponse,
-    subjectsResponse,
+    recentGrantsResponse,
     eventsResponse,
-    dappsResponse,
-    clientsResponse,
+    grantTotalsResponse,
+    activeSubjectCountResponse,
+    recentEventCountResponse,
+    dappSummariesResponse,
+    oidcClientSummariesResponse,
   ] = await Promise.all([
     supabase
       .from('selective_disclosure_grants')
@@ -338,25 +315,27 @@ export const loadDisclosureOpsOverview = async (
         'id,app_scoped_subject_id,dapp_id,oidc_client_id,source,granted_scopes,granted_claims,policy_version,consent_version,status,granted_at,revoked_at,revoked_by,metadata,created_at,updated_at'
       )
       .order('updated_at', { ascending: false })
-      .limit(MAX_GRANT_ROWS),
-    supabase
-      .from('app_scoped_subjects')
-      .select('id,subject_type,app_identifier,dapp_id,status'),
+      .limit(MAX_RECENT_GRANT_ROWS),
     supabase
       .from('selective_disclosure_events')
       .select('event_type,actor_type,actor_identifier,request_id,outcome,details,created_at')
       .order('created_at', { ascending: false })
       .limit(100),
-    supabase.from('dapps').select('id,appname'),
-    supabase.from('oidc_clients').select('client_id,client_name'),
+    supabase.rpc('get_disclosure_ops_grant_totals'),
+    supabase.rpc('get_disclosure_ops_active_subject_count'),
+    supabase.rpc('get_disclosure_ops_recent_event_count', { p_since: since }),
+    supabase.rpc('get_disclosure_ops_dapp_summaries'),
+    supabase.rpc('get_disclosure_ops_oidc_client_summaries'),
   ]);
 
   for (const response of [
-    grantsResponse,
-    subjectsResponse,
+    recentGrantsResponse,
     eventsResponse,
-    dappsResponse,
-    clientsResponse,
+    grantTotalsResponse,
+    activeSubjectCountResponse,
+    recentEventCountResponse,
+    dappSummariesResponse,
+    oidcClientSummariesResponse,
   ]) {
     if (response.error) {
       throw response.error;
@@ -364,11 +343,20 @@ export const loadDisclosureOpsOverview = async (
   }
 
   return buildDisclosureOpsOverview({
-    clients: (clientsResponse.data ?? []) as OidcClientRow[],
-    dapps: (dappsResponse.data ?? []) as DappRow[],
+    activeSubjectCount: normalizeCount(
+      ((activeSubjectCountResponse.data ?? []) as ActiveSubjectCountRow[])[0]
+        ?.active_subject_count
+    ),
+    dappSummaries: (dappSummariesResponse.data ?? []) as DappSummaryRow[],
     events: (eventsResponse.data ?? []) as DisclosureEventRow[],
+    grantTotals: (grantTotalsResponse.data ?? []) as GrantTotalRow[],
     generatedAt,
-    grants: (grantsResponse.data ?? []) as DisclosureGrantRow[],
-    subjects: (subjectsResponse.data ?? []) as AppScopedSubjectRow[],
+    oidcClientSummaries: (oidcClientSummariesResponse.data ??
+      []) as OidcClientSummaryRow[],
+    recentEventCount: normalizeCount(
+      ((recentEventCountResponse.data ?? []) as RecentEventCountRow[])[0]
+        ?.event_count
+    ),
+    recentGrants: (recentGrantsResponse.data ?? []) as DisclosureGrantRow[],
   });
 };

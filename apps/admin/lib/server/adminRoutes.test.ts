@@ -204,10 +204,10 @@ describe('Admin route baseline wiring', () => {
       totals: {
         activeGrants: 0,
         activeSubjects: 0,
-        grantRowsScanned: 0,
         grantsBySource: {},
         grantsByStatus: {},
         recentGrantEvents7d: 0,
+        recentGrantSamples: 0,
         revokedGrants: 0,
       },
     });

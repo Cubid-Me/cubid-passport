@@ -3,8 +3,19 @@ import { buildDisclosureOpsOverview } from './disclosureOperations';
 describe('Disclosure operations helpers', () => {
   it('builds aggregate disclosure health without exposing raw identifiers', () => {
     const overview = buildDisclosureOpsOverview({
-      clients: [{ client_id: 'client_tcoin', client_name: 'TCOIN' }],
-      dapps: [{ appname: 'FundLoop', id: 42 }],
+      activeSubjectCount: 2,
+      dappSummaries: [
+        {
+          active_grant_count: '1',
+          active_subject_count: 1,
+          app_name: 'FundLoop',
+          dapp_id: 42,
+          last_granted_at: '2026-05-03T10:00:00.000Z',
+          last_revoked_at: null,
+          revoked_grant_count: 0,
+          sources: { allow_page: '1' },
+        },
+      ],
       events: [
         {
           actor_identifier: 'user@example.com',
@@ -22,7 +33,31 @@ describe('Disclosure operations helpers', () => {
         },
       ],
       generatedAt: '2026-05-03T13:00:00.000Z',
-      grants: [
+      grantTotals: [
+        {
+          grant_count: '1',
+          source: 'allow_page',
+          status: 'active',
+        },
+        {
+          grant_count: 1,
+          source: 'oidc',
+          status: 'revoked',
+        },
+      ],
+      oidcClientSummaries: [
+        {
+          active_grant_count: 0,
+          client_id: 'client_tcoin',
+          client_name: 'TCOIN',
+          last_granted_at: '2026-05-03T11:00:00.000Z',
+          last_revoked_at: '2026-05-03T12:00:00.000Z',
+          revoked_grant_count: '1',
+          sources: { oidc: 1 },
+        },
+      ],
+      recentEventCount: 234,
+      recentGrants: [
         {
           app_scoped_subject_id: 'subject_1',
           consent_version: 1,
@@ -60,27 +95,13 @@ describe('Disclosure operations helpers', () => {
           updated_at: '2026-05-03T12:00:00.000Z',
         },
       ],
-      subjects: [
-        {
-          app_identifier: 'dapp:42',
-          dapp_id: 42,
-          id: 'subject_1',
-          status: 'active',
-          subject_type: 'human',
-        },
-        {
-          app_identifier: 'oidc:client_tcoin',
-          dapp_id: null,
-          id: 'subject_2',
-          status: 'active',
-          subject_type: 'human',
-        },
-      ],
     });
 
     expect(overview.totals).toMatchObject({
       activeGrants: 1,
       activeSubjects: 2,
+      recentGrantEvents7d: 234,
+      recentGrantSamples: 2,
       revokedGrants: 1,
     });
     expect(overview.totals.grantsBySource).toEqual({

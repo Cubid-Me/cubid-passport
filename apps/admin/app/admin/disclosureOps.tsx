@@ -278,8 +278,8 @@ export default function DisclosureOps() {
             value={overview.totals.recentGrantEvents7d}
           />
           <MetricCard
-            label='Rows scanned'
-            value={overview.totals.grantRowsScanned}
+            label='Grant samples'
+            value={overview.totals.recentGrantSamples}
           />
         </div>
         <p className='mt-3 text-xs text-gray-500'>

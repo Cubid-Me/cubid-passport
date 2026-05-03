@@ -188,6 +188,11 @@ API security baseline, and returns:
 - recent disclosure events with raw subject IDs, grant IDs, Cubid user IDs, and
   dapp user UUIDs redacted from event details
 
+The overview uses service-role SQL aggregate functions for totals, per-dapp
+summaries, per-OIDC-client summaries, active subject count, and 7-day event
+count. The API only samples recent grant rows for compact UI detail cards, so
+operator totals do not depend on capped PostgREST result windows.
+
 Operator-driven revocation, repair, or data backfill from Admin is out of scope
 until there is a separate authorization design. Production backfills should use
 the Passport server script and normal deployment controls, not a browser UI.

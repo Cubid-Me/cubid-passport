@@ -4346,3 +4346,35 @@ Complete `E01.2` by adding read-only Admin/Ops visibility for app-scoped subject
 #### Follow-up
 
 - yeet the E01 closeout branch for review, then start the next platform slice from `dev`
+
+### session: v152
+
+- timestamp: 2026-05-03T20:54:11Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-closeout-reconciliation**
+- head: **`6b99aa6`**
+- session name: **Address PR 157 disclosure ops review**
+
+#### Objective
+
+Address Copilot and Codex review comments on PR 157 before completing the yeet review flow.
+
+#### Actions Taken
+
+- replaced Disclosure Ops sample-derived totals with service-role SQL aggregate functions for grant totals, active subject counts, 7-day event counts, dapp summaries, and OIDC-client summaries
+- changed the Admin overview payload so sampled recent grants are labeled as samples rather than scanned totals
+- paginated the legacy stamp-permission backfill script and batched reference lookups per page
+- updated tests and engineering docs for the aggregate-backed operations contract
+
+#### Verification
+
+- `pnpm --filter @cubid/admin test`
+- `pnpm --filter @cubid/admin typecheck`
+- `pnpm --filter @cubid/admin build`
+- `pnpm --filter @cubid/passport typecheck`
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/passport test'`
+- `git diff --check`
+
+#### Follow-up
+
+- push the review fixes, confirm CI is green again, reply to and resolve the Copilot and Codex review threads

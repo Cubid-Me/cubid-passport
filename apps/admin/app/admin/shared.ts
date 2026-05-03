@@ -220,8 +220,8 @@ export interface DisclosureOpsOverviewPayload {
     activeSubjects: number;
     grantsBySource: Record<string, number>;
     grantsByStatus: Record<string, number>;
-    grantRowsScanned: number;
     recentGrantEvents7d: number;
+    recentGrantSamples: number;
     revokedGrants: number;
   };
 }
