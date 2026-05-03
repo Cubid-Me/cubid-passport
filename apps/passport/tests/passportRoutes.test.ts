@@ -633,6 +633,25 @@ test("Passport v2 save_secret is removed and never writes plaintext secrets", as
   })
   assert.equal(supabase.dappUserSecrets.length, 0)
   assert.equal(supabase.privateDappUserSecrets.length, 0)
+
+  const optionsReq = createApiRequest({
+    headers: {
+      origin: "https://passport.cubid.me",
+      "x-request-id": "passport_v2_secret_options",
+    },
+    method: "OPTIONS",
+    url: "/api/v2/save_secret",
+  })
+  const optionsRes = createApiResponse()
+
+  await saveSecretV2Handler(optionsReq, optionsRes)
+
+  assert.equal(optionsRes.statusCode, 200)
+  assert.equal(optionsRes.headers["x-request-id"], "passport_v2_secret_options")
+  assert.equal(
+    optionsRes.headers["access-control-allow-origin"],
+    "https://passport.cubid.me"
+  )
 })
 
 test("Passport v3 save_secret stores only encrypted dapp user secrets", async () => {

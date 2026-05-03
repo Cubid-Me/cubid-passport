@@ -4488,3 +4488,32 @@ Record the implementation commit for `C05.1.1` after the legacy public dapp-user
 #### Follow-up
 
 - yeet the C05 custody branch for review, or continue with a narrow post-backfill physical-removal todo once production verification is available
+
+### session: v157
+
+- timestamp: 2026-05-03T21:43:18Z
+- agent: **OpenAI Codex**
+- branch: **codex/c05-2-1-sui-v3-custody**
+- head: **`67ee15a`**
+- session name: **Address PR 158 removed endpoint review**
+
+#### Objective
+
+Address Codex review feedback on PR 158 so the removed `/api/v2/save_secret` endpoint still participates in the shared Passport route baseline.
+
+#### Actions Taken
+
+- routed the removed v2 secret endpoint through `handlePassportRoute` with an anonymous actor and explicit `POST` method contract
+- preserved the `410 endpoint_removed` response while restoring CORS and `OPTIONS` preflight handling for browser callers
+- added regression coverage for the removed endpoint's allowed-origin preflight response
+
+#### Verification
+
+- `pnpm --filter @cubid/passport typecheck`
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/passport test'`
+- `pnpm --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- commit and push the review fix, reply to and resolve the Codex thread, then re-check CI
