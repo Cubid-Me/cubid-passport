@@ -105,8 +105,7 @@ Rules:
 
 - `Idempotency-Key` is required.
 - `dapp_user_uuid` must belong to the authenticated dapp.
-- Supported generated chains are currently `evm`, `near`, and `solana`. Sui is
-  explicitly deferred to `C05.2.1`.
+- Supported generated chains are currently `evm`, `near`, `solana`, and `sui`.
 - The route creates `public.user_accounts`, encrypted `private.private_keys`,
   and one `public.dapp_user_accounts` link for the triggering dapp user.
 - If private-key or link creation fails, the route performs compensating cleanup
@@ -152,7 +151,7 @@ Request body:
 Rules:
 
 - `dapp_user_uuid` must belong to the authenticated dapp.
-- `chain` is optional and filters to `evm`, `near`, or `solana` when present.
+- `chain` is optional and filters to `evm`, `near`, `solana`, or `sui` when present.
 - Only active dapp-user account links and active user accounts are returned.
 
 Success response shape:

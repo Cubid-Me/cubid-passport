@@ -456,12 +456,12 @@ Remove ambiguous plaintext custody for blockchain private keys across EVM, NEAR,
 
 ### C05.2.1 Add Sui support to v3 blockchain account custody
 
-- Status: Not started
-- Timestamp started: TBD
-- Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Status: Completed
+- Timestamp started: 2026-05-03T21:18:25Z
+- Timestamp completed: 2026-05-03T21:21:07Z
+- Feature branch: codex/c05-2-1-sui-v3-custody
+- Head: 77b7290
+- Session-log reference(s): session: v153
 
 Add Sui to the v3 blockchain account custody surface after selecting and validating the repo-supported Sui SDK. Extend `public.ref_chains` with Sui metadata, add the Sui keypair generator, normalize Sui public-address handling, and add route/helper tests proving `/api/v3/accounts/generate` and `/api/v3/accounts/list` work without returning private-key material. Keep the same C05 Vault envelope-encryption model and `private.private_keys` storage contract used for EVM, NEAR, and Solana. This follow-up should not alter legacy v2 wallet APIs; it should only expand the v3 route surface once the Sui dependency and address format are intentionally locked.
 

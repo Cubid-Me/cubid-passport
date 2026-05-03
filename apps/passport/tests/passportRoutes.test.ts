@@ -1054,7 +1054,7 @@ test("Passport v3 account generation rejects dapp users outside the authenticate
   assert.equal(supabase.dappUserAccounts.length, 0)
 })
 
-test("Passport v3 account generation rejects unsupported Sui requests", async () => {
+test("Passport v3 account generation supports Sui without exposing private keys", async () => {
   const supabase = new MockPassportSupabase()
   const apiKey = addDappAuth(supabase)
   const dappUserUuid = "00000000-0000-4000-8000-000000000054"
@@ -1077,9 +1077,18 @@ test("Passport v3 account generation rejects unsupported Sui requests", async ()
 
   await generateAccountV3Handler(req, res)
 
-  assert.equal(res.statusCode, 400)
-  assert.equal((res.body as { error: { code: string } }).error.code, "invalid_request")
-  assert.equal(supabase.userAccounts.length, 0)
+  assert.equal(res.statusCode, 200)
+  const body = res.body as DataResponse<Record<string, unknown>>
+  assert.equal(body.data.chain, "sui")
+  assert.equal(String(body.data.publicAddress).startsWith("0x"), true)
+  assert.equal(JSON.stringify(res.body).includes("suiprivkey"), false)
+  assert.equal(JSON.stringify(res.body).includes("ciphertext"), false)
+  assert.equal(JSON.stringify(res.body).includes("private"), false)
+  assert.equal(supabase.userAccounts.length, 1)
+  assert.equal(supabase.userAccounts[0]?.chain_key, "sui")
+  assert.equal(supabase.privateKeys.length, 1)
+  assert.equal(supabase.privateKeys[0]?.chain_key, "sui")
+  assert.equal(supabase.dappUserAccounts.length, 1)
 })
 
 test("Passport v3 account generation replays Idempotency-Key writes without creating duplicate accounts", async () => {

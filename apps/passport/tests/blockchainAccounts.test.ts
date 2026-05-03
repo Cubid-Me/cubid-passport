@@ -88,13 +88,18 @@ test("blockchain private-key envelope rejects the wrong wrapping key", () => {
   )
 })
 
-test("generated blockchain accounts support evm near and solana without exposing empty keys", () => {
-  for (const chain of ["evm", "near", "solana"] as const) {
+test("generated blockchain accounts support evm near solana and sui without exposing empty keys", () => {
+  for (const chain of ["evm", "near", "solana", "sui"] as const) {
     const account = generateBlockchainAccount(chain)
 
     assert.equal(account.chainKey, chain)
     assert.ok(account.publicAddress.length > 10)
     assert.ok(account.privateKey.length > 10)
+
+    if (chain === "sui") {
+      assert.equal(account.publicAddress.startsWith("0x"), true)
+      assert.equal(account.privateKey.startsWith("suiprivkey"), true)
+    }
   }
 })
 
@@ -102,4 +107,5 @@ test("public address normalization preserves case-sensitive Solana addresses", (
   assert.equal(normalizePublicAddress("evm", "0xABC"), "0xabc")
   assert.equal(normalizePublicAddress("near", "ED25519:ABC"), "ed25519:abc")
   assert.equal(normalizePublicAddress("solana", "SoLaNaAbC"), "SoLaNaAbC")
+  assert.equal(normalizePublicAddress("sui", "0xABC"), "0xabc")
 })

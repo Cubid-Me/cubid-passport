@@ -4378,3 +4378,33 @@ Address Copilot and Codex review comments on PR 157 before completing the yeet r
 #### Follow-up
 
 - push the review fixes, confirm CI is green again, reply to and resolve the Copilot and Codex review threads
+
+### session: v153
+
+- timestamp: 2026-05-03T21:21:07Z
+- agent: **OpenAI Codex**
+- branch: **codex/c05-2-1-sui-v3-custody**
+- head: **`77b7290`**
+- session name: **Add Sui v3 blockchain custody support**
+
+#### Objective
+
+Complete `C05.2.1` by adding Sui to the v3 custodial blockchain account surface while preserving the C05 envelope-encryption and non-exposure rules.
+
+#### Actions Taken
+
+- added `@mysten/sui` to the Passport workspace and wired Sui Ed25519 account generation into the shared v3 blockchain custody helper
+- added Sui to the v3 account generate/list validation schemas and the supported-chain metadata migration path
+- updated helper, route, and docs coverage so Sui private keys remain encrypted-only and public addresses are normalized as lowercase `0x` values
+- created a handoff note for the public SDK agents because `chain: "sui"` is an additive API v3 SDK-facing capability
+
+#### Verification
+
+- `pnpm --filter @cubid/passport typecheck`
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/passport test'`
+- `pnpm --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- yeet the C05.2.1 branch for review, then continue with `C05.1.1` public dapp-user-secret legacy table quarantine or the next API v3 custody hardening slice

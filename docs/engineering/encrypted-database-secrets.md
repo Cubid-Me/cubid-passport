@@ -127,8 +127,10 @@ account metadata separately from encrypted private-key material:
 The `private` schema is service-role-only. Browser, Admin list, and dapp
 responses must never return raw private keys, ciphertext, wrapped data keys,
 IVs, authentication tags, or Vault material. V3 account generation currently
-supports EVM, NEAR, and Solana. Sui is deferred until a Sui SDK and address
-normalization contract are selected.
+supports EVM, NEAR, Solana, and Sui. Sui accounts use Ed25519 keypairs from
+`@mysten/sui`, store the SDK `suiprivkey` value only inside the encrypted
+`private.private_keys` envelope, and normalize public Sui addresses as
+lowercase `0x` values.
 
 The required Vault secret is
 `passport_blockchain_private_key_wrapping_key_v1`. It must be a base64 or
