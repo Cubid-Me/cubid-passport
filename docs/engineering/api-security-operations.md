@@ -230,7 +230,8 @@ secret before enabling v3 writes or running the legacy backfill script. The
 legacy `/api/v2/save_secret` route is removed and returns `410 endpoint_removed`.
 The legacy `public.dapp_user_secrets` table is quarantined as service-role
 read-only backfill/audit input; new writes must use v3 encrypted private-schema
-custody.
+custody. The quarantine blocks inserts and updates but preserves cascaded
+cleanup deletes from owning dapp-user records.
 
 Webhook signing secrets use the same C05 envelope model because Passport must
 recover them to sign outbound webhook deliveries. Admin-created subscriptions

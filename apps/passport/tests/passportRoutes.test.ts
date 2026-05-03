@@ -1377,11 +1377,11 @@ test("Passport v3 account list validates auth, payloads, ownership, and chain fi
     createApiRequest({
       body: {
         api_key: apiKey,
-        chain: "solana",
+        chain: "sui",
         dapp_user_uuid: dappUserUuid,
       },
       headers: {
-        "idempotency-key": "generate-solana-for-filter",
+        "idempotency-key": "generate-sui-for-filter",
         origin: "https://passport.cubid.me",
       },
       url: "/api/v3/accounts/generate",
@@ -1394,7 +1394,7 @@ test("Passport v3 account list validates auth, payloads, ownership, and chain fi
     createApiRequest({
       body: {
         api_key: apiKey,
-        chain: "evm",
+        chain: "sui",
         dapp_user_uuid: dappUserUuid,
       },
       headers: {
@@ -1409,7 +1409,9 @@ test("Passport v3 account list validates auth, payloads, ownership, and chain fi
   assert.equal(filteredRes.statusCode, 200)
   assert.equal(filteredRes.headers["x-request-id"], "passport_v3_list_filter")
   assert.equal(accounts.length, 1)
-  assert.equal(accounts[0].chain, "evm")
+  assert.equal(accounts[0].chain, "sui")
+  assert.equal(String(accounts[0].publicAddress).startsWith("0x"), true)
+  assert.equal(JSON.stringify(filteredRes.body).includes("private"), false)
 })
 
 test("Passport internal webhook trigger rejects missing internal bearer tokens", async () => {

@@ -57,7 +57,9 @@ already-created plaintext rows can be audited/backfilled into private encrypted
 custody. `/api/v2/save_secret` is removed and must not write new plaintext
 rows. The quarantine migration revokes broad public grants, leaves
 `service_role` with read-only access for backfill/audit, and installs a trigger
-that rejects new inserts, updates, and deletes on the public table.
+that rejects new inserts and updates on the public table. Deletes are not
+blocked so existing `ON DELETE CASCADE` cleanup from `public.dapp_users` can
+still remove legacy rows.
 
 The required Vault secret is `passport_dapp_user_secret_wrapping_key_v1`. It
 must be a base64 or base64url encoded 32-byte value and must be provisioned

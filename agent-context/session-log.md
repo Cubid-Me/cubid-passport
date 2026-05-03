@@ -4517,3 +4517,32 @@ Address Codex review feedback on PR 158 so the removed `/api/v2/save_secret` end
 #### Follow-up
 
 - commit and push the review fix, reply to and resolve the Codex thread, then re-check CI
+
+### session: v158
+
+- timestamp: 2026-05-03T21:45:21Z
+- agent: **OpenAI Codex**
+- branch: **codex/c05-2-1-sui-v3-custody**
+- head: **`df02adb`**
+- session name: **Address PR 158 Copilot custody comments**
+
+#### Objective
+
+Address the remaining Copilot review comments on PR 158 after the first removed-endpoint CORS fix was pushed.
+
+#### Actions Taken
+
+- adjusted the public dapp-user-secret quarantine trigger to reject inserts and updates without blocking cascaded cleanup deletes
+- updated custody docs to clarify that deletes remain available for `ON DELETE CASCADE` cleanup
+- added a Sui list/filter regression test for API v3 generated account listing
+
+#### Verification
+
+- `pnpm --filter @cubid/passport typecheck`
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/passport test'`
+- `pnpm --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- commit and push the Copilot fixes, reply to and resolve all review threads, then re-check CI

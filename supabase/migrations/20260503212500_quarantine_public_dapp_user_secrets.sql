@@ -10,7 +10,7 @@ grant select on table public.dapp_user_secrets to service_role;
 
 revoke all on sequence public.dapp_user_secrets_id_seq from service_role;
 
-create or replace function public.reject_public_dapp_user_secrets_writes()
+create or replace function public.reject_public_dapp_user_secrets_mutations()
 returns trigger
 language plpgsql
 as $$
@@ -22,10 +22,12 @@ $$;
 
 drop trigger if exists reject_public_dapp_user_secrets_writes
   on public.dapp_user_secrets;
+drop trigger if exists reject_public_dapp_user_secrets_mutations
+  on public.dapp_user_secrets;
 
-create trigger reject_public_dapp_user_secrets_writes
-before insert or update or delete on public.dapp_user_secrets
-for each row execute function public.reject_public_dapp_user_secrets_writes();
+create trigger reject_public_dapp_user_secrets_mutations
+before insert or update on public.dapp_user_secrets
+for each row execute function public.reject_public_dapp_user_secrets_mutations();
 
 comment on table public.dapp_user_secrets is
-  'Quarantined legacy plaintext dapp-user-secret table. Retained only for service-role backfill/audit reads; new writes must use private.dapp_user_secrets through API v3.';
+  'Quarantined legacy plaintext dapp-user-secret table. Retained only for service-role backfill/audit reads and cascaded cleanup deletes; new writes must use private.dapp_user_secrets through API v3.';
