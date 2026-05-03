@@ -4408,3 +4408,28 @@ Complete `C05.2.1` by adding Sui to the v3 custodial blockchain account surface 
 #### Follow-up
 
 - yeet the C05.2.1 branch for review, then continue with `C05.1.1` public dapp-user-secret legacy table quarantine or the next API v3 custody hardening slice
+
+### session: v154
+
+- timestamp: 2026-05-03T21:21:47Z
+- agent: **OpenAI Codex**
+- branch: **codex/c05-2-1-sui-v3-custody**
+- head: **`07417d1`**
+- session name: **Close C05.2.1 metadata**
+
+#### Objective
+
+Record the implementation commit for `C05.2.1` after the Sui v3 custody slice landed and passed validation.
+
+#### Actions Taken
+
+- updated `agent-context/todo.md` so `C05.2.1` references implementation commit `07417d1`
+- kept the follow-up SDK handoff note in the public SDK repo message queue for SDK agents to consume
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- yeet the C05.2.1 branch for review, then continue with `C05.1.1` or the next API v3 custody hardening slice
