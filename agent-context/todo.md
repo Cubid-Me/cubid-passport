@@ -438,8 +438,8 @@ Migrate dapp user secret custody away from plaintext storage using the C05 Supab
 - Timestamp started: 2026-05-03T21:25:01Z
 - Timestamp completed: 2026-05-03T21:26:52Z
 - Feature branch: codex/c05-2-1-sui-v3-custody
-- Head: 07f9378
-- Session-log reference(s): session: v155
+- Head: 99e8c4e
+- Session-log reference(s): session: v155, session: v156
 
 Permanently quarantine the legacy `public.dapp_user_secrets` plaintext table while preserving already-existing rows as service-role-only backfill/audit input. `/api/v2/save_secret` must no longer write plaintext rows and should return a clear removed-endpoint response that points callers at `/api/v3/save_secret`. The database should revoke broad public, anon, and authenticated grants, leave only the minimum `service_role` read access needed by the backfill script, and reject all new inserts, updates, or deletes against the public table. Keep physical table removal deferred until production confirms all historical rows have been backfilled into `private.dapp_user_secrets` and legacy retention/export needs are resolved.
 

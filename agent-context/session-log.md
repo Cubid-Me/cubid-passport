@@ -4463,3 +4463,28 @@ Complete `C05.1.1` by quarantining legacy public plaintext dapp-user-secret stor
 #### Follow-up
 
 - physically remove the legacy public table only after production backfill, audit, and retention/export decisions are complete
+
+### session: v156
+
+- timestamp: 2026-05-03T21:27:46Z
+- agent: **OpenAI Codex**
+- branch: **codex/c05-2-1-sui-v3-custody**
+- head: **`99e8c4e`**
+- session name: **Close C05.1.1 metadata**
+
+#### Objective
+
+Record the implementation commit for `C05.1.1` after the legacy public dapp-user-secret quarantine landed and passed validation.
+
+#### Actions Taken
+
+- updated `agent-context/todo.md` so `C05.1.1` references implementation commit `99e8c4e`
+- kept the physical table-removal follow-up deferred until production backfill, audit, and retention/export decisions are complete
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- yeet the C05 custody branch for review, or continue with a narrow post-backfill physical-removal todo once production verification is available
