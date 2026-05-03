@@ -867,6 +867,41 @@ test("Passport v3 save_secret rejects missing, conflicting, and pending idempote
     (pendingRes.body as { error: { code: string } }).error.code,
     "request_in_progress"
   )
+
+  supabase.apiIdempotencyKeys.push({
+    actor_identifier: "42",
+    actor_type: "dapp",
+    expires_at: new Date(Date.now() + 60000).toISOString(),
+    idempotency_key: "save-secret-failed",
+    request_hash: hashApiV3IdempotencyRequest(body),
+    request_id: "passport_failed_1",
+    route: "v3.save_secret",
+    status: "failed",
+  })
+  const priorSecretCount = supabase.privateDappUserSecrets.length
+  const failedRetryRes = createApiResponse()
+  await saveSecretV3Handler(
+    createApiRequest({
+      body,
+      headers: {
+        "idempotency-key": "save-secret-failed",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/save_secret",
+    }),
+    failedRetryRes
+  )
+  assert.equal(failedRetryRes.statusCode, 200)
+  assert.equal(
+    supabase.privateDappUserSecrets.length,
+    priorSecretCount + 1
+  )
+  assert.equal(
+    supabase.apiIdempotencyKeys.find(
+      (row) => row.idempotency_key === "save-secret-failed"
+    )?.status,
+    "completed"
+  )
 })
 
 test("Passport v3 save_secret rejects dapp-id mismatches and rate-limit denials", async () => {

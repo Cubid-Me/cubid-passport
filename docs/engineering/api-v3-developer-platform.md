@@ -291,10 +291,10 @@ Current E02 coordination status:
 
 - E02.5 was documentation-only and did not require an outbound SDK handoff.
 - E02.6 created
-  `/Users/botmaster/src/cubid/cubid-sdk-v2/agent-context/messages-from-cubid-passport/2026-05-03-e02-6-api-v3-idempotency.md`
+  `Cubid-Me/cubid-sdk:agent-context/messages-from-cubid-passport/2026-05-03-e02-6-api-v3-idempotency.md`
   for the required `Idempotency-Key` write-route contract.
 - E02.7 created
-  `/Users/botmaster/src/cubid/cubid-sdk-v2/agent-context/messages-from-cubid-passport/2026-05-03-e02-7-api-v3-webhooks.md`
+  `Cubid-Me/cubid-sdk:agent-context/messages-from-cubid-passport/2026-05-03-e02-7-api-v3-webhooks.md`
   for the canonical v3 webhook payload/signature contract.
 - As of E02.8, there are no incoming SDK-agent notes in
   `agent-context/messages-from-cubid-sdk/` in this repo.

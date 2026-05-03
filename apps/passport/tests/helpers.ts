@@ -243,24 +243,36 @@ export class MockPassportSupabase {
         select: createFilteredQuery,
         update: (patch: Record<string, unknown>) => {
           const filters: Record<string, unknown> = {}
+          const updateRows = () => {
+            const updatedRows: Record<string, unknown>[] = []
+            for (const row of this.apiIdempotencyKeys) {
+              if (
+                Object.entries(filters).every(
+                  ([filterColumn, filterValue]) =>
+                    String(row[filterColumn]) === String(filterValue)
+                )
+              ) {
+                Object.assign(row, patch)
+                updatedRows.push(row)
+              }
+            }
+            return updatedRows
+          }
           const updateQuery = {
             eq: (column: string, value: unknown) => {
               filters[column] = value
               return updateQuery
             },
             then: (resolveThen: (value: { error: null }) => unknown) => {
-              for (const row of this.apiIdempotencyKeys) {
-                if (
-                  Object.entries(filters).every(
-                    ([filterColumn, filterValue]) =>
-                      String(row[filterColumn]) === String(filterValue)
-                  )
-                ) {
-                  Object.assign(row, patch)
-                }
-              }
+              updateRows()
               return Promise.resolve({ error: null }).then(resolveThen)
             },
+            select: () => ({
+              maybeSingle: async () => {
+                const updatedRows = updateRows()
+                return { data: updatedRows[0] ?? null, error: null }
+              },
+            }),
           }
           return updateQuery
         },

@@ -4198,3 +4198,33 @@ Close E02.8 by confirming API v3 SDK-impact coordination is recorded without mov
 #### Follow-up
 
 - either yeet this feature branch for review or continue with the next backend-owned developer-platform track after E02
+
+### session: v147
+
+- timestamp: 2026-05-03T01:01:37Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-disclosure-claim-taxonomy**
+- head: **`b5dc1ec`**
+- session name: **Address PR 156 Copilot review feedback**
+
+#### Objective
+
+Address Copilot review comments on PR 156 before requesting Codex review.
+
+#### Actions Taken
+
+- made failed API v3 idempotency records re-claimable through a conditional pending transition before retrying write side effects
+- added regression coverage for retrying a failed idempotent `save_secret` request
+- updated the webhook migration to replace the legacy one-row-per-event delivery uniqueness constraint with one-row-per-attempt uniqueness
+- replaced machine-local SDK handoff paths in the API v3 engineering doc with SDK-repo-relative references
+
+#### Verification
+
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/passport test'`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- push the Copilot fixes, confirm CI is green again, reply to and resolve the review threads, then request Codex review if no Codex review exists yet

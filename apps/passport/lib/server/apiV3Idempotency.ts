@@ -122,6 +122,22 @@ const handleExistingRecord = (
   return null
 }
 
+const pendingPatch = (input: {
+  expiresAt: string
+  requestHash: string
+  requestId: string
+}) => ({
+  completed_at: null,
+  expires_at: input.expiresAt,
+  failed_at: null,
+  request_hash: input.requestHash,
+  request_id: input.requestId,
+  response_body: null,
+  response_status: null,
+  status: "pending",
+  updated_at: new Date().toISOString(),
+})
+
 export async function runApiV3IdempotentWrite(input: {
   actorIdentifier: string
   actorType: string
@@ -152,39 +168,84 @@ export async function runApiV3IdempotentWrite(input: {
   }
 
   if (existingRecord) {
+    const record = existingRecord as ApiV3IdempotencyRecord
+
     if (isExpiredRecord(existingRecord as ApiV3IdempotencyRecord)) {
-      const { error: reclaimError } = await input.supabase
+      const { data: reclaimedRecord, error: reclaimError } = await input.supabase
         .from("api_idempotency_keys")
-        .update({
-          completed_at: null,
-          expires_at: expiresAt,
-          failed_at: null,
-          request_hash: requestHash,
-          request_id: input.requestId,
-          response_body: null,
-          response_status: null,
-          status: "pending",
-          updated_at: new Date().toISOString(),
-        })
+        .update(pendingPatch({ expiresAt, requestHash, requestId: input.requestId }))
         .eq("route", input.route)
         .eq("actor_type", input.actorType)
         .eq("actor_identifier", input.actorIdentifier)
         .eq("idempotency_key", input.idempotencyKey)
+        .eq("status", record.status)
+        .select("*")
+        .maybeSingle()
 
       if (reclaimError) {
         throw reclaimError
       }
 
+      if (!reclaimedRecord) {
+        const { data: currentRecord, error: currentError } = await lookup()
+
+        if (currentError) {
+          throw currentError
+        }
+
+        if (currentRecord) {
+          const replay = handleExistingRecord(
+            currentRecord as ApiV3IdempotencyRecord,
+            requestHash
+          )
+
+          if (replay) {
+            return replay
+          }
+        }
+
+        throw new ApiSecurityError(
+          409,
+          "request_in_progress",
+          "A request with this Idempotency-Key is still in progress."
+        )
+      }
+
       hasClaimedRecord = true
     } else {
       const replay = handleExistingRecord(
-        existingRecord as ApiV3IdempotencyRecord,
+        record,
         requestHash
       )
 
       if (replay) {
         return replay
       }
+
+      const { data: reclaimedRecord, error: reclaimError } = await input.supabase
+        .from("api_idempotency_keys")
+        .update(pendingPatch({ expiresAt, requestHash, requestId: input.requestId }))
+        .eq("route", input.route)
+        .eq("actor_type", input.actorType)
+        .eq("actor_identifier", input.actorIdentifier)
+        .eq("idempotency_key", input.idempotencyKey)
+        .eq("status", record.status)
+        .select("*")
+        .maybeSingle()
+
+      if (reclaimError) {
+        throw reclaimError
+      }
+
+      if (!reclaimedRecord) {
+        throw new ApiSecurityError(
+          409,
+          "request_in_progress",
+          "A request with this Idempotency-Key is still in progress."
+        )
+      }
+
+      hasClaimedRecord = true
     }
   }
 
@@ -222,6 +283,12 @@ export async function runApiV3IdempotentWrite(input: {
         if (replay) {
           return replay
         }
+
+        throw new ApiSecurityError(
+          409,
+          "request_in_progress",
+          "A request with this Idempotency-Key is still in progress."
+        )
       }
     }
   }

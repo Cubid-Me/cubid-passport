@@ -17,6 +17,12 @@ alter table if exists public.webhook_event_deliveries
   add column if not exists event_id text,
   add column if not exists signature_version text;
 
+alter table if exists public.webhook_event_deliveries
+  drop constraint if exists unique_delivery_attempt;
+
+create unique index if not exists webhook_event_deliveries_attempt_idx
+  on public.webhook_event_deliveries (webhook_event_id, dapp_id, attempt_number);
+
 create index if not exists webhook_event_deliveries_event_id_idx
   on public.webhook_event_deliveries (event_id)
   where event_id is not null;
