@@ -4228,3 +4228,31 @@ Address Copilot review comments on PR 156 before requesting Codex review.
 #### Follow-up
 
 - push the Copilot fixes, confirm CI is green again, reply to and resolve the review threads, then request Codex review if no Codex review exists yet
+
+### session: v148
+
+- timestamp: 2026-05-03T01:07:47Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-disclosure-claim-taxonomy**
+- head: **`c0f9bf3`**
+- session name: **Tighten failed API v3 idempotency semantics**
+
+#### Objective
+
+Address the Codex review finding that failed idempotency records must not re-run writes after possible partial side effects.
+
+#### Actions Taken
+
+- changed non-expired failed API v3 idempotency records to return terminal `409 idempotency_failed` instead of retrying the handler
+- preserved conditional reclaim only for expired idempotency records, where the original retention contract has elapsed
+- updated Passport route tests so failed-key retries prove no additional secret row is written
+
+#### Verification
+
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/passport test'`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+
+#### Follow-up
+
+- push the terminal failed-idempotency fix, confirm CI is green, then reply to and resolve the Copilot and Codex review threads

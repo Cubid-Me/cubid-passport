@@ -891,16 +891,20 @@ test("Passport v3 save_secret rejects missing, conflicting, and pending idempote
     }),
     failedRetryRes
   )
-  assert.equal(failedRetryRes.statusCode, 200)
+  assert.equal(failedRetryRes.statusCode, 409)
+  assert.equal(
+    (failedRetryRes.body as { error: { code: string } }).error.code,
+    "idempotency_failed"
+  )
   assert.equal(
     supabase.privateDappUserSecrets.length,
-    priorSecretCount + 1
+    priorSecretCount
   )
   assert.equal(
     supabase.apiIdempotencyKeys.find(
       (row) => row.idempotency_key === "save-secret-failed"
     )?.status,
-    "completed"
+    "failed"
   )
 })
 
