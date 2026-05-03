@@ -54,6 +54,9 @@ Purpose: store a retrievable dapp-user secret using the v3 encrypted custody
 model. This is the encrypted replacement for legacy `/api/v2/save_secret`; it
 does not add a public retrieval endpoint.
 
+Legacy `/api/v2/save_secret` is removed and returns `410 endpoint_removed`.
+Callers that need to store dapp-user secrets must migrate to this v3 route.
+
 Request body:
 
 ```json
@@ -105,8 +108,7 @@ Rules:
 
 - `Idempotency-Key` is required.
 - `dapp_user_uuid` must belong to the authenticated dapp.
-- Supported generated chains are currently `evm`, `near`, and `solana`. Sui is
-  explicitly deferred to `C05.2.1`.
+- Supported generated chains are currently `evm`, `near`, `solana`, and `sui`.
 - The route creates `public.user_accounts`, encrypted `private.private_keys`,
   and one `public.dapp_user_accounts` link for the triggering dapp user.
 - If private-key or link creation fails, the route performs compensating cleanup
@@ -152,7 +154,7 @@ Request body:
 Rules:
 
 - `dapp_user_uuid` must belong to the authenticated dapp.
-- `chain` is optional and filters to `evm`, `near`, or `solana` when present.
+- `chain` is optional and filters to `evm`, `near`, `solana`, or `sui` when present.
 - Only active dapp-user account links and active user accounts are returned.
 
 Success response shape:

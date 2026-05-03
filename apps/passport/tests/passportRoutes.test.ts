@@ -599,7 +599,7 @@ test("Passport v2 create_user rejects malformed dapp payloads before execution",
   )
 })
 
-test("Passport v2 save_secret keeps legacy public-table behavior", async () => {
+test("Passport v2 save_secret is removed and never writes plaintext secrets", async () => {
   const supabase = new MockPassportSupabase()
   const apiKey = addDappAuth(supabase)
   const userId = "00000000-0000-4000-8000-000000000041"
@@ -613,6 +613,7 @@ test("Passport v2 save_secret keeps legacy public-table behavior", async () => {
     },
     headers: {
       origin: "https://passport.cubid.me",
+      "x-request-id": "passport_v2_secret_removed",
     },
     url: "/api/v2/save_secret",
   })
@@ -620,12 +621,37 @@ test("Passport v2 save_secret keeps legacy public-table behavior", async () => {
 
   await saveSecretV2Handler(req, res)
 
-  assert.equal(res.statusCode, 200)
-  assert.deepEqual(res.body, { success: true })
-  assert.equal(supabase.dappUserSecrets.length, 1)
+  assert.equal(res.statusCode, 410)
+  assert.equal(res.headers["x-request-id"], "passport_v2_secret_removed")
+  assert.deepEqual(res.body, {
+    error: {
+      code: "endpoint_removed",
+      message:
+        "Legacy plaintext dapp user secret writes have been removed. Use /api/v3/save_secret.",
+      requestId: "passport_v2_secret_removed",
+    },
+  })
+  assert.equal(supabase.dappUserSecrets.length, 0)
   assert.equal(supabase.privateDappUserSecrets.length, 0)
-  assert.equal(supabase.dappUserSecrets[0].secret, "legacy plaintext dapp user secret")
-  assert.equal(supabase.dappUserSecrets[0].secret_sequential_id, 1)
+
+  const optionsReq = createApiRequest({
+    headers: {
+      origin: "https://passport.cubid.me",
+      "x-request-id": "passport_v2_secret_options",
+    },
+    method: "OPTIONS",
+    url: "/api/v2/save_secret",
+  })
+  const optionsRes = createApiResponse()
+
+  await saveSecretV2Handler(optionsReq, optionsRes)
+
+  assert.equal(optionsRes.statusCode, 200)
+  assert.equal(optionsRes.headers["x-request-id"], "passport_v2_secret_options")
+  assert.equal(
+    optionsRes.headers["access-control-allow-origin"],
+    "https://passport.cubid.me"
+  )
 })
 
 test("Passport v3 save_secret stores only encrypted dapp user secrets", async () => {
@@ -1054,7 +1080,7 @@ test("Passport v3 account generation rejects dapp users outside the authenticate
   assert.equal(supabase.dappUserAccounts.length, 0)
 })
 
-test("Passport v3 account generation rejects unsupported Sui requests", async () => {
+test("Passport v3 account generation supports Sui without exposing private keys", async () => {
   const supabase = new MockPassportSupabase()
   const apiKey = addDappAuth(supabase)
   const dappUserUuid = "00000000-0000-4000-8000-000000000054"
@@ -1077,9 +1103,18 @@ test("Passport v3 account generation rejects unsupported Sui requests", async ()
 
   await generateAccountV3Handler(req, res)
 
-  assert.equal(res.statusCode, 400)
-  assert.equal((res.body as { error: { code: string } }).error.code, "invalid_request")
-  assert.equal(supabase.userAccounts.length, 0)
+  assert.equal(res.statusCode, 200)
+  const body = res.body as DataResponse<Record<string, unknown>>
+  assert.equal(body.data.chain, "sui")
+  assert.equal(String(body.data.publicAddress).startsWith("0x"), true)
+  assert.equal(JSON.stringify(res.body).includes("suiprivkey"), false)
+  assert.equal(JSON.stringify(res.body).includes("ciphertext"), false)
+  assert.equal(JSON.stringify(res.body).includes("private"), false)
+  assert.equal(supabase.userAccounts.length, 1)
+  assert.equal(supabase.userAccounts[0]?.chain_key, "sui")
+  assert.equal(supabase.privateKeys.length, 1)
+  assert.equal(supabase.privateKeys[0]?.chain_key, "sui")
+  assert.equal(supabase.dappUserAccounts.length, 1)
 })
 
 test("Passport v3 account generation replays Idempotency-Key writes without creating duplicate accounts", async () => {
@@ -1342,11 +1377,11 @@ test("Passport v3 account list validates auth, payloads, ownership, and chain fi
     createApiRequest({
       body: {
         api_key: apiKey,
-        chain: "solana",
+        chain: "sui",
         dapp_user_uuid: dappUserUuid,
       },
       headers: {
-        "idempotency-key": "generate-solana-for-filter",
+        "idempotency-key": "generate-sui-for-filter",
         origin: "https://passport.cubid.me",
       },
       url: "/api/v3/accounts/generate",
@@ -1359,7 +1394,7 @@ test("Passport v3 account list validates auth, payloads, ownership, and chain fi
     createApiRequest({
       body: {
         api_key: apiKey,
-        chain: "evm",
+        chain: "sui",
         dapp_user_uuid: dappUserUuid,
       },
       headers: {
@@ -1374,7 +1409,9 @@ test("Passport v3 account list validates auth, payloads, ownership, and chain fi
   assert.equal(filteredRes.statusCode, 200)
   assert.equal(filteredRes.headers["x-request-id"], "passport_v3_list_filter")
   assert.equal(accounts.length, 1)
-  assert.equal(accounts[0].chain, "evm")
+  assert.equal(accounts[0].chain, "sui")
+  assert.equal(String(accounts[0].publicAddress).startsWith("0x"), true)
+  assert.equal(JSON.stringify(filteredRes.body).includes("private"), false)
 })
 
 test("Passport internal webhook trigger rejects missing internal bearer tokens", async () => {

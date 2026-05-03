@@ -4378,3 +4378,171 @@ Address Copilot and Codex review comments on PR 157 before completing the yeet r
 #### Follow-up
 
 - push the review fixes, confirm CI is green again, reply to and resolve the Copilot and Codex review threads
+
+### session: v153
+
+- timestamp: 2026-05-03T21:21:07Z
+- agent: **OpenAI Codex**
+- branch: **codex/c05-2-1-sui-v3-custody**
+- head: **`77b7290`**
+- session name: **Add Sui v3 blockchain custody support**
+
+#### Objective
+
+Complete `C05.2.1` by adding Sui to the v3 custodial blockchain account surface while preserving the C05 envelope-encryption and non-exposure rules.
+
+#### Actions Taken
+
+- added `@mysten/sui` to the Passport workspace and wired Sui Ed25519 account generation into the shared v3 blockchain custody helper
+- added Sui to the v3 account generate/list validation schemas and the supported-chain metadata migration path
+- updated helper, route, and docs coverage so Sui private keys remain encrypted-only and public addresses are normalized as lowercase `0x` values
+- created a handoff note for the public SDK agents because `chain: "sui"` is an additive API v3 SDK-facing capability
+
+#### Verification
+
+- `pnpm --filter @cubid/passport typecheck`
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/passport test'`
+- `pnpm --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- yeet the C05.2.1 branch for review, then continue with `C05.1.1` public dapp-user-secret legacy table quarantine or the next API v3 custody hardening slice
+
+### session: v154
+
+- timestamp: 2026-05-03T21:21:47Z
+- agent: **OpenAI Codex**
+- branch: **codex/c05-2-1-sui-v3-custody**
+- head: **`07417d1`**
+- session name: **Close C05.2.1 metadata**
+
+#### Objective
+
+Record the implementation commit for `C05.2.1` after the Sui v3 custody slice landed and passed validation.
+
+#### Actions Taken
+
+- updated `agent-context/todo.md` so `C05.2.1` references implementation commit `07417d1`
+- kept the follow-up SDK handoff note in the public SDK repo message queue for SDK agents to consume
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- yeet the C05.2.1 branch for review, then continue with `C05.1.1` or the next API v3 custody hardening slice
+
+### session: v155
+
+- timestamp: 2026-05-03T21:26:52Z
+- agent: **OpenAI Codex**
+- branch: **codex/c05-2-1-sui-v3-custody**
+- head: **`07f9378`**
+- session name: **Quarantine legacy dapp user secret plaintext storage**
+
+#### Objective
+
+Complete `C05.1.1` by quarantining legacy public plaintext dapp-user-secret storage without dropping historical rows that may still need production backfill or audit review.
+
+#### Actions Taken
+
+- changed `/api/v2/save_secret` to return `410 endpoint_removed` instead of writing plaintext rows to `public.dapp_user_secrets`
+- added a Supabase migration that revokes broad access to `public.dapp_user_secrets`, keeps `service_role` read-only access, and rejects new inserts, updates, and deletes
+- updated Passport route tests to prove the v2 endpoint no longer writes plaintext and v3 remains the encrypted write path
+- updated custody/security docs and created a public SDK handoff note because legacy v2 secret writes are no longer supported
+
+#### Verification
+
+- `pnpm --filter @cubid/passport typecheck`
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/passport test'`
+- `pnpm --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- physically remove the legacy public table only after production backfill, audit, and retention/export decisions are complete
+
+### session: v156
+
+- timestamp: 2026-05-03T21:27:46Z
+- agent: **OpenAI Codex**
+- branch: **codex/c05-2-1-sui-v3-custody**
+- head: **`99e8c4e`**
+- session name: **Close C05.1.1 metadata**
+
+#### Objective
+
+Record the implementation commit for `C05.1.1` after the legacy public dapp-user-secret quarantine landed and passed validation.
+
+#### Actions Taken
+
+- updated `agent-context/todo.md` so `C05.1.1` references implementation commit `99e8c4e`
+- kept the physical table-removal follow-up deferred until production backfill, audit, and retention/export decisions are complete
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- yeet the C05 custody branch for review, or continue with a narrow post-backfill physical-removal todo once production verification is available
+
+### session: v157
+
+- timestamp: 2026-05-03T21:43:18Z
+- agent: **OpenAI Codex**
+- branch: **codex/c05-2-1-sui-v3-custody**
+- head: **`67ee15a`**
+- session name: **Address PR 158 removed endpoint review**
+
+#### Objective
+
+Address Codex review feedback on PR 158 so the removed `/api/v2/save_secret` endpoint still participates in the shared Passport route baseline.
+
+#### Actions Taken
+
+- routed the removed v2 secret endpoint through `handlePassportRoute` with an anonymous actor and explicit `POST` method contract
+- preserved the `410 endpoint_removed` response while restoring CORS and `OPTIONS` preflight handling for browser callers
+- added regression coverage for the removed endpoint's allowed-origin preflight response
+
+#### Verification
+
+- `pnpm --filter @cubid/passport typecheck`
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/passport test'`
+- `pnpm --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- commit and push the review fix, reply to and resolve the Codex thread, then re-check CI
+
+### session: v158
+
+- timestamp: 2026-05-03T21:45:21Z
+- agent: **OpenAI Codex**
+- branch: **codex/c05-2-1-sui-v3-custody**
+- head: **`df02adb`**
+- session name: **Address PR 158 Copilot custody comments**
+
+#### Objective
+
+Address the remaining Copilot review comments on PR 158 after the first removed-endpoint CORS fix was pushed.
+
+#### Actions Taken
+
+- adjusted the public dapp-user-secret quarantine trigger to reject inserts and updates without blocking cascaded cleanup deletes
+- updated custody docs to clarify that deletes remain available for `ON DELETE CASCADE` cleanup
+- added a Sui list/filter regression test for API v3 generated account listing
+
+#### Verification
+
+- `pnpm --filter @cubid/passport typecheck`
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/passport test'`
+- `pnpm --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- commit and push the Copilot fixes, reply to and resolve all review threads, then re-check CI

@@ -430,18 +430,18 @@ Create the retrievable-secret custody track for values Cubid must later recover 
 - Head: f3e8b02
 - Session-log reference(s): session: v79, session: v86, session: v87
 
-Migrate dapp user secret custody away from plaintext storage using the C05 Supabase Vault envelope-encryption helper. Preserve the legacy `/api/v2/save_secret` behavior and `public.dapp_user_secrets` table for compatibility, and introduce `/api/v3/save_secret` as the encrypted replacement backed by `private.dapp_user_secrets`. The v3 route must authenticate the dapp, validate that `user_id` belongs to that dapp, encrypt the submitted secret before writing the private-schema table, and store only a non-secret sentinel in the private legacy `secret` column. Provide a careful migration path that reads existing public plaintext rows and inserts encrypted private copies without logging raw values. No public decrypt endpoint should be added in this slice; decryption helpers are server-only for future explicit internal workflows.
+Migrate dapp user secret custody away from plaintext storage using the C05 Supabase Vault envelope-encryption helper. Introduce `/api/v3/save_secret` as the encrypted replacement backed by `private.dapp_user_secrets`; the earlier `/api/v2/save_secret` compatibility path has since been removed by `C05.1.1` so new plaintext rows are not written to `public.dapp_user_secrets`. The v3 route must authenticate the dapp, validate that `user_id` belongs to that dapp, encrypt the submitted secret before writing the private-schema table, and store only a non-secret sentinel in the private legacy `secret` column. Provide a careful migration path that reads existing public plaintext rows and inserts encrypted private copies without logging raw values. No public decrypt endpoint should be added in this slice; decryption helpers are server-only for future explicit internal workflows.
 
 ### C05.1.1 Remove legacy dapp user secret plaintext column
 
-- Status: Not started
-- Timestamp started: TBD
-- Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Status: Completed
+- Timestamp started: 2026-05-03T21:25:01Z
+- Timestamp completed: 2026-05-03T21:26:52Z
+- Feature branch: codex/c05-2-1-sui-v3-custody
+- Head: 99e8c4e
+- Session-log reference(s): session: v155, session: v156
 
-After C05.1 is deployed, Supabase Vault is provisioned, and the backfill script has inserted encrypted private copies for all legacy public rows in production, remove or permanently quarantine the legacy `public.dapp_user_secrets` plaintext table. First smoke-test that `/api/v3/save_secret` writes encrypted rows to `private.dapp_user_secrets`, that the backfill reports zero unmigrated public rows, and that no active caller depends on `/api/v2/save_secret` or public plaintext reads. Then add the physical cleanup migration, update docs and generated schema expectations, and add a regression check preventing new code from selecting or inserting raw `secret` values on the public table. This follow-up must not run before production verification because existing rows need a safe migration window.
+Permanently quarantine the legacy `public.dapp_user_secrets` plaintext table while preserving already-existing rows as service-role-only backfill/audit input. `/api/v2/save_secret` must no longer write plaintext rows and should return a clear removed-endpoint response that points callers at `/api/v3/save_secret`. The database should revoke broad public, anon, and authenticated grants, leave only the minimum `service_role` read access needed by the backfill script, and reject all new inserts, updates, or deletes against the public table. Keep physical table removal deferred until production confirms all historical rows have been backfilled into `private.dapp_user_secrets` and legacy retention/export needs are resolved.
 
 ### C05.2 Redesign blockchain private-key custody
 
@@ -456,12 +456,12 @@ Remove ambiguous plaintext custody for blockchain private keys across EVM, NEAR,
 
 ### C05.2.1 Add Sui support to v3 blockchain account custody
 
-- Status: Not started
-- Timestamp started: TBD
-- Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Status: Completed
+- Timestamp started: 2026-05-03T21:18:25Z
+- Timestamp completed: 2026-05-03T21:21:07Z
+- Feature branch: codex/c05-2-1-sui-v3-custody
+- Head: 07417d1
+- Session-log reference(s): session: v153, session: v154
 
 Add Sui to the v3 blockchain account custody surface after selecting and validating the repo-supported Sui SDK. Extend `public.ref_chains` with Sui metadata, add the Sui keypair generator, normalize Sui public-address handling, and add route/helper tests proving `/api/v3/accounts/generate` and `/api/v3/accounts/list` work without returning private-key material. Keep the same C05 Vault envelope-encryption model and `private.private_keys` storage contract used for EVM, NEAR, and Solana. This follow-up should not alter legacy v2 wallet APIs; it should only expand the v3 route surface once the Sui dependency and address format are intentionally locked.
 

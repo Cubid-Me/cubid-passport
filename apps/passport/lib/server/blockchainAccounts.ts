@@ -9,6 +9,7 @@ import {
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { ethers } from "ethers"
 import { KeyPair } from "near-api-js"
+import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519"
 import { Keypair } from "@solana/web3.js"
 
 export const BLOCKCHAIN_PRIVATE_KEY_ALGORITHM =
@@ -18,7 +19,7 @@ export const BLOCKCHAIN_PRIVATE_KEY_ID =
 export const BLOCKCHAIN_PRIVATE_KEY_VERSION = 1
 export const BLOCKCHAIN_PRIVATE_KEY_PURPOSE = "blockchain_private_key" as const
 
-export const SUPPORTED_GENERATED_CHAINS = ["evm", "near", "solana"] as const
+export const SUPPORTED_GENERATED_CHAINS = ["evm", "near", "solana", "sui"] as const
 
 export type SupportedGeneratedChain = (typeof SUPPORTED_GENERATED_CHAINS)[number]
 
@@ -64,7 +65,7 @@ export const normalizePublicAddress = (
 ) => {
   const trimmed = publicAddress.trim()
 
-  if (chainKey === "evm" || chainKey === "near") {
+  if (chainKey === "evm" || chainKey === "near" || chainKey === "sui") {
     return trimmed.toLowerCase()
   }
 
@@ -89,6 +90,15 @@ export const generateBlockchainAccount = (
       chainKey,
       privateKey: keyPair.toString(),
       publicAddress: keyPair.getPublicKey().toString(),
+    }
+  }
+
+  if (chainKey === "sui") {
+    const keypair = Ed25519Keypair.generate()
+    return {
+      chainKey,
+      privateKey: keypair.getSecretKey(),
+      publicAddress: keypair.getPublicKey().toSuiAddress(),
     }
   }
 

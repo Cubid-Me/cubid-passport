@@ -15,7 +15,7 @@ import { getPassportSupabase } from "@/lib/server/supabase"
 const schema = passportSchemas.z.object({
   api_key: passportSchemas.z.string().min(1).optional(),
   apikey: passportSchemas.z.string().min(1).optional(),
-  chain: passportSchemas.z.enum(["evm", "near", "solana"]),
+  chain: passportSchemas.z.enum(["evm", "near", "solana", "sui"]),
   dapp_id: passportSchemas.z.union([
     passportSchemas.z.number().int().positive(),
     passportSchemas.z.string().min(1),
