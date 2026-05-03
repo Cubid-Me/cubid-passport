@@ -4048,3 +4048,32 @@ Continue E01 by adding user-facing visibility and revocation for Allow Page disc
 #### Follow-up
 
 - yeet the E01 branch for review when ready, or close E01 metadata after the PR merges if this is the final E01 implementation slice
+
+### session: v142
+
+- timestamp: 2026-05-03T00:00:16Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-disclosure-claim-taxonomy**
+- head: **`00113f3`**
+- session name: **Reframe E02 around API v3 backend hardening**
+
+#### Objective
+
+Update stale E02 roadmap language so it reflects the current split between backend API ownership in `cubid-passport` and public SDK ownership in `Cubid-Me/cubid-sdk`.
+
+#### Actions Taken
+
+- retitled E02 around API v3 developer platform contracts, review, and hardening
+- preserved E02.1-E02.4 as SDK-ingested historical work rather than active private-repo implementation targets
+- added backend-owned E02.5-E02.8 todos for API v3 inventory, route hardening, webhook contracts, and SDK-impact coordination
+- created `docs/engineering/api-v3-developer-platform.md` as the backend-owned API v3 contract target
+- updated the SDK target-state doc so it points active E02 backend work at the API v3 engineering doc
+
+#### Verification
+
+- checked there were no incoming SDK-agent messages in `agent-context/messages-from-cubid-sdk/`
+- `git diff --check`
+
+#### Follow-up
+
+- implement E02.5 next to inventory and define the canonical API v3 contract in this repo before changing route behavior

@@ -528,16 +528,16 @@ Parallelization note: This section can run in parallel with `B`, `C`, and `D` on
 
 Take the backgrounder’s core ideas seriously by making app-scoped identity and selective disclosure explicit platform capabilities instead of incidental behavior buried in Passport flows. Build a consent and disclosure service that owns per-app subject identifiers, claim release decisions, stamp-sharing permissions, and revocation behavior. Relying parties should never need raw cross-app identifiers or unnecessary PII; they should request scopes and receive only the allowed app-scoped values. This service should back the Allow Page, the OIDC consent model, SDK calls, and webhook payload filtering. Treat it as a foundational protocol service with strong typing, auditability, and user-visible history, not just a UX screen. Finishing this todo would align Cubid much more closely with the backgrounder’s privacy, protocol, and anti-tracking principles.
 
-### E02. Productize the developer platform: REST API v2, React SDK, and webhook contracts
+### E02. Productize the developer platform: API v3 contracts, review, and hardening
 
 - Status: Ingested into cubid-sdk
 - Timestamp started: 2026-04-28T08:28:44Z
 - Timestamp completed: 2026-04-30T14:00:53Z
-- Feature branch: Cubid-Me/cubid-sdk public SDK repository
-- Head: see Cubid-Me/cubid-sdk SDK repo history
-- Session-log reference(s): session: v94, session: v95, session: v99, session: v100, session: v101, session: v102, session: v103, session: v104, session: v105, session: v106, session: v107, session: v114, session: v115, session: v116, session: v119, session: v120, session: v123; Cubid-Me/cubid-sdk session: s01-core-adoption
+- Feature branch: Cubid-Me/cubid-sdk public SDK repository; backend review continues from cubid-passport feature branches
+- Head: see Cubid-Me/cubid-sdk SDK repo history; backend review starts after 00113f3
+- Session-log reference(s): session: v94, session: v95, session: v99, session: v100, session: v101, session: v102, session: v103, session: v104, session: v105, session: v106, session: v107, session: v114, session: v115, session: v116, session: v119, session: v120, session: v123, session: v142; Cubid-Me/cubid-sdk session: s01-core-adoption
 
-Turn the current mixed bag of legacy routes into a coherent developer platform. Define the canonical REST API v2 surface for app onboarding, user creation, score lookup, identity queries, consent status, claim retrieval, and webhook registration. Build first-party packages on top of those stable contracts so integrators stop depending on internal UI code, local tarballs, or undocumented route behavior. That now explicitly includes a dual-target `@cubid/core` package that works from both npm and JSR, plus a publishable SDK ecosystem for React and chain-specific integrations: `@cubid/react`, `@cubid/evm`, `@cubid/wagmi`, `@cubid/solana`, `@cubid/cardano`, `@cubid/sui`, and `@cubid/near`. Standardize webhook events around meaningful protocol events such as consent granted, claim updated, score changed, stamp blacklisted, and subject revoked, with signed payloads and replay protection. Add versioning and compatibility rules so downstream apps can rely on Cubid as infrastructure rather than reverse-engineering a moving target.
+Reframe E02 around the current architecture split. `cubid-passport` owns the backend runtime: API behavior, route contracts, migrations, security, disclosure enforcement, v3 custody routes, and webhook delivery. `Cubid-Me/cubid-sdk` owns public SDK/API client implementation, examples, package publication, and external integration docs. The earlier E02 SDK package work has been ingested into the public SDK repo and remains historical context here. The active backend track is now API v3 review and hardening: inventory the canonical `/api/v3/*` surfaces, document which legacy `/api/v2/*` routes remain compatibility-only, tighten auth/validation/disclosure/idempotency/error behavior, and standardize webhook contracts around signed, replay-safe, disclosure-filtered protocol events. Any SDK-impacting backend change must create a handoff note for the public SDK agents instead of adding SDK code to this repo.
 
 ### E02.1 Publish `@cubid/core` as a dual-target runtime-agnostic package
 
@@ -629,6 +629,50 @@ Review the SDK prototype material now ingested into `Cubid-Me/cubid-sdk` as sour
 Ingested into `Cubid-Me/cubid-sdk` on 2026-04-30; continue Deno, publishing, and public-integration guidance there rather than from `cubid-passport`.
 
 Back the published packages with the DX and compatibility work needed for real external adoption. Add CI that proves `@cubid/core` is importable in Deno and usable in a Supabase-Edge-like environment, including a smoke import from the JSR form and a Deno-focused validation step in the normal package workflow. Write a dedicated integration guide for Next.js plus Supabase Edge that covers browser versus server usage, secret handling, phone OTP, provider handoff flows, and the post-return refresh pattern. Add copy-paste examples for resolving a Cubid user from an authenticated email, syncing an identity snapshot in an Edge Function, rendering linked or pending credential states in React, and collecting phone plus provider stamps after signup. Close with versioned API stability notes so downstream apps understand Cubid’s compatibility guarantees and deprecation posture.
+
+### E02.5 Inventory and define the canonical API v3 backend contract
+
+- Status: Not started
+- Timestamp started: TBD
+- Timestamp completed: TBD
+- Feature branch: TBD
+- Head: TBD
+- Session-log reference(s): TBD
+
+Create the backend source of truth for Cubid API v3 in `cubid-passport`, centered on `docs/engineering/api-v3-developer-platform.md`. Inventory every current `/api/v3/*` route, including encrypted dapp user secrets and blockchain account custody, and define the minimum canonical request/response contract for each route without moving SDK implementation into this repo. Explicitly classify `/api/v2/*` routes as legacy compatibility unless a specific future todo promotes a route into v3. Record shared expectations for dapp authentication, app-scoped identity, disclosure grants, non-exposure of secret material, structured errors, and idempotency. Before writing the contract, check for incoming SDK-agent notes in `agent-context/messages-from-cubid-sdk/`; after writing it, create outbound SDK notes only if the contract changes public SDK assumptions.
+
+### E02.6 Harden API v3 route behavior
+
+- Status: Not started
+- Timestamp started: TBD
+- Timestamp completed: TBD
+- Feature branch: TBD
+- Head: TBD
+- Session-log reference(s): TBD
+
+Review and harden the active API v3 routes so they are production-grade backend contracts rather than one-off feature endpoints. Keep the current route family small: `/api/v3/save_secret`, `/api/v3/accounts/generate`, and `/api/v3/accounts/list` unless the E02.5 contract intentionally adds more. Ensure every v3 route uses shared Passport API security helpers, dapp API-key authentication, explicit request schemas, ownership checks against the target dapp user, disclosure-aware behavior where relevant, stable error envelopes, request IDs, and no raw secret or private-key exposure. Add or tighten tests for malformed payloads, invalid dapp credentials, cross-dapp user attempts, unsupported chains, duplicate or retry behavior, and failure cleanup. Do not modify public SDK code here; document any SDK-visible behavior changes through the SDK handoff process.
+
+### E02.7 Standardize API v3 webhook contracts
+
+- Status: Not started
+- Timestamp started: TBD
+- Timestamp completed: TBD
+- Feature branch: TBD
+- Head: TBD
+- Session-log reference(s): TBD
+
+Define and harden the API v3 webhook runtime contract so downstream apps can consume Cubid events safely. Review current webhook trigger paths, signing-secret custody, disclosure filtering, retry behavior, and audit/security events, then document the canonical event families for v3: disclosure granted or revoked, stamp or claim updated, score changed, credential blacklisted, subject revoked, and custody/account lifecycle events where appropriate. Standardize signed payload fields, timestamp and nonce or event-id replay protection, delivery attempt metadata, failure recording, and redaction rules. Ensure webhook payloads never bypass app-scoped identity or disclosure grants, and ensure revoked grants stop future delivery. Add representative tests for signature generation, replay-protection inputs, disclosure-filtered payloads, failed delivery bookkeeping, and redaction of internal identifiers.
+
+### E02.8 Coordinate public SDK impact for API v3
+
+- Status: Not started
+- Timestamp started: TBD
+- Timestamp completed: TBD
+- Feature branch: TBD
+- Head: TBD
+- Session-log reference(s): TBD
+
+Keep the public SDK repo aligned with API v3 without reintroducing SDK implementation into `cubid-passport`. For every E02.5-E02.7 change that affects public route shape, response semantics, error categories, disclosure states, webhook payloads, examples, or migration guidance, create a concise message in `Cubid-Me/cubid-sdk` under `agent-context/messages-from-cubid-passport/`. The message should identify the backend commit or PR, describe the changed contract, say whether SDK consumers should treat it as additive, breaking, or documentation-only, and list expected SDK follow-ups. Also check `agent-context/messages-from-cubid-sdk/` in this repo before beginning each API v3 hardening slice. This todo closes when all known SDK-impact notes are created and no incoming SDK notes remain unaddressed.
 
 ### E03. Add agent and organization identity support, including MCP-compatible interfaces
 
