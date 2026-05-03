@@ -68,19 +68,18 @@ but should not accumulate heavy crypto custody dependencies.
 
 ## Current E02 Direction
 
-E02 starts by publishing `@cubid/core` as the dual-target npm/JSR foundation,
-then layers in package-ready integration surfaces:
+The original E02 SDK/package work has been ingested into `Cubid-Me/cubid-sdk`.
+This repo now treats those items as historical context only. The active
+`cubid-passport` side of E02 is API v3 backend review and hardening:
 
-- `@cubid/core` now owns the runtime-agnostic API client, identity sync helpers,
-  normalized responses, Deno validation, and Edge examples.
-- `@cubid/react` owns React-only profile completion primitives, including phone
-  OTP UI, provider connect buttons, AllowPage URL helpers, callback-state
-  helpers, and missing-recommended-credential summaries.
-- Chain package workspaces now exist as dependency-isolated homes for
-  chain-specific wallet/stamp contracts. The first slice keeps them lightweight
-  and does not yet add heavy SDKs or signing implementations.
-- `@cubid/wagmi` is the only package with a wagmi peer boundary. It can add
-  wagmi hooks/connectors later without leaking wagmi into core or React.
+- `cubid-passport` owns API v3 route behavior, migrations, security,
+  disclosure enforcement, custody behavior, and webhook runtime contracts.
+- `Cubid-Me/cubid-sdk` owns public SDK packages, examples, publication, and
+  external integration docs.
+- `packages/core` in this repo is a historical snapshot and is not a publication
+  target.
+- SDK-impacting backend changes must be communicated through the SDK handoff
+  message process, not by editing public SDK code here.
 
-Live npm/JSR publication still requires trusted-publisher setup and explicit
-release workflow execution.
+See `docs/engineering/api-v3-developer-platform.md` for the backend-owned API v3
+contract target.

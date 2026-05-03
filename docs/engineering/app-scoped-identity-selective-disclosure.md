@@ -67,11 +67,39 @@ revoked before a production backfill has run.
 Score and score-detail endpoints also calculate only from disclosed stamps so a
 dapp cannot infer undisclosed credentials from score contributions.
 
+Profile and location values are now treated as explicit non-stamp disclosure
+claims. The current taxonomy is:
+
+- `profile:name`: releases display-name or nickname-style profile values.
+- `profile:*`: releases all current profile claims in this namespace.
+- `location:rough`: releases country-level or rough location values.
+- `location:approximate`: releases approximate location values and satisfies
+  rough-location reads.
+- `location:exact`: releases exact address or coordinate values and satisfies
+  approximate and rough-location reads.
+- `location:*`: releases all current location granularities.
+
+The `profile` and `cubid:profile` scopes are accepted as profile-name grants
+for compatibility with standard profile-style consent. Location reads require a
+location claim; a broad `cubid:location` scope alone is not enough to release
+exact, approximate, or rough location data. Approximate location routes must not
+return raw address objects, and legacy dapp identity routes must sanitize user
+objects instead of spreading raw database rows.
+
 Webhook delivery is also grant-gated. Internal webhook trigger jobs look up the
 dapp user's active disclosure grants before sending credential events to a dapp
 subscription, and skip delivery when the changed stamp has not been disclosed to
 that dapp. The first pass preserves the existing webhook payload shape while
 preventing undisclosed stamp events from being sent.
+
+Passport Profile now exposes non-OIDC Allow Page disclosure history separately
+from OIDC Login with Cubid consent. Users can inspect active and revoked dapp
+grants, see the dapp name, scopes, claims, policy version, grant version, data
+classifications, and grant timestamps, and revoke active Allow Page grants. The
+revocation route updates `selective_disclosure_grants`, writes a
+`selective_disclosure_events` audit event, and removes matching legacy
+`stamp_dappuser_permissions` rows for stamp claims in the revoked grant so the
+temporary compatibility fallback does not preserve access after revocation.
 
 Passport requires `PASSPORT_APP_SCOPED_SUBJECT_SECRET` for Allow Page subject
 derivation. OIDC currently derives its broader app-scoped subject from the same
@@ -132,7 +160,8 @@ sequence is:
 4. Update SDK-facing identity routes to return only app-scoped subject and
    granted claims.
 5. Use disclosure grants to filter webhook payloads.
-6. Add user-facing disclosure history and revocation views that cover both OIDC
+6. Extend the grant taxonomy beyond stamps to profile and location claims.
+7. Add user-facing disclosure history and revocation views that cover both OIDC
    and non-OIDC app grants.
 
 ## Non-Goals In This Slice

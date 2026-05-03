@@ -3987,3 +3987,272 @@ Address Copilot and Codex review feedback on PR #155 before returning the branch
 #### Follow-up
 
 - push the review-fix commit, confirm CI, then reply to and resolve the addressed PR #155 review threads
+
+### session: v140
+
+- timestamp: 2026-05-01T08:03:51Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-disclosure-claim-taxonomy**
+- head: **`63303ad`**
+- session name: **Add E01 profile and location disclosure taxonomy**
+
+#### Objective
+
+Continue E01 by making profile and non-stamp location claims explicit in the selective-disclosure contract, then tighten dapp-facing route filters around those grants.
+
+#### Actions Taken
+
+- added Passport disclosure helpers for `profile:name`, `location:rough`, `location:approximate`, `location:exact`, and wildcard namespace grants
+- sanitized legacy dapp identity user payloads instead of spreading raw user rows back to integrators
+- gated exact, approximate, and rough location routes on matching disclosure claim granularity
+- prevented approximate location responses from returning raw address objects
+- documented the profile/location claim taxonomy and sent an SDK-impact handoff note to the canonical SDK repo
+
+#### Verification
+
+- `pnpm --filter @cubid/passport typecheck`
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/passport test'`
+- `pnpm --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- add user-facing non-OIDC app disclosure history and revocation views so users can inspect and revoke Allow Page grants outside the OIDC consent panel
+
+### session: v141
+
+- timestamp: 2026-05-01T08:55:58Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-disclosure-claim-taxonomy**
+- head: **`3123f99`**
+- session name: **Add non-OIDC app disclosure grant history and revocation**
+
+#### Objective
+
+Continue E01 by adding user-facing visibility and revocation for Allow Page disclosure grants outside the OIDC consent panel.
+
+#### Actions Taken
+
+- added Passport user APIs for listing and revoking non-OIDC Allow Page disclosure grants
+- added a Profile “App disclosure grants” card showing app, scopes, claims, policy/version metadata, data classifications, and revoked state
+- made Allow Page grant revocation update `selective_disclosure_grants`, emit `selective_disclosure_events`, and remove matching legacy stamp permissions
+- added Passport route coverage for list/revoke behavior and extended the test Supabase mock for disclosure grants
+- updated E01 engineering docs and sent an SDK-impact handoff note to the canonical SDK repo
+
+#### Verification
+
+- `pnpm --filter @cubid/passport typecheck`
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/passport test'`
+- `pnpm --filter @cubid/passport build`
+
+#### Follow-up
+
+- yeet the E01 branch for review when ready, or close E01 metadata after the PR merges if this is the final E01 implementation slice
+
+### session: v142
+
+- timestamp: 2026-05-03T00:00:16Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-disclosure-claim-taxonomy**
+- head: **`00113f3`**
+- session name: **Reframe E02 around API v3 backend hardening**
+
+#### Objective
+
+Update stale E02 roadmap language so it reflects the current split between backend API ownership in `cubid-passport` and public SDK ownership in `Cubid-Me/cubid-sdk`.
+
+#### Actions Taken
+
+- retitled E02 around API v3 developer platform contracts, review, and hardening
+- preserved E02.1-E02.4 as SDK-ingested historical work rather than active private-repo implementation targets
+- added backend-owned E02.5-E02.8 todos for API v3 inventory, route hardening, webhook contracts, and SDK-impact coordination
+- created `docs/engineering/api-v3-developer-platform.md` as the backend-owned API v3 contract target
+- updated the SDK target-state doc so it points active E02 backend work at the API v3 engineering doc
+
+#### Verification
+
+- checked there were no incoming SDK-agent messages in `agent-context/messages-from-cubid-sdk/`
+- `git diff --check`
+
+#### Follow-up
+
+- implement E02.5 next to inventory and define the canonical API v3 contract in this repo before changing route behavior
+
+### session: v143
+
+- timestamp: 2026-05-03T00:05:30Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-disclosure-claim-taxonomy**
+- head: **`4c1a9ca`**
+- session name: **Define E02.5 API v3 backend contract**
+
+#### Objective
+
+Start and complete E02.5 by inventorying the current API v3 backend routes and locking the canonical contract before changing route behavior.
+
+#### Actions Taken
+
+- checked for incoming SDK-agent messages before API v3 contract work and found none
+- marked E02.5 completed on the current feature branch
+- expanded `docs/engineering/api-v3-developer-platform.md` with route-by-route contracts for `/api/v3/save_secret`, `/api/v3/accounts/generate`, and `/api/v3/accounts/list`
+- documented API v3 dapp authentication, v2 legacy posture, structured error expectations, secret non-exposure rules, and retry/idempotency expectations
+- kept the change documentation-only, so no outbound SDK handoff note was required
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- implement E02.6 next to harden API v3 route behavior against the contract defined in E02.5
+
+### session: v144
+
+- timestamp: 2026-05-03T00:35:03Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-disclosure-claim-taxonomy**
+- head: **`6dd342e`**
+- session name: **Harden E02.6 API v3 route behavior**
+
+#### Objective
+
+Complete E02.6 by tightening the active API v3 backend routes against the canonical E02.5 contract before changing or adding broader developer-platform behavior.
+
+#### Actions Taken
+
+- added a service-role-only `api_idempotency_keys` migration for API v3 write replay protection
+- added a shared Passport API v3 idempotency helper that requires `Idempotency-Key`, hashes canonical request bodies, replays completed responses, and rejects conflicting or pending keys
+- wired idempotency into `/api/v3/save_secret` and `/api/v3/accounts/generate` without changing success payload shapes
+- expanded Passport route tests for v3 auth failures, dapp ownership, idempotent replay, conflict and pending-key errors, no secret/private-key exposure, chain filtering, and partial-failure cleanup
+- updated the API v3 engineering doc and wrote an SDK-agent handoff note for the new idempotency contract
+- marked E02.6 completed in the roadmap
+
+#### Verification
+
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/passport test'`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- implement E02.7 next to standardize API v3 webhook contracts and delivery semantics
+
+### session: v145
+
+- timestamp: 2026-05-03T00:40:34Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-disclosure-claim-taxonomy**
+- head: **`7f8aa93`**
+- session name: **Standardize E02.7 API v3 webhook contracts**
+
+#### Objective
+
+Complete E02.7 by standardizing API v3 webhook payloads, signatures, replay-protection inputs, delivery metadata, disclosure filtering, and SDK coordination.
+
+#### Actions Taken
+
+- added shared API v3 webhook helpers for canonical event names, payload construction, v1 signatures, replay headers, and delivery error classification
+- updated internal webhook trigger paths to deliver v3 protocol payloads with `X-Cubid-Event-Id`, `X-Cubid-Timestamp`, `X-Cubid-Signature-Version`, and `X-Cubid-Signature`
+- added migration fields for webhook event ids, API/payload versions, request bodies, redacted request headers, and signature version metadata
+- preserved disclosure-gated delivery and expanded Passport tests for signed payloads, undisclosed-stamp skips, failure attempts, retry metadata, and redaction of internal identifiers
+- updated the API v3 engineering doc and wrote an SDK-agent handoff note for webhook verification/docs follow-up
+- marked E02.7 completed in the roadmap
+
+#### Verification
+
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/passport test'`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- implement E02.8 next to reconcile SDK-impact notes and close the API v3 developer-platform coordination loop
+
+### session: v146
+
+- timestamp: 2026-05-03T00:43:54Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-disclosure-claim-taxonomy**
+- head: **`5b0504b`**
+- session name: **Coordinate E02.8 public SDK impact for API v3**
+
+#### Objective
+
+Close E02.8 by confirming API v3 SDK-impact coordination is recorded without moving public SDK implementation back into `cubid-passport`.
+
+#### Actions Taken
+
+- checked `agent-context/messages-from-cubid-sdk/` and confirmed there were no incoming SDK-agent notes to address
+- confirmed the SDK workspace contains outbound handoff notes for E02.6 idempotency and E02.7 webhook contract changes
+- recorded the SDK coordination ledger in `docs/engineering/api-v3-developer-platform.md`
+- marked E02.8 completed and closed the E02 backend API v3 review/hardening track in the roadmap
+
+#### Verification
+
+- `find agent-context/messages-from-cubid-sdk -type f -maxdepth 2 -print`
+- `git -C /Users/botmaster/src/cubid/cubid-sdk-v2 status --short -- agent-context/messages-from-cubid-passport`
+- `git diff --check`
+
+#### Follow-up
+
+- either yeet this feature branch for review or continue with the next backend-owned developer-platform track after E02
+
+### session: v147
+
+- timestamp: 2026-05-03T01:01:37Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-disclosure-claim-taxonomy**
+- head: **`b5dc1ec`**
+- session name: **Address PR 156 Copilot review feedback**
+
+#### Objective
+
+Address Copilot review comments on PR 156 before requesting Codex review.
+
+#### Actions Taken
+
+- made failed API v3 idempotency records re-claimable through a conditional pending transition before retrying write side effects
+- added regression coverage for retrying a failed idempotent `save_secret` request
+- updated the webhook migration to replace the legacy one-row-per-event delivery uniqueness constraint with one-row-per-attempt uniqueness
+- replaced machine-local SDK handoff paths in the API v3 engineering doc with SDK-repo-relative references
+
+#### Verification
+
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/passport test'`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- push the Copilot fixes, confirm CI is green again, reply to and resolve the review threads, then request Codex review if no Codex review exists yet
+
+### session: v148
+
+- timestamp: 2026-05-03T01:07:47Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-disclosure-claim-taxonomy**
+- head: **`c0f9bf3`**
+- session name: **Tighten failed API v3 idempotency semantics**
+
+#### Objective
+
+Address the Codex review finding that failed idempotency records must not re-run writes after possible partial side effects.
+
+#### Actions Taken
+
+- changed non-expired failed API v3 idempotency records to return terminal `409 idempotency_failed` instead of retrying the handler
+- preserved conditional reclaim only for expired idempotency records, where the original retention contract has elapsed
+- updated Passport route tests so failed-key retries prove no additional secret row is written
+
+#### Verification
+
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/passport test'`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+
+#### Follow-up
+
+- push the terminal failed-idempotency fix, confirm CI is green, then reply to and resolve the Copilot and Codex review threads

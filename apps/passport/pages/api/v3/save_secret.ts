@@ -1,10 +1,15 @@
 import type { NextApiRequest, NextApiResponse } from "next"
 import { randomUUID } from "node:crypto"
 
+import { ApiSecurityError } from "@cubid/auth/server"
 import {
   handlePassportRoute,
   passportSchemas,
 } from "@/lib/server/passportApi"
+import {
+  getApiV3IdempotencyKey,
+  runApiV3IdempotentWrite,
+} from "@/lib/server/apiV3Idempotency"
 import {
   DAPP_USER_SECRET_LEGACY_SENTINEL,
   DAPP_USER_SECRET_PURPOSE,
@@ -87,69 +92,80 @@ export default async function handler(
     },
     async ({ body, context }) => {
       const supabase = getPassportSupabase()
-      const { data: dappUser, error: dappUserError } = await supabase
-        .from("dapp_users")
-        .select("uuid,dapp_id")
-        .eq("uuid", body.user_id)
-        .eq("dapp_id", context.dapp.id)
-        .maybeSingle()
-
-      if (dappUserError) {
-        throw dappUserError
-      }
-
-      if (!dappUser) {
-        return res.status(404).json({
-          error: {
-            code: "not_found",
-            message: "Dapp user was not found for the authenticated app.",
-            requestId: context.requestId,
-          },
-        })
-      }
-
-      const encryptedSecret = await encryptDappUserSecret(
+      const response = await runApiV3IdempotentWrite({
+        actorIdentifier: context.actorIdentifier,
+        actorType: context.actorType,
+        body,
+        idempotencyKey: getApiV3IdempotencyKey(req),
+        requestId: context.requestId,
+        route: "v3.save_secret",
         supabase,
-        body.secret,
-        {
-          dappId: context.dapp.id,
-          dappUserUuid: body.user_id,
-          purpose: DAPP_USER_SECRET_PURPOSE,
-        }
-      )
+        handler: async () => {
+          const { data: dappUser, error: dappUserError } = await supabase
+            .from("dapp_users")
+            .select("uuid,dapp_id")
+            .eq("uuid", body.user_id)
+            .eq("dapp_id", context.dapp.id)
+            .maybeSingle()
 
-      await insertEncryptedSecretWithSequence(
-        supabase,
-        {
-          ...encryptedSecret,
-          dapp_user_uuid: body.user_id,
-          secret: DAPP_USER_SECRET_LEGACY_SENTINEL,
+          if (dappUserError) {
+            throw dappUserError
+          }
+
+          if (!dappUser) {
+            throw new ApiSecurityError(
+              404,
+              "not_found",
+              "Dapp user was not found for the authenticated app."
+            )
+          }
+
+          const encryptedSecret = await encryptDappUserSecret(
+            supabase,
+            body.secret,
+            {
+              dappId: context.dapp.id,
+              dappUserUuid: body.user_id,
+              purpose: DAPP_USER_SECRET_PURPOSE,
+            }
+          )
+
+          await insertEncryptedSecretWithSequence(
+            supabase,
+            {
+              ...encryptedSecret,
+              dapp_user_uuid: body.user_id,
+              secret: DAPP_USER_SECRET_LEGACY_SENTINEL,
+            },
+            body.user_id
+          )
+
+          const { error: auditError } = await supabase
+            .from("api_security_events")
+            .insert({
+              actor_identifier: context.actorIdentifier,
+              actor_type: context.actorType,
+              details: {
+                dappId: String(context.dapp.id),
+                dappUserUuid: body.user_id,
+                purpose: DAPP_USER_SECRET_PURPOSE,
+              },
+              event_id: `api_event_${randomUUID().replace(/-/g, "")}`,
+              event_type: "dapp_user_secret.encrypted",
+              outcome: "success",
+              request_id: context.requestId,
+              route: "v3.save_secret",
+            })
+
+          if (auditError) {
+            throw auditError
+          }
+
+          return { body: { success: true }, statusCode: 200 }
         },
-        body.user_id
-      )
+      })
 
-      const { error: auditError } = await supabase
-        .from("api_security_events")
-        .insert({
-          actor_identifier: context.actorIdentifier,
-          actor_type: context.actorType,
-          details: {
-            dappId: String(context.dapp.id),
-            dappUserUuid: body.user_id,
-            purpose: DAPP_USER_SECRET_PURPOSE,
-          },
-          event_id: `api_event_${randomUUID().replace(/-/g, "")}`,
-          event_type: "dapp_user_secret.encrypted",
-          outcome: "success",
-          request_id: context.requestId,
-          route: "v3.save_secret",
-        })
-
-      if (auditError) {
-        throw auditError
-      }
-
-      return res.status(200).json({ success: true })
+      return res.status(response.statusCode).json(response.body)
     }
   )
 }

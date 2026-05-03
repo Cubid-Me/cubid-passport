@@ -7,8 +7,8 @@ import {
 import { ApiSecurityError } from "@cubid/auth/server"
 import {
   filterDisclosedStamps,
-  isStampTypeDisclosed,
   loadDappDisclosureGrants,
+  sanitizeDisclosedUserProfile,
 } from "@/lib/server/disclosureGrants"
 import { getPassportSupabase } from "@/lib/server/supabase"
 import { getStampTypeName } from "@cubid/stamps"
@@ -71,17 +71,10 @@ export default async function handler(
       ).map((item: any) => ({
         [getStampTypeName(Number(item.stamptype))]: item.uniquevalue,
       }))
-      const user = dappUser.users
-        ? {
-            ...dappUser.users,
-            email: isStampTypeDisclosed(disclosureGrants, "email")
-              ? dappUser.users.email
-              : null,
-            phone: isStampTypeDisclosed(disclosureGrants, "phone")
-              ? dappUser.users.phone
-              : null,
-          }
-        : null
+      const user = sanitizeDisclosedUserProfile(
+        dappUser.users,
+        disclosureGrants
+      )
 
       return res.status(200).json({
         score_details: scoreDetails,

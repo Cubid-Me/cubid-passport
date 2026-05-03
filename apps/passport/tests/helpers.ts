@@ -36,6 +36,7 @@ export class MockPassportSupabase {
   readonly actorProfiles = new Map<string, Record<string, unknown>>()
   readonly buckets = new Map<string, BucketRow>()
   readonly dappApiKeys = new Map<string, DappApiKeyRow>()
+  readonly apiIdempotencyKeys: Array<Record<string, unknown>> = []
   readonly dappUserAccounts: Array<Record<string, unknown>> = []
   readonly dappUserSecrets: Array<Record<string, unknown>> = []
   readonly privateDappUserSecrets: Array<Record<string, unknown>> = []
@@ -47,7 +48,13 @@ export class MockPassportSupabase {
   readonly privateKeys: Array<Record<string, unknown>> = []
   readonly selectiveDisclosureGrants: Array<Record<string, unknown>> = []
   readonly stampPermissions: Array<Record<string, unknown>> = []
+  readonly stamps: Array<Record<string, unknown>> = []
   readonly userAccounts: Array<Record<string, unknown>> = []
+  readonly users = new Map<number, Record<string, unknown>>()
+  readonly webhookEventDeliveries: Array<Record<string, unknown>> = []
+  readonly webhookEvents: Array<Record<string, unknown>> = []
+  readonly webhookSubscriptions: Array<Record<string, unknown>> = []
+  failNextPrivateKeyInsert = false
   private nextEmailOtpId = 1
 
   rpc(name: string, params: Record<string, unknown>) {
@@ -129,6 +136,14 @@ export class MockPassportSupabase {
     this.dappUsers.set(row.uuid, row)
   }
 
+  setStamp(row: Record<string, unknown> & { id: number }) {
+    this.stamps.push(row)
+  }
+
+  setUser(row: Record<string, unknown> & { id: number }) {
+    this.users.set(row.id, row)
+  }
+
   setEmailOtp(row: EmailOtpRow) {
     const rows = this.emailOtps.get(row.email) ?? []
     rows.push({
@@ -137,6 +152,14 @@ export class MockPassportSupabase {
       id: row.id ?? this.nextEmailOtpId++,
     })
     this.emailOtps.set(row.email, rows)
+  }
+
+  setWebhookSubscription(row: Record<string, unknown>) {
+    this.webhookSubscriptions.push({
+      id: this.webhookSubscriptions.length + 1,
+      secret_reference_id: `webhook_secret_${this.webhookSubscriptions.length + 1}`,
+      ...row,
+    })
   }
 
   schema(name: string) {
@@ -163,6 +186,95 @@ export class MockPassportSupabase {
             window_start: String(row.window_start ?? ""),
           })
           return { error: null }
+        },
+      }
+    }
+
+    if (table === "api_idempotency_keys") {
+      const createFilteredQuery = () => {
+        const filters: Record<string, unknown> = {}
+        const resolve = () =>
+          this.apiIdempotencyKeys.filter((row) =>
+            Object.entries(filters).every(
+              ([column, value]) => String(row[column]) === String(value)
+            )
+          )
+        const query = {
+          eq: (column: string, value: unknown) => {
+            filters[column] = value
+            return query
+          },
+          maybeSingle: async () => ({
+            data: resolve()[0] ?? null,
+            error: null,
+          }),
+          then: (
+            resolveThen: (value: {
+              data: Record<string, unknown>[]
+              error: null
+            }) => unknown
+          ) => Promise.resolve({ data: resolve(), error: null }).then(resolveThen),
+        }
+        return query
+      }
+
+      return {
+        insert: async (row: Record<string, unknown>) => {
+          const existing = this.apiIdempotencyKeys.find(
+            (candidate) =>
+              candidate.route === row.route &&
+              candidate.actor_type === row.actor_type &&
+              candidate.actor_identifier === row.actor_identifier &&
+              candidate.idempotency_key === row.idempotency_key
+          )
+
+          if (existing) {
+            return { error: { code: "23505", message: "duplicate key" } }
+          }
+
+          this.apiIdempotencyKeys.push({
+            created_at: new Date().toISOString(),
+            id: this.apiIdempotencyKeys.length + 1,
+            updated_at: new Date().toISOString(),
+            ...row,
+          })
+          return { error: null }
+        },
+        select: createFilteredQuery,
+        update: (patch: Record<string, unknown>) => {
+          const filters: Record<string, unknown> = {}
+          const updateRows = () => {
+            const updatedRows: Record<string, unknown>[] = []
+            for (const row of this.apiIdempotencyKeys) {
+              if (
+                Object.entries(filters).every(
+                  ([filterColumn, filterValue]) =>
+                    String(row[filterColumn]) === String(filterValue)
+                )
+              ) {
+                Object.assign(row, patch)
+                updatedRows.push(row)
+              }
+            }
+            return updatedRows
+          }
+          const updateQuery = {
+            eq: (column: string, value: unknown) => {
+              filters[column] = value
+              return updateQuery
+            },
+            then: (resolveThen: (value: { error: null }) => unknown) => {
+              updateRows()
+              return Promise.resolve({ error: null }).then(resolveThen)
+            },
+            select: () => ({
+              maybeSingle: async () => {
+                const updatedRows = updateRows()
+                return { data: updatedRows[0] ?? null, error: null }
+              },
+            }),
+          }
+          return updateQuery
         },
       }
     }
@@ -295,6 +407,28 @@ export class MockPassportSupabase {
           }
           return query
         },
+        update: (patch: Record<string, unknown>) => {
+          const filters: Record<string, unknown> = {}
+          const query = {
+            eq: (column: string, value: unknown) => {
+              filters[column] = value
+              return query
+            },
+            then: (resolveThen: (value: { error: null }) => unknown) => {
+              for (const row of this.selectiveDisclosureGrants) {
+                if (
+                  Object.entries(filters).every(
+                    ([column, value]) => String(row[column]) === String(value)
+                  )
+                ) {
+                  Object.assign(row, patch)
+                }
+              }
+              return Promise.resolve({ error: null }).then(resolveThen)
+            },
+          }
+          return query
+        },
       }
     }
 
@@ -384,6 +518,142 @@ export class MockPassportSupabase {
       }
     }
 
+    if (table === "dapp_webhook_subscriptions") {
+      return {
+        select: () => {
+          const filters: Record<string, unknown> = {}
+          const resolve = () => {
+            const rows = this.webhookSubscriptions.filter((row) =>
+              Object.entries(filters).every(
+                ([column, value]) => String(row[column]) === String(value)
+              )
+            )
+            return { data: rows, error: null }
+          }
+          const query = {
+            match: (criteria: Record<string, unknown>) => {
+              Object.assign(filters, criteria)
+              return query
+            },
+            then: (
+              resolveThen: (value: {
+                data: Record<string, unknown>[]
+                error: null
+              }) => unknown
+            ) => Promise.resolve(resolve()).then(resolveThen),
+          }
+          return query
+        },
+      }
+    }
+
+    if (table === "webhook_events") {
+      return {
+        insert: (row: Record<string, unknown>) => {
+          const inserted = {
+            created_at: new Date().toISOString(),
+            id: this.webhookEvents.length + 1,
+            ...row,
+          }
+          this.webhookEvents.push(inserted)
+          return {
+            select: () => ({
+              then: (
+                resolveThen: (value: {
+                  data: Record<string, unknown>[]
+                  error: null
+                }) => unknown
+              ) => Promise.resolve({ data: [inserted], error: null }).then(resolveThen),
+            }),
+          }
+        },
+        select: () => {
+          const filters: Record<string, unknown> = {}
+          const resolve = () => {
+            const rows = this.webhookEvents.filter((row) =>
+              Object.entries(filters).every(
+                ([column, value]) => String(row[column]) === String(value)
+              )
+            )
+            return { data: rows, error: null }
+          }
+          const query = {
+            eq: (column: string, value: unknown) => {
+              filters[column] = value
+              return query
+            },
+            match: (criteria: Record<string, unknown>) => {
+              Object.assign(filters, criteria)
+              return query
+            },
+            then: (
+              resolveThen: (value: {
+                data: Record<string, unknown>[]
+                error: null
+              }) => unknown
+            ) => Promise.resolve(resolve()).then(resolveThen),
+          }
+          return query
+        },
+        update: (patch: Record<string, unknown>) => {
+          const filters: Record<string, unknown> = {}
+          const query = {
+            eq: (column: string, value: unknown) => {
+              filters[column] = value
+              return query
+            },
+            select: () => ({
+              then: (
+                resolveThen: (value: {
+                  data: Record<string, unknown>[]
+                  error: null
+                }) => unknown
+              ) => {
+                const updatedRows: Record<string, unknown>[] = []
+                for (const row of this.webhookEvents) {
+                  if (
+                    Object.entries(filters).every(
+                      ([column, value]) => String(row[column]) === String(value)
+                    )
+                  ) {
+                    Object.assign(row, patch)
+                    updatedRows.push(row)
+                  }
+                }
+                return Promise.resolve({
+                  data: updatedRows,
+                  error: null,
+                }).then(resolveThen)
+              },
+            }),
+          }
+          return query
+        },
+      }
+    }
+
+    if (table === "webhook_event_deliveries") {
+      return {
+        insert: async (row: Record<string, unknown>) => {
+          this.webhookEventDeliveries.push({
+            delivered_at: new Date().toISOString(),
+            id: this.webhookEventDeliveries.length + 1,
+            ...row,
+          })
+          return { error: null }
+        },
+      }
+    }
+
+    if (table === "selective_disclosure_events") {
+      return {
+        insert: async (row: Record<string, unknown>) => {
+          this.eventInserts.push(row)
+          return { error: null }
+        },
+      }
+    }
+
     if (table === "actor_profiles") {
       return {
         select: () => {
@@ -424,14 +694,109 @@ export class MockPassportSupabase {
 
     if (table === "dapps") {
       return {
-        select: () => ({
-          eq: (_column: string, value: number) => ({
-            maybeSingle: async () => ({
-              data: this.dapps.get(Number(value)) ?? null,
-              error: null,
-            }),
-          }),
-        }),
+        select: () => {
+          const filters: Record<string, unknown> = {}
+          const resolve = () => {
+            const rows = [...this.dapps.values()].filter((row) =>
+              Object.entries(filters).every(([column, value]) => {
+                if (Array.isArray(value)) {
+                  return value.includes(String(row[column]))
+                }
+                return String(row[column]) === String(value)
+              })
+            )
+            return { data: rows, error: null }
+          }
+          const query = {
+            eq: (column: string, value: unknown) => {
+              filters[column] = value
+              return {
+                maybeSingle: async () => ({
+                  data: this.dapps.get(Number(value)) ?? null,
+                  error: null,
+                }),
+              }
+            },
+            in: (column: string, values: unknown[]) => {
+              filters[column] = values.map(String)
+              return query
+            },
+            then: (
+              resolveThen: (value: {
+                data: Record<string, unknown>[]
+                error: null
+              }) => unknown
+            ) => Promise.resolve(resolve()).then(resolveThen),
+          }
+          return query
+        },
+      }
+    }
+
+    if (table === "users") {
+      return {
+        select: () => {
+          const filters: Record<string, unknown> = {}
+          const resolve = () => {
+            const rows = [...this.users.values()].filter((row) =>
+              Object.entries(filters).every(
+                ([column, value]) => String(row[column]) === String(value)
+              )
+            )
+            return { data: rows, error: null }
+          }
+          const query = {
+            eq: (column: string, value: unknown) => {
+              filters[column] = value
+              return query
+            },
+            maybeSingle: async () => {
+              const result = resolve()
+              return { data: result.data[0] ?? null, error: null }
+            },
+          }
+          return query
+        },
+      }
+    }
+
+    if (table === "stamps") {
+      return {
+        select: () => {
+          const filters: Record<string, unknown> = {}
+          const resolve = () => {
+            const rows = this.stamps.filter((row) =>
+              Object.entries(filters).every(([column, value]) => {
+                if (Array.isArray(value)) {
+                  return value.includes(String(row[column]))
+                }
+                return String(row[column]) === String(value)
+              })
+            )
+            return { data: rows, error: null }
+          }
+          const query = {
+            eq: (column: string, value: unknown) => {
+              filters[column] = value
+              return query
+            },
+            in: (column: string, values: unknown[]) => {
+              filters[column] = values.map(String)
+              return query
+            },
+            maybeSingle: async () => {
+              const result = resolve()
+              return { data: result.data[0] ?? null, error: null }
+            },
+            then: (
+              resolveThen: (value: {
+                data: Record<string, unknown>[]
+                error: null
+              }) => unknown
+            ) => Promise.resolve(resolve()).then(resolveThen),
+          }
+          return query
+        },
       }
     }
 
@@ -450,6 +815,21 @@ export class MockPassportSupabase {
                 return { data: null, error: null }
               }
               return { data: { user_id: 1234, ...row }, error: null }
+            },
+            then: (
+              resolveThen: (value: {
+                data: Record<string, unknown>[]
+                error: null
+              }) => unknown
+            ) => {
+              const rows = [...this.dappUsers.values()].filter((row) =>
+                Object.entries(filters).every(
+                  ([column, value]) =>
+                    String((row as Record<string, unknown>)[column]) ===
+                    String(value)
+                )
+              )
+              return Promise.resolve({ data: rows, error: null }).then(resolveThen)
             },
           }
           return query
@@ -696,6 +1076,11 @@ export class MockPassportSupabase {
           },
         }),
         insert: async (row: Record<string, unknown>) => {
+          if (this.failNextPrivateKeyInsert) {
+            this.failNextPrivateKeyInsert = false
+            return { error: new Error("private key insert failed") }
+          }
+
           this.privateKeys.push({
             created_at: new Date().toISOString(),
             id: `private_key_${this.privateKeys.length + 1}`,
