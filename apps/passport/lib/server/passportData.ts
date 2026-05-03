@@ -191,7 +191,7 @@ const persistAllowPageDisclosureGrant = async (input: {
   return disclosureGrant
 }
 
-const persistAllowPageDisclosureForStampPermission = async (input: {
+export const persistAllowPageDisclosureForStampPermission = async (input: {
   dappUserId: string
   stampId: number | string
 }) => {

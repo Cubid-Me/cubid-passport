@@ -167,6 +167,65 @@ export interface OidcOpsOverviewPayload {
   recentAuditEvents: OidcOpsAuditEvent[];
 }
 
+export interface DisclosureOpsEvent {
+  actorType: string;
+  createdAt: string;
+  details: Record<string, unknown>;
+  eventType: string;
+  outcome: string;
+  requestId: string | null;
+}
+
+export interface DisclosureOpsGrantSample {
+  claimCount: number;
+  consentVersion: number;
+  grantedAt: string;
+  policyVersion: string;
+  revokedAt: string | null;
+  scopeCount: number;
+  source: string;
+  status: string;
+}
+
+export interface DisclosureOpsDappSummary {
+  activeGrantCount: number;
+  activeSubjectCount: number;
+  appName: string;
+  dappId: number;
+  lastGrantedAt: string | null;
+  lastRevokedAt: string | null;
+  recentGrants: DisclosureOpsGrantSample[];
+  revokedGrantCount: number;
+  sources: Record<string, number>;
+}
+
+export interface DisclosureOpsOidcClientSummary {
+  activeGrantCount: number;
+  clientId: string;
+  clientName: string;
+  lastGrantedAt: string | null;
+  lastRevokedAt: string | null;
+  recentGrants: DisclosureOpsGrantSample[];
+  revokedGrantCount: number;
+  sources: Record<string, number>;
+}
+
+export interface DisclosureOpsOverviewPayload {
+  dapps: DisclosureOpsDappSummary[];
+  generatedAt: string;
+  oidcClients: DisclosureOpsOidcClientSummary[];
+  recentEvents: DisclosureOpsEvent[];
+  totals: {
+    activeGrants: number;
+    activeSubjects: number;
+    grantsBySource: Record<string, number>;
+    grantsByStatus: Record<string, number>;
+    recentGrantEvents7d: number;
+    recentGrantSamples: number;
+    revokedGrants: number;
+  };
+}
+
 export type RequestedInfoMap = Record<string, RequestedInfoItem>;
 export type RequestedInfoByIndex = Record<number, RequestedInfoMap>;
 

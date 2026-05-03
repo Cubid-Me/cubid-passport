@@ -1,7 +1,7 @@
 # App-Scoped Identity and Selective Disclosure
 
-Last updated: 2026-04-30
-Status: E01 foundation
+Last updated: 2026-05-03
+Status: E01 implemented; rollout follow-ups tracked in E01.1 and E01.2
 
 ## Purpose
 
@@ -59,11 +59,12 @@ disclosure grants before returning stamp values to a dapp. Legacy response
 shapes are preserved where practical, but undisclosed stamps are removed from
 the result set and email/phone fields are nulled unless the matching stamp claim
 was granted. This is intentionally stricter than the old table-permission
-behavior: `stamp_dappuser_permissions` remains a legacy compatibility table, but
-new grants are evaluated through the selective-disclosure contract. During the
-rollout period, routes retain a compatibility fallback to existing
-`stamp_dappuser_permissions` rows so pre-migration grants are not silently
-revoked before a production backfill has run.
+behavior: `stamp_dappuser_permissions` remains a legacy write-side table for
+older flows, but it is no longer a runtime authorization fallback for
+app-facing identity, score, location, or webhook release decisions. The
+`backfill:disclosure-grants` script should be run in dry-run mode before
+deployment and in write mode during rollout so legacy permission rows are
+represented in `selective_disclosure_grants`.
 Score and score-detail endpoints also calculate only from disclosed stamps so a
 dapp cannot infer undisclosed credentials from score contributions.
 
@@ -99,7 +100,8 @@ classifications, and grant timestamps, and revoke active Allow Page grants. The
 revocation route updates `selective_disclosure_grants`, writes a
 `selective_disclosure_events` audit event, and removes matching legacy
 `stamp_dappuser_permissions` rows for stamp claims in the revoked grant so the
-temporary compatibility fallback does not preserve access after revocation.
+legacy write-side permission table stays aligned with the disclosure-grant
+source of truth.
 
 Passport requires `PASSPORT_APP_SCOPED_SUBJECT_SECRET` for Allow Page subject
 derivation. OIDC currently derives its broader app-scoped subject from the same
@@ -148,21 +150,52 @@ Internal identifiers are never valid disclosure claims. If a downstream app
 needs a stable ID, it receives the app-scoped subject or OIDC pairwise `sub`,
 not raw Cubid storage identifiers.
 
-## Runtime Adoption Sequence
+## Runtime Adoption Status
 
-E01 does not rewrite every route in one pass. Current and remaining adoption
-sequence is:
+E01 is complete as a first-class platform foundation:
 
-1. Use `@cubid/identity` disclosure helpers in new API and webhook code.
-2. Route Allow Page stamp permissions through `selective_disclosure_grants`.
-3. Mirror OIDC consent records into disclosure grants or make OIDC consume the
-   disclosure grant service directly.
-4. Update SDK-facing identity routes to return only app-scoped subject and
-   granted claims.
-5. Use disclosure grants to filter webhook payloads.
-6. Extend the grant taxonomy beyond stamps to profile and location claims.
-7. Add user-facing disclosure history and revocation views that cover both OIDC
-   and non-OIDC app grants.
+1. `@cubid/identity` owns the shared app-scoped subject and disclosure-grant
+   domain helpers.
+2. Allow Page stamp permissions persist source `allow_page` disclosure grants.
+3. OIDC consent approval and revocation mirror into the shared disclosure-grant
+   contract.
+4. SDK-facing Passport identity, stamp, score, profile, and location routes
+   consult disclosure grants before releasing values.
+5. API v3 webhook delivery is disclosure-gated and does not send undisclosed
+   stamp events.
+6. The grant taxonomy now includes stamp, profile, and location claims.
+7. Passport Profile exposes OIDC consent management and separate non-OIDC app
+   disclosure grant history/revocation.
+8. Admin exposes read-only disclosure operations visibility for aggregate grant
+   health, source splits, dapp/client summaries, and redacted grant events.
+
+`E01.1` added the production backfill script and removed runtime fallback reads
+from `stamp_dappuser_permissions`. `E01.2` added the Admin read-only
+Disclosure Ops panel and overview API for app-scoped subjects, disclosure
+grants, dapp/OIDC-client health, and grant/revoke events.
+
+## Admin Disclosure Ops
+
+Admin's `Disclosure Ops` tab is intentionally read-only. It loads through
+`POST /api/admin/disclosures/operations/overview`, requires the shared Admin
+API security baseline, and returns:
+
+- total active and revoked disclosure grants
+- active app-scoped subject count
+- grant source and status splits
+- dapp-level active/revoked grant counts and recent grant samples
+- OIDC-client-level active/revoked grant counts and recent grant samples
+- recent disclosure events with raw subject IDs, grant IDs, Cubid user IDs, and
+  dapp user UUIDs redacted from event details
+
+The overview uses service-role SQL aggregate functions for totals, per-dapp
+summaries, per-OIDC-client summaries, active subject count, and 7-day event
+count. The API only samples recent grant rows for compact UI detail cards, so
+operator totals do not depend on capped PostgREST result windows.
+
+Operator-driven revocation, repair, or data backfill from Admin is out of scope
+until there is a separate authorization design. Production backfills should use
+the Passport server script and normal deployment controls, not a browser UI.
 
 ## Non-Goals In This Slice
 

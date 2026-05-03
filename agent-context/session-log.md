@@ -4256,3 +4256,125 @@ Address the Codex review finding that failed idempotency records must not re-run
 #### Follow-up
 
 - push the terminal failed-idempotency fix, confirm CI is green, then reply to and resolve the Copilot and Codex review threads
+
+### session: v149
+
+- timestamp: 2026-05-03T13:44:24Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-closeout-reconciliation**
+- head: **`87013e2`**
+- session name: **Close out E01 app-scoped disclosure foundation**
+
+#### Objective
+
+Reconcile E01 after PR 156 merged and decide whether the parent app-scoped identity and selective-disclosure todo should remain open or be split into precise follow-ups.
+
+#### Actions Taken
+
+- verified the merged runtime covers Allow Page grant persistence, OIDC consent mirroring, SDK-facing route filtering, webhook filtering, profile/location claim taxonomy, and user-facing non-OIDC disclosure history/revocation
+- marked E01 completed in the roadmap
+- added `E01.1` for production backfill and retirement of the legacy `stamp_dappuser_permissions` compatibility fallback
+- added `E01.2` for Admin/Ops visibility into app-scoped subjects, disclosure grants, and grant/revoke events
+- updated the E01 engineering doc from foundation/adoption-sequence language to implemented-status language with rollout follow-ups
+
+#### Verification
+
+- `git status -sb`
+- `rg -n "Status: (Started|Not started)|^## [A-Z][0-9]|^### [A-Z][0-9]" agent-context/todo.md`
+- reviewed `docs/engineering/app-scoped-identity-selective-disclosure.md`
+
+#### Follow-up
+
+- tackle `E01.1` next if the priority is production rollout safety, or `E01.2` next if operators need visibility before disabling legacy fallback behavior
+
+### session: v150
+
+- timestamp: 2026-05-03T13:54:17Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-closeout-reconciliation**
+- head: **`d483ab1`**
+- session name: **Retire legacy disclosure fallback**
+
+#### Objective
+
+Complete `E01.1` by adding the production backfill path for legacy stamp permissions and making selective-disclosure grants the only runtime authorization source for app-facing disclosure.
+
+#### Actions Taken
+
+- added a Passport dry-run/write script to backfill `stamp_dappuser_permissions` into `selective_disclosure_grants`
+- removed legacy stamp-permission fallback reads from disclosure grant loading and stamp filtering
+- updated webhook and disclosure tests so SDK-facing and webhook outputs require grant-backed disclosure
+- updated the engineering doc, Passport script contract, roadmap metadata, and SDK handoff note
+
+#### Verification
+
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/passport test'`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- run the backfill script in production dry-run mode before write mode, then consider `E01.2` for Admin/Ops disclosure visibility
+
+### session: v151
+
+- timestamp: 2026-05-03T17:20:46Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-closeout-reconciliation**
+- head: **`44e6eb5`**
+- session name: **Add disclosure operations visibility**
+
+#### Objective
+
+Complete `E01.2` by adding read-only Admin/Ops visibility for app-scoped subjects, selective-disclosure grants, and disclosure grant/revoke events.
+
+#### Actions Taken
+
+- added a disclosure operations server mapper and Admin overview API under the shared Admin security baseline
+- added a read-only `Disclosure Ops` Admin tab with grant health, dapp summaries, OIDC-client summaries, and redacted recent events
+- added tests for disclosure ops aggregation/redaction and route baseline wiring
+- updated the E01 engineering doc and roadmap metadata to reflect the completed operations visibility slice
+
+#### Verification
+
+- `pnpm --filter @cubid/admin test`
+- `pnpm --filter @cubid/admin typecheck`
+- `pnpm --filter @cubid/admin build`
+- `git diff --check`
+
+#### Follow-up
+
+- yeet the E01 closeout branch for review, then start the next platform slice from `dev`
+
+### session: v152
+
+- timestamp: 2026-05-03T20:54:11Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-closeout-reconciliation**
+- head: **`6b99aa6`**
+- session name: **Address PR 157 disclosure ops review**
+
+#### Objective
+
+Address Copilot and Codex review comments on PR 157 before completing the yeet review flow.
+
+#### Actions Taken
+
+- replaced Disclosure Ops sample-derived totals with service-role SQL aggregate functions for grant totals, active subject counts, 7-day event counts, dapp summaries, and OIDC-client summaries
+- changed the Admin overview payload so sampled recent grants are labeled as samples rather than scanned totals
+- paginated the legacy stamp-permission backfill script and batched reference lookups per page
+- updated tests and engineering docs for the aggregate-backed operations contract
+
+#### Verification
+
+- `pnpm --filter @cubid/admin test`
+- `pnpm --filter @cubid/admin typecheck`
+- `pnpm --filter @cubid/admin build`
+- `pnpm --filter @cubid/passport typecheck`
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/passport test'`
+- `git diff --check`
+
+#### Follow-up
+
+- push the review fixes, confirm CI is green again, reply to and resolve the Copilot and Codex review threads

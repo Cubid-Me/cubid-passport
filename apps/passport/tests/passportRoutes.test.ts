@@ -1409,9 +1409,28 @@ test("Passport API v3 webhook trigger sends signed disclosure-filtered payloads"
     id: 610,
     stamptype: 13,
   })
-  supabase.stampPermissions.push({
-    dappuser_id: dappUserUuid,
-    stamp_id: 610,
+  supabase.appScopedSubjects.push({
+    app_identifier: "dapp:42",
+    app_scoped_subject: "app_subject_610",
+    dapp_id: 42,
+    dapp_user_uuid: dappUserUuid,
+    id: "subject_610",
+    status: "active",
+  })
+  supabase.selectiveDisclosureGrants.push({
+    app_scoped_subject_id: "subject_610",
+    dapp_id: 42,
+    granted_claims: [
+      {
+        claim: "stamp:email",
+        dataClass: "identity",
+        purpose: "Allow Page stamp sharing",
+        required: false,
+      },
+    ],
+    granted_scopes: ["cubid:stamps"],
+    id: "grant_610",
+    status: "active",
   })
   supabase.setWebhookSubscription({
     dapp: 42,
@@ -1526,9 +1545,28 @@ test("Passport API v3 webhook trigger records failed delivery attempts and retry
     id: 630,
     stamptype: 13,
   })
-  supabase.stampPermissions.push({
-    dappuser_id: dappUserUuid,
-    stamp_id: 630,
+  supabase.appScopedSubjects.push({
+    app_identifier: "dapp:42",
+    app_scoped_subject: "app_subject_630",
+    dapp_id: 42,
+    dapp_user_uuid: dappUserUuid,
+    id: "subject_630",
+    status: "active",
+  })
+  supabase.selectiveDisclosureGrants.push({
+    app_scoped_subject_id: "subject_630",
+    dapp_id: 42,
+    granted_claims: [
+      {
+        claim: "stamp:email",
+        dataClass: "identity",
+        purpose: "Allow Page stamp sharing",
+        required: false,
+      },
+    ],
+    granted_scopes: ["cubid:stamps"],
+    id: "grant_630",
+    status: "active",
   })
   supabase.setWebhookSubscription({
     dapp: 42,
