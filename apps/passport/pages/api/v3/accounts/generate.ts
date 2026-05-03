@@ -1,9 +1,14 @@
 import type { NextApiRequest, NextApiResponse } from "next"
 
+import { ApiSecurityError } from "@cubid/auth/server"
 import {
   handlePassportRoute,
   passportSchemas,
 } from "@/lib/server/passportApi"
+import {
+  getApiV3IdempotencyKey,
+  runApiV3IdempotentWrite,
+} from "@/lib/server/apiV3Idempotency"
 import { createGeneratedBlockchainAccount } from "@/lib/server/blockchainAccounts"
 import { getPassportSupabase } from "@/lib/server/supabase"
 
@@ -33,26 +38,38 @@ export default async function handler(
       route: "v3.accounts.generate",
     },
     async ({ body, context }) => {
-      const account = await createGeneratedBlockchainAccount({
-        chain: body.chain,
-        dappId: context.dapp.id,
-        dappUserUuid: body.dapp_user_uuid,
-        label: body.label ?? null,
+      const supabase = getPassportSupabase()
+      const response = await runApiV3IdempotentWrite({
+        actorIdentifier: context.actorIdentifier,
+        actorType: context.actorType,
+        body,
+        idempotencyKey: getApiV3IdempotencyKey(req),
         requestId: context.requestId,
-        supabase: getPassportSupabase(),
+        route: "v3.accounts.generate",
+        supabase,
+        handler: async () => {
+          const account = await createGeneratedBlockchainAccount({
+            chain: body.chain,
+            dappId: context.dapp.id,
+            dappUserUuid: body.dapp_user_uuid,
+            label: body.label ?? null,
+            requestId: context.requestId,
+            supabase,
+          })
+
+          if (!account) {
+            throw new ApiSecurityError(
+              404,
+              "not_found",
+              "Dapp user was not found for the authenticated app."
+            )
+          }
+
+          return { body: { data: account }, statusCode: 200 }
+        },
       })
 
-      if (!account) {
-        return res.status(404).json({
-          error: {
-            code: "not_found",
-            message: "Dapp user was not found for the authenticated app.",
-            requestId: context.requestId,
-          },
-        })
-      }
-
-      return res.status(200).json({ data: account })
+      return res.status(response.statusCode).json(response.body)
     }
   )
 }

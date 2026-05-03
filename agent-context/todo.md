@@ -643,12 +643,12 @@ Create the backend source of truth for Cubid API v3 in `cubid-passport`, centere
 
 ### E02.6 Harden API v3 route behavior
 
-- Status: Not started
-- Timestamp started: TBD
-- Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Status: Completed
+- Timestamp started: 2026-05-03T00:23:24Z
+- Timestamp completed: 2026-05-03T00:35:03Z
+- Feature branch: codex/e01-disclosure-claim-taxonomy
+- Head: 6dd342e
+- Session-log reference(s): session: v144
 
 Review and harden the active API v3 routes so they are production-grade backend contracts rather than one-off feature endpoints. Keep the current route family small: `/api/v3/save_secret`, `/api/v3/accounts/generate`, and `/api/v3/accounts/list` unless the E02.5 contract intentionally adds more. Ensure every v3 route uses shared Passport API security helpers, dapp API-key authentication, explicit request schemas, ownership checks against the target dapp user, disclosure-aware behavior where relevant, stable error envelopes, request IDs, and no raw secret or private-key exposure. Add or tighten tests for malformed payloads, invalid dapp credentials, cross-dapp user attempts, unsupported chains, duplicate or retry behavior, and failure cleanup. Do not modify public SDK code here; document any SDK-visible behavior changes through the SDK handoff process.
 

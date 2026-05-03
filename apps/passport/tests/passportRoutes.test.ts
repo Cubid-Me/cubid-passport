@@ -18,6 +18,7 @@ import listAccountsV3Handler from "../pages/api/v3/accounts/list"
 import saveSecretV3Handler from "../pages/api/v3/save_secret"
 import webhookTriggerHandler from "../pages/api/cubid-webhook/trigger-url"
 import createUserHandler from "../pages/api/v2/create_user"
+import { hashApiV3IdempotencyRequest } from "../lib/server/apiV3Idempotency"
 import { decryptBlockchainPrivateKeyWithKey } from "../lib/server/blockchainAccounts"
 import {
   DAPP_USER_SECRET_LEGACY_SENTINEL,
@@ -636,6 +637,7 @@ test("Passport v3 save_secret stores only encrypted dapp user secrets", async ()
       user_id: userId,
     },
     headers: {
+      "idempotency-key": "save-secret-primary",
       origin: "https://passport.cubid.me",
     },
     url: "/api/v3/save_secret",
@@ -685,6 +687,7 @@ test("Passport v3 save_secret stores only encrypted dapp user secrets", async ()
       user_id: userId,
     },
     headers: {
+      "idempotency-key": "save-secret-second",
       origin: "https://passport.cubid.me",
     },
     url: "/api/v3/save_secret",
@@ -712,6 +715,7 @@ test("Passport v3 save_secret rejects dapp users outside the authenticated app",
       user_id: userId,
     },
     headers: {
+      "idempotency-key": "save-secret-cross-dapp",
       origin: "https://passport.cubid.me",
     },
     url: "/api/v3/save_secret",
@@ -732,6 +736,187 @@ test("Passport v3 save_secret rejects dapp users outside the authenticated app",
   })
 })
 
+test("Passport v3 save_secret requires and replays Idempotency-Key writes", async () => {
+  const supabase = new MockPassportSupabase()
+  const apiKey = addDappAuth(supabase)
+  const userId = "00000000-0000-4000-8000-000000000044"
+  supabase.setDappUser({ dapp_id: 42, uuid: userId })
+  setPassportSupabaseForTests(supabase as never)
+
+  const body = {
+    api_key: apiKey,
+    secret: "idempotent dapp user secret",
+    user_id: userId,
+  }
+  const makeReq = () =>
+    createApiRequest({
+      body,
+      headers: {
+        "idempotency-key": "save-secret-replay",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/save_secret",
+    })
+
+  const firstRes = createApiResponse()
+  await saveSecretV3Handler(makeReq(), firstRes)
+  const replayRes = createApiResponse()
+  await saveSecretV3Handler(makeReq(), replayRes)
+
+  assert.equal(firstRes.statusCode, 200)
+  assert.equal(replayRes.statusCode, 200)
+  assert.deepEqual(replayRes.body, { success: true })
+  assert.equal(supabase.privateDappUserSecrets.length, 1)
+  assert.equal(
+    supabase.apiIdempotencyKeys[0]?.status,
+    "completed"
+  )
+})
+
+test("Passport v3 save_secret rejects missing, conflicting, and pending idempotency keys", async () => {
+  const supabase = new MockPassportSupabase()
+  const apiKey = addDappAuth(supabase)
+  const userId = "00000000-0000-4000-8000-000000000045"
+  const body = {
+    api_key: apiKey,
+    secret: "first secret",
+    user_id: userId,
+  }
+  supabase.setDappUser({ dapp_id: 42, uuid: userId })
+  setPassportSupabaseForTests(supabase as never)
+
+  const missingKeyRes = createApiResponse()
+  await saveSecretV3Handler(
+    createApiRequest({
+      body,
+      headers: {
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/save_secret",
+    }),
+    missingKeyRes
+  )
+  assert.equal(missingKeyRes.statusCode, 400)
+  assert.equal(
+    (missingKeyRes.body as { error: { message: string } }).error.message,
+    "Missing Idempotency-Key header."
+  )
+
+  await saveSecretV3Handler(
+    createApiRequest({
+      body,
+      headers: {
+        "idempotency-key": "save-secret-conflict",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/save_secret",
+    }),
+    createApiResponse()
+  )
+
+  const conflictRes = createApiResponse()
+  await saveSecretV3Handler(
+    createApiRequest({
+      body: {
+        ...body,
+        secret: "different secret",
+      },
+      headers: {
+        "idempotency-key": "save-secret-conflict",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/save_secret",
+    }),
+    conflictRes
+  )
+  assert.equal(conflictRes.statusCode, 409)
+  assert.equal(
+    (conflictRes.body as { error: { code: string } }).error.code,
+    "idempotency_conflict"
+  )
+
+  supabase.apiIdempotencyKeys.push({
+    actor_identifier: "42",
+    actor_type: "dapp",
+    expires_at: new Date(Date.now() + 60000).toISOString(),
+    idempotency_key: "save-secret-pending",
+    request_hash: hashApiV3IdempotencyRequest(body),
+    request_id: "passport_pending_1",
+    route: "v3.save_secret",
+    status: "pending",
+  })
+  const pendingRes = createApiResponse()
+  await saveSecretV3Handler(
+    createApiRequest({
+      body,
+      headers: {
+        "idempotency-key": "save-secret-pending",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/save_secret",
+    }),
+    pendingRes
+  )
+  assert.equal(pendingRes.statusCode, 409)
+  assert.equal(
+    (pendingRes.body as { error: { code: string } }).error.code,
+    "request_in_progress"
+  )
+})
+
+test("Passport v3 save_secret rejects dapp-id mismatches and rate-limit denials", async () => {
+  const now = Date.now()
+  const windowStartMs = now - (now % 60000)
+  const supabase = new MockPassportSupabase()
+  const apiKey = addDappAuth(supabase)
+  const userId = "00000000-0000-4000-8000-000000000046"
+  supabase.setDappUser({ dapp_id: 42, uuid: userId })
+  setPassportSupabaseForTests(supabase as never)
+
+  const mismatchRes = createApiResponse()
+  await saveSecretV3Handler(
+    createApiRequest({
+      body: {
+        api_key: apiKey,
+        dapp_id: 99,
+        secret: "raw dapp user secret",
+        user_id: userId,
+      },
+      headers: {
+        "idempotency-key": "save-secret-dapp-mismatch",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/save_secret",
+    }),
+    mismatchRes
+  )
+  assert.equal(mismatchRes.statusCode, 403)
+  assert.equal(
+    (mismatchRes.body as { error: { code: string } }).error.code,
+    "forbidden"
+  )
+
+  supabase.setBucket(`passport_dapp_mutation:42:${windowStartMs}`, 20)
+  const rateLimitedRes = createApiResponse()
+  await saveSecretV3Handler(
+    createApiRequest({
+      body: {
+        api_key: apiKey,
+        secret: "raw dapp user secret",
+        user_id: userId,
+      },
+      headers: {
+        "idempotency-key": "save-secret-rate-limited",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/save_secret",
+    }),
+    rateLimitedRes
+  )
+  assert.equal(rateLimitedRes.statusCode, 429)
+  assert.equal(supabase.privateDappUserSecrets.length, 0)
+})
+
 test("Passport v3 account generation encrypts private keys and links only the triggering dapp user", async () => {
   const supabase = new MockPassportSupabase()
   const apiKey = addDappAuth(supabase)
@@ -747,6 +932,7 @@ test("Passport v3 account generation encrypts private keys and links only the tr
       label: "Primary EVM",
     },
     headers: {
+      "idempotency-key": "generate-evm-primary",
       origin: "https://passport.cubid.me",
     },
     url: "/api/v3/accounts/generate",
@@ -809,6 +995,7 @@ test("Passport v3 account generation rejects dapp users outside the authenticate
       dapp_user_uuid: dappUserUuid,
     },
     headers: {
+      "idempotency-key": "generate-cross-dapp",
       origin: "https://passport.cubid.me",
     },
     url: "/api/v3/accounts/generate",
@@ -837,6 +1024,7 @@ test("Passport v3 account generation rejects unsupported Sui requests", async ()
       dapp_user_uuid: dappUserUuid,
     },
     headers: {
+      "idempotency-key": "generate-sui",
       origin: "https://passport.cubid.me",
     },
     url: "/api/v3/accounts/generate",
@@ -848,6 +1036,148 @@ test("Passport v3 account generation rejects unsupported Sui requests", async ()
   assert.equal(res.statusCode, 400)
   assert.equal((res.body as { error: { code: string } }).error.code, "invalid_request")
   assert.equal(supabase.userAccounts.length, 0)
+})
+
+test("Passport v3 account generation replays Idempotency-Key writes without creating duplicate accounts", async () => {
+  const supabase = new MockPassportSupabase()
+  const apiKey = addDappAuth(supabase)
+  const dappUserUuid = "00000000-0000-4000-8000-000000000056"
+  supabase.setDappUser({ dapp_id: 42, user_id: 1234, uuid: dappUserUuid })
+  setPassportSupabaseForTests(supabase as never)
+
+  const body = {
+    api_key: apiKey,
+    chain: "near",
+    dapp_user_uuid: dappUserUuid,
+    label: "Primary NEAR",
+  }
+  const makeReq = () =>
+    createApiRequest({
+      body,
+      headers: {
+        "idempotency-key": "generate-near-replay",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/accounts/generate",
+    })
+
+  const firstRes = createApiResponse()
+  await generateAccountV3Handler(makeReq(), firstRes)
+  const replayRes = createApiResponse()
+  await generateAccountV3Handler(makeReq(), replayRes)
+
+  assert.equal(firstRes.statusCode, 200)
+  assert.equal(replayRes.statusCode, 200)
+  assert.deepEqual(replayRes.body, firstRes.body)
+  assert.equal(supabase.userAccounts.length, 1)
+  assert.equal(supabase.privateKeys.length, 1)
+  assert.equal(supabase.dappUserAccounts.length, 1)
+})
+
+test("Passport v3 account generation rejects idempotency conflicts and pending requests", async () => {
+  const supabase = new MockPassportSupabase()
+  const apiKey = addDappAuth(supabase)
+  const dappUserUuid = "00000000-0000-4000-8000-000000000057"
+  const body = {
+    api_key: apiKey,
+    chain: "evm",
+    dapp_user_uuid: dappUserUuid,
+  }
+  supabase.setDappUser({ dapp_id: 42, user_id: 1234, uuid: dappUserUuid })
+  setPassportSupabaseForTests(supabase as never)
+
+  await generateAccountV3Handler(
+    createApiRequest({
+      body,
+      headers: {
+        "idempotency-key": "generate-conflict",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/accounts/generate",
+    }),
+    createApiResponse()
+  )
+
+  const conflictRes = createApiResponse()
+  await generateAccountV3Handler(
+    createApiRequest({
+      body: {
+        ...body,
+        label: "Different body",
+      },
+      headers: {
+        "idempotency-key": "generate-conflict",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/accounts/generate",
+    }),
+    conflictRes
+  )
+  assert.equal(conflictRes.statusCode, 409)
+  assert.equal(
+    (conflictRes.body as { error: { code: string } }).error.code,
+    "idempotency_conflict"
+  )
+
+  supabase.apiIdempotencyKeys.push({
+    actor_identifier: "42",
+    actor_type: "dapp",
+    expires_at: new Date(Date.now() + 60000).toISOString(),
+    idempotency_key: "generate-pending",
+    request_hash: hashApiV3IdempotencyRequest(body),
+    request_id: "passport_pending_2",
+    route: "v3.accounts.generate",
+    status: "pending",
+  })
+  const pendingRes = createApiResponse()
+  await generateAccountV3Handler(
+    createApiRequest({
+      body,
+      headers: {
+        "idempotency-key": "generate-pending",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/accounts/generate",
+    }),
+    pendingRes
+  )
+  assert.equal(pendingRes.statusCode, 409)
+  assert.equal(
+    (pendingRes.body as { error: { code: string } }).error.code,
+    "request_in_progress"
+  )
+})
+
+test("Passport v3 account generation cleans up public account rows on private-key failure", async () => {
+  const supabase = new MockPassportSupabase()
+  const apiKey = addDappAuth(supabase)
+  const dappUserUuid = "00000000-0000-4000-8000-000000000058"
+  supabase.setDappUser({ dapp_id: 42, user_id: 1234, uuid: dappUserUuid })
+  supabase.failNextPrivateKeyInsert = true
+  setPassportSupabaseForTests(supabase as never)
+
+  const res = createApiResponse()
+  await generateAccountV3Handler(
+    createApiRequest({
+      body: {
+        api_key: apiKey,
+        chain: "evm",
+        dapp_user_uuid: dappUserUuid,
+      },
+      headers: {
+        "idempotency-key": "generate-private-key-failure",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/accounts/generate",
+    }),
+    res
+  )
+
+  assert.equal(res.statusCode, 500)
+  assert.equal(supabase.userAccounts.length, 0)
+  assert.equal(supabase.privateKeys.length, 0)
+  assert.equal(supabase.dappUserAccounts.length, 0)
+  assert.equal(supabase.apiIdempotencyKeys[0]?.status, "failed")
 })
 
 test("Passport v3 account list returns dapp-user-visible metadata without secret material", async () => {
@@ -864,6 +1194,7 @@ test("Passport v3 account list returns dapp-user-visible metadata without secret
       dapp_user_uuid: dappUserUuid,
     },
     headers: {
+      "idempotency-key": "generate-solana-for-list",
       origin: "https://passport.cubid.me",
     },
     url: "/api/v3/accounts/generate",
@@ -891,6 +1222,115 @@ test("Passport v3 account list returns dapp-user-visible metadata without secret
   assert.equal(accounts[0].dappUserUuid, dappUserUuid)
   assert.equal(JSON.stringify(listRes.body).includes("ciphertext"), false)
   assert.equal(JSON.stringify(listRes.body).includes("private"), false)
+})
+
+test("Passport v3 account list validates auth, payloads, ownership, and chain filtering", async () => {
+  const supabase = new MockPassportSupabase()
+  const apiKey = addDappAuth(supabase)
+  const dappUserUuid = "00000000-0000-4000-8000-000000000059"
+  supabase.setDappUser({ dapp_id: 42, user_id: 1234, uuid: dappUserUuid })
+  setPassportSupabaseForTests(supabase as never)
+
+  const invalidAuthRes = createApiResponse()
+  await listAccountsV3Handler(
+    createApiRequest({
+      body: {
+        api_key: "cubid_live_missing_secret",
+        dapp_user_uuid: dappUserUuid,
+      },
+      headers: {
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/accounts/list",
+    }),
+    invalidAuthRes
+  )
+  assert.equal(invalidAuthRes.statusCode, 401)
+
+  const malformedRes = createApiResponse()
+  await listAccountsV3Handler(
+    createApiRequest({
+      body: {
+        api_key: apiKey,
+        dapp_user_uuid: "not-a-uuid",
+      },
+      headers: {
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/accounts/list",
+    }),
+    malformedRes
+  )
+  assert.equal(malformedRes.statusCode, 400)
+
+  const crossDappRes = createApiResponse()
+  await listAccountsV3Handler(
+    createApiRequest({
+      body: {
+        api_key: apiKey,
+        dapp_user_uuid: "00000000-0000-4000-8000-000000000060",
+      },
+      headers: {
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/accounts/list",
+    }),
+    crossDappRes
+  )
+  assert.equal(crossDappRes.statusCode, 404)
+
+  await generateAccountV3Handler(
+    createApiRequest({
+      body: {
+        api_key: apiKey,
+        chain: "evm",
+        dapp_user_uuid: dappUserUuid,
+      },
+      headers: {
+        "idempotency-key": "generate-evm-for-filter",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/accounts/generate",
+    }),
+    createApiResponse()
+  )
+  await generateAccountV3Handler(
+    createApiRequest({
+      body: {
+        api_key: apiKey,
+        chain: "solana",
+        dapp_user_uuid: dappUserUuid,
+      },
+      headers: {
+        "idempotency-key": "generate-solana-for-filter",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/accounts/generate",
+    }),
+    createApiResponse()
+  )
+
+  const filteredRes = createApiResponse()
+  await listAccountsV3Handler(
+    createApiRequest({
+      body: {
+        api_key: apiKey,
+        chain: "evm",
+        dapp_user_uuid: dappUserUuid,
+      },
+      headers: {
+        origin: "https://passport.cubid.me",
+        "x-request-id": "passport_v3_list_filter",
+      },
+      url: "/api/v3/accounts/list",
+    }),
+    filteredRes
+  )
+  const accounts = (filteredRes.body as DataResponse<Array<Record<string, unknown>>>).data
+  assert.equal(filteredRes.statusCode, 200)
+  assert.equal(filteredRes.headers["x-request-id"], "passport_v3_list_filter")
+  assert.equal(accounts.length, 1)
+  assert.equal(accounts[0].chain, "evm")
 })
 
 test("Passport internal webhook trigger rejects missing internal bearer tokens", async () => {

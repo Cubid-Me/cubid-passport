@@ -4105,3 +4105,35 @@ Start and complete E02.5 by inventorying the current API v3 backend routes and l
 #### Follow-up
 
 - implement E02.6 next to harden API v3 route behavior against the contract defined in E02.5
+
+### session: v144
+
+- timestamp: 2026-05-03T00:35:03Z
+- agent: **OpenAI Codex**
+- branch: **codex/e01-disclosure-claim-taxonomy**
+- head: **`6dd342e`**
+- session name: **Harden E02.6 API v3 route behavior**
+
+#### Objective
+
+Complete E02.6 by tightening the active API v3 backend routes against the canonical E02.5 contract before changing or adding broader developer-platform behavior.
+
+#### Actions Taken
+
+- added a service-role-only `api_idempotency_keys` migration for API v3 write replay protection
+- added a shared Passport API v3 idempotency helper that requires `Idempotency-Key`, hashes canonical request bodies, replays completed responses, and rejects conflicting or pending keys
+- wired idempotency into `/api/v3/save_secret` and `/api/v3/accounts/generate` without changing success payload shapes
+- expanded Passport route tests for v3 auth failures, dapp ownership, idempotent replay, conflict and pending-key errors, no secret/private-key exposure, chain filtering, and partial-failure cleanup
+- updated the API v3 engineering doc and wrote an SDK-agent handoff note for the new idempotency contract
+- marked E02.6 completed in the roadmap
+
+#### Verification
+
+- `npx -p node@24 -c 'node --version && pnpm --filter @cubid/passport test'`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- implement E02.7 next to standardize API v3 webhook contracts and delivery semantics

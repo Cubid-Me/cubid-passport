@@ -41,6 +41,13 @@ body field while the shared Passport dapp actor helper verifies the key against
 but do not authorize access; the authenticated dapp from the API key is the
 authority.
 
+Write routes require an `Idempotency-Key` header. The key is scoped to the
+authenticated dapp actor plus route and retained for 24 hours. Repeating the
+same key with the same request body after a successful write replays the stored
+status and response body without repeating side effects. Reusing the same key
+with a different request body returns `409 idempotency_conflict`; retrying while
+the original request is still pending returns `409 request_in_progress`.
+
 ### `POST /api/v3/save_secret`
 
 Purpose: store a retrievable dapp-user secret using the v3 encrypted custody
@@ -59,6 +66,7 @@ Request body:
 
 Rules:
 
+- `Idempotency-Key` is required.
 - `user_id` is the dapp user UUID and must belong to the authenticated dapp.
 - `secret` must be non-empty and is encrypted before storage.
 - Writes go to `private.dapp_user_secrets` with `secret` set to the non-secret
@@ -95,6 +103,7 @@ Request body:
 
 Rules:
 
+- `Idempotency-Key` is required.
 - `dapp_user_uuid` must belong to the authenticated dapp.
 - Supported generated chains are currently `evm`, `near`, and `solana`. Sui is
   explicitly deferred to `C05.2.1`.
@@ -214,11 +223,10 @@ it, return `null`, or return an explicit non-granted state as documented by the
 route contract. It must not leak the value through score details, webhooks, or
 fallback legacy permissions.
 
-API v3 write routes should become explicitly idempotent where retries are part
-of normal integrator behavior. Until a route documents an idempotency key or
-natural idempotency rule, callers should treat successful writes as non-idempotent
-and retry only after checking the resulting resource state. E02.6 owns tightening
-that behavior per route without changing the public SDK from this repo.
+API v3 write routes use the shared `api_idempotency_keys` store. Route
+implementations must hash the canonical request body instead of storing raw
+payloads, and idempotency records must never store submitted secrets or private
+keys in plaintext.
 
 ## Webhook Contract Target
 

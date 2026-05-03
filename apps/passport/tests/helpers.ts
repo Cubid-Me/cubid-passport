@@ -36,6 +36,7 @@ export class MockPassportSupabase {
   readonly actorProfiles = new Map<string, Record<string, unknown>>()
   readonly buckets = new Map<string, BucketRow>()
   readonly dappApiKeys = new Map<string, DappApiKeyRow>()
+  readonly apiIdempotencyKeys: Array<Record<string, unknown>> = []
   readonly dappUserAccounts: Array<Record<string, unknown>> = []
   readonly dappUserSecrets: Array<Record<string, unknown>> = []
   readonly privateDappUserSecrets: Array<Record<string, unknown>> = []
@@ -50,6 +51,7 @@ export class MockPassportSupabase {
   readonly stamps: Array<Record<string, unknown>> = []
   readonly userAccounts: Array<Record<string, unknown>> = []
   readonly users = new Map<number, Record<string, unknown>>()
+  failNextPrivateKeyInsert = false
   private nextEmailOtpId = 1
 
   rpc(name: string, params: Record<string, unknown>) {
@@ -173,6 +175,83 @@ export class MockPassportSupabase {
             window_start: String(row.window_start ?? ""),
           })
           return { error: null }
+        },
+      }
+    }
+
+    if (table === "api_idempotency_keys") {
+      const createFilteredQuery = () => {
+        const filters: Record<string, unknown> = {}
+        const resolve = () =>
+          this.apiIdempotencyKeys.filter((row) =>
+            Object.entries(filters).every(
+              ([column, value]) => String(row[column]) === String(value)
+            )
+          )
+        const query = {
+          eq: (column: string, value: unknown) => {
+            filters[column] = value
+            return query
+          },
+          maybeSingle: async () => ({
+            data: resolve()[0] ?? null,
+            error: null,
+          }),
+          then: (
+            resolveThen: (value: {
+              data: Record<string, unknown>[]
+              error: null
+            }) => unknown
+          ) => Promise.resolve({ data: resolve(), error: null }).then(resolveThen),
+        }
+        return query
+      }
+
+      return {
+        insert: async (row: Record<string, unknown>) => {
+          const existing = this.apiIdempotencyKeys.find(
+            (candidate) =>
+              candidate.route === row.route &&
+              candidate.actor_type === row.actor_type &&
+              candidate.actor_identifier === row.actor_identifier &&
+              candidate.idempotency_key === row.idempotency_key
+          )
+
+          if (existing) {
+            return { error: { code: "23505", message: "duplicate key" } }
+          }
+
+          this.apiIdempotencyKeys.push({
+            created_at: new Date().toISOString(),
+            id: this.apiIdempotencyKeys.length + 1,
+            updated_at: new Date().toISOString(),
+            ...row,
+          })
+          return { error: null }
+        },
+        select: createFilteredQuery,
+        update: (patch: Record<string, unknown>) => {
+          const filters: Record<string, unknown> = {}
+          const updateQuery = {
+            eq: (column: string, value: unknown) => {
+              filters[column] = value
+              return updateQuery
+            },
+            then: (resolveThen: (value: { error: null }) => unknown) => {
+              for (const row of this.apiIdempotencyKeys) {
+                if (
+                  Object.entries(filters).every(
+                    ([filterColumn, filterValue]) =>
+                      String(row[filterColumn]) === String(filterValue)
+                  )
+                ) {
+                  Object.assign(row, patch)
+                }
+              }
+              return Promise.resolve({ error: null }).then(resolveThen)
+            },
+          }
+          return updateQuery
         },
       }
     }
@@ -832,6 +911,11 @@ export class MockPassportSupabase {
           },
         }),
         insert: async (row: Record<string, unknown>) => {
+          if (this.failNextPrivateKeyInsert) {
+            this.failNextPrivateKeyInsert = false
+            return { error: new Error("private key insert failed") }
+          }
+
           this.privateKeys.push({
             created_at: new Date().toISOString(),
             id: `private_key_${this.privateKeys.length + 1}`,
