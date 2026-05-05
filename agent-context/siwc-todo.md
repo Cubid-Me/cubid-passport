@@ -34,23 +34,23 @@ Design the first decision-complete signing architecture for app-scoped custody a
 
 ### SIWC02. Add Admin policy controls for app-scoped account custody and signing
 
-- Status: Started
+- Status: Completed
 - Timestamp started: 2026-05-05T01:23:41Z
-- Timestamp completed: TBD
+- Timestamp completed: 2026-05-05T23:41:40Z
 - Feature branch: codex/siwc-roadmap-cleanup
-- Head: TBD
-- Session-log reference(s): session: v161
+- Head: a968016
+- Session-log reference(s): session: v161, session: v162, session: v163
 
 Add Admin-side controls that let operators configure whether an app may request generated accounts, which chains are enabled, whether signing is enabled, and which approval rules apply. This should extend the existing Admin control-plane pattern rather than creating a separate wallet dashboard. Include fields for allowed chains, custody mode, signing status, allowed signature types, transaction limits, optional contract allowlists, required passkey ACR, webhook event subscriptions, and sandbox/production behavior. Admin list/detail views must not expose private keys, ciphertext, wrapped data keys, Vault key material, or cross-app user identifiers. This todo should also decide how policy names and versions are surfaced to API v3 responses and audit logs.
 
 ### SIWC03. Add Passport user-facing app account visibility
 
-- Status: Not started
-- Timestamp started: TBD
+- Status: Started
+- Timestamp started: 2026-05-05T23:41:40Z
 - Timestamp completed: TBD
-- Feature branch: TBD
+- Feature branch: codex/siwc-roadmap-cleanup
 - Head: TBD
-- Session-log reference(s): TBD
+- Session-log reference(s): session: v163
 
 Add user-facing visibility for app-scoped custody accounts in Passport, likely inside the existing Profile and disclosure-management surface. Users should be able to see which apps have generated accounts for them, which chain each account belongs to, public addresses, labels, creation dates, custody status, and whether signing is enabled for that app. The UI should reinforce the privacy model: these accounts are scoped to individual apps, and other apps should not be able to correlate them. This slice should not add private-key export, signing, or cross-app wallet portability. It should only make the already-created v3 account metadata understandable and auditable for the human user, with no exposure of private or encrypted custody fields.
 

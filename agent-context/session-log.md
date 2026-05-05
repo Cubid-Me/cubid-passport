@@ -4657,3 +4657,29 @@ Implement the Admin control-plane slice for app-scoped custody and signing polic
 #### Follow-up
 
 - close `SIWC02` metadata with the implementation commit SHA, then immediately start `SIWC03`
+
+### session: v163
+
+- timestamp: 2026-05-05T23:41:40Z
+- agent: **OpenAI Codex**
+- branch: **codex/siwc-roadmap-cleanup**
+- head: **`a968016`**
+- session name: **Close SIWC02 and start SIWC03**
+
+#### Objective
+
+Close the completed SIWC Admin policy-control todo and immediately start the next Passport account-visibility todo.
+
+#### Actions Taken
+
+- marked `SIWC02` completed in both the main roadmap and SIWC side roadmap
+- recorded implementation head `a968016` for `SIWC02`
+- marked `SIWC03` started on `codex/siwc-roadmap-cleanup`
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- implement `SIWC03` by adding Passport user-facing visibility for app-scoped custody accounts without exposing private or encrypted custody material
