@@ -4600,3 +4600,29 @@ Promote `SIWC01` from the SIWC side-roadmap into the main roadmap and define the
 #### Follow-up
 
 - close `SIWC01` metadata with the implementation commit SHA, then immediately start `SIWC02`
+
+### session: v161
+
+- timestamp: 2026-05-05T01:23:41Z
+- agent: **OpenAI Codex**
+- branch: **codex/siwc-roadmap-cleanup**
+- head: **`008934d`**
+- session name: **Close SIWC01 and start SIWC02**
+
+#### Objective
+
+Close the completed SIWC signing-architecture todo and immediately start the next SIWC policy-control todo.
+
+#### Actions Taken
+
+- marked `SIWC01` completed in both the main roadmap and the SIWC side roadmap
+- recorded implementation head `008934d` for `SIWC01`
+- marked `SIWC02` started on `codex/siwc-roadmap-cleanup`
+
+#### Verification
+
+- planned docs-only validation with `git diff --check`
+
+#### Follow-up
+
+- implement `SIWC02` by designing and adding Admin policy controls for app-scoped custody and signing

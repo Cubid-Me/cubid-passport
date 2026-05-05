@@ -731,23 +731,23 @@ Promote the SIWC side-roadmap into the main execution backlog as the next wallet
 
 ### SIWC01. Define the v3 signing and transaction authorization architecture
 
-- Status: Started
+- Status: Completed
 - Timestamp started: 2026-05-05T01:21:18Z
-- Timestamp completed: TBD
+- Timestamp completed: 2026-05-05T01:23:41Z
 - Feature branch: codex/siwc-roadmap-cleanup
-- Head: TBD
-- Session-log reference(s): session: v160
+- Head: 008934d
+- Session-log reference(s): session: v160, session: v161
 
 Design the first decision-complete signing architecture for app-scoped custody accounts in `docs/engineering/siwc-v3-signing-architecture.md`. The architecture should decide whether v3 signing starts as server-side custodial signing with Supabase Vault-backed private keys, smart-account signing, a future external signer, or a phased hybrid. It must preserve the separation between authentication credentials and blockchain signing keys: passkeys authorize user intent, while wallet private keys or smart-account signer keys perform blockchain signing. Define the signing request lifecycle, approval state machine, actor model, replay/idempotency requirements, audit events, and which chains are included in the first slice. The design should explicitly say that generated accounts are not enough for SIWC wallet parity until users can safely approve signatures or transactions.
 
 ### SIWC02. Add Admin policy controls for app-scoped account custody and signing
 
-- Status: Not started
-- Timestamp started: TBD
+- Status: Started
+- Timestamp started: 2026-05-05T01:23:41Z
 - Timestamp completed: TBD
-- Feature branch: TBD
+- Feature branch: codex/siwc-roadmap-cleanup
 - Head: TBD
-- Session-log reference(s): TBD
+- Session-log reference(s): session: v161
 
 Add Admin-side controls that let operators configure whether an app may request generated accounts, which chains are enabled, whether signing is enabled, and which approval rules apply. This should extend the existing Admin control-plane pattern rather than creating a separate wallet dashboard. Include fields for allowed chains, custody mode, signing status, allowed signature types, transaction limits, optional contract allowlists, required passkey ACR, webhook event subscriptions, and sandbox/production behavior. Admin list/detail views must not expose private keys, ciphertext, wrapped data keys, Vault key material, or cross-app user identifiers. This todo should also decide how policy names and versions are surfaced to API v3 responses and audit logs, and should treat policy changes as SDK-impacting only when they alter public route or webhook semantics.
 
