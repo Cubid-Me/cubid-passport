@@ -4573,3 +4573,30 @@ Keep the SIWC side-roadmap while replacing generic competitive guidance with rep
 #### Follow-up
 
 - yeet the docs branch for review, then consider metadata-normalizing `C02` in `agent-context/todo.md`
+
+### session: v160
+
+- timestamp: 2026-05-05T01:21:18Z
+- agent: **OpenAI Codex**
+- branch: **codex/siwc-roadmap-cleanup**
+- head: **`f4fb0c1`**
+- session name: **Promote and implement SIWC01 signing architecture**
+
+#### Objective
+
+Promote `SIWC01` from the SIWC side-roadmap into the main roadmap and define the first target architecture for API v3 signing and transaction authorization.
+
+#### Actions Taken
+
+- added the SIWC execution track and `SIWC01`-`SIWC08` child todos to `agent-context/todo.md`
+- marked `SIWC01` started in both the main roadmap and side roadmap
+- created `docs/engineering/siwc-v3-signing-architecture.md` as the signing and transaction authorization target-state source of truth
+- locked the first implementation direction as phased server-side custodial signing backed by existing Vault-encrypted API v3 private-key custody
+
+#### Verification
+
+- planned docs-only validation with `git diff --check`
+
+#### Follow-up
+
+- close `SIWC01` metadata with the implementation commit SHA, then immediately start `SIWC02`

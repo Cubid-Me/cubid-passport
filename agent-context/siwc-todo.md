@@ -23,12 +23,12 @@ The generic recommendation to build new `/api/v2/wallets/*` routes should be rep
 
 ### SIWC01. Define the v3 signing and transaction authorization architecture
 
-- Status: Not started
-- Timestamp started: TBD
+- Status: Started
+- Timestamp started: 2026-05-05T01:21:18Z
 - Timestamp completed: TBD
-- Feature branch: TBD
+- Feature branch: codex/siwc-roadmap-cleanup
 - Head: TBD
-- Session-log reference(s): TBD
+- Session-log reference(s): session: v160
 
 Design the first decision-complete signing architecture for app-scoped custody accounts. The architecture should decide whether v3 signing starts as server-side custodial signing with Supabase Vault-backed private keys, smart-account signing, a future external signer, or a phased hybrid. It must preserve the separation between authentication credentials and blockchain signing keys: passkeys authorize user intent, while wallet private keys or smart-account signer keys perform blockchain signing. Define the signing request lifecycle, approval state machine, actor model, replay/idempotency requirements, audit events, and which chains are included in the first slice. The design should explicitly say that generated accounts are not enough for SIWC wallet parity until users can safely approve signatures or transactions.
 

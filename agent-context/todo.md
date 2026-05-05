@@ -717,3 +717,102 @@ Expand the platform beyond human passports in a way that matches the backgrounde
 - Session-log reference(s): session: v111, session: v112, session: v113
 
 Translate the backgrounder’s product constraints into concrete engineering work. Redesign onboarding and verification journeys so they remain accessible, globally usable, and low-friction for users with limited documentation, limited bandwidth, or limited digital literacy. Establish an accessibility bar of WCAG 2.1 AA across Passport and Admin, including keyboard support, semantic structure, announcement behavior, color contrast, and readable step flows. Replace hard assumptions about phone, email, or wallet availability with progressive trust accumulation so users can start with minimal identity signals and deepen later. This work should include telemetry that measures abandonment at each step without capturing unnecessary personal data. The outcome should be a trust platform that grows identity depth without turning into a heavy KYC product, which is central to the Cubid mission.
+
+### SIWC. Build Sign In With Cubid custody, signing, and wallet-adjacent product surfaces
+
+- Status: Started
+- Timestamp started: 2026-05-05T01:21:18Z
+- Timestamp completed: TBD
+- Feature branch: codex/siwc-roadmap-cleanup
+- Head: TBD
+- Session-log reference(s): session: v160
+
+Promote the SIWC side-roadmap into the main execution backlog as the next wallet-adjacent platform track. The already-landed Cubid foundation covers OIDC Login with Cubid, passkey-first auth, app-scoped identity, selective disclosure, API v3 encrypted dapp-user secrets, generated app-scoped blockchain accounts, and signed webhook infrastructure. The remaining product gap is explicit signing: dapps need a safe way to request message or transaction signatures, humans need Passport-hosted visibility and approval, Admin needs policy controls, and operators need runbooks before any custody signer can be exposed broadly. SIWC work must stay backend/API-contract first in this repo, with public SDK implementation handled through `Cubid-Me/cubid-sdk` handoff notes whenever route or webhook contracts change.
+
+### SIWC01. Define the v3 signing and transaction authorization architecture
+
+- Status: Started
+- Timestamp started: 2026-05-05T01:21:18Z
+- Timestamp completed: TBD
+- Feature branch: codex/siwc-roadmap-cleanup
+- Head: TBD
+- Session-log reference(s): session: v160
+
+Design the first decision-complete signing architecture for app-scoped custody accounts in `docs/engineering/siwc-v3-signing-architecture.md`. The architecture should decide whether v3 signing starts as server-side custodial signing with Supabase Vault-backed private keys, smart-account signing, a future external signer, or a phased hybrid. It must preserve the separation between authentication credentials and blockchain signing keys: passkeys authorize user intent, while wallet private keys or smart-account signer keys perform blockchain signing. Define the signing request lifecycle, approval state machine, actor model, replay/idempotency requirements, audit events, and which chains are included in the first slice. The design should explicitly say that generated accounts are not enough for SIWC wallet parity until users can safely approve signatures or transactions.
+
+### SIWC02. Add Admin policy controls for app-scoped account custody and signing
+
+- Status: Not started
+- Timestamp started: TBD
+- Timestamp completed: TBD
+- Feature branch: TBD
+- Head: TBD
+- Session-log reference(s): TBD
+
+Add Admin-side controls that let operators configure whether an app may request generated accounts, which chains are enabled, whether signing is enabled, and which approval rules apply. This should extend the existing Admin control-plane pattern rather than creating a separate wallet dashboard. Include fields for allowed chains, custody mode, signing status, allowed signature types, transaction limits, optional contract allowlists, required passkey ACR, webhook event subscriptions, and sandbox/production behavior. Admin list/detail views must not expose private keys, ciphertext, wrapped data keys, Vault key material, or cross-app user identifiers. This todo should also decide how policy names and versions are surfaced to API v3 responses and audit logs, and should treat policy changes as SDK-impacting only when they alter public route or webhook semantics.
+
+### SIWC03. Add Passport user-facing app account visibility
+
+- Status: Not started
+- Timestamp started: TBD
+- Timestamp completed: TBD
+- Feature branch: TBD
+- Head: TBD
+- Session-log reference(s): TBD
+
+Add user-facing visibility for app-scoped custody accounts in Passport, likely inside the existing Profile and disclosure-management surface. Users should be able to see which apps have generated accounts for them, which chain each account belongs to, public addresses, labels, creation dates, custody status, and whether signing is enabled for that app. The UI should reinforce the privacy model: these accounts are scoped to individual apps, and other apps should not be able to correlate them. This slice should not add private-key export, signing, or cross-app wallet portability. It should only make the already-created v3 account metadata understandable and auditable for the human user, with no exposure of private or encrypted custody fields.
+
+### SIWC04. Implement v3 signing request lifecycle
+
+- Status: Not started
+- Timestamp started: TBD
+- Timestamp completed: TBD
+- Feature branch: TBD
+- Head: TBD
+- Session-log reference(s): TBD
+
+Implement the backend lifecycle for signing requests after SIWC01 chooses the architecture. Add API v3 routes for creating a signing request, reading request status, approving or rejecting through Passport, and returning the resulting signature or transaction hash when complete. Requests must be app-scoped, dapp-authenticated, idempotent where appropriate, bound to a specific `dapp_user_uuid` and `user_account_id`, and checked against Admin signing policy before user approval. Approval should be hosted in Passport and require passkey step-up when policy or ACR requires it. Responses must never return private keys, raw decrypted material, Vault wrapping keys, or internal human subject keys. All state changes should write audit/security events and be safe to retry.
+
+### SIWC05. Add transaction risk, policy evaluation, and passkey step-up
+
+- Status: Not started
+- Timestamp started: TBD
+- Timestamp completed: TBD
+- Feature branch: TBD
+- Head: TBD
+- Session-log reference(s): TBD
+
+Add the first transaction-policy and risk layer before broad transaction signing is considered production-ready. The initial version can be conservative: human-readable request summaries, chain/account matching, requested operation type, recipient or contract metadata where available, amount thresholds, contract allowlist checks, and mandatory passkey step-up for high-risk requests. The goal is not full transaction simulation across every chain in v1; it is to prevent blind signing from becoming the default. Passport approval screens should make the app, chain, public account, action, and risk posture clear. Admin should be able to configure policy strictness. Failed policy checks, rejected approvals, and passkey step-up failures should be auditable and webhook-eligible.
+
+### SIWC06. Add signing and wallet webhook contracts plus SDK handoff notes
+
+- Status: Not started
+- Timestamp started: TBD
+- Timestamp completed: TBD
+- Feature branch: TBD
+- Head: TBD
+- Session-log reference(s): TBD
+
+Extend the API v3 webhook contract for app-scoped custody and signing events. Candidate events include `wallet.created`, `wallet.signing_request.created`, `wallet.signing_request.approved`, `wallet.signing_request.rejected`, `wallet.signature.completed`, `wallet.transaction.submitted`, `wallet.transaction.failed`, and `wallet.policy.denied`. Payloads must follow the existing API v3 webhook direction: stable event IDs, timestamps, HMAC signatures, replay-safe delivery semantics, retry metadata, and disclosure-safe payloads that do not leak cross-app identifiers or custody secrets. Because these events affect developer-facing SDK behavior, each implemented contract change must create a handoff note in the public SDK repo. Do not add SDK implementation code to `cubid-passport`.
+
+### SIWC07. Evaluate smart-account, session-key, and paymaster roadmap
+
+- Status: Not started
+- Timestamp started: TBD
+- Timestamp completed: TBD
+- Feature branch: TBD
+- Head: TBD
+- Session-log reference(s): TBD
+
+Evaluate whether Cubid should support smart accounts, scoped session keys, and paymaster/gas sponsorship after the basic signing lifecycle is secure. This should be a design and sequencing task, not an implementation shortcut. Compare the app-scoped privacy model against user expectations for portable wallets, recovery, gasless onboarding, and asset fragmentation. Decide whether smart accounts should wrap existing app-scoped custodial keys, replace generated EOAs for some chains, or remain a later optional custody mode. Define what would need to change in Admin policy, Passport approval UX, API v3 signing routes, webhook events, and SDK contracts. The output should be a recommendation with explicit "not yet" criteria if the platform is not ready.
+
+### SIWC08. Build production readiness runbook for SIWC custody and signing
+
+- Status: Not started
+- Timestamp started: TBD
+- Timestamp completed: TBD
+- Feature branch: TBD
+- Head: TBD
+- Session-log reference(s): TBD
+
+Create the operator runbook for SIWC custody and signing before exposing signing broadly. The runbook should cover Vault key ownership and rotation, generated-account custody boundaries, migration rollback, audit-log inspection, signing request triage, webhook replay, incident response, abuse monitoring, emergency app suspension, user support, and privacy review for app-scoped account visibility. It should explicitly document what is safe to expose to users and dapps, what is Admin-only, what is service-role-only, and what must never leave server memory. Include local/staging/prod environment requirements, smoke tests, and launch blockers. This todo should close the gap between a technically working signer and an operable platform surface.
