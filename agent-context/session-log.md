@@ -4546,3 +4546,30 @@ Address the remaining Copilot review comments on PR 158 after the first removed-
 #### Follow-up
 
 - commit and push the Copilot fixes, reply to and resolve all review threads, then re-check CI
+
+### session: v159
+
+- timestamp: 2026-05-05T01:18:01Z
+- agent: **OpenAI Codex**
+- branch: **codex/siwc-roadmap-cleanup**
+- head: **`2bb7eda`**
+- session name: **Specialize SIWC roadmap**
+
+#### Objective
+
+Keep the SIWC side-roadmap while replacing generic competitive guidance with repo-specific, metadata-backed todos.
+
+#### Actions Taken
+
+- rewrote `agent-context/siwc-todo.md` around current OIDC, passkey, disclosure, API v3 custody, and SDK-boundary reality
+- added SIWC01-SIWC08 open todos with standard metadata blocks
+- preserved the product positioning while marking implemented, different, and deferred work clearly
+
+#### Verification
+
+- `git diff --check`
+- `git status --short`
+
+#### Follow-up
+
+- yeet the docs branch for review, then consider metadata-normalizing `C02` in `agent-context/todo.md`
