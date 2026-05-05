@@ -4626,3 +4626,34 @@ Close the completed SIWC signing-architecture todo and immediately start the nex
 #### Follow-up
 
 - implement `SIWC02` by designing and adding Admin policy controls for app-scoped custody and signing
+
+### session: v162
+
+- timestamp: 2026-05-05T23:41:16Z
+- agent: **OpenAI Codex**
+- branch: **codex/siwc-roadmap-cleanup**
+- head: **`4f9fb04`**
+- session name: **Implement SIWC02 Admin policy controls**
+
+#### Objective
+
+Implement the Admin control-plane slice for app-scoped custody and signing policies without adding signing execution.
+
+#### Actions Taken
+
+- added the `siwc_signing_policies` migration with fail-closed defaults and service-role-only access
+- added Admin SIWC policy list/upsert APIs using the shared Admin API baseline
+- added Admin SIWC policy repository helpers, schemas, tests, and audit-event writing
+- added the `SIWC Policy` Admin tab for custody/signing policy visibility and editing
+- documented the concrete SIWC02 policy contract in the signing architecture doc
+
+#### Verification
+
+- `pnpm --filter @cubid/admin test`
+- `pnpm --filter @cubid/admin typecheck`
+- `pnpm --filter @cubid/admin build`
+- `git diff --check`
+
+#### Follow-up
+
+- close `SIWC02` metadata with the implementation commit SHA, then immediately start `SIWC03`

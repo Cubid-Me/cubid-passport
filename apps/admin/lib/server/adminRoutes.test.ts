@@ -4,6 +4,8 @@ import syncAdminUser from '../../pages/api/admin/auth/sync';
 import metadata from '../../pages/api/admin/metadata';
 import disclosureOpsOverviewRoute from '../../pages/api/admin/disclosures/operations/overview';
 import updateOidcClientOpsRoute from '../../pages/api/admin/oidc/clients/update-ops';
+import listSiwcPoliciesRoute from '../../pages/api/admin/siwc/policies/list';
+import upsertSiwcPolicyRoute from '../../pages/api/admin/siwc/policies/upsert';
 import rotateKey from '../../pages/api/admin/apps/rotate-key';
 import createWebhook from '../../pages/api/admin/webhooks/create';
 import listWebhooks from '../../pages/api/admin/webhooks/list';
@@ -19,6 +21,8 @@ const updateOidcClientOpsMock = jest.fn();
 const loadDisclosureOpsOverviewMock = jest.fn();
 const normalizeClientOpsUpdateInputMock = jest.fn();
 const encryptWebhookSigningSecretMock = jest.fn();
+const listSiwcPoliciesMock = jest.fn();
+const upsertSiwcPolicyMock = jest.fn();
 
 jest.mock('./adminApi', () => ({
   getOwnedDapp: (...args: unknown[]) => getOwnedDappMock(...args),
@@ -55,6 +59,12 @@ jest.mock('./webhookSigningSecrets', () => ({
     encryptWebhookSigningSecretMock(...args),
   WEBHOOK_SIGNING_SECRET_LEGACY_SENTINEL:
     '__cubid_encrypted_webhook_signing_secret__',
+}));
+
+jest.mock('./siwcPolicies', () => ({
+  isSiwcPolicyInputError: () => false,
+  listSiwcPolicies: (...args: unknown[]) => listSiwcPoliciesMock(...args),
+  upsertSiwcPolicy: (...args: unknown[]) => upsertSiwcPolicyMock(...args),
 }));
 
 const createResponse = () => {
@@ -224,6 +234,60 @@ describe('Admin route baseline wiring', () => {
       })
     );
     expect(loadDisclosureOpsOverviewMock).toHaveBeenCalledWith({});
+  });
+
+  it('uses the admin read policy for SIWC policy list', async () => {
+    prepareAdminApiRequestMock.mockResolvedValue({
+      body: {},
+      context: { supabase: {} },
+      requestId: 'admin_request_siwc_list',
+    });
+    listSiwcPoliciesMock.mockResolvedValue({
+      generatedAt: '2026-05-05T00:00:00.000Z',
+      policies: [],
+    });
+
+    await listSiwcPoliciesRoute({} as NextApiRequest, createResponse());
+
+    expect(prepareAdminApiRequestMock).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      expect.objectContaining({
+        actor: 'admin',
+        rateLimitGroup: 'admin_read',
+        route: 'admin/siwc/policies/list',
+      })
+    );
+    expect(listSiwcPoliciesMock).toHaveBeenCalledWith({});
+  });
+
+  it('uses the sensitive policy for SIWC policy updates', async () => {
+    prepareAdminApiRequestMock.mockResolvedValue({
+      body: { dappId: 42, signingEnabled: true },
+      context: { adminUser: { uid: 'admin_uid' }, supabase: {} },
+      requestId: 'admin_request_siwc_upsert',
+    });
+    upsertSiwcPolicyMock.mockResolvedValue({
+      dappId: 42,
+      policyVersion: 1,
+      status: 'enabled',
+    });
+
+    await upsertSiwcPolicyRoute({} as NextApiRequest, createResponse());
+
+    expect(prepareAdminApiRequestMock).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      expect.objectContaining({
+        actor: 'admin',
+        rateLimitGroup: 'admin_sensitive',
+        route: 'admin/siwc/policies/upsert',
+      })
+    );
+    expect(upsertSiwcPolicyMock).toHaveBeenCalledWith(
+      expect.objectContaining({ adminUser: { uid: 'admin_uid' } }),
+      { dappId: 42, signingEnabled: true }
+    );
   });
 
   it('creates webhook subscriptions with encrypted one-time signing secrets', async () => {

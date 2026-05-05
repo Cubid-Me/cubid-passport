@@ -182,8 +182,31 @@ should guide them to create one before approval where policy allows.
 
 ## Policy Evaluation
 
-SIWC02 and SIWC05 should define concrete policy controls, but the architecture
-expects at least:
+SIWC02 adds the first Admin-owned policy contract in
+`public.siwc_signing_policies`. Signing remains unavailable until SIWC04, but
+every future signing request must read and enforce this table before user
+approval and again immediately before signing.
+
+The policy table stores one current policy per dapp:
+
+- `status`: `disabled`, `enabled`, or `suspended`
+- `custody_enabled`: whether the app may request app-scoped account custody
+- `signing_enabled`: whether the app may request message or transaction signing
+- `sandbox_mode`: whether the policy is still treated as non-production
+- `allowed_chains`: `evm`, `near`, `solana`, and/or `sui`
+- `allowed_request_types`: `message`, `typed_data`, and/or `transaction`
+- `required_acr`: `urn:cubid:acr:passkey` whenever signing is enabled
+- `transaction_value_limit_usd`, `contract_allowlist`,
+  `webhook_event_subscriptions`, and `metadata`
+
+Default behavior is fail-closed: missing policy rows mean custody disabled,
+signing disabled, sandbox enabled, no allowed chains, and no allowed request
+types. Admin APIs expose only non-secret policy configuration through
+`POST /api/admin/siwc/policies/list` and
+`POST /api/admin/siwc/policies/upsert`.
+
+SIWC05 should add deeper transaction policy and risk controls, but the
+architecture already expects:
 
 - dapp signing enabled/disabled
 - allowed chains
