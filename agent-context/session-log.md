@@ -4771,3 +4771,29 @@ Implement the first API v3 signing request lifecycle with Admin policy checks, P
 #### Follow-up
 
 - close `SIWC04` metadata with the implementation commit SHA, then immediately start `SIWC05`
+
+### session: v167
+
+- timestamp: 2026-05-06T08:57:01Z
+- agent: **OpenAI Codex**
+- branch: **codex/siwc-roadmap-cleanup**
+- head: **`a41f6ee`**
+- session name: **Close SIWC04 and start SIWC05**
+
+#### Objective
+
+Close the completed SIWC signing request lifecycle todo and immediately start the transaction-risk and policy-hardening follow-up.
+
+#### Actions Taken
+
+- marked `SIWC04` completed in both the main roadmap and SIWC side roadmap
+- recorded implementation head `a41f6ee` for `SIWC04`
+- marked `SIWC05` started on `codex/siwc-roadmap-cleanup`
+
+#### Verification
+
+- planned docs-only validation with `git diff --check`
+
+#### Follow-up
+
+- implement `SIWC05` by adding transaction risk summaries, stricter policy evaluation, and passkey step-up hardening before enabling transaction signing

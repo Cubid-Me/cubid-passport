@@ -764,23 +764,23 @@ Add user-facing visibility for app-scoped custody accounts in Passport, likely i
 
 ### SIWC04. Implement v3 signing request lifecycle
 
-- Status: Started
+- Status: Completed
 - Timestamp started: 2026-05-06T08:31:22Z
-- Timestamp completed: TBD
+- Timestamp completed: 2026-05-06T08:57:01Z
 - Feature branch: codex/siwc-roadmap-cleanup
-- Head: TBD
-- Session-log reference(s): session: v165
+- Head: a41f6ee
+- Session-log reference(s): session: v165, session: v166
 
 Implement the backend lifecycle for signing requests after SIWC01 chooses the architecture. Add API v3 routes for creating a signing request, reading request status, approving or rejecting through Passport, and returning the resulting signature or transaction hash when complete. Requests must be app-scoped, dapp-authenticated, idempotent where appropriate, bound to a specific `dapp_user_uuid` and `user_account_id`, and checked against Admin signing policy before user approval. Approval should be hosted in Passport and require passkey step-up when policy or ACR requires it. Responses must never return private keys, raw decrypted material, Vault wrapping keys, or internal human subject keys. All state changes should write audit/security events and be safe to retry.
 
 ### SIWC05. Add transaction risk, policy evaluation, and passkey step-up
 
-- Status: Not started
-- Timestamp started: TBD
+- Status: Started
+- Timestamp started: 2026-05-06T08:57:01Z
 - Timestamp completed: TBD
-- Feature branch: TBD
+- Feature branch: codex/siwc-roadmap-cleanup
 - Head: TBD
-- Session-log reference(s): TBD
+- Session-log reference(s): session: v167
 
 Add the first transaction-policy and risk layer before broad transaction signing is considered production-ready. The initial version can be conservative: human-readable request summaries, chain/account matching, requested operation type, recipient or contract metadata where available, amount thresholds, contract allowlist checks, and mandatory passkey step-up for high-risk requests. The goal is not full transaction simulation across every chain in v1; it is to prevent blind signing from becoming the default. Passport approval screens should make the app, chain, public account, action, and risk posture clear. Admin should be able to configure policy strictness. Failed policy checks, rejected approvals, and passkey step-up failures should be auditable and webhook-eligible.
 
