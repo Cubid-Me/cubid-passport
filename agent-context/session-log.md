@@ -4940,3 +4940,29 @@ Evaluate smart accounts, scoped session keys, and paymaster/gas sponsorship agai
 #### Follow-up
 
 - close `SIWC07` metadata with the implementation commit SHA, then start `SIWC08`
+
+### session: v173
+
+- timestamp: 2026-05-06T10:40:40Z
+- agent: **OpenAI Codex**
+- branch: **codex/siwc-roadmap-cleanup**
+- head: **`e3fec1a`**
+- session name: **Close SIWC07 and start SIWC08**
+
+#### Objective
+
+Close the completed SIWC smart-account roadmap evaluation and immediately start the production-readiness runbook follow-up.
+
+#### Actions Taken
+
+- marked `SIWC07` completed in both the main roadmap and SIWC side roadmap
+- recorded implementation head `e3fec1a` for the smart-account/session-key/paymaster recommendation
+- marked `SIWC08` started on `codex/siwc-roadmap-cleanup`
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- implement `SIWC08` by building the production-readiness runbook for SIWC custody and signing

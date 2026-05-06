@@ -89,23 +89,23 @@ Extend the API v3 webhook contract for app-scoped custody and signing events. Ca
 
 ### SIWC07. Evaluate smart-account, session-key, and paymaster roadmap
 
-- Status: Started
+- Status: Completed
 - Timestamp started: 2026-05-06T10:25:43Z
-- Timestamp completed: TBD
+- Timestamp completed: 2026-05-06T10:40:40Z
 - Feature branch: codex/siwc-roadmap-cleanup
-- Head: 82fcdd6
-- Session-log reference(s): session: v171
+- Head: e3fec1a
+- Session-log reference(s): session: v171, session: v172
 
 Evaluate whether Cubid should support smart accounts, scoped session keys, and paymaster/gas sponsorship after the basic signing lifecycle is secure. This should be a design and sequencing task, not an implementation shortcut. Compare the app-scoped privacy model against user expectations for portable wallets, recovery, gasless onboarding, and asset fragmentation. Decide whether smart accounts should wrap existing app-scoped custodial keys, replace generated EOAs for some chains, or remain a later optional custody mode. Define what would need to change in Admin policy, Passport approval UX, API v3 signing routes, webhook events, and SDK contracts. The output should be a recommendation with explicit "not yet" criteria if the platform is not ready.
 
 ### SIWC08. Build production readiness runbook for SIWC custody and signing
 
-- Status: Not started
-- Timestamp started: TBD
+- Status: Started
+- Timestamp started: 2026-05-06T10:40:40Z
 - Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Feature branch: codex/siwc-roadmap-cleanup
+- Head: e3fec1a
+- Session-log reference(s): session: v173
 
 Create the operator runbook for SIWC custody and signing before exposing signing broadly. The runbook should cover Vault key ownership and rotation, generated-account custody boundaries, migration rollback, audit-log inspection, signing request triage, webhook replay, incident response, abuse monitoring, emergency app suspension, user support, and privacy review for app-scoped account visibility. It should explicitly document what is safe to expose to users and dapps, what is Admin-only, what is service-role-only, and what must never leave server memory. Include local/staging/prod environment requirements, smoke tests, and launch blockers. This todo should close the gap between a technically working signer and an operable platform surface.
 
