@@ -1,5 +1,4 @@
 import { randomUUID } from 'crypto';
-import type { SupabaseClient } from '@supabase/supabase-js';
 
 import type { AdminRequestContext } from './adminApi';
 
@@ -233,11 +232,12 @@ const logPolicyEvent = async (
 };
 
 export const listSiwcPolicies = async (
-  supabase: SupabaseClient
+  context: AdminRequestContext
 ): Promise<SiwcPolicyList> => {
-  const dappsResponse = await supabase
+  const dappsResponse = await context.supabase
     .from('dapps')
     .select('id,uid,appname')
+    .match({ admin_uid: context.adminUser.uid })
     .order('id', { ascending: true });
 
   if (dappsResponse.error) {
@@ -254,7 +254,7 @@ export const listSiwcPolicies = async (
     };
   }
 
-  const policiesResponse = await supabase
+  const policiesResponse = await context.supabase
     .from('siwc_signing_policies')
     .select('*')
     .in('dapp_id', dappIds);

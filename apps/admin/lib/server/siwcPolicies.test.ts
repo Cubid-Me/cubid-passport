@@ -7,16 +7,24 @@ import {
 const createListSupabase = () => ({
   from: jest.fn((table: string) => {
     if (table === 'dapps') {
+      const match = jest.fn((criteria: Record<string, unknown>) => ({
+        order: async () => ({
+          data:
+            criteria.admin_uid === 'admin_uid'
+              ? [
+                  { appname: 'Demo App', id: 42, uid: 'app_uid_42' },
+                  { appname: 'No Policy App', id: 43, uid: 'app_uid_43' },
+                ]
+              : [],
+          error: null,
+        }),
+      }));
+
       return {
         select: () => ({
-          order: async () => ({
-            data: [
-              { appname: 'Demo App', id: 42, uid: 'app_uid_42' },
-              { appname: 'No Policy App', id: 43, uid: 'app_uid_43' },
-            ],
-            error: null,
-          }),
+          match,
         }),
+        __match: match,
       };
     }
 
@@ -54,6 +62,15 @@ const createListSupabase = () => ({
     throw new Error(`Unexpected table ${table}`);
   }),
 });
+
+const createAdminContext = (supabase: unknown, uid = 'admin_uid') =>
+  ({
+    adminUser: { email: 'admin@example.com', uid },
+    email: 'admin@example.com',
+    requestId: 'admin_request_siwc',
+    supabase,
+    token: { uid: 'firebase_uid' },
+  }) as never;
 
 const createUpsertSupabase = (existingPolicyVersion?: number) => {
   const eventInsert = jest.fn(async () => ({ error: null }));
@@ -141,7 +158,8 @@ const createUpsertSupabase = (existingPolicyVersion?: number) => {
 
 describe('SIWC policy helpers', () => {
   it('lists saved policies and fail-closed defaults for dapps without policies', async () => {
-    const overview = await listSiwcPolicies(createListSupabase() as never);
+    const supabase = createListSupabase();
+    const overview = await listSiwcPolicies(createAdminContext(supabase));
 
     expect(overview.policies[0]).toMatchObject({
       allowedChains: ['evm', 'sui'],
@@ -165,6 +183,13 @@ describe('SIWC policy helpers', () => {
       signingEnabled: false,
       status: 'disabled',
     });
+  });
+
+  it('scopes the policy list to dapps owned by the current admin', async () => {
+    const supabase = createListSupabase();
+    const overview = await listSiwcPolicies(createAdminContext(supabase, 'other_admin'));
+
+    expect(overview.policies).toEqual([]);
   });
 
   it('creates a passkey-required signing policy and writes an audit event', async () => {

@@ -5019,3 +5019,31 @@ Close the completed SIWC production-readiness runbook todo and reconcile the par
 #### Follow-up
 
 - yeet the SIWC roadmap branch for review, or start a new follow-up track for transaction signing readiness after review
+
+### session: v176
+
+- timestamp: 2026-05-06T12:03:10Z
+- agent: **OpenAI Codex**
+- branch: **codex/siwc-roadmap-cleanup**
+- head: **`eba25d1`**
+- session name: **Address PR 159 SIWC policy scope review**
+
+#### Objective
+
+Address the automated review finding that SIWC policy listing exposed all dapps instead of scoping to the authenticated admin.
+
+#### Actions Taken
+
+- changed `listSiwcPolicies` to accept the Admin request context and filter `dapps` by `admin_uid`
+- updated the Admin SIWC policy list route to pass the authenticated context
+- added a regression test proving another admin receives no policies for unrelated dapps
+
+#### Verification
+
+- `pnpm --filter @cubid/admin test -- siwcPolicies`
+- planned follow-up validation with `pnpm --filter @cubid/admin typecheck`
+- `git diff --check`
+
+#### Follow-up
+
+- push the review fix, comment on and resolve the PR review thread, then re-check CI

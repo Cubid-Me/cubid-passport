@@ -20,7 +20,7 @@ const list = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 
   try {
-    const data = await listSiwcPolicies(request.context.supabase);
+    const data = await listSiwcPolicies(request.context);
     return res.status(200).json({ data });
   } catch (error) {
     return sendServerError(res, error, 'Failed to load SIWC policies');
