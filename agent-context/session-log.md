@@ -4828,3 +4828,29 @@ Add transaction risk summaries, stricter policy evidence, and fresh passkey step
 #### Follow-up
 
 - close `SIWC05` metadata with the implementation commit SHA, then start `SIWC06`
+
+### session: v169
+
+- timestamp: 2026-05-06T09:22:33Z
+- agent: **OpenAI Codex**
+- branch: **codex/siwc-roadmap-cleanup**
+- head: **`313f4a5`**
+- session name: **Close SIWC05 and start SIWC06**
+
+#### Objective
+
+Close the completed SIWC transaction-risk todo and immediately start the signing/webhook contract follow-up.
+
+#### Actions Taken
+
+- marked `SIWC05` completed in both the main roadmap and SIWC side roadmap
+- recorded implementation head `313f4a5` for `SIWC05`
+- marked `SIWC06` started on `codex/siwc-roadmap-cleanup`
+
+#### Verification
+
+- planned docs-only validation with `git diff --check`
+
+#### Follow-up
+
+- implement `SIWC06` by standardizing signing and wallet webhook contracts with SDK handoff notes

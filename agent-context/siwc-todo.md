@@ -67,23 +67,23 @@ Implement the backend lifecycle for signing requests after SIWC01 chooses the ar
 
 ### SIWC05. Add transaction risk, policy evaluation, and passkey step-up
 
-- Status: Started
+- Status: Completed
 - Timestamp started: 2026-05-06T08:57:01Z
-- Timestamp completed: TBD
+- Timestamp completed: 2026-05-06T09:22:33Z
 - Feature branch: codex/siwc-roadmap-cleanup
-- Head: TBD
-- Session-log reference(s): session: v167
+- Head: 313f4a5
+- Session-log reference(s): session: v167, session: v168
 
 Add the first transaction-policy and risk layer before broad transaction signing is considered production-ready. The initial version can be conservative: human-readable request summaries, chain/account matching, requested operation type, recipient or contract metadata where available, amount thresholds, contract allowlist checks, and mandatory passkey step-up for high-risk requests. The goal is not full transaction simulation across every chain in v1; it is to prevent blind signing from becoming the default. Passport approval screens should make the app, chain, public account, action, and risk posture clear. Admin should be able to configure policy strictness. Failed policy checks, rejected approvals, and passkey step-up failures should be auditable and webhook-eligible.
 
 ### SIWC06. Add signing and wallet webhook contracts plus SDK handoff notes
 
-- Status: Not started
-- Timestamp started: TBD
+- Status: Started
+- Timestamp started: 2026-05-06T09:22:33Z
 - Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Feature branch: codex/siwc-roadmap-cleanup
+- Head: 313f4a5
+- Session-log reference(s): session: v169
 
 Extend the API v3 webhook contract for app-scoped custody and signing events. Candidate events include `wallet.created`, `wallet.signing_request.created`, `wallet.signing_request.approved`, `wallet.signing_request.rejected`, `wallet.signature.completed`, `wallet.transaction.submitted`, `wallet.transaction.failed`, and `wallet.policy.denied`. Payloads must follow the existing API v3 webhook direction: stable event IDs, timestamps, HMAC signatures, replay-safe delivery semantics, retry metadata, and disclosure-safe payloads that do not leak cross-app identifiers or custody secrets. Because these events affect developer-facing SDK behavior, each implemented contract change must create a handoff note in the public SDK repo. Do not add SDK implementation code to `cubid-passport`.
 
