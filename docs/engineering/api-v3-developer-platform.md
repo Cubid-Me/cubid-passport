@@ -217,8 +217,9 @@ Rules:
 - The dapp user and account link must belong to the authenticated dapp.
 - Admin SIWC policy must be enabled, allow signing, allow the account chain,
   and allow the requested type.
-- `transaction` requests are recorded as `policy_denied` until SIWC05 risk and
-  transaction-summary controls are implemented.
+- `transaction` requests are still recorded as `policy_denied`; SIWC05 adds
+  transaction risk summaries and stricter policy evidence, but not transaction
+  signatures.
 - Message signing is supported for EVM, NEAR, Solana, and Sui custody accounts.
 - EVM typed-data signing is supported for `typed_data`.
 - The route stores the raw signing payload in `siwc_signing_requests` for
@@ -236,6 +237,10 @@ Success response shape:
     "requestType": "message",
     "payloadHash": "64-char sha256 hex",
     "payloadSummary": { "kind": "message", "preview": "Sign in to Example" },
+    "riskLevel": "low",
+    "riskReasons": [],
+    "policyDecision": "allowed",
+    "stepUpRequired": true,
     "policyVersion": 2,
     "requiredAcr": "urn:cubid:acr:passkey",
     "expiresAt": "2026-05-06T00:10:00.000Z"
@@ -245,6 +250,13 @@ Success response shape:
 
 Responses must not include private keys, encrypted custody material, Vault key
 material, raw Cubid user ids, human subject keys, or the raw `payload` field.
+
+Transaction responses may include `riskLevel`, `riskReasons`,
+`transactionOperationType`, `transactionRecipient`,
+`transactionContractAddress`, and `transactionDeclaredValueUsd`. These are
+non-secret summaries for SDKs and Passport UI. They are not a transaction
+simulation result, and they do not mean Cubid will sign the transaction in this
+slice.
 
 ### `POST /api/v3/signing/requests/get`
 

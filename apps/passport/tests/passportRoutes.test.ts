@@ -417,7 +417,10 @@ test("Passport SIWC account list returns an empty list for signed-in users witho
   assert.deepEqual((res.body as DataResponse<unknown[]>).data, [])
 })
 
-const addSiwcSigningFixtures = (supabase: MockPassportSupabase) => {
+const addSiwcSigningFixtures = (
+  supabase: MockPassportSupabase,
+  policyOverrides: Record<string, unknown> = {}
+) => {
   const apiKey = addDappAuth(supabase)
   const dappUserUuid = "00000000-0000-4000-8000-000000000071"
   const userAccountId = "00000000-0000-4000-8000-000000000072"
@@ -453,6 +456,7 @@ const addSiwcSigningFixtures = (supabase: MockPassportSupabase) => {
   supabase.setSiwcSigningPolicy({
     allowed_chains: ["evm"],
     allowed_request_types: ["message", "typed_data", "transaction"],
+    contract_allowlist: [],
     custody_enabled: true,
     dapp_id: 42,
     policy_version: 2,
@@ -460,6 +464,8 @@ const addSiwcSigningFixtures = (supabase: MockPassportSupabase) => {
     sandbox_mode: true,
     signing_enabled: true,
     status: "enabled",
+    transaction_value_limit_usd: null,
+    ...policyOverrides,
   })
   supabase.privateKeys.push({
     ...encryptBlockchainPrivateKeyWithKey(
@@ -564,12 +570,18 @@ test("Passport API v3 SIWC signing request create/get/list use policy and idempo
 test("Passport API v3 SIWC signing request policy-denies deferred transactions", async () => {
   const supabase = new MockPassportSupabase()
   setPassportSupabaseForTests(supabase as never)
-  const fixtures = addSiwcSigningFixtures(supabase)
+  const fixtures = addSiwcSigningFixtures(supabase, {
+    contract_allowlist: ["0x0000000000000000000000000000000000000000"],
+    transaction_value_limit_usd: 25,
+  })
   const req = createApiRequest({
     body: {
       apikey: fixtures.apiKey,
       dapp_user_uuid: fixtures.dappUserUuid,
-      payload: { to: "0x0000000000000000000000000000000000000000" },
+      payload: {
+        declaredValueUsd: 10,
+        to: "0x0000000000000000000000000000000000000000",
+      },
       request_type: "transaction",
       user_account_id: fixtures.userAccountId,
     },
@@ -587,6 +599,112 @@ test("Passport API v3 SIWC signing request policy-denies deferred transactions",
   assert.equal(res.statusCode, 200)
   assert.equal(data.status, "policy_denied")
   assert.equal(data.errorCode, "transaction_signing_deferred")
+  assert.equal(data.riskLevel, "high")
+  assert.equal(data.transactionOperationType, "native_transfer")
+  assert.equal(
+    data.transactionRecipient,
+    "0x0000000000000000000000000000000000000000"
+  )
+  assert.equal(data.transactionDeclaredValueUsd, 10)
+  assert.deepEqual(data.riskReasons, ["transaction_signing_deferred"])
+  assert.equal(data.stepUpRequired, true)
+})
+
+test("Passport API v3 SIWC transaction risk records value and allowlist denials", async () => {
+  const supabase = new MockPassportSupabase()
+  setPassportSupabaseForTests(supabase as never)
+  const fixtures = addSiwcSigningFixtures(supabase, {
+    contract_allowlist: ["0x0000000000000000000000000000000000000042"],
+    transaction_value_limit_usd: 25,
+  })
+  const req = createApiRequest({
+    body: {
+      apikey: fixtures.apiKey,
+      dapp_user_uuid: fixtures.dappUserUuid,
+      payload: {
+        data: "0xabcdef",
+        declaredValueUsd: 50,
+        to: "0x0000000000000000000000000000000000000099",
+      },
+      request_type: "transaction",
+      user_account_id: fixtures.userAccountId,
+    },
+    headers: {
+      "idempotency-key": "signing-create-transaction-denied",
+      origin: "https://passport.cubid.me",
+    },
+    url: "/api/v3/signing/requests/create",
+  })
+  const res = createApiResponse()
+
+  await createSiwcSigningRequestHandler(req, res)
+
+  const data = (res.body as DataResponse<Record<string, unknown>>).data
+  assert.equal(res.statusCode, 200)
+  assert.equal(data.status, "policy_denied")
+  assert.equal(data.errorCode, "transaction_value_limit_exceeded")
+  assert.equal(data.transactionOperationType, "contract_call")
+  assert.equal(
+    data.transactionContractAddress,
+    "0x0000000000000000000000000000000000000099"
+  )
+  assert.deepEqual(data.riskReasons, [
+    "contract_not_allowlisted",
+    "transaction_value_limit_exceeded",
+    "transaction_signing_deferred",
+  ])
+})
+
+test("Passport API v3 SIWC transaction risk fails closed for unsupported chains", async () => {
+  const supabase = new MockPassportSupabase()
+  setPassportSupabaseForTests(supabase as never)
+  const fixtures = addSiwcSigningFixtures(supabase, {
+    allowed_chains: ["evm", "solana"],
+  })
+  const solanaAccountId = "00000000-0000-4000-8000-000000000075"
+  supabase.userAccounts.push({
+    chain_key: "solana",
+    created_at: "2026-05-01T00:00:00.000Z",
+    custody_status: "cubid_custodied",
+    id: solanaAccountId,
+    public_address: "solana-address",
+    public_address_normalized: "solana-address",
+    status: "active",
+    updated_at: "2026-05-01T00:00:00.000Z",
+    user_id: 1234,
+  })
+  supabase.dappUserAccounts.push({
+    created_at: "2026-05-01T00:00:00.000Z",
+    dapp_id: 42,
+    dapp_user_uuid: fixtures.dappUserUuid,
+    id: "00000000-0000-4000-8000-000000000076",
+    status: "active",
+    updated_at: "2026-05-01T00:00:00.000Z",
+    user_account_id: solanaAccountId,
+  })
+  const req = createApiRequest({
+    body: {
+      apikey: fixtures.apiKey,
+      dapp_user_uuid: fixtures.dappUserUuid,
+      payload: { to: "solana-destination" },
+      request_type: "transaction",
+      user_account_id: solanaAccountId,
+    },
+    headers: {
+      "idempotency-key": "signing-create-transaction-solana",
+      origin: "https://passport.cubid.me",
+    },
+    url: "/api/v3/signing/requests/create",
+  })
+  const res = createApiResponse()
+
+  await createSiwcSigningRequestHandler(req, res)
+
+  const data = (res.body as DataResponse<Record<string, unknown>>).data
+  assert.equal(res.statusCode, 200)
+  assert.equal(data.status, "policy_denied")
+  assert.equal(data.errorCode, "transaction_chain_risk_unsupported")
+  assert.deepEqual(data.riskReasons, ["transaction_chain_risk_unsupported"])
 })
 
 test("Passport SIWC signing approval requires passkey step-up then completes EVM message signatures", async () => {
@@ -639,6 +757,7 @@ test("Passport SIWC signing approval requires passkey step-up then completes EVM
     primary_email: "person@example.com",
   })
   supabase.setOidcSession({
+    created_at: new Date().toISOString(),
     expires_at: new Date(Date.now() + 60_000).toISOString(),
     human_subject_key: "human_subject_1",
     metadata: {
@@ -670,6 +789,78 @@ test("Passport SIWC signing approval requires passkey step-up then completes EVM
     fixtures.wallet.address
   )
   assert.equal(JSON.stringify(approveRes.body).includes(fixtures.wallet.privateKey), false)
+})
+
+test("Passport SIWC signing approval rejects stale passkey step-up sessions", async () => {
+  const supabase = new MockPassportSupabase()
+  setPassportSupabaseForTests(supabase as never)
+  addFirebaseUserAuth()
+  const fixtures = addSiwcSigningFixtures(supabase)
+
+  const createReq = createApiRequest({
+    body: {
+      apikey: fixtures.apiKey,
+      dapp_user_uuid: fixtures.dappUserUuid,
+      payload: { message: "stale passkey approval" },
+      request_type: "message",
+      user_account_id: fixtures.userAccountId,
+    },
+    headers: {
+      "idempotency-key": "signing-approve-stale-stepup",
+      origin: "https://passport.cubid.me",
+    },
+    url: "/api/v3/signing/requests/create",
+  })
+  const createRes = createApiResponse()
+  await createSiwcSigningRequestHandler(createReq, createRes)
+  const signingRequestId = String(
+    (createRes.body as DataResponse<Record<string, unknown>>).data
+      .signingRequestId
+  )
+
+  supabase.setOidcHumanSubject({
+    cubid_user_id: 1234,
+    human_subject_key: "human_subject_1",
+    primary_email: "person@example.com",
+  })
+  supabase.setOidcSession({
+    created_at: new Date(Date.now() - 10 * 60_000).toISOString(),
+    expires_at: new Date(Date.now() + 60_000).toISOString(),
+    human_subject_key: "human_subject_1",
+    metadata: {
+      acr: "urn:cubid:acr:passkey",
+      authentication_methods: ["passkey"],
+    },
+    revoked_at: null,
+    session_id: "oidc_session_stale_passkey",
+  })
+
+  const approveReq = createApiRequest({
+    body: { signingRequestId },
+    headers: {
+      authorization: "Bearer firebase-test-token",
+      cookie: "cubid_oidc_session_id=oidc_session_stale_passkey",
+      origin: "https://passport.cubid.me",
+      "x-request-id": "passport_siwc_stale_stepup",
+    },
+    url: "/api/siwc/signing/requests/approve",
+  })
+  const approveRes = createApiResponse()
+  await approveSiwcSigningRequestHandler(approveReq, approveRes)
+
+  assert.equal(approveRes.statusCode, 403)
+  assert.equal(
+    (approveRes.body as { error: { code: string } }).error.code,
+    "step_up_required"
+  )
+  assert.equal(
+    supabase.eventInserts.some(
+      (event) =>
+        event.event_type === "signing_request.step_up_failed" &&
+        event.request_id === "passport_siwc_stale_stepup"
+    ),
+    true
+  )
 })
 
 test("Passport SIWC signing requests can be listed, rejected, and cancelled", async () => {

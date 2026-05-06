@@ -114,14 +114,22 @@ type SiwcSigningRequestSummary = {
   expiresAt: string
   payloadHash: string
   payloadSummary: Record<string, unknown>
+  policyDecision: string | null
   policyVersion: number
   publicAddress: string
   rejectedAt: string | null
   requiredAcr: "urn:cubid:acr:passkey" | null
   requestType: "message" | "typed_data" | "transaction"
   result: unknown
+  riskLevel: "low" | "medium" | "high" | null
+  riskReasons: string[]
   signingRequestId: string
+  stepUpRequired: boolean
   status: string
+  transactionContractAddress: string | null
+  transactionDeclaredValueUsd: number | null
+  transactionOperationType: string | null
+  transactionRecipient: string | null
   updatedAt: string
   userAccountId: string
 }
@@ -1553,6 +1561,12 @@ export const Profile = () => {
                   typeof request.payloadSummary?.preview === "string"
                     ? request.payloadSummary.preview
                     : request.payloadHash
+                const riskTone =
+                  request.riskLevel === "high"
+                    ? "bg-red-100 text-red-700"
+                    : request.riskLevel === "medium"
+                      ? "bg-amber-100 text-amber-700"
+                      : "bg-emerald-100 text-emerald-700"
 
                 return (
                   <div
@@ -1577,6 +1591,13 @@ export const Profile = () => {
                           >
                             {request.status.replace(/_/g, " ")}
                           </span>
+                          {request.riskLevel && (
+                            <span
+                              className={`rounded-full px-2 py-1 text-xs ${riskTone}`}
+                            >
+                              {request.riskLevel} risk
+                            </span>
+                          )}
                         </div>
                         <p className="mt-1 break-all text-xs text-muted-foreground">
                           {request.publicAddress}
@@ -1606,9 +1627,50 @@ export const Profile = () => {
                         {request.requiredAcr ?? "standard Passport session"}
                       </p>
                       <p>
+                        <span className="text-muted-foreground">Step-up:</span>{" "}
+                        {request.stepUpRequired
+                          ? "fresh passkey required"
+                          : "not required"}
+                      </p>
+                      {request.requestType === "transaction" && (
+                        <>
+                          <p>
+                            <span className="text-muted-foreground">
+                              Action:
+                            </span>{" "}
+                            {request.transactionOperationType ?? "unknown"}
+                          </p>
+                          <p className="break-all">
+                            <span className="text-muted-foreground">
+                              Recipient:
+                            </span>{" "}
+                            {request.transactionRecipient ?? "not provided"}
+                          </p>
+                          <p className="break-all">
+                            <span className="text-muted-foreground">
+                              Contract:
+                            </span>{" "}
+                            {request.transactionContractAddress ?? "none"}
+                          </p>
+                          <p>
+                            <span className="text-muted-foreground">
+                              Declared value:
+                            </span>{" "}
+                            {request.transactionDeclaredValueUsd !== null
+                              ? `$${request.transactionDeclaredValueUsd}`
+                              : "not declared"}
+                          </p>
+                        </>
+                      )}
+                      <p>
                         <span className="text-muted-foreground">Updated:</span>{" "}
                         {dayjs(request.updatedAt).format("YYYY-MM-DD HH:mm")}
                       </p>
+                      {(request.riskReasons ?? []).length > 0 && (
+                        <p className="break-all text-amber-700 md:col-span-2">
+                          Risk notes: {(request.riskReasons ?? []).join(", ")}
+                        </p>
+                      )}
                       {request.errorMessage && (
                         <p className="text-amber-700 md:col-span-2">
                           {request.errorMessage}

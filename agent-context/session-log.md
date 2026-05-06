@@ -4797,3 +4797,34 @@ Close the completed SIWC signing request lifecycle todo and immediately start th
 #### Follow-up
 
 - implement `SIWC05` by adding transaction risk summaries, stricter policy evaluation, and passkey step-up hardening before enabling transaction signing
+
+### session: v168
+
+- timestamp: 2026-05-06T09:22:05Z
+- agent: **OpenAI Codex**
+- branch: **codex/siwc-roadmap-cleanup**
+- head: **`12f2d3f`**
+- session name: **Implement SIWC05 transaction risk controls**
+
+#### Objective
+
+Add transaction risk summaries, stricter policy evidence, and fresh passkey step-up checks before any SIWC transaction signing is enabled.
+
+#### Actions Taken
+
+- added service-role-only signing request risk metadata for risk level, risk reasons, policy decision, transaction recipient/contract/value, and step-up requirement
+- added conservative transaction risk evaluation for EVM transaction payloads and fail-closed unsupported-chain handling for NEAR, Solana, and Sui transactions
+- enforced transaction value limits and contract allowlists in policy denial details while keeping all transaction signing disabled
+- hardened Passport signing approval so passkey ACR sessions must be fresh and step-up failures are audited
+- updated Profile signing-request visibility, SIWC/API v3 docs, Passport tests, and the public SDK handoff note
+
+#### Verification
+
+- `npx -p node@24 node $(which pnpm) --filter @cubid/passport test`
+- `pnpm --filter @cubid/passport typecheck`
+- `npx -p node@24 node $(which pnpm) --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- close `SIWC05` metadata with the implementation commit SHA, then start `SIWC06`

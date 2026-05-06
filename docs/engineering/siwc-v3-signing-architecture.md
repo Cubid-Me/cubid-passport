@@ -1,7 +1,7 @@
 # SIWC V3 Signing And Transaction Authorization Architecture
 
 Last updated: 2026-05-06
-Status: SIWC04 implemented lifecycle with transaction-risk controls deferred
+Status: SIWC05 implemented transaction risk controls; transaction signing remains disabled
 
 ## Purpose
 
@@ -314,20 +314,36 @@ type before the request can enter `pending_user_approval`.
 
 Passport approval re-checks policy immediately before signing. If policy has
 changed, the request moves to `policy_denied` instead of signing. If
-`required_acr = urn:cubid:acr:passkey`, approval requires a current
+`required_acr = urn:cubid:acr:passkey`, approval requires a fresh
 `cubid_oidc_session_id` cookie whose OIDC session was authenticated with
-passkey and whose human subject belongs to the signed-in Passport user.
+passkey, whose human subject belongs to the signed-in Passport user, and whose
+passkey assurance is no older than five minutes. Missing, stale, revoked, or
+cross-user passkey sessions are audited as `signing_request.step_up_failed`.
 
 SIWC04 supports message signing for EVM, NEAR, Solana, and Sui generated
-custody accounts, plus EVM typed-data signing. Transaction requests are
-recorded as `policy_denied` with `transaction_signing_deferred` until SIWC05
-adds transaction risk controls and human-readable summaries.
+custody accounts, plus EVM typed-data signing. SIWC05 adds transaction risk
+controls and human-readable summaries, but it still records transaction
+requests as `policy_denied`. Transaction signing remains intentionally
+disabled until a later explicit enablement slice.
+
+Transaction risk controls are conservative:
+
+- EVM transaction payloads are summarized as native transfers or contract calls.
+- Recipient or contract addresses are normalized when possible.
+- Declared USD value is accepted only when supplied by the caller.
+- Admin `transaction_value_limit_usd` and `contract_allowlist` are enforced in
+  the policy decision.
+- NEAR, Solana, and Sui transaction requests fail closed with
+  `transaction_chain_risk_unsupported` until chain-specific summaries exist.
+- All transaction requests include `riskLevel`, `riskReasons`,
+  `transactionOperationType`, recipient/contract fields, declared value, policy
+  decision, and step-up requirement in public response summaries.
 
 Public dapp and Passport responses return request status, payload hash,
-payload summary, policy version, required ACR, expiry, and signing result when
-completed. They never return private keys, decrypted material, ciphertext,
-wrapped keys, IVs, auth tags, human subject keys, raw Cubid user ids, or the
-raw signing `payload` field.
+payload summary, risk summary, policy version, required ACR, expiry, and
+signing result when completed. They never return private keys, decrypted
+material, ciphertext, wrapped keys, IVs, auth tags, human subject keys, raw
+Cubid user ids, or the raw signing `payload` field.
 
 ## Deferred
 

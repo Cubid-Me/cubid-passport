@@ -25,8 +25,10 @@ import { getPassportSupabase } from "./supabase"
 
 export const SIWC_PASSKEY_ACR = "urn:cubid:acr:passkey" as const
 const SIGNING_REQUEST_TTL_MS = 10 * 60 * 1000
+const SIWC_PASSKEY_STEP_UP_MAX_AGE_MS = 5 * 60 * 1000
 
 type SigningRequestType = "message" | "transaction" | "typed_data"
+type SiwcRiskLevel = "low" | "medium" | "high"
 type SigningRequestStatus =
   | "approved"
   | "cancelled"
@@ -41,13 +43,16 @@ type SigningRequestStatus =
 type SiwcPolicyRow = {
   allowed_chains: unknown
   allowed_request_types: unknown
+  contract_allowlist: unknown
   custody_enabled: boolean
   dapp_id: number | string
+  metadata: unknown
   policy_version: number
   required_acr: string | null
   sandbox_mode: boolean
   signing_enabled: boolean
   status: string
+  transaction_value_limit_usd: number | string | null
 }
 
 type DappUserRow = {
@@ -89,13 +94,21 @@ type SiwcSigningRequestRow = {
   payload: unknown
   payload_hash: string
   payload_summary: unknown
+  policy_decision: string | null
   policy_version: number
   rejected_at: string | null
   required_acr: string | null
   result: unknown
+  risk_level: string | null
+  risk_reasons: unknown
   request_type: string
   signing_request_id: string
+  step_up_required: boolean | null
   status: SigningRequestStatus
+  transaction_contract_address: string | null
+  transaction_declared_value_usd: number | string | null
+  transaction_operation_type: string | null
+  transaction_recipient: string | null
   updated_at: string
   user_account_id: string
   user_id: number | string
@@ -111,8 +124,20 @@ type PolicyEvaluation = {
   allowed: boolean
   denialCode?: string
   denialMessage?: string
+  policyDecision: string
   policyVersion: number
   requiredAcr: typeof SIWC_PASSKEY_ACR | null
+  risk: TransactionRiskEvaluation
+  stepUpRequired: boolean
+}
+
+type TransactionRiskEvaluation = {
+  contractAddress: string | null
+  declaredValueUsd: number | null
+  operationType: string | null
+  recipient: string | null
+  riskLevel: SiwcRiskLevel
+  riskReasons: string[]
 }
 
 export type SiwcSigningRequestSummary = {
@@ -128,13 +153,21 @@ export type SiwcSigningRequestSummary = {
   expiresAt: string
   payloadHash: string
   payloadSummary: Record<string, unknown>
+  policyDecision: string | null
   policyVersion: number
   rejectedAt: string | null
   requiredAcr: typeof SIWC_PASSKEY_ACR | null
   requestType: SigningRequestType
   result: unknown
+  riskLevel: SiwcRiskLevel | null
+  riskReasons: string[]
   signingRequestId: string
+  stepUpRequired: boolean
   status: SigningRequestStatus
+  transactionContractAddress: string | null
+  transactionDeclaredValueUsd: number | null
+  transactionOperationType: string | null
+  transactionRecipient: string | null
   updatedAt: string
   userAccountId: string
 }
@@ -148,6 +181,31 @@ const normalizeStringArray = (value: unknown): string[] =>
   Array.isArray(value)
     ? value.filter((entry): entry is string => typeof entry === "string")
     : []
+
+const normalizeAllowlist = (value: unknown): string[] =>
+  normalizeStringArray(value).map((entry) => entry.trim().toLowerCase())
+
+const parseOptionalUsdValue = (value: unknown): number | null => {
+  if (value === undefined || value === null || value === "") {
+    return null
+  }
+
+  const parsed = typeof value === "number" ? value : Number(String(value))
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : null
+}
+
+const getObjectValue = (
+  value: Record<string, unknown>,
+  keys: string[]
+): unknown => {
+  for (const key of keys) {
+    if (value[key] !== undefined) {
+      return value[key]
+    }
+  }
+
+  return undefined
+}
 
 const stableValue = (value: unknown): unknown => {
   if (Array.isArray(value)) {
@@ -218,6 +276,26 @@ const summarizePayload = (
     }
   }
 
+  if (requestType === "transaction" && payload && typeof payload === "object") {
+    const transaction = payload as Record<string, unknown>
+    const to = getObjectValue(transaction, [
+      "to",
+      "recipient",
+      "contract",
+      "contractAddress",
+      "contract_address",
+    ])
+    const data = getObjectValue(transaction, ["data", "callData", "calldata"])
+    return {
+      kind: "transaction",
+      operation:
+        typeof data === "string" && data.trim() && data.trim() !== "0x"
+          ? "contract_call"
+          : "native_transfer",
+      to: typeof to === "string" ? to : null,
+    }
+  }
+
   return {
     kind: requestType,
     payloadHash: hashPayload(payload),
@@ -242,13 +320,28 @@ const mapSigningRequest = (
     typeof row.payload_summary === "object" && row.payload_summary !== null
       ? (row.payload_summary as Record<string, unknown>)
       : {},
+  policyDecision: row.policy_decision ?? null,
   policyVersion: Number(row.policy_version ?? 0),
   rejectedAt: row.rejected_at,
   requiredAcr: row.required_acr === SIWC_PASSKEY_ACR ? SIWC_PASSKEY_ACR : null,
   requestType: row.request_type as SigningRequestType,
   result: row.result ?? null,
+  riskLevel:
+    row.risk_level === "low" ||
+    row.risk_level === "medium" ||
+    row.risk_level === "high"
+      ? row.risk_level
+      : null,
+  riskReasons: normalizeStringArray(row.risk_reasons),
   signingRequestId: row.signing_request_id,
+  stepUpRequired: row.step_up_required === true,
   status: row.status,
+  transactionContractAddress: row.transaction_contract_address ?? null,
+  transactionDeclaredValueUsd: parseOptionalUsdValue(
+    row.transaction_declared_value_usd
+  ),
+  transactionOperationType: row.transaction_operation_type ?? null,
+  transactionRecipient: row.transaction_recipient ?? null,
   updatedAt: row.updated_at,
   userAccountId: String(row.user_account_id),
 })
@@ -285,7 +378,7 @@ const loadPolicy = async (supabase: SupabaseClient, dappId: number | string) => 
   const { data, error } = await supabase
     .from("siwc_signing_policies")
     .select(
-      "dapp_id,status,policy_version,custody_enabled,signing_enabled,sandbox_mode,allowed_chains,allowed_request_types,required_acr"
+      "dapp_id,status,policy_version,custody_enabled,signing_enabled,sandbox_mode,allowed_chains,allowed_request_types,required_acr,transaction_value_limit_usd,contract_allowlist,metadata"
     )
     .eq("dapp_id", dappId)
     .maybeSingle()
@@ -297,28 +390,157 @@ const loadPolicy = async (supabase: SupabaseClient, dappId: number | string) => 
   return data as SiwcPolicyRow | null
 }
 
+const baseRisk = (riskLevel: SiwcRiskLevel): TransactionRiskEvaluation => ({
+  contractAddress: null,
+  declaredValueUsd: null,
+  operationType: null,
+  recipient: null,
+  riskLevel,
+  riskReasons: [],
+})
+
+const evaluateTransactionRisk = (input: {
+  chain: string
+  payload: unknown
+  policy: SiwcPolicyRow | null
+}): TransactionRiskEvaluation => {
+  const risk = baseRisk("high")
+
+  if (input.chain !== "evm") {
+    return {
+      ...risk,
+      operationType: "unsupported_transaction",
+      riskReasons: ["transaction_chain_risk_unsupported"],
+    }
+  }
+
+  if (!input.payload || typeof input.payload !== "object") {
+    return {
+      ...risk,
+      operationType: "malformed_transaction",
+      riskReasons: ["transaction_payload_malformed"],
+    }
+  }
+
+  const payload = input.payload as Record<string, unknown>
+  const toValue = getObjectValue(payload, [
+    "to",
+    "recipient",
+    "contract",
+    "contractAddress",
+    "contract_address",
+  ])
+  const dataValue = getObjectValue(payload, ["data", "callData", "calldata"])
+  const hasCallData =
+    typeof dataValue === "string" &&
+    dataValue.trim().length > 0 &&
+    dataValue.trim() !== "0x"
+  const declaredValueUsd = parseOptionalUsdValue(
+    getObjectValue(payload, [
+      "declaredValueUsd",
+      "declared_value_usd",
+      "transactionValueUsd",
+      "transaction_value_usd",
+      "valueUsd",
+      "value_usd",
+    ])
+  )
+  const payloadChain = getObjectValue(payload, ["chain", "chainKey", "chain_key"])
+  const reasons: string[] = []
+  let normalizedRecipient: string | null = null
+
+  if (
+    typeof payloadChain === "string" &&
+    payloadChain.trim().length > 0 &&
+    normalizeChainKey(payloadChain) !== input.chain
+  ) {
+    reasons.push("transaction_chain_account_mismatch")
+  }
+
+  if (typeof toValue === "string" && ethers.utils.isAddress(toValue)) {
+    normalizedRecipient = ethers.utils.getAddress(toValue).toLowerCase()
+  } else {
+    reasons.push("transaction_recipient_invalid")
+  }
+
+  const operationType = hasCallData ? "contract_call" : "native_transfer"
+  const contractAddress = hasCallData ? normalizedRecipient : null
+  const allowlist = normalizeAllowlist(input.policy?.contract_allowlist)
+
+  if (contractAddress && allowlist.length > 0) {
+    if (allowlist.includes(contractAddress)) {
+      reasons.push("contract_allowlist_match")
+    } else {
+      reasons.push("contract_not_allowlisted")
+    }
+  } else if (contractAddress) {
+    reasons.push("contract_allowlist_missing")
+  }
+
+  if (declaredValueUsd !== null) {
+    const limit = parseOptionalUsdValue(input.policy?.transaction_value_limit_usd)
+    if (limit !== null && declaredValueUsd > limit) {
+      reasons.push("transaction_value_limit_exceeded")
+    }
+  } else {
+    reasons.push("transaction_value_usd_not_declared")
+  }
+
+  reasons.push("transaction_signing_deferred")
+
+  return {
+    contractAddress,
+    declaredValueUsd,
+    operationType,
+    recipient: normalizedRecipient,
+    riskLevel: "high",
+    riskReasons: reasons,
+  }
+}
+
 const evaluatePolicy = (
   policy: SiwcPolicyRow | null,
-  input: { chain: string; requestType: SigningRequestType }
+  input: { chain: string; payload: unknown; requestType: SigningRequestType }
 ): PolicyEvaluation => {
+  const risk =
+    input.requestType === "transaction"
+      ? evaluateTransactionRisk({
+          chain: input.chain,
+          payload: input.payload,
+          policy,
+        })
+      : baseRisk(input.requestType === "typed_data" ? "medium" : "low")
+  const requiredAcr =
+    policy?.required_acr === SIWC_PASSKEY_ACR ? SIWC_PASSKEY_ACR : null
+  const stepUpRequired = requiredAcr === SIWC_PASSKEY_ACR
+
   if (!policy) {
     return {
       allowed: false,
       denialCode: "policy_missing",
       denialMessage: "Signing policy is not configured for this app.",
       policyVersion: 0,
+      policyDecision: "denied",
       requiredAcr: null,
+      risk,
+      stepUpRequired: false,
     }
   }
 
-  if (policy.status !== "enabled" || !policy.signing_enabled) {
+  if (
+    policy.status !== "enabled" ||
+    !policy.custody_enabled ||
+    !policy.signing_enabled
+  ) {
     return {
       allowed: false,
       denialCode: "signing_disabled",
       denialMessage: "Signing is disabled for this app.",
       policyVersion: Number(policy.policy_version ?? 0),
-      requiredAcr:
-        policy.required_acr === SIWC_PASSKEY_ACR ? SIWC_PASSKEY_ACR : null,
+      policyDecision: "denied",
+      requiredAcr,
+      risk,
+      stepUpRequired,
     }
   }
 
@@ -328,8 +550,10 @@ const evaluatePolicy = (
       denialCode: "chain_not_allowed",
       denialMessage: "This chain is not enabled for app signing.",
       policyVersion: Number(policy.policy_version ?? 0),
-      requiredAcr:
-        policy.required_acr === SIWC_PASSKEY_ACR ? SIWC_PASSKEY_ACR : null,
+      policyDecision: "denied",
+      requiredAcr,
+      risk,
+      stepUpRequired,
     }
   }
 
@@ -343,28 +567,44 @@ const evaluatePolicy = (
       denialCode: "request_type_not_allowed",
       denialMessage: "This signing request type is not enabled for this app.",
       policyVersion: Number(policy.policy_version ?? 0),
-      requiredAcr:
-        policy.required_acr === SIWC_PASSKEY_ACR ? SIWC_PASSKEY_ACR : null,
+      policyDecision: "denied",
+      requiredAcr,
+      risk,
+      stepUpRequired,
     }
   }
 
   if (input.requestType === "transaction") {
+    const denialCode = risk.riskReasons.includes(
+      "transaction_value_limit_exceeded"
+    )
+      ? "transaction_value_limit_exceeded"
+      : risk.riskReasons.includes("contract_not_allowlisted")
+        ? "contract_not_allowlisted"
+        : risk.riskReasons.includes("transaction_chain_risk_unsupported")
+          ? "transaction_chain_risk_unsupported"
+          : "transaction_signing_deferred"
+
     return {
       allowed: false,
-      denialCode: "transaction_signing_deferred",
+      denialCode,
       denialMessage:
-        "Transaction signing requires SIWC05 risk controls before it can be approved.",
+        "Transaction signing remains disabled until SIWC transaction enablement is explicitly approved.",
       policyVersion: Number(policy.policy_version ?? 0),
-      requiredAcr:
-        policy.required_acr === SIWC_PASSKEY_ACR ? SIWC_PASSKEY_ACR : null,
+      policyDecision: "denied",
+      requiredAcr,
+      risk,
+      stepUpRequired,
     }
   }
 
   return {
     allowed: true,
+    policyDecision: "allowed",
     policyVersion: Number(policy.policy_version ?? 0),
-    requiredAcr:
-      policy.required_acr === SIWC_PASSKEY_ACR ? SIWC_PASSKEY_ACR : null,
+    requiredAcr,
+    risk,
+    stepUpRequired,
   }
 }
 
@@ -457,6 +697,7 @@ export async function createSiwcSigningRequest(input: {
   const policy = await loadPolicy(input.supabase, input.dappId)
   const evaluation = evaluatePolicy(policy, {
     chain,
+    payload: input.payload,
     requestType: input.requestType,
   })
   const now = new Date().toISOString()
@@ -485,12 +726,20 @@ export async function createSiwcSigningRequest(input: {
         input.payload,
         input.payloadSummary
       ),
+      policy_decision: evaluation.policyDecision,
       policy_version: evaluation.policyVersion,
       request_id_header: input.requestId,
       request_type: input.requestType,
       required_acr: evaluation.requiredAcr,
+      risk_level: evaluation.risk.riskLevel,
+      risk_reasons: evaluation.risk.riskReasons,
       signing_request_id: signingRequestId,
+      step_up_required: evaluation.stepUpRequired,
       status,
+      transaction_contract_address: evaluation.risk.contractAddress,
+      transaction_declared_value_usd: evaluation.risk.declaredValueUsd,
+      transaction_operation_type: evaluation.risk.operationType,
+      transaction_recipient: evaluation.risk.recipient,
       updated_at: now,
       user_account_id: input.userAccountId,
       user_id: context.dappUser.user_id,
@@ -510,7 +759,10 @@ export async function createSiwcSigningRequest(input: {
       dappId: String(input.dappId),
       dappUserUuid: input.dappUserUuid,
       policyVersion: evaluation.policyVersion,
+      riskLevel: evaluation.risk.riskLevel,
+      riskReasons: evaluation.risk.riskReasons,
       signingRequestId,
+      stepUpRequired: evaluation.stepUpRequired,
       status,
       userAccountId: input.userAccountId,
     },
@@ -812,7 +1064,7 @@ const assertPasskeyAcrSatisfied = async (
   const supabase = getPassportSupabase()
   const { data: session, error } = await supabase
     .from("oidc_sessions")
-    .select("session_id,human_subject_key,metadata,expires_at,revoked_at")
+    .select("session_id,human_subject_key,metadata,expires_at,revoked_at,created_at")
     .eq("session_id", sessionId)
     .maybeSingle()
 
@@ -825,13 +1077,30 @@ const assertPasskeyAcrSatisfied = async (
     metadata.authentication_methods ?? metadata.authenticationMethods
   )
   const acr = typeof metadata.acr === "string" ? metadata.acr : null
+  const authTimeValue =
+    metadata.auth_time ??
+    metadata.authTime ??
+    metadata.passkey_authenticated_at ??
+    metadata.passkeyAuthenticatedAt
+  const authTimeMs =
+    typeof authTimeValue === "number"
+      ? authTimeValue > 10_000_000_000
+        ? authTimeValue
+        : authTimeValue * 1000
+      : typeof authTimeValue === "string" && authTimeValue.trim().length > 0
+        ? new Date(authTimeValue).getTime()
+        : session?.created_at
+          ? new Date(String(session.created_at)).getTime()
+          : NaN
 
   if (
     !session ||
     !session.human_subject_key ||
     session.revoked_at ||
     new Date(String(session.expires_at)).getTime() <= Date.now() ||
-    (acr !== SIWC_PASSKEY_ACR && !authMethods.includes("passkey"))
+    (acr !== SIWC_PASSKEY_ACR && !authMethods.includes("passkey")) ||
+    !Number.isFinite(authTimeMs) ||
+    Date.now() - authTimeMs > SIWC_PASSKEY_STEP_UP_MAX_AGE_MS
   ) {
     throw new ApiSecurityError(
       403,
@@ -897,7 +1166,7 @@ const signPayload = async (
     throw new ApiSecurityError(
       409,
       "transaction_signing_deferred",
-      "Transaction signing requires SIWC05 risk controls before it can be approved."
+      "Transaction signing remains disabled until SIWC transaction enablement is explicitly approved."
     )
   }
 
@@ -1012,6 +1281,7 @@ const completeApprovedSigning = async (
   const policy = await loadPolicy(supabase, row.dapp_id)
   const evaluation = evaluatePolicy(policy, {
     chain: String(account.chain_key),
+    payload: row.payload,
     requestType: row.request_type as SigningRequestType,
   })
 
@@ -1022,7 +1292,15 @@ const completeApprovedSigning = async (
       .update({
         error_code: evaluation.denialCode ?? "policy_denied",
         error_message: evaluation.denialMessage ?? "Signing policy denied.",
+        policy_decision: evaluation.policyDecision,
         status: "policy_denied",
+        risk_level: evaluation.risk.riskLevel,
+        risk_reasons: evaluation.risk.riskReasons,
+        step_up_required: evaluation.stepUpRequired,
+        transaction_contract_address: evaluation.risk.contractAddress,
+        transaction_declared_value_usd: evaluation.risk.declaredValueUsd,
+        transaction_operation_type: evaluation.risk.operationType,
+        transaction_recipient: evaluation.risk.recipient,
         updated_at: now,
       })
       .eq("signing_request_id", row.signing_request_id)
@@ -1139,7 +1417,29 @@ export async function approvePassportSiwcSigningRequest(input: {
     )
   }
 
-  await assertPasskeyAcrSatisfied(input.req, row, token)
+  try {
+    await assertPasskeyAcrSatisfied(input.req, row, token)
+  } catch (error) {
+    if (
+      error instanceof ApiSecurityError &&
+      (error.code === "step_up_required" || error.code === "step_up_stale")
+    ) {
+      await insertSecurityEvent(supabase, {
+        actorIdentifier: token.uid,
+        actorType: "user",
+        details: {
+          signingRequestId: row.signing_request_id,
+          status: row.status,
+        },
+        eventType: "signing_request.step_up_failed",
+        outcome: "failure",
+        requestId: input.requestId,
+        route: "passport.siwc.signing.requests.approve",
+      })
+    }
+
+    throw error
+  }
 
   const approvedAt = new Date().toISOString()
   const { data: approvedRow, error: approveError } = await supabase
