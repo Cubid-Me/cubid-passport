@@ -4546,3 +4546,559 @@ Address the remaining Copilot review comments on PR 158 after the first removed-
 #### Follow-up
 
 - commit and push the Copilot fixes, reply to and resolve all review threads, then re-check CI
+
+### session: v159
+
+- timestamp: 2026-05-05T01:18:01Z
+- agent: **OpenAI Codex**
+- branch: **codex/siwc-roadmap-cleanup**
+- head: **`2bb7eda`**
+- session name: **Specialize SIWC roadmap**
+
+#### Objective
+
+Keep the SIWC side-roadmap while replacing generic competitive guidance with repo-specific, metadata-backed todos.
+
+#### Actions Taken
+
+- rewrote `agent-context/siwc-todo.md` around current OIDC, passkey, disclosure, API v3 custody, and SDK-boundary reality
+- added SIWC01-SIWC08 open todos with standard metadata blocks
+- preserved the product positioning while marking implemented, different, and deferred work clearly
+
+#### Verification
+
+- `git diff --check`
+- `git status --short`
+
+#### Follow-up
+
+- yeet the docs branch for review, then consider metadata-normalizing `C02` in `agent-context/todo.md`
+
+### session: v160
+
+- timestamp: 2026-05-05T01:21:18Z
+- agent: **OpenAI Codex**
+- branch: **codex/siwc-roadmap-cleanup**
+- head: **`f4fb0c1`**
+- session name: **Promote and implement SIWC01 signing architecture**
+
+#### Objective
+
+Promote `SIWC01` from the SIWC side-roadmap into the main roadmap and define the first target architecture for API v3 signing and transaction authorization.
+
+#### Actions Taken
+
+- added the SIWC execution track and `SIWC01`-`SIWC08` child todos to `agent-context/todo.md`
+- marked `SIWC01` started in both the main roadmap and side roadmap
+- created `docs/engineering/siwc-v3-signing-architecture.md` as the signing and transaction authorization target-state source of truth
+- locked the first implementation direction as phased server-side custodial signing backed by existing Vault-encrypted API v3 private-key custody
+
+#### Verification
+
+- planned docs-only validation with `git diff --check`
+
+#### Follow-up
+
+- close `SIWC01` metadata with the implementation commit SHA, then immediately start `SIWC02`
+
+### session: v161
+
+- timestamp: 2026-05-05T01:23:41Z
+- agent: **OpenAI Codex**
+- branch: **codex/siwc-roadmap-cleanup**
+- head: **`008934d`**
+- session name: **Close SIWC01 and start SIWC02**
+
+#### Objective
+
+Close the completed SIWC signing-architecture todo and immediately start the next SIWC policy-control todo.
+
+#### Actions Taken
+
+- marked `SIWC01` completed in both the main roadmap and the SIWC side roadmap
+- recorded implementation head `008934d` for `SIWC01`
+- marked `SIWC02` started on `codex/siwc-roadmap-cleanup`
+
+#### Verification
+
+- planned docs-only validation with `git diff --check`
+
+#### Follow-up
+
+- implement `SIWC02` by designing and adding Admin policy controls for app-scoped custody and signing
+
+### session: v162
+
+- timestamp: 2026-05-05T23:41:16Z
+- agent: **OpenAI Codex**
+- branch: **codex/siwc-roadmap-cleanup**
+- head: **`4f9fb04`**
+- session name: **Implement SIWC02 Admin policy controls**
+
+#### Objective
+
+Implement the Admin control-plane slice for app-scoped custody and signing policies without adding signing execution.
+
+#### Actions Taken
+
+- added the `siwc_signing_policies` migration with fail-closed defaults and service-role-only access
+- added Admin SIWC policy list/upsert APIs using the shared Admin API baseline
+- added Admin SIWC policy repository helpers, schemas, tests, and audit-event writing
+- added the `SIWC Policy` Admin tab for custody/signing policy visibility and editing
+- documented the concrete SIWC02 policy contract in the signing architecture doc
+
+#### Verification
+
+- `pnpm --filter @cubid/admin test`
+- `pnpm --filter @cubid/admin typecheck`
+- `pnpm --filter @cubid/admin build`
+- `git diff --check`
+
+#### Follow-up
+
+- close `SIWC02` metadata with the implementation commit SHA, then immediately start `SIWC03`
+
+### session: v163
+
+- timestamp: 2026-05-05T23:41:40Z
+- agent: **OpenAI Codex**
+- branch: **codex/siwc-roadmap-cleanup**
+- head: **`a968016`**
+- session name: **Close SIWC02 and start SIWC03**
+
+#### Objective
+
+Close the completed SIWC Admin policy-control todo and immediately start the next Passport account-visibility todo.
+
+#### Actions Taken
+
+- marked `SIWC02` completed in both the main roadmap and SIWC side roadmap
+- recorded implementation head `a968016` for `SIWC02`
+- marked `SIWC03` started on `codex/siwc-roadmap-cleanup`
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- implement `SIWC03` by adding Passport user-facing visibility for app-scoped custody accounts without exposing private or encrypted custody material
+
+### session: v164
+
+- timestamp: 2026-05-06T08:30:48Z
+- agent: **OpenAI Codex**
+- branch: **codex/siwc-roadmap-cleanup**
+- head: **`4203c6c`**
+- session name: **Implement SIWC03 Passport account visibility**
+
+#### Objective
+
+Add Passport user-facing visibility for app-scoped custody accounts without exposing private or encrypted custody material.
+
+#### Actions Taken
+
+- added an authenticated Passport SIWC account visibility helper and `POST /api/siwc/accounts/list`
+- added a Profile `App-scoped accounts` card showing app, chain, public address, custody/signing policy status, and timestamps
+- extended Passport tests and mocks for user-owned account visibility, policy metadata, empty state, auth failure, and secret redaction
+- documented the SIWC03 visibility contract in `docs/engineering/siwc-v3-signing-architecture.md`
+
+#### Verification
+
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm --filter @cubid/passport test`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm --filter @cubid/passport typecheck`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- close `SIWC03` metadata with the implementation commit SHA, then immediately start `SIWC04`
+
+### session: v165
+
+- timestamp: 2026-05-06T08:31:22Z
+- agent: **OpenAI Codex**
+- branch: **codex/siwc-roadmap-cleanup**
+- head: **`774cd64`**
+- session name: **Close SIWC03 and start SIWC04**
+
+#### Objective
+
+Close the completed SIWC Passport account-visibility todo and immediately start the v3 signing request lifecycle todo.
+
+#### Actions Taken
+
+- marked `SIWC03` completed in both the main roadmap and SIWC side roadmap
+- recorded implementation head `774cd64` for `SIWC03`
+- marked `SIWC04` started on `codex/siwc-roadmap-cleanup`
+
+#### Verification
+
+- planned docs-only validation with `git diff --check`
+
+#### Follow-up
+
+- implement `SIWC04` by adding the backend signing request lifecycle guarded by Admin policy and Passport approval
+
+### session: v166
+
+- timestamp: 2026-05-06T08:56:28Z
+- agent: **OpenAI Codex**
+- branch: **codex/siwc-roadmap-cleanup**
+- head: **`a58b735`**
+- session name: **Implement SIWC04 signing request lifecycle**
+
+#### Objective
+
+Implement the first API v3 signing request lifecycle with Admin policy checks, Passport user approval, passkey ACR enforcement, and safe server-side signing for supported message flows.
+
+#### Actions Taken
+
+- added the `siwc_signing_requests` migration and service-role-only storage contract
+- added dapp-facing API v3 signing request create/get/list/cancel routes with idempotent creation
+- added Passport user-facing signing request list/approve/reject routes and Profile approval visibility
+- implemented policy evaluation, passkey-backed OIDC session step-up checks, encrypted private-key decrypt, and EVM/NEAR/Solana/Sui message signing plus EVM typed-data signing
+- kept transaction signing policy-denied until SIWC05 risk controls
+- updated API v3 and SIWC architecture docs and wrote the public SDK handoff note
+
+#### Verification
+
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm --filter @cubid/passport test`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm --filter @cubid/passport typecheck`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- close `SIWC04` metadata with the implementation commit SHA, then immediately start `SIWC05`
+
+### session: v167
+
+- timestamp: 2026-05-06T08:57:01Z
+- agent: **OpenAI Codex**
+- branch: **codex/siwc-roadmap-cleanup**
+- head: **`a41f6ee`**
+- session name: **Close SIWC04 and start SIWC05**
+
+#### Objective
+
+Close the completed SIWC signing request lifecycle todo and immediately start the transaction-risk and policy-hardening follow-up.
+
+#### Actions Taken
+
+- marked `SIWC04` completed in both the main roadmap and SIWC side roadmap
+- recorded implementation head `a41f6ee` for `SIWC04`
+- marked `SIWC05` started on `codex/siwc-roadmap-cleanup`
+
+#### Verification
+
+- planned docs-only validation with `git diff --check`
+
+#### Follow-up
+
+- implement `SIWC05` by adding transaction risk summaries, stricter policy evaluation, and passkey step-up hardening before enabling transaction signing
+
+### session: v168
+
+- timestamp: 2026-05-06T09:22:05Z
+- agent: **OpenAI Codex**
+- branch: **codex/siwc-roadmap-cleanup**
+- head: **`12f2d3f`**
+- session name: **Implement SIWC05 transaction risk controls**
+
+#### Objective
+
+Add transaction risk summaries, stricter policy evidence, and fresh passkey step-up checks before any SIWC transaction signing is enabled.
+
+#### Actions Taken
+
+- added service-role-only signing request risk metadata for risk level, risk reasons, policy decision, transaction recipient/contract/value, and step-up requirement
+- added conservative transaction risk evaluation for EVM transaction payloads and fail-closed unsupported-chain handling for NEAR, Solana, and Sui transactions
+- enforced transaction value limits and contract allowlists in policy denial details while keeping all transaction signing disabled
+- hardened Passport signing approval so passkey ACR sessions must be fresh and step-up failures are audited
+- updated Profile signing-request visibility, SIWC/API v3 docs, Passport tests, and the public SDK handoff note
+
+#### Verification
+
+- `npx -p node@24 node $(which pnpm) --filter @cubid/passport test`
+- `pnpm --filter @cubid/passport typecheck`
+- `npx -p node@24 node $(which pnpm) --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- close `SIWC05` metadata with the implementation commit SHA, then start `SIWC06`
+
+### session: v169
+
+- timestamp: 2026-05-06T09:22:33Z
+- agent: **OpenAI Codex**
+- branch: **codex/siwc-roadmap-cleanup**
+- head: **`313f4a5`**
+- session name: **Close SIWC05 and start SIWC06**
+
+#### Objective
+
+Close the completed SIWC transaction-risk todo and immediately start the signing/webhook contract follow-up.
+
+#### Actions Taken
+
+- marked `SIWC05` completed in both the main roadmap and SIWC side roadmap
+- recorded implementation head `313f4a5` for `SIWC05`
+- marked `SIWC06` started on `codex/siwc-roadmap-cleanup`
+
+#### Verification
+
+- planned docs-only validation with `git diff --check`
+
+#### Follow-up
+
+- implement `SIWC06` by standardizing signing and wallet webhook contracts with SDK handoff notes
+
+### session: v170
+
+- timestamp: 2026-05-06T10:24:29Z
+- agent: **OpenAI Codex**
+- branch: **codex/siwc-roadmap-cleanup**
+- head: **`82fcdd6`**
+- session name: **Implement SIWC06 signing webhook contracts**
+
+#### Objective
+
+Extend the API v3 webhook contract to cover app-scoped custody and SIWC signing lifecycle events without enabling transaction signing.
+
+#### Actions Taken
+
+- added canonical SIWC wallet webhook event names and seeded them into `webhook_types`
+- added a shared SIWC webhook delivery helper that reuses v3 payloads, signatures, delivery attempts, encrypted webhook secrets, and best-effort failure handling
+- emitted wallet/signing webhooks from account generation, signing request creation, policy denial, approval, rejection, cancellation, step-up failure, and signature completion/failure paths
+- updated Admin SIWC policy event choices, API v3/SIWC docs, Passport route tests, and the public SDK handoff note
+
+#### Verification
+
+- `npx -p node@24 node $(which pnpm) --filter @cubid/passport test`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/admin typecheck`
+- `npx -p node@24 node $(which pnpm) --filter @cubid/passport build`
+- `npx -p node@24 node $(which pnpm) --filter @cubid/admin build`
+- `git diff --check`
+
+#### Follow-up
+
+- close `SIWC06` metadata with the implementation commit SHA, then start `SIWC07`
+
+### session: v171
+
+- timestamp: 2026-05-06T10:25:43Z
+- agent: **OpenAI Codex**
+- branch: **codex/siwc-roadmap-cleanup**
+- head: **`82fcdd6`**
+- session name: **Close SIWC06 and start SIWC07**
+
+#### Objective
+
+Close the SIWC webhook contract todo after validation and immediately start the smart-account/session-key/paymaster roadmap follow-up.
+
+#### Actions Taken
+
+- marked `SIWC06` completed in both the main roadmap and SIWC side roadmap
+- recorded implementation head `82fcdd6` for the wallet/signing webhook contract work
+- marked `SIWC07` started on `codex/siwc-roadmap-cleanup`
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- implement `SIWC07` by evaluating smart accounts, session keys, and paymaster/gas sponsorship against Cubid's app-scoped custody model
+
+### session: v172
+
+- timestamp: 2026-05-06T10:39:53Z
+- agent: **OpenAI Codex**
+- branch: **codex/siwc-roadmap-cleanup**
+- head: **`338d035`**
+- session name: **Implement SIWC07 smart-account roadmap evaluation**
+
+#### Objective
+
+Evaluate smart accounts, scoped session keys, and paymaster/gas sponsorship against Cubid's app-scoped custody model without changing runtime behavior.
+
+#### Actions Taken
+
+- documented that app-scoped generated custody accounts remain the near-term default account mode
+- recommended smart accounts as a future optional EVM-first custody mode rather than a replacement for generated accounts
+- defined session keys as future scoped, revocable child capabilities of app-scoped accounts
+- defined paymasters as a later policy and billing product gated by transaction signing readiness and abuse controls
+- created a public SDK handoff note explaining that future SDK support should use capability discovery
+
+#### Verification
+
+- planned docs-only validation with `git diff --check`
+
+#### Follow-up
+
+- close `SIWC07` metadata with the implementation commit SHA, then start `SIWC08`
+
+### session: v173
+
+- timestamp: 2026-05-06T10:40:40Z
+- agent: **OpenAI Codex**
+- branch: **codex/siwc-roadmap-cleanup**
+- head: **`e3fec1a`**
+- session name: **Close SIWC07 and start SIWC08**
+
+#### Objective
+
+Close the completed SIWC smart-account roadmap evaluation and immediately start the production-readiness runbook follow-up.
+
+#### Actions Taken
+
+- marked `SIWC07` completed in both the main roadmap and SIWC side roadmap
+- recorded implementation head `e3fec1a` for the smart-account/session-key/paymaster recommendation
+- marked `SIWC08` started on `codex/siwc-roadmap-cleanup`
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- implement `SIWC08` by building the production-readiness runbook for SIWC custody and signing
+
+### session: v174
+
+- timestamp: 2026-05-06T11:47:17Z
+- agent: **OpenAI Codex**
+- branch: **codex/siwc-roadmap-cleanup**
+- head: **`88203ac`**
+- session name: **Implement SIWC08 custody signing runbook**
+
+#### Objective
+
+Create the production-readiness runbook for operating SIWC app-scoped custody and signing safely.
+
+#### Actions Taken
+
+- added a dedicated SIWC custody and signing production runbook
+- documented custody exposure boundaries, Vault prerequisites, migration readiness, Admin policy operations, signing request triage, webhook operations, smoke tests, abuse monitoring, incident response, user support, and launch blockers
+- updated the SIWC architecture status to point at the runbook closeout state
+
+#### Verification
+
+- planned docs-only validation with `git diff --check`
+
+#### Follow-up
+
+- close `SIWC08` metadata with the implementation commit SHA and reconcile the parent SIWC roadmap status
+
+### session: v175
+
+- timestamp: 2026-05-06T11:49:35Z
+- agent: **OpenAI Codex**
+- branch: **codex/siwc-roadmap-cleanup**
+- head: **`969385a`**
+- session name: **Close SIWC08 and SIWC roadmap**
+
+#### Objective
+
+Close the completed SIWC production-readiness runbook todo and reconcile the parent SIWC roadmap status.
+
+#### Actions Taken
+
+- marked `SIWC08` completed in both the main roadmap and SIWC side roadmap
+- recorded implementation head `969385a` for the SIWC custody and signing runbook
+- marked the parent `SIWC` roadmap completed now that SIWC01 through SIWC08 are closed
+- updated the SIWC side-roadmap truth statement so it reflects the delivered signing foundation and deferred transaction/smart-account work
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- yeet the SIWC roadmap branch for review, or start a new follow-up track for transaction signing readiness after review
+
+### session: v176
+
+- timestamp: 2026-05-06T12:03:10Z
+- agent: **OpenAI Codex**
+- branch: **codex/siwc-roadmap-cleanup**
+- head: **`eba25d1`**
+- session name: **Address PR 159 SIWC policy scope review**
+
+#### Objective
+
+Address the automated review finding that SIWC policy listing exposed all dapps instead of scoping to the authenticated admin.
+
+#### Actions Taken
+
+- changed `listSiwcPolicies` to accept the Admin request context and filter `dapps` by `admin_uid`
+- updated the Admin SIWC policy list route to pass the authenticated context
+- added a regression test proving another admin receives no policies for unrelated dapps
+
+#### Verification
+
+- `pnpm --filter @cubid/admin test -- siwcPolicies`
+- planned follow-up validation with `pnpm --filter @cubid/admin typecheck`
+- `git diff --check`
+
+#### Follow-up
+
+- push the review fix, comment on and resolve the PR review thread, then re-check CI
+
+### session: v177
+
+- timestamp: 2026-05-06T12:04:27Z
+- agent: **OpenAI Codex**
+- branch: **codex/siwc-roadmap-cleanup**
+- head: **`84c3969`**
+- session name: **Address PR 159 Copilot wording comments**
+
+#### Objective
+
+Address Copilot review feedback about stale SIWC architecture and Profile copy.
+
+#### Actions Taken
+
+- updated the SIWC architecture intro to reflect that signing routes and Admin policy controls now exist
+- changed the API surface section from future/candidate language to implemented route language
+- removed the stale `pending_policy` state from the documented state machine
+- updated Profile copy so users are not told signing requests are unavailable while the signing request card is live
+
+#### Verification
+
+- planned docs/UI copy validation with `git diff --check`
+- planned focused validation with `pnpm --filter @cubid/passport typecheck`
+
+#### Follow-up
+
+- push the wording fix, reply to and resolve Copilot threads, then re-check CI
+
+### session: v178
+
+- timestamp: 2026-05-06T12:07:38Z
+- agent: **OpenAI Codex**
+- branch: **codex/siwc-roadmap-cleanup**
+- head: **`855eebd`**
+- session name: **Fix PR 159 Admin route test after SIWC policy scoping**
+
+#### Objective
+
+Fix the CI failure caused by the Admin route wiring test still expecting the old SIWC policy list helper signature.
+
+#### Actions Taken
+
+- updated the SIWC policy list route test to provide and expect the Admin request context
+- kept the ownership-scoped runtime behavior introduced for the review fix
+
+#### Verification
+
+- planned focused validation with `pnpm --filter @cubid/admin test -- adminRoutes`
+- planned follow-up validation with `pnpm --filter @cubid/admin typecheck`
+- `git diff --check`
+
+#### Follow-up
+
+- push the CI fix and confirm PR checks return green

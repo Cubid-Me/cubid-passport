@@ -8,10 +8,17 @@ import AppList from './appList';
 import DisclosureOps from './disclosureOps';
 import OidcOps from './oidcOps';
 import OidcRegistry from './oidcRegistry';
+import SiwcPolicy from './siwcPolicy';
 import Webhooks from './webhook';
 
 // Define the type for the tab state
-type Tab = 'apps' | 'disclosure-ops' | 'oidc' | 'oidc-ops' | 'webhooks';
+type Tab =
+  | 'apps'
+  | 'disclosure-ops'
+  | 'oidc'
+  | 'oidc-ops'
+  | 'siwc-policy'
+  | 'webhooks';
 
 export default function Admin() {
   const [activeTab, setActiveTab] = useState<Tab>('apps'); // Define state with Tab type
@@ -47,6 +54,12 @@ export default function Admin() {
               Disclosure Ops
             </button>
             <button
+              onClick={() => setActiveTab('siwc-policy')}
+              className={`pb-2 ${activeTab === 'siwc-policy' ? 'border-b-2 border-blue-500 text-blue-500' : ''}`}
+            >
+              SIWC Policy
+            </button>
+            <button
               onClick={() => setActiveTab('webhooks')}
               className={`pb-2 ${activeTab === 'webhooks' ? 'border-b-2 border-blue-500 text-blue-500' : ''}`}
             >
@@ -58,6 +71,7 @@ export default function Admin() {
             {activeTab === 'oidc' && <OidcRegistry />}
             {activeTab === 'oidc-ops' && <OidcOps />}
             {activeTab === 'disclosure-ops' && <DisclosureOps />}
+            {activeTab === 'siwc-policy' && <SiwcPolicy />}
             {activeTab === 'webhooks' && <Webhooks />}
           </div>
         </div>

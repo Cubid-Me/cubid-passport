@@ -166,3 +166,23 @@ export const adminOidcClientOpsUpdateSchema = z
     status: z.enum(['active', 'suspended']).optional(),
   })
   .passthrough();
+
+export const adminSiwcPolicyListSchema = z.object({}).passthrough();
+
+export const adminSiwcPolicyUpsertSchema = z
+  .object({
+    allowedChains: z.array(z.enum(['evm', 'near', 'solana', 'sui'])),
+    allowedRequestTypes: z.array(z.enum(['message', 'typed_data', 'transaction'])),
+    contractAllowlist: z.array(z.string().trim().min(1)).optional(),
+    custodyEnabled: z.boolean(),
+    dappId: z.coerce.number().int().positive(),
+    metadata: z.record(z.unknown()).optional(),
+    policyName: z.string().trim().min(1),
+    requiredAcr: z.literal('urn:cubid:acr:passkey').nullable().optional(),
+    sandboxMode: z.boolean(),
+    signingEnabled: z.boolean(),
+    status: z.enum(['disabled', 'enabled', 'suspended']),
+    transactionValueLimitUsd: z.coerce.number().nonnegative().nullable().optional(),
+    webhookEventSubscriptions: z.array(z.string().trim().min(1)).optional(),
+  })
+  .passthrough();

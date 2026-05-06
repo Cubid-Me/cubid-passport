@@ -226,6 +226,37 @@ export interface DisclosureOpsOverviewPayload {
   };
 }
 
+export type SiwcPolicyStatus = 'disabled' | 'enabled' | 'suspended';
+export type SiwcPolicyChain = 'evm' | 'near' | 'solana' | 'sui';
+export type SiwcPolicyRequestType = 'message' | 'typed_data' | 'transaction';
+
+export interface SiwcPolicyRecord {
+  allowedChains: SiwcPolicyChain[];
+  allowedRequestTypes: SiwcPolicyRequestType[];
+  contractAllowlist: string[];
+  createdAt: string | null;
+  custodyEnabled: boolean;
+  dappId: number;
+  dappName: string;
+  dappUid: string | null;
+  metadata: Record<string, unknown>;
+  policyId: string | null;
+  policyName: string;
+  policyVersion: number;
+  requiredAcr: 'urn:cubid:acr:passkey' | null;
+  sandboxMode: boolean;
+  signingEnabled: boolean;
+  status: SiwcPolicyStatus;
+  transactionValueLimitUsd: number | null;
+  updatedAt: string | null;
+  webhookEventSubscriptions: string[];
+}
+
+export interface SiwcPolicyOverviewPayload {
+  generatedAt: string;
+  policies: SiwcPolicyRecord[];
+}
+
 export type RequestedInfoMap = Record<string, RequestedInfoItem>;
 export type RequestedInfoByIndex = Record<number, RequestedInfoMap>;
 

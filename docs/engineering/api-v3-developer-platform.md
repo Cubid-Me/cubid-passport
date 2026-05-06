@@ -1,6 +1,6 @@
 # API v3 Developer Platform
 
-Last updated: 2026-05-03
+Last updated: 2026-05-06
 Status: E02.5 canonical contract
 
 ## Purpose
@@ -27,6 +27,14 @@ The current backend-owned API v3 routes are:
   the `private` schema and returning only public account metadata.
 - `POST /api/v3/accounts/list`: dapp-authenticated account metadata listing
   scoped to the target dapp user.
+- `POST /api/v3/signing/requests/create`: dapp-authenticated creation of a
+  Passport-hosted signing request for an app-scoped account.
+- `POST /api/v3/signing/requests/get`: dapp-authenticated signing request
+  status lookup.
+- `POST /api/v3/signing/requests/list`: dapp-authenticated signing request
+  listing for the authenticated app.
+- `POST /api/v3/signing/requests/cancel`: dapp-authenticated cancellation for
+  pending signing requests.
 
 Existing `/api/v2/*` routes remain legacy compatibility surfaces unless a
 future todo explicitly promotes a capability into API v3. New developer-facing
@@ -182,6 +190,127 @@ The route returns public metadata only. It must not expose private keys,
 ciphertexts, wrapped keys, internal user ids, or account records not linked to
 the authenticated dapp user.
 
+### `POST /api/v3/signing/requests/create`
+
+Purpose: create a Passport-hosted signing request for a specific app-scoped
+custodial account. The route records the request, evaluates the current Admin
+SIWC policy, and returns a polling-safe state. It does not sign until the
+Passport user approves the request.
+
+Request body:
+
+```json
+{
+  "api_key": "cubid_live_...",
+  "dapp_user_uuid": "00000000-0000-4000-8000-000000000000",
+  "user_account_id": "00000000-0000-4000-8000-000000000001",
+  "request_type": "message",
+  "payload": { "message": "Sign in to Example" },
+  "payload_summary": { "kind": "message", "preview": "Sign in to Example" }
+}
+```
+
+Rules:
+
+- `Idempotency-Key` is required and follows the shared API v3 write-route
+  contract.
+- The dapp user and account link must belong to the authenticated dapp.
+- Admin SIWC policy must be enabled, allow signing, allow the account chain,
+  and allow the requested type.
+- `transaction` requests are still recorded as `policy_denied`; SIWC05 adds
+  transaction risk summaries and stricter policy evidence, but not transaction
+  signatures.
+- Message signing is supported for EVM, NEAR, Solana, and Sui custody accounts.
+- EVM typed-data signing is supported for `typed_data`.
+- The route stores the raw signing payload in `siwc_signing_requests` for
+  service-role signing, but public responses return only payload hashes and
+  summaries.
+
+Success response shape:
+
+```json
+{
+  "data": {
+    "signingRequestId": "siwc_req_...",
+    "status": "pending_user_approval",
+    "chain": "evm",
+    "requestType": "message",
+    "payloadHash": "64-char sha256 hex",
+    "payloadSummary": { "kind": "message", "preview": "Sign in to Example" },
+    "riskLevel": "low",
+    "riskReasons": [],
+    "policyDecision": "allowed",
+    "stepUpRequired": true,
+    "policyVersion": 2,
+    "requiredAcr": "urn:cubid:acr:passkey",
+    "expiresAt": "2026-05-06T00:10:00.000Z"
+  }
+}
+```
+
+Responses must not include private keys, encrypted custody material, Vault key
+material, raw Cubid user ids, human subject keys, or the raw `payload` field.
+
+Transaction responses may include `riskLevel`, `riskReasons`,
+`transactionOperationType`, `transactionRecipient`,
+`transactionContractAddress`, and `transactionDeclaredValueUsd`. These are
+non-secret summaries for SDKs and Passport UI. They are not a transaction
+simulation result, and they do not mean Cubid will sign the transaction in this
+slice.
+
+### `POST /api/v3/signing/requests/get`
+
+Purpose: let the authenticated dapp poll one signing request that belongs to
+that dapp.
+
+Request body:
+
+```json
+{
+  "api_key": "cubid_live_...",
+  "signing_request_id": "siwc_req_..."
+}
+```
+
+Completed message or typed-data requests include `result` with a signature,
+algorithm, public address, and result type. Failed, rejected, cancelled,
+expired, and policy-denied requests include status plus redacted error metadata
+where available.
+
+### `POST /api/v3/signing/requests/list`
+
+Purpose: list recent signing requests for the authenticated dapp, optionally
+filtered to one dapp user.
+
+Request body:
+
+```json
+{
+  "api_key": "cubid_live_...",
+  "dapp_user_uuid": "00000000-0000-4000-8000-000000000000",
+  "limit": 25
+}
+```
+
+The response is `{ "data": [...] }` using the same redacted signing request
+summary shape as `get`.
+
+### `POST /api/v3/signing/requests/cancel`
+
+Purpose: cancel a pending signing request before the Passport user approves it.
+
+Request body:
+
+```json
+{
+  "api_key": "cubid_live_...",
+  "signing_request_id": "siwc_req_..."
+}
+```
+
+Only `pending_user_approval` requests can be cancelled. Terminal requests are
+idempotently returned in their terminal state.
+
 ## Error Contract
 
 API v3 uses the Passport structured error envelope for non-OIDC APIs:
@@ -244,6 +373,21 @@ deliveries use canonical v3 event names:
 - `score_increase` -> `score.increased`
 - `score_decrease` -> `score.decreased`
 
+SIWC custody and signing events are first-class v3 event names:
+
+- `wallet.created`
+- `wallet.signing_request.created`
+- `wallet.policy.denied`
+- `wallet.signing_request.approved`
+- `wallet.signing_request.rejected`
+- `wallet.signing_request.cancelled`
+- `wallet.signing_request.step_up_failed`
+- `wallet.signature.completed`
+- `wallet.signature.failed`
+
+`wallet.transaction.submitted` and `wallet.transaction.failed` remain deferred
+until transaction signing exists.
+
 Delivered payloads use this shape:
 
 ```json
@@ -261,6 +405,14 @@ Delivered payloads use this shape:
 }
 ```
 
+SIWC events use the same envelope. Their `data` object may include account id,
+chain, public address, dapp-user account id, signing request id, request type,
+status, policy version, risk summary, payload hash, and safe result metadata
+such as signature algorithm and public address. SIWC webhook payloads never
+include raw signing payloads, signatures, private keys, encrypted key material,
+Vault wrapping keys, human subject keys, raw Cubid user ids, Firebase uid, or
+webhook signing secrets.
+
 Delivery requests include replay-protection headers:
 
 - `X-Cubid-Event-Id`: stable event id for the dapp, event type, dapp user, and
@@ -277,6 +429,13 @@ include raw Cubid user ids, human subject keys, raw stamp rows, signing secrets,
 or private custody material. Delivery attempts record event id, request body,
 redacted request headers, signature version, status, response code/body, failure
 category, and attempt number in `webhook_event_deliveries`.
+
+SIWC webhook delivery is additionally gated by
+`siwc_signing_policies.webhook_event_subscriptions` and the app's active
+`dapp_webhook_subscriptions` row for the canonical event name. Delivery is
+best-effort for account and signing APIs: failed dapp endpoints are recorded in
+`webhook_event_deliveries`, but they do not roll back generated accounts,
+approvals, rejections, cancellations, or completed signatures.
 
 ## SDK Coordination
 
