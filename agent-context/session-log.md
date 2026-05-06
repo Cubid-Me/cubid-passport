@@ -4860,7 +4860,7 @@ Close the completed SIWC transaction-risk todo and immediately start the signing
 - timestamp: 2026-05-06T10:24:29Z
 - agent: **OpenAI Codex**
 - branch: **codex/siwc-roadmap-cleanup**
-- head: **`55fb0ca`**
+- head: **`82fcdd6`**
 - session name: **Implement SIWC06 signing webhook contracts**
 
 #### Objective
@@ -4886,3 +4886,29 @@ Extend the API v3 webhook contract to cover app-scoped custody and SIWC signing 
 #### Follow-up
 
 - close `SIWC06` metadata with the implementation commit SHA, then start `SIWC07`
+
+### session: v171
+
+- timestamp: 2026-05-06T10:25:43Z
+- agent: **OpenAI Codex**
+- branch: **codex/siwc-roadmap-cleanup**
+- head: **`82fcdd6`**
+- session name: **Close SIWC06 and start SIWC07**
+
+#### Objective
+
+Close the SIWC webhook contract todo after validation and immediately start the smart-account/session-key/paymaster roadmap follow-up.
+
+#### Actions Taken
+
+- marked `SIWC06` completed in both the main roadmap and SIWC side roadmap
+- recorded implementation head `82fcdd6` for the wallet/signing webhook contract work
+- marked `SIWC07` started on `codex/siwc-roadmap-cleanup`
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- implement `SIWC07` by evaluating smart accounts, session keys, and paymaster/gas sponsorship against Cubid's app-scoped custody model

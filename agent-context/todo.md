@@ -786,23 +786,23 @@ Add the first transaction-policy and risk layer before broad transaction signing
 
 ### SIWC06. Add signing and wallet webhook contracts plus SDK handoff notes
 
-- Status: Started
+- Status: Completed
 - Timestamp started: 2026-05-06T09:22:33Z
-- Timestamp completed: TBD
+- Timestamp completed: 2026-05-06T10:25:43Z
 - Feature branch: codex/siwc-roadmap-cleanup
-- Head: 313f4a5
-- Session-log reference(s): session: v169
+- Head: 82fcdd6
+- Session-log reference(s): session: v169, session: v170
 
 Extend the API v3 webhook contract for app-scoped custody and signing events. Candidate events include `wallet.created`, `wallet.signing_request.created`, `wallet.signing_request.approved`, `wallet.signing_request.rejected`, `wallet.signature.completed`, `wallet.transaction.submitted`, `wallet.transaction.failed`, and `wallet.policy.denied`. Payloads must follow the existing API v3 webhook direction: stable event IDs, timestamps, HMAC signatures, replay-safe delivery semantics, retry metadata, and disclosure-safe payloads that do not leak cross-app identifiers or custody secrets. Because these events affect developer-facing SDK behavior, each implemented contract change must create a handoff note in the public SDK repo. Do not add SDK implementation code to `cubid-passport`.
 
 ### SIWC07. Evaluate smart-account, session-key, and paymaster roadmap
 
-- Status: Not started
-- Timestamp started: TBD
+- Status: Started
+- Timestamp started: 2026-05-06T10:25:43Z
 - Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Feature branch: codex/siwc-roadmap-cleanup
+- Head: 82fcdd6
+- Session-log reference(s): session: v171
 
 Evaluate whether Cubid should support smart accounts, scoped session keys, and paymaster/gas sponsorship after the basic signing lifecycle is secure. This should be a design and sequencing task, not an implementation shortcut. Compare the app-scoped privacy model against user expectations for portable wallets, recovery, gasless onboarding, and asset fragmentation. Decide whether smart accounts should wrap existing app-scoped custodial keys, replace generated EOAs for some chains, or remain a later optional custody mode. Define what would need to change in Admin policy, Passport approval UX, API v3 signing routes, webhook events, and SDK contracts. The output should be a recommendation with explicit "not yet" criteria if the platform is not ready.
 
