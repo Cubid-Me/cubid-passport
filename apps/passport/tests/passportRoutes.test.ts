@@ -3,6 +3,7 @@ import test from "node:test"
 
 import axios from "axios"
 import { hashDappApiKey } from "@cubid/auth/server"
+import { ethers } from "ethers"
 
 import actorProfileGetHandler from "../pages/api/actors/profile/get"
 import actorProfileUpsertHandler from "../pages/api/actors/profile/upsert"
@@ -10,6 +11,9 @@ import appDisclosureGrantListHandler from "../pages/api/disclosures/app-grants/l
 import appDisclosureGrantRevokeHandler from "../pages/api/disclosures/app-grants/revoke"
 import consentListHandler from "../pages/api/oidc/consents/list"
 import siwcAccountListHandler from "../pages/api/siwc/accounts/list"
+import approveSiwcSigningRequestHandler from "../pages/api/siwc/signing/requests/approve"
+import listPassportSiwcSigningRequestsHandler from "../pages/api/siwc/signing/requests/list"
+import rejectSiwcSigningRequestHandler from "../pages/api/siwc/signing/requests/reject"
 import supabaseSelectHandler from "../pages/api/supabase/select"
 import sendOtpHandler from "../pages/api/twillio/send-otp"
 import sendEmailOtpHandler from "../pages/api/v2/email/send_otp"
@@ -18,11 +22,18 @@ import saveSecretV2Handler from "../pages/api/v2/save_secret"
 import generateAccountV3Handler from "../pages/api/v3/accounts/generate"
 import listAccountsV3Handler from "../pages/api/v3/accounts/list"
 import saveSecretV3Handler from "../pages/api/v3/save_secret"
+import cancelSiwcSigningRequestHandler from "../pages/api/v3/signing/requests/cancel"
+import createSiwcSigningRequestHandler from "../pages/api/v3/signing/requests/create"
+import getSiwcSigningRequestHandler from "../pages/api/v3/signing/requests/get"
+import listSiwcSigningRequestsHandler from "../pages/api/v3/signing/requests/list"
 import webhookTriggerHandler from "../pages/api/cubid-webhook/trigger-url"
 import createUserHandler from "../pages/api/v2/create_user"
 import { hashApiV3IdempotencyRequest } from "../lib/server/apiV3Idempotency"
 import { signApiV3WebhookPayload } from "../lib/server/apiV3Webhooks"
-import { decryptBlockchainPrivateKeyWithKey } from "../lib/server/blockchainAccounts"
+import {
+  encryptBlockchainPrivateKeyWithKey,
+  decryptBlockchainPrivateKeyWithKey,
+} from "../lib/server/blockchainAccounts"
 import {
   DAPP_USER_SECRET_LEGACY_SENTINEL,
   decryptDappUserSecretWithKey,
@@ -404,6 +415,340 @@ test("Passport SIWC account list returns an empty list for signed-in users witho
 
   assert.equal(res.statusCode, 200)
   assert.deepEqual((res.body as DataResponse<unknown[]>).data, [])
+})
+
+const addSiwcSigningFixtures = (supabase: MockPassportSupabase) => {
+  const apiKey = addDappAuth(supabase)
+  const dappUserUuid = "00000000-0000-4000-8000-000000000071"
+  const userAccountId = "00000000-0000-4000-8000-000000000072"
+  const dappUserAccountId = "00000000-0000-4000-8000-000000000073"
+  const wallet = ethers.Wallet.createRandom()
+
+  supabase.setUser({ email: "person@example.com", id: 1234 })
+  supabase.setDappUser({
+    dapp_id: 42,
+    user_id: 1234,
+    uuid: dappUserUuid,
+  })
+  supabase.userAccounts.push({
+    chain_key: "evm",
+    created_at: "2026-05-01T00:00:00.000Z",
+    custody_status: "cubid_custodied",
+    id: userAccountId,
+    public_address: wallet.address,
+    public_address_normalized: wallet.address.toLowerCase(),
+    status: "active",
+    updated_at: "2026-05-01T00:00:00.000Z",
+    user_id: 1234,
+  })
+  supabase.dappUserAccounts.push({
+    created_at: "2026-05-01T00:00:00.000Z",
+    dapp_id: 42,
+    dapp_user_uuid: dappUserUuid,
+    id: dappUserAccountId,
+    status: "active",
+    updated_at: "2026-05-01T00:00:00.000Z",
+    user_account_id: userAccountId,
+  })
+  supabase.setSiwcSigningPolicy({
+    allowed_chains: ["evm"],
+    allowed_request_types: ["message", "typed_data", "transaction"],
+    custody_enabled: true,
+    dapp_id: 42,
+    policy_version: 2,
+    required_acr: "urn:cubid:acr:passkey",
+    sandbox_mode: true,
+    signing_enabled: true,
+    status: "enabled",
+  })
+  supabase.privateKeys.push({
+    ...encryptBlockchainPrivateKeyWithKey(
+      wallet.privateKey,
+      Buffer.from("fedcba9876543210fedcba9876543210"),
+      {
+        chainKey: "evm",
+        publicAddressNormalized: wallet.address.toLowerCase(),
+        userAccountId,
+        userId: 1234,
+      }
+    ),
+    chain_key: "evm",
+    status: "active",
+    user_account_id: userAccountId,
+  })
+
+  return {
+    apiKey,
+    dappUserAccountId,
+    dappUserUuid,
+    userAccountId,
+    wallet,
+  }
+}
+
+test("Passport API v3 SIWC signing request create/get/list use policy and idempotency", async () => {
+  const supabase = new MockPassportSupabase()
+  setPassportSupabaseForTests(supabase as never)
+  const fixtures = addSiwcSigningFixtures(supabase)
+  const body = {
+    apikey: fixtures.apiKey,
+    dapp_user_uuid: fixtures.dappUserUuid,
+    payload: { message: "hello Cubid" },
+    request_type: "message",
+    user_account_id: fixtures.userAccountId,
+  }
+
+  const createReq = createApiRequest({
+    body,
+    headers: {
+      "idempotency-key": "signing-create-1",
+      origin: "https://passport.cubid.me",
+      "x-request-id": "passport_siwc_signing_create",
+    },
+    url: "/api/v3/signing/requests/create",
+  })
+  const createRes = createApiResponse()
+
+  await createSiwcSigningRequestHandler(createReq, createRes)
+
+  assert.equal(createRes.statusCode, 200)
+  assert.equal(supabase.siwcSigningRequests.length, 1)
+  const created = (createRes.body as DataResponse<Record<string, unknown>>).data
+  assert.equal(created.status, "pending_user_approval")
+  assert.equal(created.policyVersion, 2)
+  assert.equal(created.requiredAcr, "urn:cubid:acr:passkey")
+  assert.equal(JSON.stringify(createRes.body).includes('"payload"'), false)
+  assert.equal(JSON.stringify(createRes.body).includes("private"), false)
+
+  const replayRes = createApiResponse()
+  await createSiwcSigningRequestHandler(createReq, replayRes)
+  assert.equal(replayRes.statusCode, 200)
+  assert.equal(supabase.siwcSigningRequests.length, 1)
+  assert.deepEqual(replayRes.body, createRes.body)
+
+  const getReq = createApiRequest({
+    body: {
+      apikey: fixtures.apiKey,
+      signing_request_id: String(created.signingRequestId),
+    },
+    headers: {
+      origin: "https://passport.cubid.me",
+    },
+    url: "/api/v3/signing/requests/get",
+  })
+  const getRes = createApiResponse()
+  await getSiwcSigningRequestHandler(getReq, getRes)
+  assert.equal(getRes.statusCode, 200)
+  assert.equal(
+    (getRes.body as DataResponse<Record<string, unknown>>).data
+      .signingRequestId,
+    created.signingRequestId
+  )
+
+  const listReq = createApiRequest({
+    body: {
+      apikey: fixtures.apiKey,
+      dapp_user_uuid: fixtures.dappUserUuid,
+    },
+    headers: {
+      origin: "https://passport.cubid.me",
+    },
+    url: "/api/v3/signing/requests/list",
+  })
+  const listRes = createApiResponse()
+  await listSiwcSigningRequestsHandler(listReq, listRes)
+  assert.equal(listRes.statusCode, 200)
+  assert.equal((listRes.body as DataResponse<unknown[]>).data.length, 1)
+})
+
+test("Passport API v3 SIWC signing request policy-denies deferred transactions", async () => {
+  const supabase = new MockPassportSupabase()
+  setPassportSupabaseForTests(supabase as never)
+  const fixtures = addSiwcSigningFixtures(supabase)
+  const req = createApiRequest({
+    body: {
+      apikey: fixtures.apiKey,
+      dapp_user_uuid: fixtures.dappUserUuid,
+      payload: { to: "0x0000000000000000000000000000000000000000" },
+      request_type: "transaction",
+      user_account_id: fixtures.userAccountId,
+    },
+    headers: {
+      "idempotency-key": "signing-create-transaction",
+      origin: "https://passport.cubid.me",
+    },
+    url: "/api/v3/signing/requests/create",
+  })
+  const res = createApiResponse()
+
+  await createSiwcSigningRequestHandler(req, res)
+
+  const data = (res.body as DataResponse<Record<string, unknown>>).data
+  assert.equal(res.statusCode, 200)
+  assert.equal(data.status, "policy_denied")
+  assert.equal(data.errorCode, "transaction_signing_deferred")
+})
+
+test("Passport SIWC signing approval requires passkey step-up then completes EVM message signatures", async () => {
+  const supabase = new MockPassportSupabase()
+  setPassportSupabaseForTests(supabase as never)
+  addFirebaseUserAuth()
+  const fixtures = addSiwcSigningFixtures(supabase)
+
+  const createReq = createApiRequest({
+    body: {
+      apikey: fixtures.apiKey,
+      dapp_user_uuid: fixtures.dappUserUuid,
+      payload: { message: "approve this" },
+      request_type: "message",
+      user_account_id: fixtures.userAccountId,
+    },
+    headers: {
+      "idempotency-key": "signing-approve-1",
+      origin: "https://passport.cubid.me",
+    },
+    url: "/api/v3/signing/requests/create",
+  })
+  const createRes = createApiResponse()
+  await createSiwcSigningRequestHandler(createReq, createRes)
+  const signingRequestId = String(
+    (createRes.body as DataResponse<Record<string, unknown>>).data
+      .signingRequestId
+  )
+
+  const missingStepUpReq = createApiRequest({
+    body: { signingRequestId },
+    headers: {
+      authorization: "Bearer firebase-test-token",
+      origin: "https://passport.cubid.me",
+      "x-request-id": "passport_siwc_approve_no_stepup",
+    },
+    url: "/api/siwc/signing/requests/approve",
+  })
+  const missingStepUpRes = createApiResponse()
+  await approveSiwcSigningRequestHandler(missingStepUpReq, missingStepUpRes)
+  assert.equal(missingStepUpRes.statusCode, 403)
+  assert.equal(
+    (missingStepUpRes.body as { error: { code: string } }).error.code,
+    "step_up_required"
+  )
+
+  supabase.setOidcHumanSubject({
+    cubid_user_id: 1234,
+    human_subject_key: "human_subject_1",
+    primary_email: "person@example.com",
+  })
+  supabase.setOidcSession({
+    expires_at: new Date(Date.now() + 60_000).toISOString(),
+    human_subject_key: "human_subject_1",
+    metadata: {
+      acr: "urn:cubid:acr:passkey",
+      authentication_methods: ["passkey"],
+    },
+    revoked_at: null,
+    session_id: "oidc_session_passkey",
+  })
+
+  const approveReq = createApiRequest({
+    body: { signingRequestId },
+    headers: {
+      authorization: "Bearer firebase-test-token",
+      cookie: "cubid_oidc_session_id=oidc_session_passkey",
+      origin: "https://passport.cubid.me",
+    },
+    url: "/api/siwc/signing/requests/approve",
+  })
+  const approveRes = createApiResponse()
+  await approveSiwcSigningRequestHandler(approveReq, approveRes)
+
+  assert.equal(approveRes.statusCode, 200)
+  const approved = (approveRes.body as DataResponse<Record<string, unknown>>).data
+  assert.equal(approved.status, "completed")
+  const result = approved.result as { signature: string }
+  assert.equal(
+    ethers.utils.verifyMessage("approve this", result.signature),
+    fixtures.wallet.address
+  )
+  assert.equal(JSON.stringify(approveRes.body).includes(fixtures.wallet.privateKey), false)
+})
+
+test("Passport SIWC signing requests can be listed, rejected, and cancelled", async () => {
+  const supabase = new MockPassportSupabase()
+  setPassportSupabaseForTests(supabase as never)
+  addFirebaseUserAuth()
+  const fixtures = addSiwcSigningFixtures(supabase)
+
+  const createSigning = async (idempotencyKey: string) => {
+    const req = createApiRequest({
+      body: {
+        apikey: fixtures.apiKey,
+        dapp_user_uuid: fixtures.dappUserUuid,
+        payload: { message: idempotencyKey },
+        request_type: "message",
+        user_account_id: fixtures.userAccountId,
+      },
+      headers: {
+        "idempotency-key": idempotencyKey,
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/signing/requests/create",
+    })
+    const res = createApiResponse()
+    await createSiwcSigningRequestHandler(req, res)
+    return String(
+      (res.body as DataResponse<Record<string, unknown>>).data
+        .signingRequestId
+    )
+  }
+
+  const rejectId = await createSigning("signing-reject-1")
+  const cancelId = await createSigning("signing-cancel-1")
+  const listReq = createApiRequest({
+    body: {},
+    headers: {
+      authorization: "Bearer firebase-test-token",
+      origin: "https://passport.cubid.me",
+    },
+    url: "/api/siwc/signing/requests/list",
+  })
+  const listRes = createApiResponse()
+  await listPassportSiwcSigningRequestsHandler(listReq, listRes)
+  assert.equal(listRes.statusCode, 200)
+  assert.equal((listRes.body as DataResponse<unknown[]>).data.length, 2)
+
+  const rejectReq = createApiRequest({
+    body: { signingRequestId: rejectId },
+    headers: {
+      authorization: "Bearer firebase-test-token",
+      origin: "https://passport.cubid.me",
+    },
+    url: "/api/siwc/signing/requests/reject",
+  })
+  const rejectRes = createApiResponse()
+  await rejectSiwcSigningRequestHandler(rejectReq, rejectRes)
+  assert.equal(rejectRes.statusCode, 200)
+  assert.equal(
+    (rejectRes.body as DataResponse<Record<string, unknown>>).data.status,
+    "rejected"
+  )
+
+  const cancelReq = createApiRequest({
+    body: {
+      apikey: fixtures.apiKey,
+      signing_request_id: cancelId,
+    },
+    headers: {
+      origin: "https://passport.cubid.me",
+    },
+    url: "/api/v3/signing/requests/cancel",
+  })
+  const cancelRes = createApiResponse()
+  await cancelSiwcSigningRequestHandler(cancelReq, cancelRes)
+  assert.equal(cancelRes.statusCode, 200)
+  assert.equal(
+    (cancelRes.body as DataResponse<Record<string, unknown>>).data.status,
+    "cancelled"
+  )
 })
 
 test("Passport actor profile get defaults signed-in users to human", async () => {

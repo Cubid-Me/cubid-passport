@@ -1,7 +1,7 @@
 # SIWC V3 Signing And Transaction Authorization Architecture
 
-Last updated: 2026-05-05
-Status: SIWC01 accepted target state
+Last updated: 2026-05-06
+Status: SIWC04 implemented lifecycle with transaction-risk controls deferred
 
 ## Purpose
 
@@ -289,12 +289,50 @@ signing disabled, custody disabled, sandbox mode enabled, and policy version
 `0`. This is visibility only; users cannot sign, export, transfer, revoke, or
 share accounts through SIWC03.
 
+## Signing Request Lifecycle
+
+SIWC04 implements the first backend signing request lifecycle:
+
+- dapps create signing requests with
+  `POST /api/v3/signing/requests/create`
+- dapps poll, list, or cancel with
+  `POST /api/v3/signing/requests/get`,
+  `POST /api/v3/signing/requests/list`, and
+  `POST /api/v3/signing/requests/cancel`
+- signed-in Passport users inspect requests with
+  `POST /api/siwc/signing/requests/list`
+- signed-in Passport users approve or reject with
+  `POST /api/siwc/signing/requests/approve` and
+  `POST /api/siwc/signing/requests/reject`
+
+Request creation requires `Idempotency-Key` and is scoped to the authenticated
+dapp actor. The route checks that the `dapp_user_uuid`, `user_account_id`, and
+`dapp_user_accounts` link all belong to the authenticated dapp. It then
+evaluates the current `public.siwc_signing_policies` row. Missing or disabled
+policy rows fail closed. Enabled policy rows must allow the chain and request
+type before the request can enter `pending_user_approval`.
+
+Passport approval re-checks policy immediately before signing. If policy has
+changed, the request moves to `policy_denied` instead of signing. If
+`required_acr = urn:cubid:acr:passkey`, approval requires a current
+`cubid_oidc_session_id` cookie whose OIDC session was authenticated with
+passkey and whose human subject belongs to the signed-in Passport user.
+
+SIWC04 supports message signing for EVM, NEAR, Solana, and Sui generated
+custody accounts, plus EVM typed-data signing. Transaction requests are
+recorded as `policy_denied` with `transaction_signing_deferred` until SIWC05
+adds transaction risk controls and human-readable summaries.
+
+Public dapp and Passport responses return request status, payload hash,
+payload summary, policy version, required ACR, expiry, and signing result when
+completed. They never return private keys, decrypted material, ciphertext,
+wrapped keys, IVs, auth tags, human subject keys, raw Cubid user ids, or the
+raw signing `payload` field.
+
 ## Deferred
 
 Deferred until later SIWC slices:
 
-- Admin policy UI and persistence
-- implementation of signing request tables and routes
 - transaction simulation and risk scoring
 - smart accounts, session keys, paymasters, and gas sponsorship
 - public SDK implementation in `Cubid-Me/cubid-sdk`

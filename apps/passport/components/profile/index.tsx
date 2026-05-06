@@ -101,6 +101,31 @@ type SiwcAccountSummary = {
   updatedAt: string
 }
 
+type SiwcSigningRequestSummary = {
+  approvedAt: string | null
+  chain: string
+  completedAt: string | null
+  createdAt: string
+  dappId: string
+  dappName: string
+  dappUserUuid: string
+  errorCode: string | null
+  errorMessage: string | null
+  expiresAt: string
+  payloadHash: string
+  payloadSummary: Record<string, unknown>
+  policyVersion: number
+  publicAddress: string
+  rejectedAt: string | null
+  requiredAcr: "urn:cubid:acr:passkey" | null
+  requestType: "message" | "typed_data" | "transaction"
+  result: unknown
+  signingRequestId: string
+  status: string
+  updatedAt: string
+  userAccountId: string
+}
+
 type PasskeyDeviceSummary = {
   authenticatorAttachment: string | null
   backupEligible: boolean
@@ -236,6 +261,13 @@ export const Profile = () => {
     useState<string | null>(null)
   const [siwcAccounts, setSiwcAccounts] = useState<SiwcAccountSummary[]>([])
   const [siwcAccountsLoading, setSiwcAccountsLoading] = useState(false)
+  const [siwcSigningRequests, setSiwcSigningRequests] = useState<
+    SiwcSigningRequestSummary[]
+  >([])
+  const [siwcSigningRequestsLoading, setSiwcSigningRequestsLoading] =
+    useState(false)
+  const [actingSiwcSigningRequestId, setActingSiwcSigningRequestId] =
+    useState<string | null>(null)
   const [actorProfile, setActorProfile] = useState<ActorProfileSummary | null>(
     null
   )
@@ -707,6 +739,76 @@ export const Profile = () => {
   useEffect(() => {
     fetchSiwcAccounts()
   }, [fetchSiwcAccounts])
+
+  const fetchSiwcSigningRequests = useCallback(async () => {
+    if (!email && !phone) {
+      setSiwcSigningRequests([])
+      return
+    }
+
+    setSiwcSigningRequestsLoading(true)
+    try {
+      const headers = await getOidcAuthHeaders()
+      const { data } = await axios.post<{ data: SiwcSigningRequestSummary[] }>(
+        "/api/siwc/signing/requests/list",
+        {},
+        { headers }
+      )
+      setSiwcSigningRequests(data.data ?? [])
+    } catch (error) {
+      console.error(error)
+      toast.error("Failed to load signing requests")
+    } finally {
+      setSiwcSigningRequestsLoading(false)
+    }
+  }, [email, phone, getOidcAuthHeaders])
+
+  useEffect(() => {
+    fetchSiwcSigningRequests()
+  }, [fetchSiwcSigningRequests])
+
+  const decideSiwcSigningRequest = useCallback(
+    async (
+      request: SiwcSigningRequestSummary,
+      decision: "approve" | "reject"
+    ) => {
+      const verb = decision === "approve" ? "Approve" : "Reject"
+      if (
+        !window.confirm(
+          `${verb} signing request from ${request.dappName} for ${request.chain}?`
+        )
+      ) {
+        return
+      }
+
+      setActingSiwcSigningRequestId(request.signingRequestId)
+      try {
+        const headers = await getOidcAuthHeaders()
+        await axios.post(
+          `/api/siwc/signing/requests/${decision}`,
+          { signingRequestId: request.signingRequestId },
+          { headers }
+        )
+        toast.success(
+          decision === "approve"
+            ? "Signing request approved"
+            : "Signing request rejected"
+        )
+        await fetchSiwcSigningRequests()
+      } catch (error: any) {
+        console.error(error)
+        const message =
+          error?.response?.data?.error?.message ??
+          (decision === "approve"
+            ? "Failed to approve signing request"
+            : "Failed to reject signing request")
+        toast.error(message)
+      } finally {
+        setActingSiwcSigningRequestId(null)
+      }
+    },
+    [fetchSiwcSigningRequests, getOidcAuthHeaders]
+  )
 
   const selectedActorPolicy = actorValidationPolicies[actorType]
 
@@ -1406,6 +1508,144 @@ export const Profile = () => {
                   </p>
                 </div>
               ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="md:col-span-2">
+          <CardHeader>
+            <CardTitle>Signing requests</CardTitle>
+            <CardDescription>
+              Review app requests to sign with Cubid-generated accounts. Only
+              approve requests you recognize; transaction signing remains
+              disabled until risk controls are live.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="mb-4 flex justify-end">
+              <Button
+                disabled={siwcSigningRequestsLoading}
+                onClick={fetchSiwcSigningRequests}
+                variant="outline"
+              >
+                {siwcSigningRequestsLoading ? "Refreshing..." : "Refresh"}
+              </Button>
+            </div>
+            {siwcSigningRequestsLoading && siwcSigningRequests.length === 0 && (
+              <p className="text-sm text-muted-foreground">
+                Loading signing requests...
+              </p>
+            )}
+            {!siwcSigningRequestsLoading &&
+              siwcSigningRequests.length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  No signing requests found.
+                </p>
+              )}
+            <div className="space-y-3">
+              {siwcSigningRequests.map((request) => {
+                const pending = request.status === "pending_user_approval"
+                const payloadKind =
+                  typeof request.payloadSummary?.kind === "string"
+                    ? request.payloadSummary.kind
+                    : request.requestType
+                const payloadPreview =
+                  typeof request.payloadSummary?.preview === "string"
+                    ? request.payloadSummary.preview
+                    : request.payloadHash
+
+                return (
+                  <div
+                    key={request.signingRequestId}
+                    className="rounded-lg border bg-background p-4"
+                  >
+                    <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="font-semibold">{request.dappName}</h3>
+                          <span className="rounded-full bg-muted px-2 py-1 text-xs uppercase">
+                            {request.chain}
+                          </span>
+                          <span
+                            className={`rounded-full px-2 py-1 text-xs ${
+                              pending
+                                ? "bg-blue-100 text-blue-700"
+                                : request.status === "completed"
+                                  ? "bg-emerald-100 text-emerald-700"
+                                  : "bg-muted text-muted-foreground"
+                            }`}
+                          >
+                            {request.status.replace(/_/g, " ")}
+                          </span>
+                        </div>
+                        <p className="mt-1 break-all text-xs text-muted-foreground">
+                          {request.publicAddress}
+                        </p>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Policy v{request.policyVersion} · expires{" "}
+                        {dayjs(request.expiresAt).format("YYYY-MM-DD HH:mm")}
+                      </div>
+                    </div>
+
+                    <div className="mt-4 grid gap-3 text-sm md:grid-cols-2">
+                      <p>
+                        <span className="text-muted-foreground">Type:</span>{" "}
+                        {request.requestType}
+                      </p>
+                      <p>
+                        <span className="text-muted-foreground">Payload:</span>{" "}
+                        {payloadKind}
+                      </p>
+                      <p className="break-all md:col-span-2">
+                        <span className="text-muted-foreground">Summary:</span>{" "}
+                        {payloadPreview}
+                      </p>
+                      <p>
+                        <span className="text-muted-foreground">Required auth:</span>{" "}
+                        {request.requiredAcr ?? "standard Passport session"}
+                      </p>
+                      <p>
+                        <span className="text-muted-foreground">Updated:</span>{" "}
+                        {dayjs(request.updatedAt).format("YYYY-MM-DD HH:mm")}
+                      </p>
+                      {request.errorMessage && (
+                        <p className="text-amber-700 md:col-span-2">
+                          {request.errorMessage}
+                        </p>
+                      )}
+                    </div>
+
+                    {pending && (
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        <Button
+                          disabled={
+                            actingSiwcSigningRequestId ===
+                            request.signingRequestId
+                          }
+                          onClick={() =>
+                            decideSiwcSigningRequest(request, "approve")
+                          }
+                        >
+                          Approve
+                        </Button>
+                        <Button
+                          disabled={
+                            actingSiwcSigningRequestId ===
+                            request.signingRequestId
+                          }
+                          onClick={() =>
+                            decideSiwcSigningRequest(request, "reject")
+                          }
+                          variant="outline"
+                        >
+                          Reject
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           </CardContent>
         </Card>

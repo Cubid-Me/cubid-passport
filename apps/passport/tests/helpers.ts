@@ -45,9 +45,12 @@ export class MockPassportSupabase {
   readonly emailOtps = new Map<string, EmailOtpRow[]>()
   readonly eventInserts: Array<Record<string, unknown>> = []
   readonly lastUsedUpdates: number[] = []
+  readonly oidcHumanSubjects: Array<Record<string, unknown>> = []
   readonly privateKeys: Array<Record<string, unknown>> = []
   readonly selectiveDisclosureGrants: Array<Record<string, unknown>> = []
+  readonly siwcSigningRequests: Array<Record<string, unknown>> = []
   readonly siwcSigningPolicies: Array<Record<string, unknown>> = []
+  readonly oidcSessions: Array<Record<string, unknown>> = []
   readonly stampPermissions: Array<Record<string, unknown>> = []
   readonly stamps: Array<Record<string, unknown>> = []
   readonly userAccounts: Array<Record<string, unknown>> = []
@@ -157,6 +160,14 @@ export class MockPassportSupabase {
 
   setSiwcSigningPolicy(row: Record<string, unknown>) {
     this.siwcSigningPolicies.push(row)
+  }
+
+  setOidcSession(row: Record<string, unknown>) {
+    this.oidcSessions.push(row)
+  }
+
+  setOidcHumanSubject(row: Record<string, unknown>) {
+    this.oidcHumanSubjects.push(row)
   }
 
   setWebhookSubscription(row: Record<string, unknown>) {
@@ -1055,6 +1066,10 @@ export class MockPassportSupabase {
               inFilters[column] = values.map(String)
               return query
             },
+            maybeSingle: async () => {
+              const result = resolve()
+              return { data: result.data[0] ?? null, error: null }
+            },
             then: (
               resolveThen: (value: {
                 data: Record<string, unknown>[]
@@ -1092,6 +1107,28 @@ export class MockPassportSupabase {
             ...row,
           })
           return { error: null }
+        },
+        select: () => {
+          const filters: Record<string, unknown> = {}
+          const resolve = () => {
+            const rows = this.privateKeys.filter((row) =>
+              Object.entries(filters).every(
+                ([column, value]) => String(row[column]) === String(value)
+              )
+            )
+            return { data: rows, error: null }
+          }
+          const query = {
+            eq: (column: string, value: unknown) => {
+              filters[column] = value
+              return query
+            },
+            maybeSingle: async () => {
+              const result = resolve()
+              return { data: result.data[0] ?? null, error: null }
+            },
+          }
+          return query
         },
       }
     }
@@ -1153,6 +1190,10 @@ export class MockPassportSupabase {
               inFilters[column] = values.map(String)
               return query
             },
+            maybeSingle: async () => {
+              const result = resolve()
+              return { data: result.data[0] ?? null, error: null }
+            },
             then: (
               resolveThen: (value: {
                 data: Record<string, unknown>[]
@@ -1168,15 +1209,90 @@ export class MockPassportSupabase {
     if (table === "siwc_signing_policies") {
       return {
         select: () => {
+          const filters: Record<string, unknown> = {}
           const inFilters: Record<string, string[]> = {}
           const resolve = () => {
             let rows = [...this.siwcSigningPolicies]
             for (const [column, values] of Object.entries(inFilters)) {
               rows = rows.filter((row) => values.includes(String(row[column])))
             }
+            for (const [column, value] of Object.entries(filters)) {
+              rows = rows.filter((row) => String(row[column]) === String(value))
+            }
             return { data: rows, error: null }
           }
           const query = {
+            eq: (column: string, value: unknown) => {
+              filters[column] = value
+              return query
+            },
+            in: (column: string, values: unknown[]) => {
+              inFilters[column] = values.map(String)
+              return query
+            },
+            maybeSingle: async () => {
+              const result = resolve()
+              return { data: result.data[0] ?? null, error: null }
+            },
+            then: (
+              resolveThen: (value: {
+                data: Record<string, unknown>[]
+                error: null
+              }) => unknown
+            ) => Promise.resolve(resolve()).then(resolveThen),
+          }
+          return query
+        },
+      }
+    }
+
+    if (table === "oidc_sessions") {
+      return {
+        select: () => {
+          const filters: Record<string, unknown> = {}
+          const resolve = () => {
+            const rows = this.oidcSessions.filter((row) =>
+              Object.entries(filters).every(
+                ([column, value]) => String(row[column]) === String(value)
+              )
+            )
+            return { data: rows, error: null }
+          }
+          const query = {
+            eq: (column: string, value: unknown) => {
+              filters[column] = value
+              return query
+            },
+            maybeSingle: async () => {
+              const result = resolve()
+              return { data: result.data[0] ?? null, error: null }
+            },
+          }
+          return query
+        },
+      }
+    }
+
+    if (table === "oidc_human_subjects") {
+      return {
+        select: () => {
+          const filters: Record<string, unknown> = {}
+          const inFilters: Record<string, string[]> = {}
+          const resolve = () => {
+            let rows = [...this.oidcHumanSubjects]
+            for (const [column, values] of Object.entries(inFilters)) {
+              rows = rows.filter((row) => values.includes(String(row[column])))
+            }
+            for (const [column, value] of Object.entries(filters)) {
+              rows = rows.filter((row) => String(row[column]) === String(value))
+            }
+            return { data: rows, error: null }
+          }
+          const query = {
+            eq: (column: string, value: unknown) => {
+              filters[column] = value
+              return query
+            },
             in: (column: string, values: unknown[]) => {
               inFilters[column] = values.map(String)
               return query
@@ -1187,6 +1303,114 @@ export class MockPassportSupabase {
                 error: null
               }) => unknown
             ) => Promise.resolve(resolve()).then(resolveThen),
+          }
+          return query
+        },
+      }
+    }
+
+    if (table === "siwc_signing_requests") {
+      const createQuery = () => {
+        const filters: Record<string, unknown> = {}
+        const inFilters: Record<string, string[]> = {}
+        let limitValue: number | null = null
+        const resolve = () => {
+          let rows = [...this.siwcSigningRequests]
+          for (const [column, values] of Object.entries(inFilters)) {
+            rows = rows.filter((row) => values.includes(String(row[column])))
+          }
+          for (const [column, value] of Object.entries(filters)) {
+            rows = rows.filter((row) => String(row[column]) === String(value))
+          }
+          rows.sort((left, right) =>
+            String(right.created_at ?? "").localeCompare(
+              String(left.created_at ?? "")
+            )
+          )
+          if (limitValue !== null) {
+            rows = rows.slice(0, limitValue)
+          }
+          return { data: rows, error: null }
+        }
+        const query = {
+          eq: (column: string, value: unknown) => {
+            filters[column] = value
+            return query
+          },
+          in: (column: string, values: unknown[]) => {
+            inFilters[column] = values.map(String)
+            return query
+          },
+          limit: (value: number) => {
+            limitValue = value
+            return query
+          },
+          maybeSingle: async () => {
+            const result = resolve()
+            return { data: result.data[0] ?? null, error: null }
+          },
+          order: () => query,
+          single: async () => {
+            const result = resolve()
+            return { data: result.data[0] ?? null, error: null }
+          },
+          then: (
+            resolveThen: (value: {
+              data: Record<string, unknown>[]
+              error: null
+            }) => unknown
+          ) => Promise.resolve(resolve()).then(resolveThen),
+        }
+        return query
+      }
+
+      return {
+        insert: (row: Record<string, unknown>) => {
+          const inserted = {
+            approved_at: null,
+            completed_at: null,
+            created_at: new Date().toISOString(),
+            id: `siwc_signing_request_${this.siwcSigningRequests.length + 1}`,
+            rejected_at: null,
+            result: null,
+            updated_at: new Date().toISOString(),
+            ...row,
+          }
+          this.siwcSigningRequests.push(inserted)
+          return {
+            select: () => ({
+              single: async () => ({ data: inserted, error: null }),
+            }),
+          }
+        },
+        select: createQuery,
+        update: (patch: Record<string, unknown>) => {
+          const filters: Record<string, unknown> = {}
+          const updateRows = () => {
+            const updatedRows: Record<string, unknown>[] = []
+            for (const row of this.siwcSigningRequests) {
+              if (
+                Object.entries(filters).every(
+                  ([column, value]) => String(row[column]) === String(value)
+                )
+              ) {
+                Object.assign(row, patch)
+                updatedRows.push(row)
+              }
+            }
+            return updatedRows
+          }
+          const query = {
+            eq: (column: string, value: unknown) => {
+              filters[column] = value
+              return query
+            },
+            select: () => ({
+              single: async () => ({
+                data: updateRows()[0] ?? null,
+                error: null,
+              }),
+            }),
           }
           return query
         },

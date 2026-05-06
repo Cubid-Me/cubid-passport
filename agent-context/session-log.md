@@ -4739,3 +4739,35 @@ Close the completed SIWC Passport account-visibility todo and immediately start 
 #### Follow-up
 
 - implement `SIWC04` by adding the backend signing request lifecycle guarded by Admin policy and Passport approval
+
+### session: v166
+
+- timestamp: 2026-05-06T08:56:28Z
+- agent: **OpenAI Codex**
+- branch: **codex/siwc-roadmap-cleanup**
+- head: **`a58b735`**
+- session name: **Implement SIWC04 signing request lifecycle**
+
+#### Objective
+
+Implement the first API v3 signing request lifecycle with Admin policy checks, Passport user approval, passkey ACR enforcement, and safe server-side signing for supported message flows.
+
+#### Actions Taken
+
+- added the `siwc_signing_requests` migration and service-role-only storage contract
+- added dapp-facing API v3 signing request create/get/list/cancel routes with idempotent creation
+- added Passport user-facing signing request list/approve/reject routes and Profile approval visibility
+- implemented policy evaluation, passkey-backed OIDC session step-up checks, encrypted private-key decrypt, and EVM/NEAR/Solana/Sui message signing plus EVM typed-data signing
+- kept transaction signing policy-denied until SIWC05 risk controls
+- updated API v3 and SIWC architecture docs and wrote the public SDK handoff note
+
+#### Verification
+
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm --filter @cubid/passport test`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm --filter @cubid/passport typecheck`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- close `SIWC04` metadata with the implementation commit SHA, then immediately start `SIWC05`
