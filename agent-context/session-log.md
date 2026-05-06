@@ -5129,3 +5129,137 @@ Create a deferred future-ideas reference and repo-local guidance for how agents 
 #### Follow-up
 
 - commit the documentation update and yeet if review is desired
+
+### session: v180
+
+- timestamp: 2026-05-06T22:48:47Z
+- agent: **OpenAI Codex**
+- branch: **codex/repo-cleanup-delivery-status**
+- head: **`2ece33c`**
+- session name: **Record repo cleanup delivery status**
+
+#### Objective
+
+Capture the repo cleanup assessment in durable docs and add a concrete hosted
+Supabase delivery follow-up without applying hosted migrations.
+
+#### Actions Taken
+
+- added `agent-context/repo-status.md` with cleanup status across workflow,
+  docs, tests, CI, Supabase, SDK boundary, and production readiness
+- refreshed README environment/current-status wording so it no longer implies
+  stale pre-monorepo priorities or unverified hardcoded-secret claims
+- added `F01` to `agent-context/todo.md` for protected Supabase dev/preview
+  migration deployment automation
+
+#### Verification
+
+- planned docs validation with `git diff --check`
+- no hosted Supabase mutation or function deployment performed
+
+#### Follow-up
+
+- implement `F01` as the next cleanup/release-operations slice before applying
+  hosted migrations to `CubidDev`
+
+### session: v181
+
+- timestamp: 2026-05-06T22:52:17Z
+- agent: **OpenAI Codex**
+- branch: **codex/repo-cleanup-delivery-status**
+- head: **`c8e2618`**
+- session name: **Add protected Supabase delivery workflow**
+
+#### Objective
+
+Implement the F01 hosted Supabase delivery mechanism and confirm whether it can
+be safely run against `CubidDev`.
+
+#### Actions Taken
+
+- added `.github/workflows/supabase-deploy.yml` with pull-request migration
+  dry-run support and manual `check` / `apply` dispatch modes
+- added guarded project-ref and backup confirmation checks before apply mode
+- added `docs/engineering/supabase-hosted-delivery.md` documenting target
+  project, required GitHub secrets, backup posture, and operator steps
+- updated repo-status and F01 metadata to reflect the implemented workflow and
+  current deployment blocker
+
+#### Verification
+
+- confirmed linked Supabase project is `CubidDev` / `cggycnbvljcdptzyjpju`
+- confirmed `supabase backups list` shows recent completed physical backups
+- confirmed `supabase db push --dry-run --linked` lists 25 pending migrations
+- confirmed there are no `supabase/functions` to deploy from this repo
+- confirmed no repository or checked GitHub Environment `SUPABASE_ACCESS_TOKEN`
+  secret is currently configured
+
+#### Follow-up
+
+- configure `SUPABASE_ACCESS_TOKEN` and reviewer protection on the selected
+  GitHub Environment, then run the `Supabase Deploy` workflow in `check` mode
+  before running `apply`
+
+### session: v182
+
+- timestamp: 2026-05-06T23:10:06Z
+- agent: **OpenAI Codex**
+- branch: **codex/repo-cleanup-delivery-status**
+- head: **`99736d4`**
+- session name: **Address PR 160 Supabase workflow review**
+
+#### Objective
+
+Address automated review feedback on the protected Supabase deployment
+workflow before hosted migration checks are run from GitHub.
+
+#### Actions Taken
+
+- moved workflow dispatch inputs into environment variables before shell usage
+  so untrusted input is handled as data, not interpolated script text
+- added `SUPABASE_DB_PASSWORD` as a required GitHub Environment secret for
+  hosted deploy runs
+- passed the database password to `supabase link` so CI does not prompt or hang
+- updated the hosted delivery runbook and F01 metadata with the additional
+  secret requirement
+
+#### Verification
+
+- planned validation with workflow YAML parsing and `git diff --check`
+
+#### Follow-up
+
+- push the review fix, reply to the automated comments, and re-check PR 160 CI
+
+### session: v183
+
+- timestamp: 2026-05-06T23:11:36Z
+- agent: **OpenAI Codex**
+- branch: **codex/repo-cleanup-delivery-status**
+- head: **`78d6242`**
+- session name: **Address PR 160 Copilot workflow safeguards**
+
+#### Objective
+
+Address Copilot review feedback on implicit project targeting, check-mode
+friction, and backup enforcement in the Supabase deployment workflow.
+
+#### Actions Taken
+
+- made `confirm_project_ref` optional for check mode and enforced it only for
+  apply mode
+- required `CUBID_SUPABASE_PROJECT_REF` in the selected GitHub Environment
+  instead of falling back implicitly during workflow dispatch
+- added an apply-mode backup assertion that fails when no completed Supabase
+  backup exists in the last 36 hours
+- updated the hosted delivery runbook and F01 metadata with the explicit
+  environment variable and backup-check requirements
+
+#### Verification
+
+- planned validation with workflow YAML parsing and `git diff --check`
+
+#### Follow-up
+
+- push the safeguard fix, reply to and resolve review comments, then re-check
+  PR 160 CI

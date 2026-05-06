@@ -52,17 +52,17 @@ Passport runtime env files now belong under `apps/passport/`. Use [apps/passport
 
 Admin runtime env files belong under [apps/admin/.env.example](apps/admin/.env.example).
 
-Known Passport env variables include:
+Important Passport env variables include:
 
 - `NEXT_PUBLIC_DAPP_ID`
-- `WLD_CLIENT_ID`
-- `WLD_CLIENT_SECRET`
-- `authToken`
-- `is_allow_token`
-- `private_key_near`
-- `twilio_sid`
-
-Some third-party credentials are still hardcoded in source files and should be moved into environment variables before this app is treated as production-ready.
+- `PASSPORT_PUBLIC_ORIGIN`
+- `PASSPORT_CORS_ALLOWED_ORIGINS`
+- `PASSPORT_INTERNAL_API_TOKEN`
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `FIREBASE_PROJECT_ID`
+- `FIREBASE_CLIENT_EMAIL`
+- `FIREBASE_PRIVATE_KEY`
 
 Known Admin env variables include:
 
@@ -73,6 +73,9 @@ Known Admin env variables include:
 - `FIREBASE_PROJECT_ID`
 - `FIREBASE_CLIENT_EMAIL`
 - `FIREBASE_PRIVATE_KEY`
+
+Operational secret ownership and legacy env aliases are documented in
+[docs/engineering/operational-secret-hardening.md](docs/engineering/operational-secret-hardening.md).
 
 ## Repository Layout
 
@@ -86,11 +89,12 @@ Known Admin env variables include:
 - `.github/`: CI workflows and repo automation
 - `pnpm-workspace.yaml`, `turbo.json`, `tsconfig.base.json`: monorepo workspace and shared tooling contracts
 
-## Current Focus
+## Current Platform Status
 
-- stabilize the two-app monorepo contract across Passport and Admin
-- extract the next layer of shared packages once both apps are running from one workspace graph
-- add the dedicated OIDC service and shared identity packages
+- Repo-side platform foundations are largely complete for Passport, Admin, OIDC, API v3 custody, app-scoped disclosure, and SIWC message/typed-data signing.
+- Public SDK implementation lives in `Cubid-Me/cubid-sdk`; keep SDK-impacting backend changes coordinated through agent messages.
+- Hosted readiness is not complete until Supabase migrations are applied to the target environment, required runtime and Vault secrets are provisioned, and Passport/Admin/OIDC/API v3/SIWC smoke checks pass.
+- The linked `CubidDev` Supabase project currently has only the baseline remote-schema migration recorded, so do not assume hosted dev matches the repo schema.
 
 ## Agent And SDK Guidance
 
