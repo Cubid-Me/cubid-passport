@@ -1,7 +1,7 @@
 # SIWC V3 Signing And Transaction Authorization Architecture
 
 Last updated: 2026-05-06
-Status: SIWC05 implemented transaction risk controls; transaction signing remains disabled
+Status: SIWC07 completed smart-account, session-key, and paymaster roadmap evaluation; transaction signing remains disabled
 
 ## Purpose
 
@@ -366,12 +366,70 @@ signing result when completed. They never return private keys, decrypted
 material, ciphertext, wrapped keys, IVs, auth tags, human subject keys, raw
 Cubid user ids, or the raw signing `payload` field.
 
+## SIWC07 Smart Accounts, Session Keys, And Paymasters
+
+SIWC07 keeps the current server-side custodial signing model as the near-term
+default. Generated app-scoped accounts remain the base account mode because
+they already match Cubid's privacy posture: every dapp gets its own account
+linkage, approvals happen through Passport, and custody secrets stay behind the
+service-role and Vault boundary.
+
+Smart accounts should be added later as an optional EVM-first custody mode, not
+as a replacement for generated app-scoped accounts. They are useful when an app
+needs programmability, recovery rules, spending limits, batched execution,
+sponsored gas, or account abstraction features that cannot be safely expressed
+with an ordinary generated account. They also add deployment, chain support,
+gas, bundler, paymaster, monitoring, and support complexity, so they should be
+explicitly policy-gated and capability-advertised rather than assumed.
+
+Session keys should be treated as scoped, revocable child capabilities of an
+app-scoped account. A session key must never become a cross-app portable
+identity or wallet credential. A future session-key design should bind each key
+to a dapp, dapp user, account, chain, request type, expiry, policy version, and
+optional spending or contract limits. Creation should require Passport approval
+and passkey step-up, and revocation should be visible to both Admin and the
+user. Session keys should wait until the current signing policy, approval UX,
+webhooks, and production runbook are stable.
+
+Paymasters and gas sponsorship should be treated as a separate app policy and
+billing product. They should remain disabled until transaction signing has a
+safe enablement plan, transaction summaries are human-readable, abuse controls
+are live, and Admin can configure budgets, rate limits, allowed contracts,
+allowed chains, and emergency suspension. Paymaster support should emit
+dedicated audit and webhook events once it exists, but `wallet.transaction.*`
+events remain deferred until transaction signing and submission are available.
+
+Recommended sequence:
+
+1. Finish SIWC08 production readiness for the current custodial signing model.
+2. Add a future EVM smart-account design todo that chooses provider, account
+   standard, deployment timing, recovery model, and capability discovery shape.
+3. Add scoped session keys only after smart-account or transaction-signing
+   semantics define what the delegated key may actually do.
+4. Add paymasters last, after transaction risk, monitoring, billing limits, and
+   emergency app suspension are operational.
+
+Not-yet criteria:
+
+- Do not replace generated app-scoped accounts with smart accounts by default.
+- Do not expose session keys until they have expiry, scope, revocation,
+  approval, and audit semantics.
+- Do not enable paymasters until transaction signing and abuse controls are
+  production-ready.
+- Do not assume Solana, NEAR, or Sui have the same smart-account abstractions as
+  EVM; evaluate chain-native equivalents only after chain-specific transaction
+  signing is safe and user-readable.
+- Do not add SDK APIs that imply all accounts are smart accounts; SDKs should
+  use capability discovery when this roadmap becomes implementation work.
+
 ## Deferred
 
 Deferred until later SIWC slices:
 
 - transaction simulation and risk scoring
-- smart accounts, session keys, paymasters, and gas sponsorship
+- EVM-first smart-account design and optional custody mode implementation
+- scoped session keys with expiry, limits, revocation, and passkey approval
+- paymasters and gas sponsorship after transaction signing is safe
 - public SDK implementation in `Cubid-Me/cubid-sdk`
 
 ## Acceptance Criteria For SIWC01

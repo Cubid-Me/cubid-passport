@@ -4912,3 +4912,31 @@ Close the SIWC webhook contract todo after validation and immediately start the 
 #### Follow-up
 
 - implement `SIWC07` by evaluating smart accounts, session keys, and paymaster/gas sponsorship against Cubid's app-scoped custody model
+
+### session: v172
+
+- timestamp: 2026-05-06T10:39:53Z
+- agent: **OpenAI Codex**
+- branch: **codex/siwc-roadmap-cleanup**
+- head: **`338d035`**
+- session name: **Implement SIWC07 smart-account roadmap evaluation**
+
+#### Objective
+
+Evaluate smart accounts, scoped session keys, and paymaster/gas sponsorship against Cubid's app-scoped custody model without changing runtime behavior.
+
+#### Actions Taken
+
+- documented that app-scoped generated custody accounts remain the near-term default account mode
+- recommended smart accounts as a future optional EVM-first custody mode rather than a replacement for generated accounts
+- defined session keys as future scoped, revocable child capabilities of app-scoped accounts
+- defined paymasters as a later policy and billing product gated by transaction signing readiness and abuse controls
+- created a public SDK handoff note explaining that future SDK support should use capability discovery
+
+#### Verification
+
+- planned docs-only validation with `git diff --check`
+
+#### Follow-up
+
+- close `SIWC07` metadata with the implementation commit SHA, then start `SIWC08`
