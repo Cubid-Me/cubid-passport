@@ -816,3 +816,16 @@ Evaluate whether Cubid should support smart accounts, scoped session keys, and p
 - Session-log reference(s): session: v173, session: v174
 
 Create the operator runbook for SIWC custody and signing before exposing signing broadly. The runbook should cover Vault key ownership and rotation, generated-account custody boundaries, migration rollback, audit-log inspection, signing request triage, webhook replay, incident response, abuse monitoring, emergency app suspension, user support, and privacy review for app-scoped account visibility. It should explicitly document what is safe to expose to users and dapps, what is Admin-only, what is service-role-only, and what must never leave server memory. Include local/staging/prod environment requirements, smoke tests, and launch blockers. This todo should close the gap between a technically working signer and an operable platform surface.
+
+## F. Hosted Delivery and Release Operations
+
+### F01. Add protected Supabase dev/preview migration deployment
+
+- Status: Not started
+- Timestamp started: TBD
+- Timestamp completed: TBD
+- Feature branch: TBD
+- Head: TBD
+- Session-log reference(s): TBD
+
+Add the missing hosted Supabase delivery path for the linked `CubidDev` preview/dev project. The repo currently contains migrations through `20260506093000`, but `supabase migration list --linked` shows only the baseline `20260331020028` migration applied remotely. Create a GitHub workflow that validates migration drift on pull requests and provides a manual, protected apply path for `dev` after approval, using repo or environment secrets rather than local shell mutation. The workflow should identify the target project ref, run a dry-run or remote migration status check before applying, avoid deploying functions when no `supabase/functions` directory exists, and produce logs operators can use for smoke verification. This todo does not itself apply migrations; it creates the safe delivery mechanism.

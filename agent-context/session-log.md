@@ -5129,3 +5129,35 @@ Create a deferred future-ideas reference and repo-local guidance for how agents 
 #### Follow-up
 
 - commit the documentation update and yeet if review is desired
+
+### session: v180
+
+- timestamp: 2026-05-06T22:48:47Z
+- agent: **OpenAI Codex**
+- branch: **codex/repo-cleanup-delivery-status**
+- head: **`2ece33c`**
+- session name: **Record repo cleanup delivery status**
+
+#### Objective
+
+Capture the repo cleanup assessment in durable docs and add a concrete hosted
+Supabase delivery follow-up without applying hosted migrations.
+
+#### Actions Taken
+
+- added `agent-context/repo-status.md` with cleanup status across workflow,
+  docs, tests, CI, Supabase, SDK boundary, and production readiness
+- refreshed README environment/current-status wording so it no longer implies
+  stale pre-monorepo priorities or unverified hardcoded-secret claims
+- added `F01` to `agent-context/todo.md` for protected Supabase dev/preview
+  migration deployment automation
+
+#### Verification
+
+- planned docs validation with `git diff --check`
+- no hosted Supabase mutation or function deployment performed
+
+#### Follow-up
+
+- implement `F01` as the next cleanup/release-operations slice before applying
+  hosted migrations to `CubidDev`
