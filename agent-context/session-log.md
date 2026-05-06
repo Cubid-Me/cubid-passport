@@ -4966,3 +4966,29 @@ Close the completed SIWC smart-account roadmap evaluation and immediately start 
 #### Follow-up
 
 - implement `SIWC08` by building the production-readiness runbook for SIWC custody and signing
+
+### session: v174
+
+- timestamp: 2026-05-06T11:47:17Z
+- agent: **OpenAI Codex**
+- branch: **codex/siwc-roadmap-cleanup**
+- head: **`88203ac`**
+- session name: **Implement SIWC08 custody signing runbook**
+
+#### Objective
+
+Create the production-readiness runbook for operating SIWC app-scoped custody and signing safely.
+
+#### Actions Taken
+
+- added a dedicated SIWC custody and signing production runbook
+- documented custody exposure boundaries, Vault prerequisites, migration readiness, Admin policy operations, signing request triage, webhook operations, smoke tests, abuse monitoring, incident response, user support, and launch blockers
+- updated the SIWC architecture status to point at the runbook closeout state
+
+#### Verification
+
+- planned docs-only validation with `git diff --check`
+
+#### Follow-up
+
+- close `SIWC08` metadata with the implementation commit SHA and reconcile the parent SIWC roadmap status

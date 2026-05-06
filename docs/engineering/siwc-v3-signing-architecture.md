@@ -1,7 +1,7 @@
 # SIWC V3 Signing And Transaction Authorization Architecture
 
 Last updated: 2026-05-06
-Status: SIWC07 completed smart-account, session-key, and paymaster roadmap evaluation; transaction signing remains disabled
+Status: SIWC08 production runbook added; transaction signing remains disabled
 
 ## Purpose
 
