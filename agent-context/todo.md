@@ -720,14 +720,14 @@ Translate the backgrounder’s product constraints into concrete engineering wor
 
 ### SIWC. Build Sign In With Cubid custody, signing, and wallet-adjacent product surfaces
 
-- Status: Started
+- Status: Completed
 - Timestamp started: 2026-05-05T01:21:18Z
-- Timestamp completed: TBD
+- Timestamp completed: 2026-05-06T11:49:35Z
 - Feature branch: codex/siwc-roadmap-cleanup
-- Head: TBD
-- Session-log reference(s): session: v160
+- Head: 969385a
+- Session-log reference(s): session: v160, session: v175
 
-Promote the SIWC side-roadmap into the main execution backlog as the next wallet-adjacent platform track. The already-landed Cubid foundation covers OIDC Login with Cubid, passkey-first auth, app-scoped identity, selective disclosure, API v3 encrypted dapp-user secrets, generated app-scoped blockchain accounts, and signed webhook infrastructure. The remaining product gap is explicit signing: dapps need a safe way to request message or transaction signatures, humans need Passport-hosted visibility and approval, Admin needs policy controls, and operators need runbooks before any custody signer can be exposed broadly. SIWC work must stay backend/API-contract first in this repo, with public SDK implementation handled through `Cubid-Me/cubid-sdk` handoff notes whenever route or webhook contracts change.
+Promote the SIWC side-roadmap into the main execution backlog as the next wallet-adjacent platform track. The Cubid foundation covers OIDC Login with Cubid, passkey-first auth, app-scoped identity, selective disclosure, API v3 encrypted dapp-user secrets, generated app-scoped blockchain accounts, signed webhook infrastructure, Passport-hosted signing approval, Admin signing policy controls, and SIWC production-readiness runbooks. This track delivered the backend/API-contract foundation for app-scoped custody and message or typed-data signing while keeping transaction signing, smart accounts, session keys, paymasters, and public SDK implementation explicitly deferred.
 
 ### SIWC01. Define the v3 signing and transaction authorization architecture
 
@@ -808,11 +808,11 @@ Evaluate whether Cubid should support smart accounts, scoped session keys, and p
 
 ### SIWC08. Build production readiness runbook for SIWC custody and signing
 
-- Status: Started
+- Status: Completed
 - Timestamp started: 2026-05-06T10:40:40Z
-- Timestamp completed: TBD
+- Timestamp completed: 2026-05-06T11:49:35Z
 - Feature branch: codex/siwc-roadmap-cleanup
-- Head: e3fec1a
-- Session-log reference(s): session: v173
+- Head: 969385a
+- Session-log reference(s): session: v173, session: v174
 
 Create the operator runbook for SIWC custody and signing before exposing signing broadly. The runbook should cover Vault key ownership and rotation, generated-account custody boundaries, migration rollback, audit-log inspection, signing request triage, webhook replay, incident response, abuse monitoring, emergency app suspension, user support, and privacy review for app-scoped account visibility. It should explicitly document what is safe to expose to users and dapps, what is Admin-only, what is service-role-only, and what must never leave server memory. Include local/staging/prod environment requirements, smoke tests, and launch blockers. This todo should close the gap between a technically working signer and an operable platform surface.

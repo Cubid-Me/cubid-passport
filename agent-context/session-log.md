@@ -4992,3 +4992,30 @@ Create the production-readiness runbook for operating SIWC app-scoped custody an
 #### Follow-up
 
 - close `SIWC08` metadata with the implementation commit SHA and reconcile the parent SIWC roadmap status
+
+### session: v175
+
+- timestamp: 2026-05-06T11:49:35Z
+- agent: **OpenAI Codex**
+- branch: **codex/siwc-roadmap-cleanup**
+- head: **`969385a`**
+- session name: **Close SIWC08 and SIWC roadmap**
+
+#### Objective
+
+Close the completed SIWC production-readiness runbook todo and reconcile the parent SIWC roadmap status.
+
+#### Actions Taken
+
+- marked `SIWC08` completed in both the main roadmap and SIWC side roadmap
+- recorded implementation head `969385a` for the SIWC custody and signing runbook
+- marked the parent `SIWC` roadmap completed now that SIWC01 through SIWC08 are closed
+- updated the SIWC side-roadmap truth statement so it reflects the delivered signing foundation and deferred transaction/smart-account work
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- yeet the SIWC roadmap branch for review, or start a new follow-up track for transaction signing readiness after review

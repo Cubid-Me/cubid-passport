@@ -10,7 +10,7 @@ Source note: this file replaces a generic competitor-research implementation gui
 - Passkey work is already substantially implemented: Passport login UX, fallback/recovery framing, passkey registration, device lifecycle, rename/revoke, Profile visibility, Admin read-only passkey ops, and passkey-required ACR semantics exist.
 - App-scoped identity and selective disclosure are now first-class backend concepts: app-scoped subjects, disclosure grants, Allow Page persistence, OIDC consent persistence, SDK-facing route filtering, webhook filtering, non-OIDC disclosure history/revocation, and Admin disclosure ops exist.
 - API v3 custody exists for encrypted dapp-user secrets and generated app-scoped blockchain accounts across EVM, NEAR, Solana, and Sui. Private material is stored through Supabase Vault-backed envelope encryption and is not returned to dapps, browsers, or Admin list views.
-- The important SIWC product gap is signing. Generated app-scoped accounts can be created and listed, but Cubid does not yet expose message signing, transaction approval, signing policy evaluation, signer recovery, transaction simulation, or smart-account/session-key flows.
+- The SIWC backend foundation now includes app-scoped account generation/listing, Admin signing policy controls, Passport account visibility, message and typed-data signing requests, passkey step-up, transaction-risk denial evidence, signed wallet webhooks, and an operator runbook. Transaction signing, signer recovery, transaction simulation, smart accounts, session keys, and paymasters remain deferred.
 - Public SDK and UI package implementation belongs in `Cubid-Me/cubid-sdk`, not this repo. This repo owns backend behavior, migrations, Passport/Admin/OIDC runtime, API/webhook contracts, and handoff notes for SDK agents.
 
 ## Recommended Direction
@@ -100,12 +100,12 @@ Evaluate whether Cubid should support smart accounts, scoped session keys, and p
 
 ### SIWC08. Build production readiness runbook for SIWC custody and signing
 
-- Status: Started
+- Status: Completed
 - Timestamp started: 2026-05-06T10:40:40Z
-- Timestamp completed: TBD
+- Timestamp completed: 2026-05-06T11:49:35Z
 - Feature branch: codex/siwc-roadmap-cleanup
-- Head: e3fec1a
-- Session-log reference(s): session: v173
+- Head: 969385a
+- Session-log reference(s): session: v173, session: v174
 
 Create the operator runbook for SIWC custody and signing before exposing signing broadly. The runbook should cover Vault key ownership and rotation, generated-account custody boundaries, migration rollback, audit-log inspection, signing request triage, webhook replay, incident response, abuse monitoring, emergency app suspension, user support, and privacy review for app-scoped account visibility. It should explicitly document what is safe to expose to users and dapps, what is Admin-only, what is service-role-only, and what must never leave server memory. Include local/staging/prod environment requirements, smoke tests, and launch blockers. This todo should close the gap between a technically working signer and an operable platform surface.
 
