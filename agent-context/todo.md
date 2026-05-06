@@ -833,6 +833,7 @@ Add the missing hosted Supabase delivery path for the linked `CubidDev` preview/
 Implementation status: the workflow and runbook are in place, and `CubidDev`
 backup posture was checked locally with completed physical backups visible
 through 2026-05-06. The workflow requires both `SUPABASE_ACCESS_TOKEN` and
-`SUPABASE_DB_PASSWORD` in the selected GitHub Environment, plus reviewer
-protection before apply. Configure those settings, then dispatch
-`Supabase Deploy` in `check` mode before `apply`.
+`SUPABASE_DB_PASSWORD` in the selected GitHub Environment, an explicit
+`CUBID_SUPABASE_PROJECT_REF` environment variable, plus reviewer protection
+before apply. Configure those settings, then dispatch `Supabase Deploy` in
+`check` mode before `apply`.

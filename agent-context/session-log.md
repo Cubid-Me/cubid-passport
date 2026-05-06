@@ -5230,3 +5230,36 @@ workflow before hosted migration checks are run from GitHub.
 #### Follow-up
 
 - push the review fix, reply to the automated comments, and re-check PR 160 CI
+
+### session: v183
+
+- timestamp: 2026-05-06T23:11:36Z
+- agent: **OpenAI Codex**
+- branch: **codex/repo-cleanup-delivery-status**
+- head: **`78d6242`**
+- session name: **Address PR 160 Copilot workflow safeguards**
+
+#### Objective
+
+Address Copilot review feedback on implicit project targeting, check-mode
+friction, and backup enforcement in the Supabase deployment workflow.
+
+#### Actions Taken
+
+- made `confirm_project_ref` optional for check mode and enforced it only for
+  apply mode
+- required `CUBID_SUPABASE_PROJECT_REF` in the selected GitHub Environment
+  instead of falling back implicitly during workflow dispatch
+- added an apply-mode backup assertion that fails when no completed Supabase
+  backup exists in the last 36 hours
+- updated the hosted delivery runbook and F01 metadata with the explicit
+  environment variable and backup-check requirements
+
+#### Verification
+
+- planned validation with workflow YAML parsing and `git diff --check`
+
+#### Follow-up
+
+- push the safeguard fix, reply to and resolve review comments, then re-check
+  PR 160 CI
