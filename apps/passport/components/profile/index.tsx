@@ -1510,10 +1510,10 @@ export const Profile = () => {
                     </p>
                   </div>
 
-                  <p className="mt-4 text-xs text-muted-foreground">
-                    Signing requests are not available yet. Future requests
-                    must use Passport approval and the app policy shown above.
-                  </p>
+	                  <p className="mt-4 text-xs text-muted-foreground">
+	                    Signing requests use Passport approval and the app policy
+	                    shown above. Transaction signing remains disabled.
+	                  </p>
                 </div>
               ))}
             </div>

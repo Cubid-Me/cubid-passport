@@ -11,9 +11,11 @@ boundary is explicit signing: a dapp can create and list app-scoped custodial
 accounts, but it cannot yet ask the human to approve a message signature or
 transaction.
 
-This document defines the first SIWC signing architecture for API v3. It is a
-design contract only; it does not add signing endpoints, Admin controls, or SDK
-code.
+This document defines the SIWC signing architecture for API v3 and records the
+current implemented backend boundary. Signing request routes, Admin policy
+controls, Passport approval, and message or typed-data signing now exist in
+this repo. Public SDK implementation remains outside this repo, and transaction
+signing remains deferred.
 
 ## Locked Direction
 
@@ -88,29 +90,28 @@ Initial signing eligibility should follow existing v3 custody support:
 Each chain package or helper should remain isolated. Do not introduce generic
 cross-chain assumptions that hide chain-specific risk.
 
-## Proposed API V3 Surfaces
+## API V3 Surfaces
 
-Future signing routes should use the existing Passport API v3 baseline:
-structured errors, `X-Request-Id`, dapp API-key auth, ownership checks,
-idempotency on writes, rate limits, and no secret exposure.
+Signing routes use the existing Passport API v3 baseline: structured errors,
+`X-Request-Id`, dapp API-key auth, ownership checks, idempotency on writes,
+rate limits, and no secret exposure.
 
-Candidate routes:
+Implemented dapp-authenticated routes:
 
 - `POST /api/v3/signing/requests/create`
 - `POST /api/v3/signing/requests/get`
 - `POST /api/v3/signing/requests/cancel`
 - `POST /api/v3/signing/requests/list`
 
-Passport-hosted approval should use authenticated human routes, not dapp
-credentials:
+Passport-hosted approval uses authenticated human routes, not dapp credentials:
 
 - `POST /api/siwc/signing/requests/list`
 - `POST /api/siwc/signing/requests/approve`
 - `POST /api/siwc/signing/requests/reject`
 
-Route names can change during implementation, but the ownership boundary should
-not: dapps create and observe requests; humans approve or reject in Passport;
-server-side custody code signs only after policy and approval succeed.
+The ownership boundary must not change: dapps create and observe requests;
+humans approve or reject in Passport; server-side custody code signs only after
+policy and approval succeed.
 
 ## Request Model
 
@@ -137,9 +138,8 @@ prefer summaries and hashes over raw payloads whenever possible.
 
 ## State Machine
 
-Initial signing request states:
+Signing request states:
 
-- `pending_policy`: created, awaiting policy evaluation
 - `policy_denied`: rejected by policy before user approval
 - `pending_user_approval`: policy accepted, waiting for Passport approval
 - `approved`: human approved with sufficient auth context
@@ -150,8 +150,9 @@ Initial signing request states:
 - `failed`: server-side signing or submission failed
 - `cancelled`: dapp cancelled before completion
 
-Allowed transitions should be explicit. Terminal states should be immutable
-except for metadata fields such as delivery attempts or support notes.
+Policy evaluation happens during request creation, so requests are stored only
+after the policy decision is known. Terminal states should be immutable except
+for metadata fields such as delivery attempts or support notes.
 
 ## Authorization Boundary
 

@@ -5047,3 +5047,31 @@ Address the automated review finding that SIWC policy listing exposed all dapps 
 #### Follow-up
 
 - push the review fix, comment on and resolve the PR review thread, then re-check CI
+
+### session: v177
+
+- timestamp: 2026-05-06T12:04:27Z
+- agent: **OpenAI Codex**
+- branch: **codex/siwc-roadmap-cleanup**
+- head: **`84c3969`**
+- session name: **Address PR 159 Copilot wording comments**
+
+#### Objective
+
+Address Copilot review feedback about stale SIWC architecture and Profile copy.
+
+#### Actions Taken
+
+- updated the SIWC architecture intro to reflect that signing routes and Admin policy controls now exist
+- changed the API surface section from future/candidate language to implemented route language
+- removed the stale `pending_policy` state from the documented state machine
+- updated Profile copy so users are not told signing requests are unavailable while the signing request card is live
+
+#### Verification
+
+- planned docs/UI copy validation with `git diff --check`
+- planned focused validation with `pnpm --filter @cubid/passport typecheck`
+
+#### Follow-up
+
+- push the wording fix, reply to and resolve Copilot threads, then re-check CI
