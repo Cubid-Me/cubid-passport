@@ -5102,3 +5102,30 @@ Fix the CI failure caused by the Admin route wiring test still expecting the old
 #### Follow-up
 
 - push the CI fix and confirm PR checks return green
+
+### session: v179
+
+- timestamp: 2026-05-06T12:39:47Z
+- agent: **OpenAI Codex**
+- branch: **codex/future-ideas-reference**
+- head: **`68cffea`**
+- session name: **Add future ideas reference**
+
+#### Objective
+
+Create a deferred future-ideas reference and repo-local guidance for how agents should use it.
+
+#### Actions Taken
+
+- added `agent-context/future-ideas.md` with deferred feature-expansion ideas such as smart accounts, session keys, paymasters, transaction simulation, and SIWC sandboxing
+- updated `AGENTS.md` so "what's next" recommendations use the future ideas file only after active todos and blockers are depleted
+- updated `AGENTS.md` so repo-cleanup passes verify the future ideas file exists and remains clearly deferred
+- noted that the global `~/.codex/skills` files were not edited because they live in the protected memory/skills area
+
+#### Verification
+
+- planned docs-only validation with `git diff --check`
+
+#### Follow-up
+
+- commit the documentation update and yeet if review is desired
