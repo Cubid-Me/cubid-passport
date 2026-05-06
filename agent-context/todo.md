@@ -821,11 +821,19 @@ Create the operator runbook for SIWC custody and signing before exposing signing
 
 ### F01. Add protected Supabase dev/preview migration deployment
 
-- Status: Not started
-- Timestamp started: TBD
+- Status: Blocked
+- Timestamp started: 2026-05-06T22:52:17Z
 - Timestamp completed: TBD
-- Feature branch: TBD
+- Feature branch: codex/repo-cleanup-delivery-status
 - Head: TBD
-- Session-log reference(s): TBD
+- Session-log reference(s): session: v181
 
 Add the missing hosted Supabase delivery path for the linked `CubidDev` preview/dev project. The repo currently contains migrations through `20260506093000`, but `supabase migration list --linked` shows only the baseline `20260331020028` migration applied remotely. Create a GitHub workflow that validates migration drift on pull requests and provides a manual, protected apply path for `dev` after approval, using repo or environment secrets rather than local shell mutation. The workflow should identify the target project ref, run a dry-run or remote migration status check before applying, avoid deploying functions when no `supabase/functions` directory exists, and produce logs operators can use for smoke verification. This todo does not itself apply migrations; it creates the safe delivery mechanism.
+
+Implementation status: the workflow and runbook are in place, and `CubidDev`
+backup posture was checked locally with completed physical backups visible
+through 2026-05-06. The hosted apply is blocked because the repo currently has
+no `SUPABASE_ACCESS_TOKEN` configured at the repository or GitHub Environment
+level, and the existing Preview/Production environments do not have reviewer
+protection rules configured. Configure those settings, then dispatch
+`Supabase Deploy` in `check` mode before `apply`.

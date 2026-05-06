@@ -1,6 +1,6 @@
 # Repo Status
 
-Last updated: 2026-05-06T22:48:47Z
+Last updated: 2026-05-06T22:52:17Z
 
 | Requirement | Status |
 | --- | --- |
@@ -14,10 +14,10 @@ Last updated: 2026-05-06T22:48:47Z
 | Engineering docs | Pass. Current architecture and operating docs live under `docs/engineering/`; no target-state docs were found outside the expected docs area during this pass. |
 | Testing strategy | Partial. Root scripts run lint, typecheck, test, build, and security checks; some chain placeholder packages still have no real tests. |
 | Local acceptance harness | Partial. Unit/server tests cover core route behavior, but there is no single local end-to-end acceptance harness for Passport, Admin, OIDC, API v3, and SIWC together. |
-| CI contract | Partial. CI runs repo validation on PRs and pushes to `main`, but it does not validate Supabase migration drift or deployment readiness. |
-| Supabase migrations | Blocked. Local repo has migrations through `20260506093000`; linked `CubidDev` only reports `20260331020028` applied. Do not assume hosted dev is schema-current. |
+| CI contract | Partial. CI runs repo validation on PRs and pushes to `main`; `F01` adds a Supabase deploy workflow, but remote drift checks depend on GitHub environment secrets being configured. |
+| Supabase migrations | Blocked. Local repo has migrations through `20260506093000`; linked `CubidDev` only reports `20260331020028` applied. A local dry-run shows 25 pending migrations would be applied. Do not assume hosted dev is schema-current. |
 | Supabase functions | Not applicable. This repo has no `supabase/functions` directory and the linked `CubidDev` project reports no deployed functions. |
-| Supabase deployment workflow | Missing. There is no GitHub workflow for protected migration dry-run/checks or approved migration apply to `CubidDev`. See `F01`. |
+| Supabase deployment workflow | Partial. `.github/workflows/supabase-deploy.yml` defines check/apply paths for `CubidDev`, but GitHub environment secrets/protection must be configured before it can apply. |
 | Environment and secrets | Partial. Workspace `.env.example` files exist and operational-secret docs exist; live secrets and Supabase Vault values still need environment provisioning and smoke verification. |
 | Git artifact hygiene | Pass. Build outputs, `.next`, `dist`, coverage, node modules, and local env files are ignored and not tracked. |
 | Production readiness | Blocked. Repo-side implementation is strong, but production requires hosted migrations, Vault/runtime secrets, SDK sync, deployment checks, and smoke tests. |

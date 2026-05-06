@@ -5161,3 +5161,41 @@ Supabase delivery follow-up without applying hosted migrations.
 
 - implement `F01` as the next cleanup/release-operations slice before applying
   hosted migrations to `CubidDev`
+
+### session: v181
+
+- timestamp: 2026-05-06T22:52:17Z
+- agent: **OpenAI Codex**
+- branch: **codex/repo-cleanup-delivery-status**
+- head: **`c8e2618`**
+- session name: **Add protected Supabase delivery workflow**
+
+#### Objective
+
+Implement the F01 hosted Supabase delivery mechanism and confirm whether it can
+be safely run against `CubidDev`.
+
+#### Actions Taken
+
+- added `.github/workflows/supabase-deploy.yml` with pull-request migration
+  dry-run support and manual `check` / `apply` dispatch modes
+- added guarded project-ref and backup confirmation checks before apply mode
+- added `docs/engineering/supabase-hosted-delivery.md` documenting target
+  project, required GitHub secrets, backup posture, and operator steps
+- updated repo-status and F01 metadata to reflect the implemented workflow and
+  current deployment blocker
+
+#### Verification
+
+- confirmed linked Supabase project is `CubidDev` / `cggycnbvljcdptzyjpju`
+- confirmed `supabase backups list` shows recent completed physical backups
+- confirmed `supabase db push --dry-run --linked` lists 25 pending migrations
+- confirmed there are no `supabase/functions` to deploy from this repo
+- confirmed no repository or checked GitHub Environment `SUPABASE_ACCESS_TOKEN`
+  secret is currently configured
+
+#### Follow-up
+
+- configure `SUPABASE_ACCESS_TOKEN` and reviewer protection on the selected
+  GitHub Environment, then run the `Supabase Deploy` workflow in `check` mode
+  before running `apply`
