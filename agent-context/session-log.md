@@ -4713,3 +4713,29 @@ Add Passport user-facing visibility for app-scoped custody accounts without expo
 #### Follow-up
 
 - close `SIWC03` metadata with the implementation commit SHA, then immediately start `SIWC04`
+
+### session: v165
+
+- timestamp: 2026-05-06T08:31:22Z
+- agent: **OpenAI Codex**
+- branch: **codex/siwc-roadmap-cleanup**
+- head: **`774cd64`**
+- session name: **Close SIWC03 and start SIWC04**
+
+#### Objective
+
+Close the completed SIWC Passport account-visibility todo and immediately start the v3 signing request lifecycle todo.
+
+#### Actions Taken
+
+- marked `SIWC03` completed in both the main roadmap and SIWC side roadmap
+- recorded implementation head `774cd64` for `SIWC03`
+- marked `SIWC04` started on `codex/siwc-roadmap-cleanup`
+
+#### Verification
+
+- planned docs-only validation with `git diff --check`
+
+#### Follow-up
+
+- implement `SIWC04` by adding the backend signing request lifecycle guarded by Admin policy and Passport approval

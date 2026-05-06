@@ -45,23 +45,23 @@ Add Admin-side controls that let operators configure whether an app may request 
 
 ### SIWC03. Add Passport user-facing app account visibility
 
-- Status: Started
+- Status: Completed
 - Timestamp started: 2026-05-05T23:41:40Z
-- Timestamp completed: TBD
+- Timestamp completed: 2026-05-06T08:31:22Z
 - Feature branch: codex/siwc-roadmap-cleanup
-- Head: TBD
-- Session-log reference(s): session: v163
+- Head: 774cd64
+- Session-log reference(s): session: v163, session: v164
 
 Add user-facing visibility for app-scoped custody accounts in Passport, likely inside the existing Profile and disclosure-management surface. Users should be able to see which apps have generated accounts for them, which chain each account belongs to, public addresses, labels, creation dates, custody status, and whether signing is enabled for that app. The UI should reinforce the privacy model: these accounts are scoped to individual apps, and other apps should not be able to correlate them. This slice should not add private-key export, signing, or cross-app wallet portability. It should only make the already-created v3 account metadata understandable and auditable for the human user, with no exposure of private or encrypted custody fields.
 
 ### SIWC04. Implement v3 signing request lifecycle
 
-- Status: Not started
-- Timestamp started: TBD
+- Status: Started
+- Timestamp started: 2026-05-06T08:31:22Z
 - Timestamp completed: TBD
-- Feature branch: TBD
+- Feature branch: codex/siwc-roadmap-cleanup
 - Head: TBD
-- Session-log reference(s): TBD
+- Session-log reference(s): session: v165
 
 Implement the backend lifecycle for signing requests after SIWC01 chooses the architecture. Add API v3 routes for creating a signing request, reading request status, approving or rejecting through Passport, and returning the resulting signature or transaction hash when complete. Requests must be app-scoped, dapp-authenticated, idempotent where appropriate, bound to a specific `dapp_user_uuid` and `user_account_id`, and checked against Admin signing policy before user approval. Approval should be hosted in Passport and require passkey step-up when policy or ACR requires it. Responses must never return private keys, raw decrypted material, Vault wrapping keys, or internal human subject keys. All state changes should write audit/security events and be safe to retry.
 
