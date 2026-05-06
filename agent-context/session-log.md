@@ -5199,3 +5199,34 @@ be safely run against `CubidDev`.
 - configure `SUPABASE_ACCESS_TOKEN` and reviewer protection on the selected
   GitHub Environment, then run the `Supabase Deploy` workflow in `check` mode
   before running `apply`
+
+### session: v182
+
+- timestamp: 2026-05-06T23:10:06Z
+- agent: **OpenAI Codex**
+- branch: **codex/repo-cleanup-delivery-status**
+- head: **`99736d4`**
+- session name: **Address PR 160 Supabase workflow review**
+
+#### Objective
+
+Address automated review feedback on the protected Supabase deployment
+workflow before hosted migration checks are run from GitHub.
+
+#### Actions Taken
+
+- moved workflow dispatch inputs into environment variables before shell usage
+  so untrusted input is handled as data, not interpolated script text
+- added `SUPABASE_DB_PASSWORD` as a required GitHub Environment secret for
+  hosted deploy runs
+- passed the database password to `supabase link` so CI does not prompt or hang
+- updated the hosted delivery runbook and F01 metadata with the additional
+  secret requirement
+
+#### Verification
+
+- planned validation with workflow YAML parsing and `git diff --check`
+
+#### Follow-up
+
+- push the review fix, reply to the automated comments, and re-check PR 160 CI

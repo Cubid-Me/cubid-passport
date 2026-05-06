@@ -21,6 +21,7 @@ Configure the selected GitHub Environment, recommended
 `Preview – cubid-passport`, with:
 
 - secret `SUPABASE_ACCESS_TOKEN`
+- secret `SUPABASE_DB_PASSWORD`
 - optional environment variable `CUBID_SUPABASE_PROJECT_REF`
 
 If `CUBID_SUPABASE_PROJECT_REF` is omitted, the workflow defaults to
@@ -48,10 +49,11 @@ migrations.
 ## Operator Checklist Before Apply
 
 1. Confirm the workflow environment has `SUPABASE_ACCESS_TOKEN`.
-2. Confirm the GitHub Environment has reviewer protection for applies.
-3. Run workflow dispatch with `mode=check`.
-4. Confirm `supabase backups list` shows a recent `COMPLETED` backup.
-5. Run workflow dispatch with `mode=apply` only after the check output is
+2. Confirm the workflow environment has `SUPABASE_DB_PASSWORD`.
+3. Confirm the GitHub Environment has reviewer protection for applies.
+4. Run workflow dispatch with `mode=check`.
+5. Confirm `supabase backups list` shows a recent `COMPLETED` backup.
+6. Run workflow dispatch with `mode=apply` only after the check output is
    understood.
-6. After apply, run app smoke checks for Passport, Admin, OIDC, API v3, and
+7. After apply, run app smoke checks for Passport, Admin, OIDC, API v3, and
    SIWC surfaces before enabling broader usage.
