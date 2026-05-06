@@ -5075,3 +5075,30 @@ Address Copilot review feedback about stale SIWC architecture and Profile copy.
 #### Follow-up
 
 - push the wording fix, reply to and resolve Copilot threads, then re-check CI
+
+### session: v178
+
+- timestamp: 2026-05-06T12:07:38Z
+- agent: **OpenAI Codex**
+- branch: **codex/siwc-roadmap-cleanup**
+- head: **`855eebd`**
+- session name: **Fix PR 159 Admin route test after SIWC policy scoping**
+
+#### Objective
+
+Fix the CI failure caused by the Admin route wiring test still expecting the old SIWC policy list helper signature.
+
+#### Actions Taken
+
+- updated the SIWC policy list route test to provide and expect the Admin request context
+- kept the ownership-scoped runtime behavior introduced for the review fix
+
+#### Verification
+
+- planned focused validation with `pnpm --filter @cubid/admin test -- adminRoutes`
+- planned follow-up validation with `pnpm --filter @cubid/admin typecheck`
+- `git diff --check`
+
+#### Follow-up
+
+- push the CI fix and confirm PR checks return green

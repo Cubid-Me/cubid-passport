@@ -237,9 +237,10 @@ describe('Admin route baseline wiring', () => {
   });
 
   it('uses the admin read policy for SIWC policy list', async () => {
+    const context = { adminUser: { uid: 'admin_uid' }, supabase: {} };
     prepareAdminApiRequestMock.mockResolvedValue({
       body: {},
-      context: { supabase: {} },
+      context,
       requestId: 'admin_request_siwc_list',
     });
     listSiwcPoliciesMock.mockResolvedValue({
@@ -258,7 +259,7 @@ describe('Admin route baseline wiring', () => {
         route: 'admin/siwc/policies/list',
       })
     );
-    expect(listSiwcPoliciesMock).toHaveBeenCalledWith({});
+    expect(listSiwcPoliciesMock).toHaveBeenCalledWith(context);
   });
 
   it('uses the sensitive policy for SIWC policy updates', async () => {
