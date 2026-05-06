@@ -93,6 +93,19 @@ const addFirebaseUserAuth = () => {
   })
 }
 
+const addSiwcWebhookSubscription = (
+  supabase: MockPassportSupabase,
+  webhook: string
+) => {
+  supabase.setWebhookSubscription({
+    dapp: 42,
+    secret: "webhook-signing-secret",
+    status: "active",
+    webhook,
+    webhook_url: `https://example.test/${webhook}`,
+  })
+}
+
 test("legacy Passport Supabase select endpoint is hard-disabled with a request id", async () => {
   const supabase = new MockPassportSupabase()
   setPassportSupabaseForTests(supabase as never)
@@ -707,6 +720,77 @@ test("Passport API v3 SIWC transaction risk fails closed for unsupported chains"
   assert.deepEqual(data.riskReasons, ["transaction_chain_risk_unsupported"])
 })
 
+test("Passport API v3 SIWC signing request emits created and policy-denied webhooks", async () => {
+  const supabase = new MockPassportSupabase()
+  setPassportSupabaseForTests(supabase as never)
+  const fixtures = addSiwcSigningFixtures(supabase, {
+    webhook_event_subscriptions: [
+      "wallet.policy.denied",
+      "wallet.signing_request.created",
+    ],
+  })
+  addSiwcWebhookSubscription(supabase, "wallet.signing_request.created")
+  addSiwcWebhookSubscription(supabase, "wallet.policy.denied")
+  const delivered: Array<Record<string, unknown>> = []
+  axios.post = (async (_url: string, body: unknown) => {
+    delivered.push(JSON.parse(String(body)) as Record<string, unknown>)
+    return { data: "accepted", status: 202 }
+  }) as typeof axios.post
+
+  await createSiwcSigningRequestHandler(
+    createApiRequest({
+      body: {
+        apikey: fixtures.apiKey,
+        dapp_user_uuid: fixtures.dappUserUuid,
+        payload: { message: "webhook me" },
+        request_type: "message",
+        user_account_id: fixtures.userAccountId,
+      },
+      headers: {
+        "idempotency-key": "signing-created-webhook",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/signing/requests/create",
+    }),
+    createApiResponse()
+  )
+  await createSiwcSigningRequestHandler(
+    createApiRequest({
+      body: {
+        apikey: fixtures.apiKey,
+        dapp_user_uuid: fixtures.dappUserUuid,
+        payload: {
+          declaredValueUsd: 10,
+          to: "0x0000000000000000000000000000000000000000",
+        },
+        request_type: "transaction",
+        user_account_id: fixtures.userAccountId,
+      },
+      headers: {
+        "idempotency-key": "signing-policy-denied-webhook",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/signing/requests/create",
+    }),
+    createApiResponse()
+  )
+
+  assert.deepEqual(
+    delivered.map((payload) => payload.eventType).sort(),
+    ["wallet.policy.denied", "wallet.signing_request.created"]
+  )
+  const denied = delivered.find(
+    (payload) => payload.eventType === "wallet.policy.denied"
+  )
+  assert.equal(
+    (denied?.data as Record<string, unknown>).errorCode,
+    "transaction_signing_deferred"
+  )
+  assert.equal(JSON.stringify(delivered).includes('"payload"'), false)
+  assert.equal(JSON.stringify(delivered).includes("private"), false)
+  assert.equal(JSON.stringify(delivered).includes("human_subject_key"), false)
+})
+
 test("Passport SIWC signing approval requires passkey step-up then completes EVM message signatures", async () => {
   const supabase = new MockPassportSupabase()
   setPassportSupabaseForTests(supabase as never)
@@ -791,11 +875,122 @@ test("Passport SIWC signing approval requires passkey step-up then completes EVM
   assert.equal(JSON.stringify(approveRes.body).includes(fixtures.wallet.privateKey), false)
 })
 
+test("Passport SIWC signing approval emits approved and signature completed webhooks", async () => {
+  const supabase = new MockPassportSupabase()
+  setPassportSupabaseForTests(supabase as never)
+  addFirebaseUserAuth()
+  const fixtures = addSiwcSigningFixtures(supabase, {
+    webhook_event_subscriptions: [
+      "wallet.signature.completed",
+      "wallet.signing_request.approved",
+      "wallet.signing_request.created",
+    ],
+  })
+  addSiwcWebhookSubscription(supabase, "wallet.signing_request.created")
+  addSiwcWebhookSubscription(supabase, "wallet.signing_request.approved")
+  addSiwcWebhookSubscription(supabase, "wallet.signature.completed")
+  const delivered: Array<Record<string, unknown>> = []
+  axios.post = (async (_url: string, body: unknown) => {
+    delivered.push(JSON.parse(String(body)) as Record<string, unknown>)
+    return { data: "accepted", status: 202 }
+  }) as typeof axios.post
+
+  const createRes = createApiResponse()
+  await createSiwcSigningRequestHandler(
+    createApiRequest({
+      body: {
+        apikey: fixtures.apiKey,
+        dapp_user_uuid: fixtures.dappUserUuid,
+        payload: { message: "complete webhook" },
+        request_type: "message",
+        user_account_id: fixtures.userAccountId,
+      },
+      headers: {
+        "idempotency-key": "signing-completed-webhook",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/signing/requests/create",
+    }),
+    createRes
+  )
+  const signingRequestId = String(
+    (createRes.body as DataResponse<Record<string, unknown>>).data
+      .signingRequestId
+  )
+
+  supabase.setOidcHumanSubject({
+    cubid_user_id: 1234,
+    human_subject_key: "human_subject_1",
+    primary_email: "person@example.com",
+  })
+  supabase.setOidcSession({
+    created_at: new Date().toISOString(),
+    expires_at: new Date(Date.now() + 60_000).toISOString(),
+    human_subject_key: "human_subject_1",
+    metadata: {
+      acr: "urn:cubid:acr:passkey",
+      authentication_methods: ["passkey"],
+    },
+    revoked_at: null,
+    session_id: "oidc_session_passkey_webhook",
+  })
+
+  await approveSiwcSigningRequestHandler(
+    createApiRequest({
+      body: { signingRequestId },
+      headers: {
+        authorization: "Bearer firebase-test-token",
+        cookie: "cubid_oidc_session_id=oidc_session_passkey_webhook",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/siwc/signing/requests/approve",
+    }),
+    createApiResponse()
+  )
+
+  assert.deepEqual(
+    delivered.map((payload) => payload.eventType),
+    [
+      "wallet.signing_request.created",
+      "wallet.signing_request.approved",
+      "wallet.signature.completed",
+    ]
+  )
+  const completed = delivered[2]
+  assert.equal((completed.data as Record<string, unknown>).status, "completed")
+  assert.equal(
+    ((completed.data as Record<string, unknown>).result as Record<string, unknown>)
+      .algorithm,
+    "evm_secp256k1"
+  )
+  assert.equal(
+    "signature" in
+      (((completed.data as Record<string, unknown>).result as Record<
+        string,
+        unknown
+      >) ?? {}),
+    false
+  )
+  assert.equal(JSON.stringify(completed).includes(fixtures.wallet.privateKey), false)
+})
+
 test("Passport SIWC signing approval rejects stale passkey step-up sessions", async () => {
   const supabase = new MockPassportSupabase()
   setPassportSupabaseForTests(supabase as never)
   addFirebaseUserAuth()
-  const fixtures = addSiwcSigningFixtures(supabase)
+  const fixtures = addSiwcSigningFixtures(supabase, {
+    webhook_event_subscriptions: [
+      "wallet.signing_request.created",
+      "wallet.signing_request.step_up_failed",
+    ],
+  })
+  addSiwcWebhookSubscription(supabase, "wallet.signing_request.created")
+  addSiwcWebhookSubscription(supabase, "wallet.signing_request.step_up_failed")
+  const delivered: Array<Record<string, unknown>> = []
+  axios.post = (async (_url: string, body: unknown) => {
+    delivered.push(JSON.parse(String(body)) as Record<string, unknown>)
+    return { data: "accepted", status: 202 }
+  }) as typeof axios.post
 
   const createReq = createApiRequest({
     body: {
@@ -861,13 +1056,31 @@ test("Passport SIWC signing approval rejects stale passkey step-up sessions", as
     ),
     true
   )
+  assert.equal(
+    delivered.some(
+      (payload) => payload.eventType === "wallet.signing_request.step_up_failed"
+    ),
+    true
+  )
 })
 
 test("Passport SIWC signing requests can be listed, rejected, and cancelled", async () => {
   const supabase = new MockPassportSupabase()
   setPassportSupabaseForTests(supabase as never)
   addFirebaseUserAuth()
-  const fixtures = addSiwcSigningFixtures(supabase)
+  const fixtures = addSiwcSigningFixtures(supabase, {
+    webhook_event_subscriptions: [
+      "wallet.signing_request.cancelled",
+      "wallet.signing_request.rejected",
+    ],
+  })
+  addSiwcWebhookSubscription(supabase, "wallet.signing_request.cancelled")
+  addSiwcWebhookSubscription(supabase, "wallet.signing_request.rejected")
+  const delivered: Array<Record<string, unknown>> = []
+  axios.post = (async (_url: string, body: unknown) => {
+    delivered.push(JSON.parse(String(body)) as Record<string, unknown>)
+    return { data: "accepted", status: 202 }
+  }) as typeof axios.post
 
   const createSigning = async (idempotencyKey: string) => {
     const req = createApiRequest({
@@ -939,6 +1152,10 @@ test("Passport SIWC signing requests can be listed, rejected, and cancelled", as
   assert.equal(
     (cancelRes.body as DataResponse<Record<string, unknown>>).data.status,
     "cancelled"
+  )
+  assert.deepEqual(
+    delivered.map((payload) => payload.eventType).sort(),
+    ["wallet.signing_request.cancelled", "wallet.signing_request.rejected"]
   )
 })
 
@@ -1976,6 +2193,143 @@ test("Passport v3 account generation cleans up public account rows on private-ke
   assert.equal(supabase.privateKeys.length, 0)
   assert.equal(supabase.dappUserAccounts.length, 0)
   assert.equal(supabase.apiIdempotencyKeys[0]?.status, "failed")
+})
+
+test("Passport v3 account generation emits safe wallet.created webhooks", async () => {
+  const supabase = new MockPassportSupabase()
+  const apiKey = addDappAuth(supabase)
+  const dappUserUuid = "00000000-0000-4000-8000-000000000057"
+  supabase.setDappUser({ dapp_id: 42, user_id: 1234, uuid: dappUserUuid })
+  supabase.setSiwcSigningPolicy({
+    dapp_id: 42,
+    webhook_event_subscriptions: ["wallet.created"],
+  })
+  addSiwcWebhookSubscription(supabase, "wallet.created")
+  setPassportSupabaseForTests(supabase as never)
+
+  let deliveredBody = ""
+  axios.post = (async (_url: string, body: unknown) => {
+    deliveredBody = String(body)
+    return { data: "accepted", status: 202 }
+  }) as typeof axios.post
+
+  const res = createApiResponse()
+  await generateAccountV3Handler(
+    createApiRequest({
+      body: {
+        api_key: apiKey,
+        chain: "evm",
+        dapp_user_uuid: dappUserUuid,
+      },
+      headers: {
+        "idempotency-key": "generate-wallet-created-webhook",
+        origin: "https://passport.cubid.me",
+        "x-request-id": "passport_wallet_created_webhook",
+      },
+      url: "/api/v3/accounts/generate",
+    }),
+    res
+  )
+
+  assert.equal(res.statusCode, 200)
+  assert.equal(supabase.webhookEvents.length, 1)
+  assert.equal(supabase.webhookEventDeliveries[0]?.delivery_status, "succeeded")
+  const payload = JSON.parse(deliveredBody) as Record<string, unknown>
+  assert.equal(payload.eventType, "wallet.created")
+  assert.equal(payload.requestId, "passport_wallet_created_webhook")
+  assert.deepEqual(payload.subject, { dappUserUuid })
+  assert.equal(
+    (payload.data as Record<string, unknown>).accountId,
+    (res.body as DataResponse<Record<string, unknown>>).data.accountId
+  )
+  assert.equal(JSON.stringify(payload).includes("private"), false)
+  assert.equal(JSON.stringify(payload).includes("ciphertext"), false)
+  assert.equal(JSON.stringify(payload).includes("wrapped"), false)
+  assert.equal(JSON.stringify(payload).includes("human_subject_key"), false)
+})
+
+test("Passport v3 account generation skips SIWC webhooks not enabled by policy", async () => {
+  const supabase = new MockPassportSupabase()
+  const apiKey = addDappAuth(supabase)
+  const dappUserUuid = "00000000-0000-4000-8000-000000000053"
+  supabase.setDappUser({ dapp_id: 42, user_id: 1234, uuid: dappUserUuid })
+  supabase.setSiwcSigningPolicy({
+    dapp_id: 42,
+    webhook_event_subscriptions: [],
+  })
+  addSiwcWebhookSubscription(supabase, "wallet.created")
+  setPassportSupabaseForTests(supabase as never)
+
+  let delivered = false
+  axios.post = (async () => {
+    delivered = true
+    return { data: "accepted", status: 202 }
+  }) as typeof axios.post
+
+  const res = createApiResponse()
+  await generateAccountV3Handler(
+    createApiRequest({
+      body: {
+        api_key: apiKey,
+        chain: "evm",
+        dapp_user_uuid: dappUserUuid,
+      },
+      headers: {
+        "idempotency-key": "generate-wallet-created-not-subscribed",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/accounts/generate",
+    }),
+    res
+  )
+
+  assert.equal(res.statusCode, 200)
+  assert.equal(delivered, false)
+  assert.equal(supabase.webhookEvents.length, 0)
+  assert.equal(supabase.webhookEventDeliveries.length, 0)
+})
+
+test("Passport v3 account generation records failed SIWC webhook delivery without failing the response", async () => {
+  const supabase = new MockPassportSupabase()
+  const apiKey = addDappAuth(supabase)
+  const dappUserUuid = "00000000-0000-4000-8000-000000000054"
+  supabase.setDappUser({ dapp_id: 42, user_id: 1234, uuid: dappUserUuid })
+  supabase.setSiwcSigningPolicy({
+    dapp_id: 42,
+    webhook_event_subscriptions: ["wallet.created"],
+  })
+  addSiwcWebhookSubscription(supabase, "wallet.created")
+  setPassportSupabaseForTests(supabase as never)
+  axios.post = (async () => {
+    throw {
+      response: {
+        data: { error: "down" },
+        status: 503,
+      },
+    }
+  }) as typeof axios.post
+
+  const res = createApiResponse()
+  await generateAccountV3Handler(
+    createApiRequest({
+      body: {
+        api_key: apiKey,
+        chain: "evm",
+        dapp_user_uuid: dappUserUuid,
+      },
+      headers: {
+        "idempotency-key": "generate-wallet-created-failed-webhook",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/accounts/generate",
+    }),
+    res
+  )
+
+  assert.equal(res.statusCode, 200)
+  assert.equal(supabase.webhookEventDeliveries.length, 1)
+  assert.equal(supabase.webhookEventDeliveries[0]?.delivery_status, "failed")
+  assert.equal(supabase.webhookEventDeliveries[0]?.error_category, "server_error")
 })
 
 test("Passport v3 account list returns dapp-user-visible metadata without secret material", async () => {

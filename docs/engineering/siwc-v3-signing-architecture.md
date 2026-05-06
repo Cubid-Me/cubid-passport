@@ -254,18 +254,39 @@ unredacted transaction payloads.
 
 ## Webhooks
 
-SIWC signing events should extend the API v3 webhook contract rather than add a
-separate delivery system. Candidate events:
+SIWC signing events extend the API v3 webhook contract rather than adding a
+separate delivery system. SIWC06 seeds and emits these canonical event names:
 
+- `wallet.created`
 - `wallet.signing_request.created`
-- `wallet.signing_request.policy_denied`
+- `wallet.policy.denied`
 - `wallet.signing_request.approved`
 - `wallet.signing_request.rejected`
+- `wallet.signing_request.cancelled`
+- `wallet.signing_request.step_up_failed`
 - `wallet.signature.completed`
-- `wallet.transaction.submitted`
-- `wallet.transaction.failed`
+- `wallet.signature.failed`
 
-Payloads must be signed, replay-safe, disclosure-filtered, and app-scoped.
+Each event uses the API v3 webhook envelope, HMAC signature headers, replay
+event id, delivery attempt records, and encrypted per-subscription signing
+secret resolution. Delivery requires both an active `dapp_webhook_subscriptions`
+row for the canonical event and the event name in
+`siwc_signing_policies.webhook_event_subscriptions`.
+
+SIWC webhook payloads are app-scoped and custody-safe. They may include account
+id, dapp user uuid, chain, public address, signing request id, request type,
+status, policy version, risk summary, payload hash, and safe signature result
+metadata such as algorithm and public address. They must not include raw
+signing payloads, signatures, private keys, encrypted key material, Vault
+material, human subject keys, raw Cubid user ids, Firebase uid, or webhook
+signing secrets.
+
+Webhook delivery is best-effort for SIWC lifecycle APIs. A dapp endpoint outage
+records a failed delivery attempt but does not roll back account generation,
+approval, rejection, cancellation, or signature completion.
+
+`wallet.transaction.submitted` and `wallet.transaction.failed` remain deferred
+until transaction signing and transaction submission exist.
 
 ## Passport Account Visibility
 

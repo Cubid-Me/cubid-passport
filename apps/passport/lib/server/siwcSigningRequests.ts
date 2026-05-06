@@ -10,6 +10,10 @@ import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519"
 import { Keypair } from "@solana/web3.js"
 
 import {
+  deliverSiwcApiV3Webhook,
+  type SiwcApiV3WebhookEventType,
+} from "./apiV3Webhooks"
+import {
   decryptBlockchainPrivateKeyWithKey,
   getBlockchainPrivateKeyWrappingKey,
   normalizeChainKey,
@@ -345,6 +349,63 @@ const mapSigningRequest = (
   updatedAt: row.updated_at,
   userAccountId: String(row.user_account_id),
 })
+
+const summarizeSigningResult = (result: unknown) => {
+  if (!result || typeof result !== "object") {
+    return null
+  }
+
+  const value = result as Record<string, unknown>
+  return {
+    algorithm: typeof value.algorithm === "string" ? value.algorithm : null,
+    publicAddress:
+      typeof value.publicAddress === "string" ? value.publicAddress : null,
+    type: typeof value.type === "string" ? value.type : null,
+  }
+}
+
+const buildSiwcSigningWebhookData = (row: SiwcSigningRequestRow) => {
+  const summary = mapSigningRequest(row)
+  return {
+    accountId: summary.userAccountId,
+    chain: summary.chain,
+    errorCode: summary.errorCode,
+    errorMessage: summary.errorMessage,
+    payloadHash: summary.payloadHash,
+    policyDecision: summary.policyDecision,
+    policyVersion: summary.policyVersion,
+    requestType: summary.requestType,
+    result: summarizeSigningResult(summary.result),
+    riskLevel: summary.riskLevel,
+    riskReasons: summary.riskReasons,
+    signingRequestId: summary.signingRequestId,
+    status: summary.status,
+    stepUpRequired: summary.stepUpRequired,
+    transactionContractAddress: summary.transactionContractAddress,
+    transactionDeclaredValueUsd: summary.transactionDeclaredValueUsd,
+    transactionOperationType: summary.transactionOperationType,
+    transactionRecipient: summary.transactionRecipient,
+  }
+}
+
+const publishSiwcSigningWebhook = async (
+  supabase: SupabaseClient,
+  row: SiwcSigningRequestRow,
+  input: {
+    eventType: SiwcApiV3WebhookEventType
+    requestId: string
+  }
+) => {
+  await deliverSiwcApiV3Webhook({
+    dappId: row.dapp_id,
+    dappUserUuid: row.dapp_user_uuid,
+    eventKey: `${input.eventType}:${row.signing_request_id}`,
+    eventType: input.eventType,
+    requestId: input.requestId,
+    supabase,
+    data: buildSiwcSigningWebhookData(row),
+  })
+}
 
 const insertSecurityEvent = async (
   supabase: SupabaseClient,
@@ -751,6 +812,8 @@ export async function createSiwcSigningRequest(input: {
     throw error
   }
 
+  const insertedRow = data as SiwcSigningRequestRow
+
   await insertSecurityEvent(input.supabase, {
     actorIdentifier: String(input.dappId),
     actorType: "dapp",
@@ -774,7 +837,14 @@ export async function createSiwcSigningRequest(input: {
     route: "v3.signing.requests.create",
   })
 
-  return mapSigningRequest(data as SiwcSigningRequestRow)
+  await publishSiwcSigningWebhook(input.supabase, insertedRow, {
+    eventType: evaluation.allowed
+      ? "wallet.signing_request.created"
+      : "wallet.policy.denied",
+    requestId: input.requestId,
+  })
+
+  return mapSigningRequest(insertedRow)
 }
 
 const loadDappSigningRequest = async (
@@ -886,6 +956,11 @@ export async function cancelSiwcSigningRequestForDapp(input: {
     outcome: "success",
     requestId: input.requestId,
     route: "v3.signing.requests.cancel",
+  })
+
+  await publishSiwcSigningWebhook(input.supabase, data as SiwcSigningRequestRow, {
+    eventType: "wallet.signing_request.cancelled",
+    requestId: input.requestId,
   })
 
   return mapSigningRequest(data as SiwcSigningRequestRow)
@@ -1436,6 +1511,10 @@ export async function approvePassportSiwcSigningRequest(input: {
         requestId: input.requestId,
         route: "passport.siwc.signing.requests.approve",
       })
+      await publishSiwcSigningWebhook(supabase, row, {
+        eventType: "wallet.signing_request.step_up_failed",
+        requestId: input.requestId,
+      })
     }
 
     throw error
@@ -1471,10 +1550,45 @@ export async function approvePassportSiwcSigningRequest(input: {
     route: "passport.siwc.signing.requests.approve",
   })
 
-  const completedRow = await completeApprovedSigning(
-    supabase,
-    approvedRow as SiwcSigningRequestRow
-  )
+  await publishSiwcSigningWebhook(supabase, approvedRow as SiwcSigningRequestRow, {
+    eventType: "wallet.signing_request.approved",
+    requestId: input.requestId,
+  })
+
+  let completedRow: SiwcSigningRequestRow
+  try {
+    completedRow = await completeApprovedSigning(
+      supabase,
+      approvedRow as SiwcSigningRequestRow
+    )
+  } catch (error) {
+    const failedAt = new Date().toISOString()
+    const { data: failedRow } = await supabase
+      .from("siwc_signing_requests")
+      .update({
+        error_code:
+          error instanceof ApiSecurityError ? error.code : "signing_failed",
+        error_message:
+          error instanceof Error ? error.message : "Signing failed.",
+        status: "failed",
+        updated_at: failedAt,
+      })
+      .eq("signing_request_id", row.signing_request_id)
+      .select("*")
+      .single()
+
+    await publishSiwcSigningWebhook(
+      supabase,
+      (failedRow as SiwcSigningRequestRow | null) ??
+        (approvedRow as SiwcSigningRequestRow),
+      {
+        eventType: "wallet.signature.failed",
+        requestId: input.requestId,
+      }
+    )
+
+    throw error
+  }
 
   await insertSecurityEvent(supabase, {
     actorIdentifier: token.uid,
@@ -1490,6 +1604,14 @@ export async function approvePassportSiwcSigningRequest(input: {
     outcome: completedRow.status === "completed" ? "success" : "failure",
     requestId: input.requestId,
     route: "passport.siwc.signing.requests.approve",
+  })
+
+  await publishSiwcSigningWebhook(supabase, completedRow, {
+    eventType:
+      completedRow.status === "completed"
+        ? "wallet.signature.completed"
+        : "wallet.policy.denied",
+    requestId: input.requestId,
   })
 
   return mapSigningRequest(completedRow)
@@ -1546,6 +1668,11 @@ export async function rejectPassportSiwcSigningRequest(input: {
     outcome: "success",
     requestId: input.requestId,
     route: "passport.siwc.signing.requests.reject",
+  })
+
+  await publishSiwcSigningWebhook(supabase, data as SiwcSigningRequestRow, {
+    eventType: "wallet.signing_request.rejected",
+    requestId: input.requestId,
   })
 
   return mapSigningRequest(data as SiwcSigningRequestRow)

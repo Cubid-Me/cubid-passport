@@ -17,13 +17,15 @@ const REQUEST_TYPES: SiwcPolicyRequestType[] = [
   'transaction',
 ];
 const WEBHOOK_EVENTS = [
-  'wallet.signing_request.created',
-  'wallet.signing_request.approved',
-  'wallet.signing_request.rejected',
-  'wallet.signature.completed',
-  'wallet.transaction.submitted',
-  'wallet.transaction.failed',
+  'wallet.created',
   'wallet.policy.denied',
+  'wallet.signature.completed',
+  'wallet.signature.failed',
+  'wallet.signing_request.approved',
+  'wallet.signing_request.cancelled',
+  'wallet.signing_request.created',
+  'wallet.signing_request.rejected',
+  'wallet.signing_request.step_up_failed',
 ];
 const PASSKEY_ACR = 'urn:cubid:acr:passkey' as const;
 

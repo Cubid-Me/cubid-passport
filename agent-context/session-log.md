@@ -4854,3 +4854,35 @@ Close the completed SIWC transaction-risk todo and immediately start the signing
 #### Follow-up
 
 - implement `SIWC06` by standardizing signing and wallet webhook contracts with SDK handoff notes
+
+### session: v170
+
+- timestamp: 2026-05-06T10:24:29Z
+- agent: **OpenAI Codex**
+- branch: **codex/siwc-roadmap-cleanup**
+- head: **`55fb0ca`**
+- session name: **Implement SIWC06 signing webhook contracts**
+
+#### Objective
+
+Extend the API v3 webhook contract to cover app-scoped custody and SIWC signing lifecycle events without enabling transaction signing.
+
+#### Actions Taken
+
+- added canonical SIWC wallet webhook event names and seeded them into `webhook_types`
+- added a shared SIWC webhook delivery helper that reuses v3 payloads, signatures, delivery attempts, encrypted webhook secrets, and best-effort failure handling
+- emitted wallet/signing webhooks from account generation, signing request creation, policy denial, approval, rejection, cancellation, step-up failure, and signature completion/failure paths
+- updated Admin SIWC policy event choices, API v3/SIWC docs, Passport route tests, and the public SDK handoff note
+
+#### Verification
+
+- `npx -p node@24 node $(which pnpm) --filter @cubid/passport test`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/admin typecheck`
+- `npx -p node@24 node $(which pnpm) --filter @cubid/passport build`
+- `npx -p node@24 node $(which pnpm) --filter @cubid/admin build`
+- `git diff --check`
+
+#### Follow-up
+
+- close `SIWC06` metadata with the implementation commit SHA, then start `SIWC07`

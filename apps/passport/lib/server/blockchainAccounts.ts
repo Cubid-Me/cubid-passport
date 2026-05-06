@@ -12,6 +12,8 @@ import { KeyPair } from "near-api-js"
 import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519"
 import { Keypair } from "@solana/web3.js"
 
+import { deliverSiwcApiV3Webhook } from "./apiV3Webhooks"
+
 export const BLOCKCHAIN_PRIVATE_KEY_ALGORITHM =
   "aes-256-gcm-envelope" as const
 export const BLOCKCHAIN_PRIVATE_KEY_ID =
@@ -353,6 +355,22 @@ export async function createGeneratedBlockchainAccount(input: {
       outcome: "success",
       request_id: input.requestId,
       route: "v3.accounts.generate",
+    })
+
+    await deliverSiwcApiV3Webhook({
+      dappId: input.dappId,
+      dappUserUuid: input.dappUserUuid,
+      eventKey: userAccountId,
+      eventType: "wallet.created",
+      requestId: input.requestId,
+      supabase: input.supabase,
+      data: {
+        accountId: userAccountId,
+        chain: chainKey,
+        custodyStatus: String(userAccount.custody_status),
+        dappUserAccountId: String(link.id),
+        publicAddress: String(userAccount.public_address),
+      },
     })
 
     return {

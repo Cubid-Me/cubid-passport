@@ -373,6 +373,21 @@ deliveries use canonical v3 event names:
 - `score_increase` -> `score.increased`
 - `score_decrease` -> `score.decreased`
 
+SIWC custody and signing events are first-class v3 event names:
+
+- `wallet.created`
+- `wallet.signing_request.created`
+- `wallet.policy.denied`
+- `wallet.signing_request.approved`
+- `wallet.signing_request.rejected`
+- `wallet.signing_request.cancelled`
+- `wallet.signing_request.step_up_failed`
+- `wallet.signature.completed`
+- `wallet.signature.failed`
+
+`wallet.transaction.submitted` and `wallet.transaction.failed` remain deferred
+until transaction signing exists.
+
 Delivered payloads use this shape:
 
 ```json
@@ -390,6 +405,14 @@ Delivered payloads use this shape:
 }
 ```
 
+SIWC events use the same envelope. Their `data` object may include account id,
+chain, public address, dapp-user account id, signing request id, request type,
+status, policy version, risk summary, payload hash, and safe result metadata
+such as signature algorithm and public address. SIWC webhook payloads never
+include raw signing payloads, signatures, private keys, encrypted key material,
+Vault wrapping keys, human subject keys, raw Cubid user ids, Firebase uid, or
+webhook signing secrets.
+
 Delivery requests include replay-protection headers:
 
 - `X-Cubid-Event-Id`: stable event id for the dapp, event type, dapp user, and
@@ -406,6 +429,13 @@ include raw Cubid user ids, human subject keys, raw stamp rows, signing secrets,
 or private custody material. Delivery attempts record event id, request body,
 redacted request headers, signature version, status, response code/body, failure
 category, and attempt number in `webhook_event_deliveries`.
+
+SIWC webhook delivery is additionally gated by
+`siwc_signing_policies.webhook_event_subscriptions` and the app's active
+`dapp_webhook_subscriptions` row for the canonical event name. Delivery is
+best-effort for account and signing APIs: failed dapp endpoints are recorded in
+`webhook_event_deliveries`, but they do not roll back generated accounts,
+approvals, rejections, cancellations, or completed signatures.
 
 ## SDK Coordination
 
