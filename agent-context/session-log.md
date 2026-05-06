@@ -4683,3 +4683,33 @@ Close the completed SIWC Admin policy-control todo and immediately start the nex
 #### Follow-up
 
 - implement `SIWC03` by adding Passport user-facing visibility for app-scoped custody accounts without exposing private or encrypted custody material
+
+### session: v164
+
+- timestamp: 2026-05-06T08:30:48Z
+- agent: **OpenAI Codex**
+- branch: **codex/siwc-roadmap-cleanup**
+- head: **`4203c6c`**
+- session name: **Implement SIWC03 Passport account visibility**
+
+#### Objective
+
+Add Passport user-facing visibility for app-scoped custody accounts without exposing private or encrypted custody material.
+
+#### Actions Taken
+
+- added an authenticated Passport SIWC account visibility helper and `POST /api/siwc/accounts/list`
+- added a Profile `App-scoped accounts` card showing app, chain, public address, custody/signing policy status, and timestamps
+- extended Passport tests and mocks for user-owned account visibility, policy metadata, empty state, auth failure, and secret redaction
+- documented the SIWC03 visibility contract in `docs/engineering/siwc-v3-signing-architecture.md`
+
+#### Verification
+
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm --filter @cubid/passport test`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm --filter @cubid/passport typecheck`
+- `npx -y -p node@24 -p pnpm@10.33.0 pnpm --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- close `SIWC03` metadata with the implementation commit SHA, then immediately start `SIWC04`

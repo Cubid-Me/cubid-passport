@@ -9,6 +9,7 @@ import actorProfileUpsertHandler from "../pages/api/actors/profile/upsert"
 import appDisclosureGrantListHandler from "../pages/api/disclosures/app-grants/list"
 import appDisclosureGrantRevokeHandler from "../pages/api/disclosures/app-grants/revoke"
 import consentListHandler from "../pages/api/oidc/consents/list"
+import siwcAccountListHandler from "../pages/api/siwc/accounts/list"
 import supabaseSelectHandler from "../pages/api/supabase/select"
 import sendOtpHandler from "../pages/api/twillio/send-otp"
 import sendEmailOtpHandler from "../pages/api/v2/email/send_otp"
@@ -221,6 +222,188 @@ test("Passport app disclosure grants list and revoke Allow Page grants", async (
     ),
     true
   )
+})
+
+test("Passport SIWC account list requires Firebase bearer auth", async () => {
+  const supabase = new MockPassportSupabase()
+  setPassportSupabaseForTests(supabase as never)
+
+  const req = createApiRequest({
+    body: {},
+    headers: {
+      origin: "https://passport.cubid.me",
+      "x-request-id": "passport_siwc_missing_auth",
+    },
+    url: "/api/siwc/accounts/list",
+  })
+  const res = createApiResponse()
+
+  await siwcAccountListHandler(req, res)
+
+  assert.equal(res.statusCode, 401)
+  assert.equal(res.headers["x-request-id"], "passport_siwc_missing_auth")
+  assert.deepEqual(res.body, {
+    error: {
+      code: "unauthorized",
+      message: "Missing Firebase bearer token.",
+      requestId: "passport_siwc_missing_auth",
+    },
+  })
+})
+
+test("Passport SIWC account list returns public app-scoped account metadata only", async () => {
+  const supabase = new MockPassportSupabase()
+  setPassportSupabaseForTests(supabase as never)
+  addFirebaseUserAuth()
+  supabase.setUser({ email: "person@example.com", id: 1234 })
+  supabase.setDapp({ appname: "Wallet App", id: 42 })
+  supabase.setDapp({ appname: "Other App", id: 99 })
+  supabase.userAccounts.push(
+    {
+      account_label: "Primary EVM",
+      chain_key: "evm",
+      created_at: "2026-05-01T00:00:00.000Z",
+      custody_status: "cubid_custodied",
+      id: "account_visible",
+      private_key_ciphertext: "must_not_surface",
+      public_address: "0xabc",
+      status: "active",
+      updated_at: "2026-05-02T00:00:00.000Z",
+      user_id: 1234,
+      wrapped_data_key: "must_not_surface",
+    },
+    {
+      chain_key: "solana",
+      created_at: "2026-05-01T00:00:00.000Z",
+      custody_status: "cubid_custodied",
+      id: "account_other_user",
+      public_address: "other",
+      status: "active",
+      updated_at: "2026-05-02T00:00:00.000Z",
+      user_id: 9999,
+    },
+    {
+      chain_key: "sui",
+      created_at: "2026-05-01T00:00:00.000Z",
+      custody_status: "cubid_custodied",
+      id: "account_revoked",
+      public_address: "0xdead",
+      status: "revoked",
+      updated_at: "2026-05-02T00:00:00.000Z",
+      user_id: 1234,
+    }
+  )
+  supabase.dappUserAccounts.push(
+    {
+      created_at: "2026-05-01T00:00:00.000Z",
+      dapp_id: 42,
+      dapp_user_uuid: "00000000-0000-4000-8000-000000000061",
+      id: "link_visible",
+      status: "active",
+      updated_at: "2026-05-02T00:00:00.000Z",
+      user_account_id: "account_visible",
+    },
+    {
+      created_at: "2026-05-01T00:00:00.000Z",
+      dapp_id: 99,
+      dapp_user_uuid: "00000000-0000-4000-8000-000000000062",
+      id: "link_other_user",
+      status: "active",
+      updated_at: "2026-05-02T00:00:00.000Z",
+      user_account_id: "account_other_user",
+    },
+    {
+      created_at: "2026-05-01T00:00:00.000Z",
+      dapp_id: 42,
+      dapp_user_uuid: "00000000-0000-4000-8000-000000000063",
+      id: "link_revoked",
+      status: "active",
+      updated_at: "2026-05-02T00:00:00.000Z",
+      user_account_id: "account_revoked",
+    },
+    {
+      created_at: "2026-05-01T00:00:00.000Z",
+      dapp_id: 42,
+      dapp_user_uuid: "00000000-0000-4000-8000-000000000064",
+      id: "link_archived",
+      status: "archived",
+      updated_at: "2026-05-02T00:00:00.000Z",
+      user_account_id: "account_visible",
+    }
+  )
+  supabase.setSiwcSigningPolicy({
+    custody_enabled: true,
+    dapp_id: 42,
+    policy_version: 3,
+    required_acr: "urn:cubid:acr:passkey",
+    sandbox_mode: true,
+    signing_enabled: true,
+    status: "enabled",
+  })
+
+  const req = createApiRequest({
+    body: {},
+    headers: {
+      authorization: "Bearer firebase-test-token",
+      origin: "https://passport.cubid.me",
+      "x-request-id": "passport_siwc_accounts",
+    },
+    url: "/api/siwc/accounts/list",
+  })
+  const res = createApiResponse()
+
+  await siwcAccountListHandler(req, res)
+
+  assert.equal(res.statusCode, 200)
+  assert.equal(res.headers["x-request-id"], "passport_siwc_accounts")
+  const accounts = (res.body as DataResponse<Array<Record<string, unknown>>>).data
+  assert.equal(accounts.length, 1)
+  assert.deepEqual(accounts[0], {
+    accountId: "account_visible",
+    accountStatus: "active",
+    chain: "evm",
+    createdAt: "2026-05-01T00:00:00.000Z",
+    custodyEnabled: true,
+    custodyStatus: "cubid_custodied",
+    dappId: "42",
+    dappName: "Wallet App",
+    dappUserAccountId: "link_visible",
+    dappUserUuid: "00000000-0000-4000-8000-000000000061",
+    label: "Primary EVM",
+    linkStatus: "active",
+    policyStatus: "enabled",
+    policyVersion: 3,
+    publicAddress: "0xabc",
+    requiredAcr: "urn:cubid:acr:passkey",
+    sandboxMode: true,
+    signingEnabled: true,
+    updatedAt: "2026-05-02T00:00:00.000Z",
+  })
+  assert.equal(JSON.stringify(res.body).includes("private"), false)
+  assert.equal(JSON.stringify(res.body).includes("ciphertext"), false)
+  assert.equal(JSON.stringify(res.body).includes("wrapped"), false)
+  assert.equal(JSON.stringify(res.body).includes("user_id"), false)
+})
+
+test("Passport SIWC account list returns an empty list for signed-in users without Cubid user ids", async () => {
+  const supabase = new MockPassportSupabase()
+  setPassportSupabaseForTests(supabase as never)
+  addFirebaseUserAuth()
+
+  const req = createApiRequest({
+    body: {},
+    headers: {
+      authorization: "Bearer firebase-test-token",
+      origin: "https://passport.cubid.me",
+    },
+    url: "/api/siwc/accounts/list",
+  })
+  const res = createApiResponse()
+
+  await siwcAccountListHandler(req, res)
+
+  assert.equal(res.statusCode, 200)
+  assert.deepEqual((res.body as DataResponse<unknown[]>).data, [])
 })
 
 test("Passport actor profile get defaults signed-in users to human", async () => {

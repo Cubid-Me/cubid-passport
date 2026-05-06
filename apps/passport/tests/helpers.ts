@@ -47,6 +47,7 @@ export class MockPassportSupabase {
   readonly lastUsedUpdates: number[] = []
   readonly privateKeys: Array<Record<string, unknown>> = []
   readonly selectiveDisclosureGrants: Array<Record<string, unknown>> = []
+  readonly siwcSigningPolicies: Array<Record<string, unknown>> = []
   readonly stampPermissions: Array<Record<string, unknown>> = []
   readonly stamps: Array<Record<string, unknown>> = []
   readonly userAccounts: Array<Record<string, unknown>> = []
@@ -152,6 +153,10 @@ export class MockPassportSupabase {
       id: row.id ?? this.nextEmailOtpId++,
     })
     this.emailOtps.set(row.email, rows)
+  }
+
+  setSiwcSigningPolicy(row: Record<string, unknown>) {
+    this.siwcSigningPolicies.push(row)
   }
 
   setWebhookSubscription(row: Record<string, unknown>) {
@@ -1030,11 +1035,11 @@ export class MockPassportSupabase {
         },
         select: () => {
           const filters: Record<string, unknown> = {}
-          let idFilter: string[] | null = null
+          const inFilters: Record<string, string[]> = {}
           const resolve = () => {
             let rows = [...this.userAccounts]
-            if (idFilter) {
-              rows = rows.filter((row) => idFilter?.includes(String(row.id)))
+            for (const [column, values] of Object.entries(inFilters)) {
+              rows = rows.filter((row) => values.includes(String(row[column])))
             }
             for (const [column, value] of Object.entries(filters)) {
               rows = rows.filter((row) => String(row[column]) === String(value))
@@ -1046,8 +1051,8 @@ export class MockPassportSupabase {
               filters[column] = value
               return query
             },
-            in: (_column: string, values: string[]) => {
-              idFilter = values
+            in: (column: string, values: unknown[]) => {
+              inFilters[column] = values.map(String)
               return query
             },
             then: (
@@ -1126,17 +1131,54 @@ export class MockPassportSupabase {
         },
         select: () => {
           const filters: Record<string, unknown> = {}
+          const inFilters: Record<string, string[]> = {}
           const resolve = () => {
             const rows = this.dappUserAccounts.filter((row) => {
-              return Object.entries(filters).every(
+              const matchesEq = Object.entries(filters).every(
                 ([column, value]) => String(row[column]) === String(value)
               )
+              const matchesIn = Object.entries(inFilters).every(
+                ([column, values]) => values.includes(String(row[column]))
+              )
+              return matchesEq && matchesIn
             })
             return { data: rows, error: null }
           }
           const query = {
             eq: (column: string, value: unknown) => {
               filters[column] = value
+              return query
+            },
+            in: (column: string, values: unknown[]) => {
+              inFilters[column] = values.map(String)
+              return query
+            },
+            then: (
+              resolveThen: (value: {
+                data: Record<string, unknown>[]
+                error: null
+              }) => unknown
+            ) => Promise.resolve(resolve()).then(resolveThen),
+          }
+          return query
+        },
+      }
+    }
+
+    if (table === "siwc_signing_policies") {
+      return {
+        select: () => {
+          const inFilters: Record<string, string[]> = {}
+          const resolve = () => {
+            let rows = [...this.siwcSigningPolicies]
+            for (const [column, values] of Object.entries(inFilters)) {
+              rows = rows.filter((row) => values.includes(String(row[column])))
+            }
+            return { data: rows, error: null }
+          }
+          const query = {
+            in: (column: string, values: unknown[]) => {
+              inFilters[column] = values.map(String)
               return query
             },
             then: (

@@ -79,6 +79,28 @@ type AppDisclosureGrantSummary = {
   source: "allow_page"
 }
 
+type SiwcAccountSummary = {
+  accountId: string
+  accountStatus: string
+  chain: string
+  createdAt: string
+  custodyEnabled: boolean
+  custodyStatus: string
+  dappId: string
+  dappName: string
+  dappUserAccountId: string
+  dappUserUuid: string
+  label: string | null
+  linkStatus: string
+  policyStatus: string
+  policyVersion: number
+  publicAddress: string
+  requiredAcr: "urn:cubid:acr:passkey" | null
+  sandboxMode: boolean
+  signingEnabled: boolean
+  updatedAt: string
+}
+
 type PasskeyDeviceSummary = {
   authenticatorAttachment: string | null
   backupEligible: boolean
@@ -212,6 +234,8 @@ export const Profile = () => {
     useState(false)
   const [revokingAppDisclosureGrantId, setRevokingAppDisclosureGrantId] =
     useState<string | null>(null)
+  const [siwcAccounts, setSiwcAccounts] = useState<SiwcAccountSummary[]>([])
+  const [siwcAccountsLoading, setSiwcAccountsLoading] = useState(false)
   const [actorProfile, setActorProfile] = useState<ActorProfileSummary | null>(
     null
   )
@@ -656,6 +680,33 @@ export const Profile = () => {
     },
     [fetchAppDisclosureGrants, getOidcAuthHeaders]
   )
+
+  const fetchSiwcAccounts = useCallback(async () => {
+    if (!email && !phone) {
+      setSiwcAccounts([])
+      return
+    }
+
+    setSiwcAccountsLoading(true)
+    try {
+      const headers = await getOidcAuthHeaders()
+      const { data } = await axios.post<{ data: SiwcAccountSummary[] }>(
+        "/api/siwc/accounts/list",
+        {},
+        { headers }
+      )
+      setSiwcAccounts(data.data ?? [])
+    } catch (error) {
+      console.error(error)
+      toast.error("Failed to load app-scoped accounts")
+    } finally {
+      setSiwcAccountsLoading(false)
+    }
+  }, [email, phone, getOidcAuthHeaders])
+
+  useEffect(() => {
+    fetchSiwcAccounts()
+  }, [fetchSiwcAccounts])
 
   const selectedActorPolicy = actorValidationPolicies[actorType]
 
@@ -1243,6 +1294,118 @@ export const Profile = () => {
                   </div>
                 )
               })}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="md:col-span-2">
+          <CardHeader>
+            <CardTitle>App-scoped accounts</CardTitle>
+            <CardDescription>
+              View Cubid-generated accounts that belong to one app at a time.
+              These are not universal wallets, and Cubid never shows private
+              keys or encrypted custody material here.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="mb-4 flex justify-end">
+              <Button
+                disabled={siwcAccountsLoading}
+                onClick={fetchSiwcAccounts}
+                variant="outline"
+              >
+                {siwcAccountsLoading ? "Refreshing..." : "Refresh"}
+              </Button>
+            </div>
+            {siwcAccountsLoading && siwcAccounts.length === 0 && (
+              <p className="text-sm text-muted-foreground">
+                Loading app-scoped accounts...
+              </p>
+            )}
+            {!siwcAccountsLoading && siwcAccounts.length === 0 && (
+              <p className="text-sm text-muted-foreground">
+                No app-scoped accounts found.
+              </p>
+            )}
+            <div className="space-y-3">
+              {siwcAccounts.map((account) => (
+                <div
+                  key={account.dappUserAccountId}
+                  className="rounded-lg border bg-background p-4"
+                >
+                  <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="font-semibold">{account.dappName}</h3>
+                        <span className="rounded-full bg-muted px-2 py-1 text-xs uppercase">
+                          {account.chain}
+                        </span>
+                        <span
+                          className={`rounded-full px-2 py-1 text-xs ${
+                            account.signingEnabled &&
+                            account.policyStatus === "enabled"
+                              ? "bg-emerald-100 text-emerald-700"
+                              : "bg-amber-100 text-amber-700"
+                          }`}
+                        >
+                          {account.signingEnabled &&
+                          account.policyStatus === "enabled"
+                            ? "Signing policy enabled"
+                            : "Signing not live"}
+                        </span>
+                      </div>
+                      <p className="mt-1 break-all text-xs text-muted-foreground">
+                        {account.publicAddress}
+                      </p>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Policy v{account.policyVersion} · {account.policyStatus}
+                    </div>
+                  </div>
+
+                  <div className="mt-4 grid gap-3 text-sm md:grid-cols-2">
+                    <p>
+                      <span className="text-muted-foreground">Label:</span>{" "}
+                      {account.label ?? "No label"}
+                    </p>
+                    <p>
+                      <span className="text-muted-foreground">Custody:</span>{" "}
+                      {account.custodyStatus}
+                    </p>
+                    <p>
+                      <span className="text-muted-foreground">Account:</span>{" "}
+                      {account.accountStatus}
+                    </p>
+                    <p>
+                      <span className="text-muted-foreground">App link:</span>{" "}
+                      {account.linkStatus}
+                    </p>
+                    <p>
+                      <span className="text-muted-foreground">Signing:</span>{" "}
+                      {account.signingEnabled
+                        ? `requires ${account.requiredAcr ?? "configured auth"}`
+                        : "disabled"}
+                    </p>
+                    <p>
+                      <span className="text-muted-foreground">Sandbox:</span>{" "}
+                      {account.sandboxMode ? "yes" : "no"}
+                    </p>
+                    <p>
+                      <span className="text-muted-foreground">Created:</span>{" "}
+                      {dayjs(account.createdAt).format("YYYY-MM-DD HH:mm")}
+                    </p>
+                    <p>
+                      <span className="text-muted-foreground">Updated:</span>{" "}
+                      {dayjs(account.updatedAt).format("YYYY-MM-DD HH:mm")}
+                    </p>
+                  </div>
+
+                  <p className="mt-4 text-xs text-muted-foreground">
+                    Signing requests are not available yet. Future requests
+                    must use Passport approval and the app policy shown above.
+                  </p>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>

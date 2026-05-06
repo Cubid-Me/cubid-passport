@@ -267,12 +267,33 @@ separate delivery system. Candidate events:
 
 Payloads must be signed, replay-safe, disclosure-filtered, and app-scoped.
 
+## Passport Account Visibility
+
+SIWC03 adds user-facing visibility for generated app-scoped custody accounts.
+Passport exposes `POST /api/siwc/accounts/list` as a Firebase-authenticated user
+route and displays the result in Profile.
+
+The route returns public account metadata only:
+
+- app name and dapp id
+- dapp user UUID and dapp-user-account link id
+- account id, chain, public address, label, account status, custody status, and
+  timestamps
+- current SIWC policy visibility fields: policy status/version, custody enabled,
+  signing enabled, sandbox mode, and required ACR
+
+The route must not expose private keys, ciphertext, wrapped data keys, IVs,
+auth tags, Vault material, human subject keys, raw internal user ids, or
+service-role-only fields. Missing SIWC policy rows are shown fail-closed:
+signing disabled, custody disabled, sandbox mode enabled, and policy version
+`0`. This is visibility only; users cannot sign, export, transfer, revoke, or
+share accounts through SIWC03.
+
 ## Deferred
 
 Deferred until later SIWC slices:
 
 - Admin policy UI and persistence
-- Passport user-facing account visibility
 - implementation of signing request tables and routes
 - transaction simulation and risk scoring
 - smart accounts, session keys, paymasters, and gas sponsorship
