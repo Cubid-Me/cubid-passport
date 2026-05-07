@@ -8,9 +8,13 @@ shell mutation.
 
 - Preview/dev project: `CubidDev`
 - Project ref: `cggycnbvljcdptzyjpju`
-- Current repo status as of 2026-05-06: local migrations exist through
-  `20260506093000`, while `CubidDev` reports only `20260331020028` applied.
-  A local dry-run lists 25 pending migrations.
+- Current repo status as of 2026-05-07: local and remote migrations are aligned
+  through `20260506093000` for `CubidDev`.
+- Hosted workflow evidence:
+  - PR/check workflow succeeded for PR #160.
+  - Manual apply workflow succeeded on 2026-05-06T23:50Z.
+  - Manual follow-up check workflow succeeded on 2026-05-06T23:50Z and skipped
+    apply because no pending migrations remained.
 
 There is no `supabase/functions` directory in this repo, so Edge Function
 deployment is currently not applicable.
@@ -47,7 +51,7 @@ Use `.github/workflows/supabase-deploy.yml`.
 The workflow logs backup posture and migration status before applying pending
 migrations.
 
-## Operator Checklist Before Apply
+## Operator Checklist Before Future Applies
 
 1. Confirm the workflow environment has `SUPABASE_ACCESS_TOKEN`.
 2. Confirm the workflow environment has `SUPABASE_DB_PASSWORD`.
@@ -59,3 +63,13 @@ migrations.
    understood.
 8. After apply, run app smoke checks for Passport, Admin, OIDC, API v3, and
    SIWC surfaces before enabling broader usage.
+
+## Current Hosted Status
+
+`CubidDev` is schema-current for the repo migration set through
+`20260506093000`. There are still no Supabase Edge Functions owned by this
+repo, so function deployment remains not applicable.
+
+This does not mean the whole platform is production-ready. Runtime and Vault
+secrets, TCOIN or other relying-party client seed data, and Passport/Admin/API
+v3/SIWC end-to-end smoke checks remain separate launch-readiness gates.

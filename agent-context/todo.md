@@ -821,19 +821,24 @@ Create the operator runbook for SIWC custody and signing before exposing signing
 
 ### F01. Add protected Supabase dev/preview migration deployment
 
-- Status: Blocked
+- Status: Completed
 - Timestamp started: 2026-05-06T22:52:17Z
-- Timestamp completed: TBD
+- Timestamp completed: 2026-05-06T23:50:56Z
 - Feature branch: codex/repo-cleanup-delivery-status
-- Head: TBD
-- Session-log reference(s): session: v181
+- Head: d98028f
+- Session-log reference(s): session: v181, session: v182, session: v183, session: v184
 
-Add the missing hosted Supabase delivery path for the linked `CubidDev` preview/dev project. The repo currently contains migrations through `20260506093000`, but `supabase migration list --linked` shows only the baseline `20260331020028` migration applied remotely. Create a GitHub workflow that validates migration drift on pull requests and provides a manual, protected apply path for `dev` after approval, using repo or environment secrets rather than local shell mutation. The workflow should identify the target project ref, run a dry-run or remote migration status check before applying, avoid deploying functions when no `supabase/functions` directory exists, and produce logs operators can use for smoke verification. This todo does not itself apply migrations; it creates the safe delivery mechanism.
+Add the missing hosted Supabase delivery path for the linked `CubidDev` preview/dev project, then use that protected path to bring the dev database current once the required GitHub Environment secrets, reviewer protection, and backup posture are confirmed. The workflow should validate migration drift on pull requests and provide manual `check` and `apply` dispatch modes for `dev` using repo or environment secrets rather than ad hoc local shell mutation. It should identify the target project ref, run remote migration status checks before applying, avoid deploying functions when no `supabase/functions` directory exists, and produce logs operators can use for smoke verification. This todo is complete only when the mechanism exists, the protected environment is configured, and `CubidDev` migration status is confirmed current.
 
-Implementation status: the workflow and runbook are in place, and `CubidDev`
-backup posture was checked locally with completed physical backups visible
-through 2026-05-06. The workflow requires both `SUPABASE_ACCESS_TOKEN` and
-`SUPABASE_DB_PASSWORD` in the selected GitHub Environment, an explicit
-`CUBID_SUPABASE_PROJECT_REF` environment variable, plus reviewer protection
-before apply. Configure those settings, then dispatch `Supabase Deploy` in
-`check` mode before `apply`.
+Implementation status: the workflow and runbook are in place, GitHub
+Environment secrets and reviewer protection were configured, and the protected
+workflow was run against `CubidDev`. Manual `check` and `apply` dispatches
+succeeded on 2026-05-06, and a follow-up `check` confirmed no pending
+migrations remained. `supabase migration list --linked` now shows local and
+remote aligned through `20260506093000`. This repo still has no
+`supabase/functions` directory, so function deployment remains not applicable.
+
+Remaining hosted-readiness work is no longer F01 implementation. Treat runtime
+and Vault secret verification, TCOIN/client seed data, OIDC full PKCE smoke,
+Passport/Admin/API v3/SIWC smoke checks, and production environment delivery as
+separate launch-readiness follow-ups.

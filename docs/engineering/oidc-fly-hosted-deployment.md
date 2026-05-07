@@ -1,6 +1,6 @@
 # OIDC Fly Hosted Deployment
 
-Status: staging adapter/runbook for `services/oidc`
+Status: staging deployed on Fly for `services/oidc`
 
 This runbook deploys the standalone OIDC issuer service to Fly.io for the staging issuer `https://staging-id.cubid.me`. It is intentionally separate from the Passport/Admin Vercel deployments because `services/oidc` is a long-running Node HTTP service, not a Next.js app.
 
@@ -14,6 +14,14 @@ This runbook deploys the standalone OIDC issuer service to Fly.io for the stagin
 - Fly config: `services/oidc/fly.staging.toml`
 - Container build: `services/oidc/Dockerfile`
 - Runtime command: `pnpm --filter @cubid/oidc start`
+
+Current hosted status as of 2026-05-07:
+
+- `staging-id.cubid.me` resolves to the Fly app.
+- Fly certificate status is issued and active.
+- Discovery and JWKS smoke checks pass on `https://staging-id.cubid.me`.
+- Empty `/token` and `/userinfo` requests return expected OIDC-shaped errors
+  with `X-Request-Id`.
 
 Use the repository root as the Fly deploy context so workspace packages such as `@cubid/auth`, `@cubid/config`, `@cubid/claims`, and `@cubid/identity` are available during install and runtime.
 

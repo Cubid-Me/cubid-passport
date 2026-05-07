@@ -1,3 +1,39 @@
+### session: v184
+
+- timestamp: 2026-05-07T11:30:11Z
+- agent: **OpenAI Codex**
+- branch: **codex/hosted-readiness-metadata**
+- head: **`eb96754`**
+- session name: **Reconcile hosted readiness metadata**
+
+#### Objective
+
+Update stale hosted-readiness metadata now that CubidDev migrations are applied
+and the OIDC staging issuer is live on Fly.
+
+#### Actions Taken
+
+- marked `F01` completed in `agent-context/todo.md`
+- updated `agent-context/repo-status.md` so Supabase migrations, the protected
+  deployment workflow, and OIDC staging reflect current hosted status
+- updated the Supabase hosted-delivery runbook to record the successful apply
+  and follow-up check state
+- updated the OIDC Fly deployment runbook to state that `staging-id.cubid.me`
+  is deployed, certificated, and smoke-checked
+
+#### Verification
+
+- confirmed `supabase migration list --linked` reports local and remote
+  migrations aligned through `20260506093000`
+- confirmed recent `Supabase Deploy` workflow dispatches completed
+  successfully, including apply and follow-up check
+- planned docs-only validation with `git diff --check`
+
+#### Follow-up
+
+- run full Passport/Admin/API v3/SIWC/TCOIN OIDC smoke checks before claiming
+  broader staging or production readiness
+
 ### session: v140
 
 - timestamp: 2026-05-07T11:16:13Z
