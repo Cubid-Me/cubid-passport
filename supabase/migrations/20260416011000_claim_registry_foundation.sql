@@ -1,0 +1,355 @@
+create table if not exists public.oidc_claim_registry (
+  claim_id text primary key,
+  claim_name text not null unique,
+  display_name text not null,
+  source text not null default 'admin' check (source in ('seed', 'admin')),
+  status text not null default 'active' check (status in ('active', 'archived')),
+  classification text not null check (classification in ('identity', 'hashed', 'boolean', 'score', 'json')),
+  description text not null,
+  scopes jsonb not null default '[]'::jsonb,
+  token_eligible boolean not null default false,
+  userinfo_eligible boolean not null default false,
+  requires_explicit_consent boolean not null default true,
+  availability_mode text not null default 'global' check (availability_mode in ('global', 'client_bound')),
+  computation_method text not null check (
+    computation_method in (
+      'seeded',
+      'derived_score',
+      'derived_verification',
+      'derived_stamps',
+      'custom_json',
+      'custom_boolean',
+      'custom_identity'
+    )
+  ),
+  metadata jsonb not null default '{}'::jsonb,
+  created_by_admin_email text,
+  updated_by_admin_email text,
+  archived_at timestamptz,
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now())
+);
+
+create index if not exists oidc_claim_registry_status_idx
+  on public.oidc_claim_registry (status);
+
+create index if not exists oidc_claim_registry_availability_mode_idx
+  on public.oidc_claim_registry (availability_mode);
+
+create table if not exists public.oidc_identity_depth_policies (
+  policy_id text primary key,
+  policy_name text not null unique,
+  description text not null,
+  status text not null default 'active' check (status in ('active', 'archived')),
+  target_claims jsonb not null default '[]'::jsonb,
+  target_scopes jsonb not null default '[]'::jsonb,
+  minimum_score_band text,
+  required_verification_claims jsonb not null default '[]'::jsonb,
+  required_stamp_keys jsonb not null default '[]'::jsonb,
+  policy_version integer not null default 1,
+  metadata jsonb not null default '{}'::jsonb,
+  created_by_admin_email text,
+  updated_by_admin_email text,
+  archived_at timestamptz,
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now())
+);
+
+create index if not exists oidc_identity_depth_policies_status_idx
+  on public.oidc_identity_depth_policies (status);
+
+create table if not exists public.oidc_client_claim_policy_bindings (
+  binding_id text primary key,
+  client_id text not null references public.oidc_clients (client_id) on delete cascade,
+  claim_name text not null references public.oidc_claim_registry (claim_name) on delete cascade,
+  policy_id text references public.oidc_identity_depth_policies (policy_id) on delete set null,
+  enabled boolean not null default true,
+  metadata jsonb not null default '{}'::jsonb,
+  created_by_admin_email text,
+  updated_by_admin_email text,
+  archived_at timestamptz,
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now())
+);
+
+create unique index if not exists oidc_client_claim_policy_bindings_client_claim_unique_idx
+  on public.oidc_client_claim_policy_bindings (client_id, claim_name)
+  where archived_at is null;
+
+create index if not exists oidc_client_claim_policy_bindings_policy_id_idx
+  on public.oidc_client_claim_policy_bindings (policy_id);
+
+insert into public.oidc_claim_registry (
+  claim_id,
+  claim_name,
+  display_name,
+  source,
+  status,
+  classification,
+  description,
+  scopes,
+  token_eligible,
+  userinfo_eligible,
+  requires_explicit_consent,
+  availability_mode,
+  computation_method,
+  metadata
+)
+values
+  (
+    'seed:sub',
+    'sub',
+    'Sub',
+    'seed',
+    'active',
+    'identity',
+    'Pairwise Cubid subject identifier.',
+    '["openid"]'::jsonb,
+    true,
+    true,
+    false,
+    'global',
+    'seeded',
+    '{}'::jsonb
+  ),
+  (
+    'seed:name',
+    'name',
+    'Name',
+    'seed',
+    'active',
+    'identity',
+    'Display name shared through the OIDC profile scope.',
+    '["profile"]'::jsonb,
+    true,
+    true,
+    true,
+    'global',
+    'seeded',
+    '{}'::jsonb
+  ),
+  (
+    'seed:preferred_username',
+    'preferred_username',
+    'Preferred Username',
+    'seed',
+    'active',
+    'identity',
+    'Preferred handle or username.',
+    '["profile"]'::jsonb,
+    true,
+    true,
+    true,
+    'global',
+    'seeded',
+    '{}'::jsonb
+  ),
+  (
+    'seed:picture',
+    'picture',
+    'Picture',
+    'seed',
+    'active',
+    'identity',
+    'Profile image URL.',
+    '["profile"]'::jsonb,
+    true,
+    true,
+    true,
+    'global',
+    'seeded',
+    '{}'::jsonb
+  ),
+  (
+    'seed:locale',
+    'locale',
+    'Locale',
+    'seed',
+    'active',
+    'identity',
+    'Preferred locale.',
+    '["profile"]'::jsonb,
+    true,
+    true,
+    true,
+    'global',
+    'seeded',
+    '{}'::jsonb
+  ),
+  (
+    'seed:updated_at',
+    'updated_at',
+    'Updated At',
+    'seed',
+    'active',
+    'identity',
+    'Timestamp for profile updates.',
+    '["profile"]'::jsonb,
+    true,
+    true,
+    true,
+    'global',
+    'seeded',
+    '{}'::jsonb
+  ),
+  (
+    'seed:email',
+    'email',
+    'Email',
+    'seed',
+    'active',
+    'identity',
+    'Verified email address when consented.',
+    '["email"]'::jsonb,
+    true,
+    true,
+    true,
+    'global',
+    'seeded',
+    '{}'::jsonb
+  ),
+  (
+    'seed:email_verified',
+    'email_verified',
+    'Email Verified',
+    'seed',
+    'active',
+    'boolean',
+    'Whether the email address has been verified.',
+    '["email"]'::jsonb,
+    true,
+    true,
+    true,
+    'global',
+    'derived_verification',
+    '{}'::jsonb
+  ),
+  (
+    'seed:cubid_score',
+    'cubid_score',
+    'Cubid Score',
+    'seed',
+    'active',
+    'score',
+    'Derived Cubid score value.',
+    '["cubid:score"]'::jsonb,
+    true,
+    true,
+    true,
+    'global',
+    'derived_score',
+    '{}'::jsonb
+  ),
+  (
+    'seed:cubid_score_band',
+    'cubid_score_band',
+    'Cubid Score Band',
+    'seed',
+    'active',
+    'score',
+    'Derived score band for the current subject.',
+    '["cubid:score"]'::jsonb,
+    true,
+    true,
+    true,
+    'global',
+    'derived_score',
+    '{}'::jsonb
+  ),
+  (
+    'seed:cubid_personhood_level',
+    'cubid_personhood_level',
+    'Cubid Personhood Level',
+    'seed',
+    'active',
+    'score',
+    'Human-readable personhood level derived from the score.',
+    '["cubid:score"]'::jsonb,
+    true,
+    true,
+    true,
+    'global',
+    'derived_score',
+    '{}'::jsonb
+  ),
+  (
+    'seed:cubid_score_updated_at',
+    'cubid_score_updated_at',
+    'Cubid Score Updated At',
+    'seed',
+    'active',
+    'score',
+    'Timestamp for the latest score update.',
+    '["cubid:score"]'::jsonb,
+    true,
+    true,
+    true,
+    'global',
+    'derived_score',
+    '{}'::jsonb
+  ),
+  (
+    'seed:cubid_verifications',
+    'cubid_verifications',
+    'Cubid Verifications',
+    'seed',
+    'active',
+    'json',
+    'Detailed verification outcomes for the current subject.',
+    '["cubid:verification"]'::jsonb,
+    false,
+    true,
+    true,
+    'global',
+    'derived_verification',
+    '{}'::jsonb
+  ),
+  (
+    'seed:cubid_verification_summary',
+    'cubid_verification_summary',
+    'Cubid Verification Summary',
+    'seed',
+    'active',
+    'boolean',
+    'Compressed verification summary flags.',
+    '["cubid:verification"]'::jsonb,
+    true,
+    true,
+    true,
+    'global',
+    'derived_verification',
+    '{}'::jsonb
+  ),
+  (
+    'seed:cubid_stamps',
+    'cubid_stamps',
+    'Cubid Stamps',
+    'seed',
+    'active',
+    'json',
+    'Policy-approved stamp and registry output.',
+    '["cubid:stamps"]'::jsonb,
+    false,
+    true,
+    true,
+    'global',
+    'derived_stamps',
+    '{}'::jsonb
+  ),
+  (
+    'seed:cubid_claims',
+    'cubid_claims',
+    'Cubid Claims',
+    'seed',
+    'active',
+    'json',
+    'Custom Cubid claims resolved for the client.',
+    '["cubid:claims"]'::jsonb,
+    false,
+    true,
+    true,
+    'global',
+    'custom_json',
+    '{}'::jsonb
+  )
+on conflict (claim_id) do nothing;

@@ -1,0 +1,30 @@
+{
+  "name": "@cubid/evm",
+  "version": "0.1.0",
+  "description": "EVM wallet and stamp helper contracts for Cubid integrations.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "README.md"],
+  "sideEffects": false,
+  "publishConfig": { "access": "public" },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsx": "^4.20.6",
+    "typescript": "5.2.2"
+  },
+  "scripts": {
+    "build": "pnpm exec tsc -p tsconfig.build.json",
+    "lint": "pnpm exec tsc --noEmit -p tsconfig.json",
+    "typecheck": "pnpm exec tsc --noEmit -p tsconfig.json",
+    "test": "pnpm exec tsx --test src/*.test.ts",
+    "format": "echo \"No format changes required for @cubid/evm\"",
+    "format:write": "echo \"No format changes required for @cubid/evm\""
+  }
+}

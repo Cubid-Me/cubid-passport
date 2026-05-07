@@ -1,0 +1,134 @@
+import React, { useCallback, useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import axios from "axios"
+
+import { encode_data } from "@/lib/encode_data"
+import useAuth from "@/hooks/useAuth"
+import { useCreatedByAppId } from "@/hooks/useCreatedByApp"
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
+import { wallet } from "@/lib/wallet"
+
+import { stampsWithId } from "."
+import { Button } from "../ui/button"
+import { insertStamp } from "@/lib/stampInsertion"
+
+const redirectUri = process.env.NEXT_PUBLIC_INSTAGRAM_REDIRECT_URI ?? ""
+const instagramClientId = process.env.NEXT_PUBLIC_INSTAGRAM_CLIENT_ID ?? ""
+
+const InstagramAuth = ({ allowPage }: any) => {
+  const isConfigured = Boolean(instagramClientId && redirectUri)
+
+  const handleLogin = () => {
+    if (!isConfigured) {
+      return
+    }
+
+    if (allowPage) {
+      localStorage.setItem(
+        "allow_url",
+        window.location.href.replace(`${window.location.origin}/allow?`, "")
+      )
+    }
+    window.location.href = `https://api.instagram.com/oauth/authorize?client_id=${instagramClientId}&redirect_uri=${redirectUri}&scope=user_profile&response_type=code`
+  }
+
+  return (
+    <div className="py-2">
+      <Button variant="default" onClick={handleLogin} disabled={!isConfigured}>
+        Login with Instagram
+      </Button>
+      {!isConfigured && (
+        <p className="mt-2 text-sm text-muted-foreground">
+          Instagram login is not configured for this environment.
+        </p>
+      )}
+    </div>
+  )
+}
+
+export const InstagramConnect = ({
+  open,
+  onClose,
+  onOpen,
+  fetchStamps,
+  appId,
+  allowPage,
+}: {
+  open: boolean
+  onClose: () => void
+  onOpen: () => void
+  fetchStamps: () => void
+  appId?: any
+  allowPage?: boolean
+}) => {
+  const searchParams = useSearchParams()
+  const authData = useAuth({ appId })
+  const router = useRouter()
+  const { getIdForApp } = useCreatedByAppId()
+
+  const fetchData = useCallback(
+    async (code_fixes: string) => {
+      const { email } = await authData.getUser();
+      if (typeof email === "string") {
+        const {
+          data: { user_id, data },
+        } = await axios.post("/api/insta-data-fetch", {
+          code: code_fixes,
+          redirectUri: redirectUri,
+          email: email,
+        })
+        const allData: any = data
+        if (user_id) {
+          const dbUser = await authData.getUser()
+          await insertStamp({
+            stamp_type: 'instagram',
+            user_data: { user_id: dbUser?.id, uuid: "" },
+            stampData: {
+              identity: allData.username,
+              uniquevalue: allData.id,
+            },
+            app_id: await getIdForApp()
+          })
+
+          fetchStamps()
+        }
+      }
+    },
+    [authData, fetchStamps, getIdForApp]
+  )
+  useEffect(() => {
+    ; (async () => {
+      const code = searchParams?.get("code")
+
+      if (code) {
+        await fetchData(code)
+      }
+    })()
+  }, [onOpen, searchParams, fetchData])
+  return (
+    <>
+      <Sheet
+        open={open}
+        onOpenChange={(value) => {
+          if (value === false) {
+            onClose()
+          }
+        }}
+      >
+        <SheetContent>
+          <SheetHeader>
+            <SheetTitle>Connect Instagram</SheetTitle>
+            <div>
+              <InstagramAuth allowPage={allowPage as any} />
+            </div>
+          </SheetHeader>
+        </SheetContent>
+      </Sheet>
+    </>
+  )
+}
