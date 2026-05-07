@@ -10,6 +10,7 @@ This runbook deploys the standalone OIDC issuer service to Fly.io for the stagin
 - Region: `yyz`
 - Service port: `OIDC_PORT=8080`
 - Public issuer: `https://staging-id.cubid.me`
+- Passkey RP ID: `cubid.me`, so staging can support both `passport.cubid.me` and `passport-preview.cubid.me` browser origins.
 - Fly config: `services/oidc/fly.staging.toml`
 - Container build: `services/oidc/Dockerfile`
 - Runtime command: `pnpm --filter @cubid/oidc start`

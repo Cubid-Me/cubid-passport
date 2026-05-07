@@ -1,3 +1,28 @@
+### session: v139
+
+- timestamp: 2026-05-07T11:13:16Z
+- agent: **OpenAI Codex**
+- branch: **codex/oidc-fly-staging-deploy**
+- head: **`732ab7d`**
+- session name: **Address OIDC Fly passkey RP review**
+
+#### Objective
+
+Fix the staging Fly passkey configuration so both production and preview Passport origins can use hosted OIDC passkey ceremonies.
+
+#### Actions Taken
+
+- set `OIDC_PASSKEY_RP_ID` to the shared suffix `cubid.me` in the Fly staging config
+- documented that the staging issuer uses the shared RP ID to support `passport.cubid.me` and `passport-preview.cubid.me`
+
+#### Verification
+
+- planned follow-up validation with `pnpm --filter @cubid/oidc typecheck`, `pnpm --filter @cubid/oidc build`, Fly redeploy, and hosted discovery/JWKS smokes
+
+#### Follow-up
+
+- reply to and resolve the Codex review thread after the fix is pushed
+
 ### session: v138
 
 - timestamp: 2026-05-07T08:52:27Z
