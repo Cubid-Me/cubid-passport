@@ -1,3 +1,119 @@
+### session: v140
+
+- timestamp: 2026-05-07T11:16:13Z
+- agent: **OpenAI Codex**
+- branch: **codex/oidc-fly-staging-deploy**
+- head: **`37a76cd`**
+- session name: **Address OIDC Fly deployment review comments**
+
+#### Objective
+
+Address remaining review feedback on PR #161 without changing the hosted OIDC protocol surface.
+
+#### Actions Taken
+
+- removed unused `OIDC_STAGING_ISSUER_URL` from the Fly staging runtime config
+- changed the OIDC Fly Docker build from `build` to `typecheck` because the runtime intentionally starts the TypeScript service with `tsx`
+- documented that the container validates TypeScript without producing unused `dist/` output
+
+#### Verification
+
+- planned follow-up validation with focused OIDC checks, Docker build, Fly redeploy, and hosted issuer smokes
+
+#### Follow-up
+
+- reply to and resolve the Copilot and Codex review threads after the fix is pushed
+
+### session: v139
+
+- timestamp: 2026-05-07T11:13:16Z
+- agent: **OpenAI Codex**
+- branch: **codex/oidc-fly-staging-deploy**
+- head: **`732ab7d`**
+- session name: **Address OIDC Fly passkey RP review**
+
+#### Objective
+
+Fix the staging Fly passkey configuration so both production and preview Passport origins can use hosted OIDC passkey ceremonies.
+
+#### Actions Taken
+
+- set `OIDC_PASSKEY_RP_ID` to the shared suffix `cubid.me` in the Fly staging config
+- documented that the staging issuer uses the shared RP ID to support `passport.cubid.me` and `passport-preview.cubid.me`
+
+#### Verification
+
+- planned follow-up validation with `pnpm --filter @cubid/oidc typecheck`, `pnpm --filter @cubid/oidc build`, Fly redeploy, and hosted discovery/JWKS smokes
+
+#### Follow-up
+
+- reply to and resolve the Codex review thread after the fix is pushed
+
+### session: v138
+
+- timestamp: 2026-05-07T08:52:27Z
+- agent: **OpenAI Codex**
+- branch: **codex/oidc-fly-staging-deploy**
+- head: **`a0cee16`**
+- session name: **Deploy OIDC staging issuer to Fly**
+
+#### Objective
+
+Finish the staging Fly deployment path for the OIDC issuer and record the deployment-command correction discovered during the live deploy.
+
+#### Actions Taken
+
+- created the Fly app `cubid-oidc-staging`
+- staged and deployed required OIDC runtime secrets for Supabase, Firebase, pairwise subject derivation, and JWT signing
+- deployed the OIDC service to Fly and verified discovery plus JWKS on the Fly hostname
+- added the Fly certificate request for `staging-id.cubid.me`
+- corrected the Fly deploy command so the Dockerfile is resolved from the monorepo root while keeping the config under `services/oidc`
+- bound the OIDC server explicitly to `0.0.0.0` for hosted proxy compatibility
+
+#### Verification
+
+- `pnpm --filter @cubid/oidc typecheck`
+- `pnpm --filter @cubid/oidc build`
+- `docker build -f services/oidc/Dockerfile -t cubid-oidc-staging:local .`
+- `flyctl deploy . -c services/oidc/fly.staging.toml --dockerfile services/oidc/Dockerfile --app cubid-oidc-staging`
+- `curl -fsS https://cubid-oidc-staging.fly.dev/.well-known/openid-configuration`
+- `curl -fsS https://cubid-oidc-staging.fly.dev/jwks`
+
+#### Follow-up
+
+- add DNS records for `staging-id.cubid.me`: A `66.241.124.238` and AAAA `2a09:8280:1::112:476f:0`
+- rerun `flyctl certs check staging-id.cubid.me --app cubid-oidc-staging` and smoke `https://staging-id.cubid.me` after DNS propagates
+
+### session: v137
+
+- timestamp: 2026-05-07T08:43:12Z
+- agent: **OpenAI Codex**
+- branch: **codex/oidc-fly-staging-deploy**
+- head: **`d98028f`**
+- session name: **Add OIDC Fly staging deployment adapter**
+
+#### Objective
+
+Prepare the standalone OIDC issuer service for hosted staging deployment on Fly.io at `https://staging-id.cubid.me`.
+
+#### Actions Taken
+
+- added a Fly-oriented OIDC Dockerfile that builds and runs the `@cubid/oidc` workspace from the monorepo root
+- added a staging Fly config for the `cubid-oidc-staging` app, `yyz` region, HTTPS service routing, and staging issuer environment defaults
+- added an OIDC Fly deployment runbook covering required runtime secrets, DNS/certificate wiring, staging smoke checks, TCOIN client seeding, and rollback
+- linked the Fly deployment runbook from the existing TCOIN OIDC readiness document
+
+#### Verification
+
+- `pnpm --filter @cubid/oidc typecheck`
+- `pnpm --filter @cubid/oidc build`
+- `docker build -f services/oidc/Dockerfile -t cubid-oidc-staging:local .`
+- `git diff --check`
+
+#### Follow-up
+
+- provision Fly app secrets, deploy `cubid-oidc-staging`, add the `staging-id.cubid.me` Fly certificate, configure DNS, and run hosted issuer smoke checks
+
 ### session: v136
 
 - timestamp: 2026-04-30T23:33:11Z
