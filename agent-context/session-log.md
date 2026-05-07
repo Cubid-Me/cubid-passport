@@ -1,3 +1,38 @@
+### session: v138
+
+- timestamp: 2026-05-07T08:52:27Z
+- agent: **OpenAI Codex**
+- branch: **codex/oidc-fly-staging-deploy**
+- head: **`a0cee16`**
+- session name: **Deploy OIDC staging issuer to Fly**
+
+#### Objective
+
+Finish the staging Fly deployment path for the OIDC issuer and record the deployment-command correction discovered during the live deploy.
+
+#### Actions Taken
+
+- created the Fly app `cubid-oidc-staging`
+- staged and deployed required OIDC runtime secrets for Supabase, Firebase, pairwise subject derivation, and JWT signing
+- deployed the OIDC service to Fly and verified discovery plus JWKS on the Fly hostname
+- added the Fly certificate request for `staging-id.cubid.me`
+- corrected the Fly deploy command so the Dockerfile is resolved from the monorepo root while keeping the config under `services/oidc`
+- bound the OIDC server explicitly to `0.0.0.0` for hosted proxy compatibility
+
+#### Verification
+
+- `pnpm --filter @cubid/oidc typecheck`
+- `pnpm --filter @cubid/oidc build`
+- `docker build -f services/oidc/Dockerfile -t cubid-oidc-staging:local .`
+- `flyctl deploy . -c services/oidc/fly.staging.toml --dockerfile services/oidc/Dockerfile --app cubid-oidc-staging`
+- `curl -fsS https://cubid-oidc-staging.fly.dev/.well-known/openid-configuration`
+- `curl -fsS https://cubid-oidc-staging.fly.dev/jwks`
+
+#### Follow-up
+
+- add DNS records for `staging-id.cubid.me`: A `66.241.124.238` and AAAA `2a09:8280:1::112:476f:0`
+- rerun `flyctl certs check staging-id.cubid.me --app cubid-oidc-staging` and smoke `https://staging-id.cubid.me` after DNS propagates
+
 ### session: v137
 
 - timestamp: 2026-05-07T08:43:12Z

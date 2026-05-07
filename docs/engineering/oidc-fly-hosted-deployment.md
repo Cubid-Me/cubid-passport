@@ -17,7 +17,7 @@ This runbook deploys the standalone OIDC issuer service to Fly.io for the stagin
 Use the repository root as the Fly deploy context so workspace packages such as `@cubid/auth`, `@cubid/config`, `@cubid/claims`, and `@cubid/identity` are available during install and runtime.
 
 ```sh
-fly deploy -c services/oidc/fly.staging.toml
+fly deploy . -c services/oidc/fly.staging.toml --dockerfile services/oidc/Dockerfile
 ```
 
 ## Required Fly Secrets

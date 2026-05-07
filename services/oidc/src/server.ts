@@ -58,7 +58,7 @@ async function startServer() {
     }
   });
 
-  server.listen(config.port, () => {
+  server.listen(config.port, "0.0.0.0", () => {
     console.log(`[oidc] listening on ${config.publicOrigin}`);
   });
 }
