@@ -36,6 +36,9 @@ on:
 permissions:
   contents: read
 
+env:
+  SHARED_DEV_SUPABASE_PROJECT_REF: cggycnbvljcdptzyjpju
+
 jobs:
   pull-request-migration-check:
     if: github.event_name == 'pull_request'
@@ -44,6 +47,7 @@ jobs:
       CUBID_SUPABASE_PROJECT_REF: ${{ vars.CUBID_SUPABASE_PROJECT_REF }}
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      PR_BASE_REF: ${{ github.base_ref }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -63,6 +67,11 @@ jobs:
             exit 0
           fi
 
+          if [[ "${PR_BASE_REF}" == "main" && "${CUBID_SUPABASE_PROJECT_REF}" == "${SHARED_DEV_SUPABASE_PROJECT_REF}" ]]; then
+            echo "::notice::PR targets main, but the configured Supabase project is the shared dev/preview project ${SHARED_DEV_SUPABASE_PROJECT_REF}; skipping remote migration drift check because dev already owns migration application for this project."
+            exit 0
+          fi
+
           supabase link --project-ref "$CUBID_SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
           supabase migration list --linked
           supabase db push --dry-run --linked
@@ -78,6 +87,7 @@ jobs:
       WORKFLOW_MODE: ${{ inputs.mode }}
       CONFIRM_PROJECT_REF: ${{ inputs.confirm_project_ref }}
       CONFIRM_RECENT_BACKUP: ${{ inputs.confirm_recent_backup }}
+      TARGET_ENVIRONMENT: ${{ inputs.github_environment }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -121,14 +131,22 @@ jobs:
 
           echo "Confirmed Supabase target project ref: $CUBID_SUPABASE_PROJECT_REF"
 
+          if [[ "${TARGET_ENVIRONMENT}" == Production* && "${CUBID_SUPABASE_PROJECT_REF}" == "${SHARED_DEV_SUPABASE_PROJECT_REF}" ]]; then
+            echo "::notice::Production environment is still configured to the shared dev/preview Supabase project ${SHARED_DEV_SUPABASE_PROJECT_REF}; skipping hosted migration/function deployment steps for this run."
+            echo "SKIP_SHARED_SUPABASE_DEPLOY=true" >> "$GITHUB_ENV"
+          else
+            echo "SKIP_SHARED_SUPABASE_DEPLOY=false" >> "$GITHUB_ENV"
+          fi
+
       - name: Show remote backup posture
+        if: env.SKIP_SHARED_SUPABASE_DEPLOY != 'true'
         shell: bash
         run: |
           set -euo pipefail
           supabase backups list --project-ref "$CUBID_SUPABASE_PROJECT_REF"
 
       - name: Require recent completed backup before apply
-        if: inputs.mode == 'apply'
+        if: inputs.mode == 'apply' && env.SKIP_SHARED_SUPABASE_DEPLOY != 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -152,6 +170,7 @@ jobs:
           NODE
 
       - name: Link project and inspect migration status
+        if: env.SKIP_SHARED_SUPABASE_DEPLOY != 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -159,16 +178,17 @@ jobs:
           supabase migration list --linked
 
       - name: Check pending migrations
-        if: inputs.mode == 'check'
+        if: inputs.mode == 'check' && env.SKIP_SHARED_SUPABASE_DEPLOY != 'true'
         shell: bash
         run: supabase db push --dry-run --linked
 
       - name: Apply pending migrations
-        if: inputs.mode == 'apply'
+        if: inputs.mode == 'apply' && env.SKIP_SHARED_SUPABASE_DEPLOY != 'true'
         shell: bash
         run: supabase db push --linked --yes
 
       - name: Confirm no Supabase Edge functions are deployed by this repo
+        if: env.SKIP_SHARED_SUPABASE_DEPLOY != 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -179,3 +199,9 @@ jobs:
           fi
 
           echo "No supabase/functions directory found; function deployment is not applicable for this repo."
+
+      - name: Record shared-project deployment skip
+        if: env.SKIP_SHARED_SUPABASE_DEPLOY == 'true'
+        shell: bash
+        run: |
+          echo "Skipped Supabase migration and function deployment because the selected Production environment still points at the shared dev/preview Supabase project ${SHARED_DEV_SUPABASE_PROJECT_REF}."

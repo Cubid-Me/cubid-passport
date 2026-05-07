@@ -32,6 +32,12 @@ Set `CUBID_SUPABASE_PROJECT_REF` to `cggycnbvljcdptzyjpju` for
 `Preview – cubid-passport`. The environment should require reviewer approval
 before `apply` runs.
 
+Until production has its own Supabase project, `Production – cubid-passport`
+may temporarily point at the same `CubidDev` ref. While that is true, the
+workflow treats `cggycnbvljcdptzyjpju` as a shared dev/preview project and
+does not re-run migration or function deployment steps during production
+promotion.
+
 ## Workflow
 
 Use `.github/workflows/supabase-deploy.yml`.
@@ -40,6 +46,10 @@ Use `.github/workflows/supabase-deploy.yml`.
   `SUPABASE_DB_PASSWORD`, and `CUBID_SUPABASE_PROJECT_REF` are available. If
   they are not configured yet, the workflow emits a warning instead of blocking
   unrelated docs/setup PRs.
+- Pull requests into `main` skip the remote Supabase drift check when the
+  configured project ref is still the shared dev/preview project
+  `cggycnbvljcdptzyjpju`; dev is the migration-application boundary for that
+  shared project.
 - Manual dispatch with `mode=check` lists remote migration history and performs
   `supabase db push --dry-run`.
 - Manual dispatch with `mode=apply` requires:
@@ -50,6 +60,13 @@ Use `.github/workflows/supabase-deploy.yml`.
 
 The workflow logs backup posture and migration status before applying pending
 migrations.
+
+Manual dispatches against `Production – cubid-passport` also no-op the
+Supabase migration/function steps when that environment is still configured to
+the shared dev/preview project ref. Once production receives a separate
+Supabase project, remove that temporary posture by setting
+`CUBID_SUPABASE_PROJECT_REF` to the production ref and running the normal
+protected check/apply sequence.
 
 ## Operator Checklist Before Future Applies
 

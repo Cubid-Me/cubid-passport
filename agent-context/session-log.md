@@ -1,3 +1,36 @@
+### session: v185
+
+- timestamp: 2026-05-07T11:48:24Z
+- agent: **OpenAI Codex**
+- branch: **codex/hosted-readiness-metadata**
+- head: **`b9b652f`**
+- session name: **Guard shared Supabase promotion checks**
+
+#### Objective
+
+Prepare for a `dev` to `main` promotion while preview and production still
+share the same `CubidDev` Supabase project.
+
+#### Actions Taken
+
+- added a shared-project guard to `.github/workflows/supabase-deploy.yml` so
+  pull requests into `main` skip remote Supabase migration drift checks when
+  the configured project ref is still `cggycnbvljcdptzyjpju`
+- added a matching manual-dispatch no-op path for `Production – cubid-passport`
+  when it is still configured to the shared dev/preview Supabase project
+- updated the hosted Supabase delivery runbook with the temporary shared
+  Supabase promotion posture
+
+#### Verification
+
+- ran `git diff --check`
+- parsed `.github/workflows/supabase-deploy.yml` with Ruby YAML loading
+
+#### Follow-up
+
+- publish this guard to `dev`, then open the `dev` to `main` promotion PR and
+  confirm the Supabase workflow reports the shared-project skip
+
 ### session: v184
 
 - timestamp: 2026-05-07T11:30:11Z
