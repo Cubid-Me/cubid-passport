@@ -1,3 +1,35 @@
+### session: v186
+
+- timestamp: 2026-05-07T13:30:57Z
+- agent: **OpenAI Codex**
+- branch: **codex/hosted-readiness-metadata**
+- head: **`4bb17b2`**
+- session name: **Address PR 162 workspace transpilation review**
+
+#### Objective
+
+Address Codex review feedback on missing workspace package transpilation in
+the Admin and Passport Next builds.
+
+#### Actions Taken
+
+- added `@cubid/claims` and `@cubid/auth` to the Admin Next
+  `transpilePackages` list alongside existing shared packages
+- added Passport workspace imports `@cubid/auth`, `@cubid/config`,
+  `@cubid/identity`, and `@cubid/stamps` to Passport
+  `transpilePackages`
+
+#### Verification
+
+- ran `pnpm --filter @cubid/admin build`
+- ran `pnpm --filter @cubid/passport build`
+- ran `git diff --check`
+
+#### Follow-up
+
+- reply to and resolve the two PR #162 review threads, then re-check CI after
+  pushing the fix
+
 ### session: v185
 
 - timestamp: 2026-05-07T11:48:24Z

@@ -1,6 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  transpilePackages: ['@cubid/types'],
+  transpilePackages: [
+    '@cubid/auth',
+    '@cubid/config',
+    '@cubid/identity',
+    '@cubid/stamps',
+    '@cubid/types',
+  ],
   webpack: config => {
     config.externals.push('pino-pretty', 'lokijs', 'encoding')
     return config

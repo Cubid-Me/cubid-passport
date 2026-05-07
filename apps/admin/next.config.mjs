@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: false,
-  transpilePackages: ['@cubid/config', '@cubid/types'],
+  transpilePackages: ['@cubid/auth', '@cubid/claims', '@cubid/config', '@cubid/types'],
   experimental: {
     appDir: true,
   },
