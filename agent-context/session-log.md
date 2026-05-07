@@ -1,3 +1,29 @@
+### session: v140
+
+- timestamp: 2026-05-07T11:16:13Z
+- agent: **OpenAI Codex**
+- branch: **codex/oidc-fly-staging-deploy**
+- head: **`37a76cd`**
+- session name: **Address OIDC Fly deployment review comments**
+
+#### Objective
+
+Address remaining review feedback on PR #161 without changing the hosted OIDC protocol surface.
+
+#### Actions Taken
+
+- removed unused `OIDC_STAGING_ISSUER_URL` from the Fly staging runtime config
+- changed the OIDC Fly Docker build from `build` to `typecheck` because the runtime intentionally starts the TypeScript service with `tsx`
+- documented that the container validates TypeScript without producing unused `dist/` output
+
+#### Verification
+
+- planned follow-up validation with focused OIDC checks, Docker build, Fly redeploy, and hosted issuer smokes
+
+#### Follow-up
+
+- reply to and resolve the Copilot and Codex review threads after the fix is pushed
+
 ### session: v139
 
 - timestamp: 2026-05-07T11:13:16Z

@@ -12,7 +12,7 @@ COPY packages ./packages
 COPY services/oidc ./services/oidc
 
 RUN pnpm install --frozen-lockfile --filter @cubid/oidc...
-RUN pnpm --filter @cubid/oidc build
+RUN pnpm --filter @cubid/oidc typecheck
 
 ENV NODE_ENV=production
 ENV OIDC_PORT=8080
