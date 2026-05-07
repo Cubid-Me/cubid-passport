@@ -1,3 +1,33 @@
+### session: v137
+
+- timestamp: 2026-05-07T08:43:12Z
+- agent: **OpenAI Codex**
+- branch: **codex/oidc-fly-staging-deploy**
+- head: **`d98028f`**
+- session name: **Add OIDC Fly staging deployment adapter**
+
+#### Objective
+
+Prepare the standalone OIDC issuer service for hosted staging deployment on Fly.io at `https://staging-id.cubid.me`.
+
+#### Actions Taken
+
+- added a Fly-oriented OIDC Dockerfile that builds and runs the `@cubid/oidc` workspace from the monorepo root
+- added a staging Fly config for the `cubid-oidc-staging` app, `yyz` region, HTTPS service routing, and staging issuer environment defaults
+- added an OIDC Fly deployment runbook covering required runtime secrets, DNS/certificate wiring, staging smoke checks, TCOIN client seeding, and rollback
+- linked the Fly deployment runbook from the existing TCOIN OIDC readiness document
+
+#### Verification
+
+- `pnpm --filter @cubid/oidc typecheck`
+- `pnpm --filter @cubid/oidc build`
+- `docker build -f services/oidc/Dockerfile -t cubid-oidc-staging:local .`
+- `git diff --check`
+
+#### Follow-up
+
+- provision Fly app secrets, deploy `cubid-oidc-staging`, add the `staging-id.cubid.me` Fly certificate, configure DNS, and run hosted issuer smoke checks
+
 ### session: v136
 
 - timestamp: 2026-04-30T23:33:11Z

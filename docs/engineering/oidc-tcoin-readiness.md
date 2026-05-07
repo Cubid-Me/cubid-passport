@@ -2,6 +2,8 @@
 
 This document records the repo-side production readiness contract for using Login with Cubid from TCOIN. It does not claim that infrastructure has been deployed; live rollout still requires hosting, DNS, secrets, and Supabase migration application in the target environment.
 
+The staging hosted deployment adapter and Fly.io operator runbook now live in [docs/engineering/oidc-fly-hosted-deployment.md](./oidc-fly-hosted-deployment.md).
+
 ## Issuer Environments
 
 - Local issuer: `http://localhost:4280`
@@ -84,7 +86,7 @@ Before TCOIN treats Cubid as a usable issuer:
 B02.4 is repo-side readiness only. It does not perform:
 
 - DNS creation for `id.cubid.me`.
-- Hosting provider deployment.
-- Secret provisioning.
+- Production hosting provider deployment.
+- Production secret provisioning.
 - Supabase migration execution against staging or production.
 - TCOIN application-side OIDC configuration.
