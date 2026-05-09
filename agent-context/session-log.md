@@ -5480,3 +5480,40 @@ friction, and backup enforcement in the Supabase deployment workflow.
 
 - push the safeguard fix, reply to and resolve review comments, then re-check
   PR 160 CI
+
+### session: v184
+
+- timestamp: 2026-05-09T22:24:18Z
+- agent: **OpenAI Codex**
+- branch: **codex/clearpass-verify-stamp**
+- head: **`f520845`**
+- session name: **Add ClearPass Verify stamp bridge**
+
+#### Objective
+
+Add ClearPass Verify as a third-party high-value KYC/personhood stamp without
+turning it into Cubid-branded KYC, and coordinate the future SDK launcher work.
+
+#### Actions Taken
+
+- added canonical `clearpass_verify` stamp metadata, scoring seed data, and
+  pending ClearPass verification session storage
+- added Passport ClearPass start/callback pages backed by signed start and
+  completion token verification
+- mint sanitized ClearPass stamp data and disclosure grants without storing raw
+  document, OCR, face, or biometric payloads
+- added Passport tests, env examples, engineering docs, and an SDK handoff note
+
+#### Verification
+
+- `npx -p node@24 node $(which pnpm) --filter @cubid/passport test`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+- `pnpm --filter @cubid/stamps test`
+- `pnpm --filter @cubid/stamps typecheck`
+- `git diff --check`
+
+#### Follow-up
+
+- SDK agents should add the public React ClearPass launcher from the handoff
+  note in `Cubid-Me/cubid-sdk`
