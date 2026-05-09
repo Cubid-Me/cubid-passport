@@ -13,16 +13,18 @@ export default async function ClearPassVerifyPage({
   }>
 }) {
   const params = await searchParams
+  const requestId = createRequestId("passport")
   let clearPassUrl: string
 
   try {
     const { redirectUrl } = await createClearPassVerificationRedirect({
       pageId: params.page_id ?? "",
-      requestId: createRequestId("passport"),
+      requestId,
       uid: params.uid ?? "",
     })
     clearPassUrl = redirectUrl
   } catch (error) {
+    console.error("ClearPass verification start failed", { error, requestId })
     return (
       <main className="mx-auto flex min-h-screen max-w-xl flex-col justify-center px-6 py-12 text-slate-900">
         <section className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
@@ -37,7 +39,7 @@ export default async function ClearPassVerifyPage({
             the app that requested this stamp and try again.
           </p>
           <p className="mt-4 rounded-lg bg-slate-50 p-3 text-xs text-slate-500">
-            {error instanceof Error ? error.message : "Verification start failed."}
+            Reference: {requestId}
           </p>
         </section>
       </main>

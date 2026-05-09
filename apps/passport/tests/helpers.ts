@@ -422,6 +422,7 @@ export class MockPassportSupabase {
         update: (patch: Record<string, unknown>) => {
           const filters: Record<string, unknown> = {}
           const updateRows = () => {
+            const updatedRows: Array<Record<string, unknown>> = []
             for (const row of this.clearPassVerificationSessions) {
               if (
                 Object.entries(filters).every(
@@ -429,14 +430,22 @@ export class MockPassportSupabase {
                 )
               ) {
                 Object.assign(row, patch)
+                updatedRows.push(row)
               }
             }
+            return updatedRows
           }
           const query = {
             eq: (column: string, value: unknown) => {
               filters[column] = value
               return query
             },
+            select: () => ({
+              maybeSingle: async () => {
+                const updatedRows = updateRows()
+                return { data: updatedRows[0] ?? null, error: null }
+              },
+            }),
             then: (resolveThen: (value: { error: null }) => unknown) => {
               updateRows()
               return Promise.resolve({ error: null }).then(resolveThen)

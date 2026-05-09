@@ -121,6 +121,7 @@ test("ClearPass completion rejects invalid and replayed sessions", async () => {
     {
       appId: "cubid",
       exp: Date.now() + 60_000,
+      redirectUri: "https://passport.cubid.me/verify/clearpass/callback",
       status: "approved",
       tokenUse: "clearpass_completion",
       userId: sessionId,
@@ -146,6 +147,19 @@ test("ClearPass completion rejects invalid and replayed sessions", async () => {
   assert.equal(supabase.stamps.length, 1)
 })
 
+test("ClearPass completion rejects malformed tokens", async () => {
+  setup()
+
+  await assert.rejects(
+    () =>
+      completeClearPassVerification({
+        clearpassSession: "not-json.not-a-signature",
+        verificationId: "ver_malformed",
+      }),
+    /token is invalid/
+  )
+})
+
 test("ClearPass completion rejects launcher tokens and unsigned verification ids", async () => {
   const supabase = setup()
   const { redirectUrl } = await createClearPassVerificationRedirect({
@@ -162,6 +176,37 @@ test("ClearPass completion rejects launcher tokens and unsigned verification ids
         verificationId: "unsigned_verification_id",
       }),
     /token is invalid/
+  )
+
+  assert.equal(supabase.stamps.length, 0)
+})
+
+test("ClearPass completion rejects tokens minted for another callback", async () => {
+  const supabase = setup()
+  const { sessionId } = await createClearPassVerificationRedirect({
+    pageId: 777,
+    uid: "11111111-1111-4111-8111-111111111111",
+  })
+  const clearpassSession = createClearPassSignedToken(
+    {
+      appId: "cubid",
+      exp: Date.now() + 60_000,
+      redirectUri: "https://evil.example/callback",
+      status: "approved",
+      tokenUse: "clearpass_completion",
+      userId: sessionId,
+      verificationId: "ver_wrong_callback",
+    },
+    tokenSecret
+  )
+
+  await assert.rejects(
+    () =>
+      completeClearPassVerification({
+        clearpassSession,
+        verificationId: "ver_wrong_callback",
+      }),
+    /callback does not match/
   )
 
   assert.equal(supabase.stamps.length, 0)

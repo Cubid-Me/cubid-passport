@@ -1,4 +1,4 @@
-import { createHmac, randomUUID, timingSafeEqual } from "node:crypto"
+import { createHmac, timingSafeEqual } from "node:crypto"
 
 import { ApiSecurityError } from "@cubid/auth/server"
 import { getOptionalEnv, getRequiredSecret } from "@cubid/config"
@@ -92,8 +92,12 @@ export const verifyClearPassSignedToken = (
     return null
   }
 
-  const payload = decodeJson(body)
-  return typeof payload.exp === "number" && payload.exp >= now ? payload : null
+  try {
+    const payload = decodeJson(body)
+    return typeof payload.exp === "number" && payload.exp >= now ? payload : null
+  } catch {
+    return null
+  }
 }
 
 const normalizeOrigin = (value: string) => value.replace(/\/+$/, "")
@@ -299,6 +303,41 @@ const loadPendingSession = async (sessionId: string) => {
   return session
 }
 
+const consumePendingSession = async (input: {
+  requestId?: string | null
+  sessionId: string
+}) => {
+  await loadPendingSession(input.sessionId)
+
+  const now = new Date().toISOString()
+  const { data, error } = await getPassportSupabase()
+    .from("clearpass_verification_sessions")
+    .update({
+      request_id: input.requestId ?? null,
+      status: "processing",
+      updated_at: now,
+    })
+    .eq("id", input.sessionId)
+    .eq("status", "pending")
+    .select("*")
+    .maybeSingle()
+
+  if (error) {
+    throw error
+  }
+
+  const session = data as ClearPassSessionRow | null
+  if (!session) {
+    throw new ApiSecurityError(
+      400,
+      "invalid_request",
+      "ClearPass verification session is invalid or expired."
+    )
+  }
+
+  return session
+}
+
 export const completeClearPassVerification = async (input: {
   clearpassSession: string
   requestId?: string | null
@@ -330,6 +369,15 @@ export const completeClearPassVerification = async (input: {
     )
   }
 
+  const expectedRedirectUri = `${config.passportOrigin}/verify/clearpass/callback`
+  if (payload.redirectUri !== expectedRedirectUri) {
+    throw new ApiSecurityError(
+      400,
+      "invalid_request",
+      "ClearPass verification callback does not match this Passport origin."
+    )
+  }
+
   if (!payload.verificationId) {
     throw new ApiSecurityError(
       400,
@@ -346,7 +394,10 @@ export const completeClearPassVerification = async (input: {
     )
   }
 
-  const session = await loadPendingSession(payload.userId)
+  const session = await consumePendingSession({
+    requestId: input.requestId,
+    sessionId: payload.userId,
+  })
   const verificationId = payload.verificationId
 
   const derivedClaims = sanitizeDerivedClaims(payload)
@@ -386,7 +437,7 @@ export const completeClearPassVerification = async (input: {
       updated_at: verifiedAt,
     })
     .eq("id", session.id)
-    .eq("status", "pending")
+    .eq("status", "processing")
 
   if (updateError) {
     throw updateError

@@ -1,10 +1,10 @@
 create table if not exists public.clearpass_verification_sessions (
-  id uuid primary key default gen_random_uuid(),
+  id uuid primary key default extensions.gen_random_uuid(),
   dapp_user_uuid uuid not null references public.dapp_users(uuid) on delete cascade,
   dapp_id bigint not null references public.dapps(id) on delete cascade,
   page_id bigint references public.dapp_pages(id) on delete set null,
   user_id bigint not null references public.users(id) on delete cascade,
-  status text not null default 'pending' check (status in ('pending', 'verified', 'failed', 'expired')),
+  status text not null default 'pending' check (status in ('pending', 'processing', 'verified', 'failed', 'expired')),
   requested_scopes jsonb not null default '["cubid:stamps"]'::jsonb,
   requested_claims jsonb not null default '["stamp:clearpass_verify"]'::jsonb,
   return_to text,

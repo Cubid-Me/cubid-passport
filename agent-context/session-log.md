@@ -5551,3 +5551,39 @@ cannot be replayed as provider completion proofs.
 
 - push the review fix, reply to and resolve the Codex review thread, then
   re-check PR 163 CI
+
+### session: v186
+
+- timestamp: 2026-05-09T23:04:44Z
+- agent: **OpenAI Codex**
+- branch: **codex/clearpass-verify-stamp**
+- head: **`ff544e0`**
+- session name: **Address ClearPass Copilot hardening review**
+
+#### Objective
+
+Address PR 163 Copilot review feedback around ClearPass session safety,
+malformed-token handling, migration portability, and user-safe error pages.
+
+#### Actions Taken
+
+- schema-qualified the ClearPass session UUID default and added a processing
+  status for atomic callback consumption
+- made signed-token parsing fail closed for malformed payloads and validated
+  completion-token callback origin
+- consumed pending verification sessions before minting stamps to prevent
+  concurrent replay duplicates
+- replaced raw end-user error messages with request-id references while logging
+  detailed server-side errors
+
+#### Verification
+
+- `npx -p node@24 node $(which pnpm) --filter @cubid/passport test`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- push the Copilot hardening fix, reply to and resolve all review threads, and
+  re-check PR 163 CI
