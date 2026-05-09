@@ -8,11 +8,17 @@ import { getPassportSupabase } from "./supabase"
 
 const CLEARPASS_STAMP_TYPE = "clearpass_verify"
 const SESSION_TTL_MS = 10 * 60 * 1000
+const CLEARPASS_START_TOKEN_USE = "clearpass_start"
+const CLEARPASS_COMPLETION_TOKEN_USE = "clearpass_completion"
 
 type SignedTokenPayload = Record<string, unknown> & {
   appId?: string
+  claims?: Record<string, unknown>
+  derivedClaims?: Record<string, unknown>
   exp?: number
   redirectUri?: string
+  status?: string
+  tokenUse?: string
   userId?: string
   verificationId?: string
 }
@@ -252,6 +258,7 @@ export const createClearPassVerificationRedirect = async (input: {
       appId: config.partnerAppId,
       exp: expiresAt.getTime(),
       redirectUri: callbackUrl.toString(),
+      tokenUse: CLEARPASS_START_TOKEN_USE,
       userId: sessionRow.id,
     },
     config.tokenSecret
@@ -303,7 +310,11 @@ export const completeClearPassVerification = async (input: {
     config.tokenSecret
   )
 
-  if (!payload?.userId || payload.appId !== config.partnerAppId) {
+  if (
+    !payload?.userId ||
+    payload.appId !== config.partnerAppId ||
+    payload.tokenUse !== CLEARPASS_COMPLETION_TOKEN_USE
+  ) {
     throw new ApiSecurityError(
       400,
       "invalid_request",
@@ -311,11 +322,23 @@ export const completeClearPassVerification = async (input: {
     )
   }
 
-  if (
-    input.verificationId &&
-    payload.verificationId &&
-    input.verificationId !== payload.verificationId
-  ) {
+  if (payload.status !== "approved") {
+    throw new ApiSecurityError(
+      400,
+      "invalid_request",
+      "ClearPass verification is not approved."
+    )
+  }
+
+  if (!payload.verificationId) {
+    throw new ApiSecurityError(
+      400,
+      "invalid_request",
+      "ClearPass verification id is required."
+    )
+  }
+
+  if (input.verificationId && input.verificationId !== payload.verificationId) {
     throw new ApiSecurityError(
       400,
       "invalid_request",
@@ -324,15 +347,7 @@ export const completeClearPassVerification = async (input: {
   }
 
   const session = await loadPendingSession(payload.userId)
-  const verificationId = payload.verificationId ?? input.verificationId
-
-  if (!verificationId) {
-    throw new ApiSecurityError(
-      400,
-      "invalid_request",
-      "ClearPass verification id is required."
-    )
-  }
+  const verificationId = payload.verificationId
 
   const derivedClaims = sanitizeDerivedClaims(payload)
   const verifiedAt = new Date().toISOString()

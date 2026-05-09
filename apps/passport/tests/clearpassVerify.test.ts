@@ -53,6 +53,7 @@ test("ClearPass launcher creates a pending session and signed start token", asyn
   const [body] = startToken.split(".")
   const payload = JSON.parse(Buffer.from(body ?? "", "base64url").toString("utf8"))
   assert.equal(payload.appId, "cubid")
+  assert.equal(payload.tokenUse, "clearpass_start")
   assert.equal(payload.userId, session?.id)
   assert.equal(payload.redirectUri, "https://passport.cubid.me/verify/clearpass/callback")
 })
@@ -74,6 +75,8 @@ test("ClearPass completion mints a sanitized stamp and disclosure grant", async 
       },
       exp: Date.now() + 60_000,
       redirectUri: "https://passport.cubid.me/verify/clearpass/callback",
+      status: "approved",
+      tokenUse: "clearpass_completion",
       userId: sessionId,
       verificationId: "ver_clearpass_123",
     },
@@ -118,6 +121,8 @@ test("ClearPass completion rejects invalid and replayed sessions", async () => {
     {
       appId: "cubid",
       exp: Date.now() + 60_000,
+      status: "approved",
+      tokenUse: "clearpass_completion",
       userId: sessionId,
       verificationId: "ver_replay",
     },
@@ -139,6 +144,57 @@ test("ClearPass completion rejects invalid and replayed sessions", async () => {
   )
 
   assert.equal(supabase.stamps.length, 1)
+})
+
+test("ClearPass completion rejects launcher tokens and unsigned verification ids", async () => {
+  const supabase = setup()
+  const { redirectUrl } = await createClearPassVerificationRedirect({
+    pageId: 777,
+    uid: "11111111-1111-4111-8111-111111111111",
+  })
+  const startToken = new URL(redirectUrl).searchParams.get("start_token")
+  assert.ok(startToken)
+
+  await assert.rejects(
+    () =>
+      completeClearPassVerification({
+        clearpassSession: startToken,
+        verificationId: "unsigned_verification_id",
+      }),
+    /token is invalid/
+  )
+
+  assert.equal(supabase.stamps.length, 0)
+})
+
+test("ClearPass completion rejects non-approved provider tokens", async () => {
+  const supabase = setup()
+  const { sessionId } = await createClearPassVerificationRedirect({
+    pageId: 777,
+    uid: "11111111-1111-4111-8111-111111111111",
+  })
+  const clearpassSession = createClearPassSignedToken(
+    {
+      appId: "cubid",
+      exp: Date.now() + 60_000,
+      status: "pending",
+      tokenUse: "clearpass_completion",
+      userId: sessionId,
+      verificationId: "ver_pending",
+    },
+    tokenSecret
+  )
+
+  await assert.rejects(
+    () =>
+      completeClearPassVerification({
+        clearpassSession,
+        verificationId: "ver_pending",
+      }),
+    /not approved/
+  )
+
+  assert.equal(supabase.stamps.length, 0)
 })
 
 test("ClearPass launcher rejects cross-dapp page and user pairs", async () => {

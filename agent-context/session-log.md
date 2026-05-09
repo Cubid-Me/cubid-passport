@@ -5517,3 +5517,37 @@ turning it into Cubid-branded KYC, and coordinate the future SDK launcher work.
 
 - SDK agents should add the public React ClearPass launcher from the handoff
   note in `Cubid-Me/cubid-sdk`
+
+### session: v185
+
+- timestamp: 2026-05-09T23:01:13Z
+- agent: **OpenAI Codex**
+- branch: **codex/clearpass-verify-stamp**
+- head: **`08740ae`**
+- session name: **Address ClearPass completion-token review**
+
+#### Objective
+
+Address PR 163 automated review feedback by ensuring ClearPass launcher tokens
+cannot be replayed as provider completion proofs.
+
+#### Actions Taken
+
+- distinguished ClearPass start tokens from provider completion tokens with an
+  explicit signed token-use field
+- required callback completion tokens to be provider-signed, approved, and to
+  include the provider verification id in the signed payload
+- kept the callback `verification_id` query value as a consistency check only,
+  and added regression coverage for start-token replay attempts
+
+#### Verification
+
+- `npx -p node@24 node $(which pnpm) --filter @cubid/passport test`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- push the review fix, reply to and resolve the Codex review thread, then
+  re-check PR 163 CI

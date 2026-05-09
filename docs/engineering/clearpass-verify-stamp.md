@@ -8,15 +8,19 @@ must not frame this as "Cubid KYC".
 
 - Stamp slug: `clearpass_verify`.
 - Collection URL: `/verify/clearpass?uid=<dapp_user_uuid>&page_id=<page_id>`.
-- Callback URL: `/verify/clearpass/callback?clearpass_session=<signed-token>&verification_id=<id>`.
+- Callback URL: `/verify/clearpass/callback?clearpass_session=<signed-completion-token>&verification_id=<optional-consistency-check>`.
 - Provider origin: `CLEARPASS_VERIFY_ORIGIN`, expected to be `https://scan.clearpass.app`.
 
 Passport creates a short-lived ClearPass start token with partner app id
-`cubid`, an opaque Cubid verification session id as the subject, and the Cubid
-callback URL. ClearPass returns a signed completion token. Passport verifies the
-signature, rejects expired or replayed sessions, mints the `clearpass_verify`
+`cubid`, token use `clearpass_start`, an opaque Cubid verification session id as
+the subject, and the Cubid callback URL. ClearPass must return a distinct signed
+completion token with token use `clearpass_completion`, status `approved`, the
+same opaque session id, and the provider verification id inside the signed
+payload. Passport verifies the signature and token use, rejects expired,
+non-approved, mismatched, or replayed sessions, mints the `clearpass_verify`
 stamp, and persists the existing Allow Page disclosure grant for the requesting
-dapp.
+dapp. The optional `verification_id` query parameter is only a consistency check
+against the signed completion token; it is never trusted as proof by itself.
 
 ## Stored Data
 
