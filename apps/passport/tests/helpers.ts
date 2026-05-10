@@ -37,10 +37,12 @@ export class MockPassportSupabase {
   readonly buckets = new Map<string, BucketRow>()
   readonly dappApiKeys = new Map<string, DappApiKeyRow>()
   readonly apiIdempotencyKeys: Array<Record<string, unknown>> = []
+  readonly clearPassVerificationSessions: Array<Record<string, unknown>> = []
   readonly dappUserAccounts: Array<Record<string, unknown>> = []
   readonly dappUserSecrets: Array<Record<string, unknown>> = []
   readonly privateDappUserSecrets: Array<Record<string, unknown>> = []
   readonly dappUsers = new Map<string, DappUserRow>()
+  readonly dappPages = new Map<number, Record<string, unknown>>()
   readonly dapps = new Map<number, Record<string, unknown>>()
   readonly emailOtps = new Map<string, EmailOtpRow[]>()
   readonly eventInserts: Array<Record<string, unknown>> = []
@@ -134,6 +136,10 @@ export class MockPassportSupabase {
 
   setDapp(row: Record<string, unknown> & { id: number }) {
     this.dapps.set(row.id, row)
+  }
+
+  setDappPage(row: Record<string, unknown> & { id: number }) {
+    this.dappPages.set(row.id, row)
   }
 
   setDappUser(row: DappUserRow) {
@@ -372,6 +378,84 @@ export class MockPassportSupabase {
       }
     }
 
+    if (table === "clearpass_verification_sessions") {
+      const createQuery = () => {
+        const filters: Record<string, unknown> = {}
+        const resolve = () => {
+          const rows = this.clearPassVerificationSessions.filter((row) =>
+            Object.entries(filters).every(
+              ([column, value]) => String(row[column]) === String(value)
+            )
+          )
+          return { data: rows, error: null }
+        }
+        const query = {
+          eq: (column: string, value: unknown) => {
+            filters[column] = value
+            return query
+          },
+          maybeSingle: async () => {
+            const result = resolve()
+            return { data: result.data[0] ?? null, error: null }
+          },
+        }
+        return query
+      }
+
+      return {
+        insert: (row: Record<string, unknown>) => {
+          const inserted = {
+            created_at: new Date().toISOString(),
+            id: `00000000-0000-4000-8000-${String(this.clearPassVerificationSessions.length + 1).padStart(12, "0")}`,
+            status: "pending",
+            updated_at: new Date().toISOString(),
+            ...row,
+          }
+          this.clearPassVerificationSessions.push(inserted)
+          return {
+            select: () => ({
+              maybeSingle: async () => ({ data: inserted, error: null }),
+            }),
+          }
+        },
+        select: createQuery,
+        update: (patch: Record<string, unknown>) => {
+          const filters: Record<string, unknown> = {}
+          const updateRows = () => {
+            const updatedRows: Array<Record<string, unknown>> = []
+            for (const row of this.clearPassVerificationSessions) {
+              if (
+                Object.entries(filters).every(
+                  ([column, value]) => String(row[column]) === String(value)
+                )
+              ) {
+                Object.assign(row, patch)
+                updatedRows.push(row)
+              }
+            }
+            return updatedRows
+          }
+          const query = {
+            eq: (column: string, value: unknown) => {
+              filters[column] = value
+              return query
+            },
+            select: () => ({
+              maybeSingle: async () => {
+                const updatedRows = updateRows()
+                return { data: updatedRows[0] ?? null, error: null }
+              },
+            }),
+            then: (resolveThen: (value: { error: null }) => unknown) => {
+              updateRows()
+              return Promise.resolve({ error: null }).then(resolveThen)
+            },
+          }
+          return query
+        },
+      }
+    }
+
     if (table === "selective_disclosure_grants") {
       return {
         insert: (row: Record<string, unknown>) => {
@@ -531,6 +615,21 @@ export class MockPassportSupabase {
           this.eventInserts.push(row)
           return { error: null }
         },
+      }
+    }
+
+    if (table === "all_blacklisted_stamps") {
+      return {
+        select: () => ({
+          eq: () => ({
+            then: (
+              resolveThen: (value: {
+                data: Record<string, unknown>[]
+                error: null
+              }) => unknown
+            ) => Promise.resolve({ data: [], error: null }).then(resolveThen),
+          }),
+        }),
       }
     }
 
@@ -749,6 +848,33 @@ export class MockPassportSupabase {
       }
     }
 
+    if (table === "dapp_pages") {
+      return {
+        select: () => {
+          const filters: Record<string, unknown> = {}
+          const resolve = () => {
+            const rows = [...this.dappPages.values()].filter((row) =>
+              Object.entries(filters).every(
+                ([column, value]) => String(row[column]) === String(value)
+              )
+            )
+            return { data: rows, error: null }
+          }
+          const query = {
+            eq: (column: string, value: unknown) => {
+              filters[column] = value
+              return query
+            },
+            maybeSingle: async () => {
+              const result = resolve()
+              return { data: result.data[0] ?? null, error: null }
+            },
+          }
+          return query
+        },
+      }
+    }
+
     if (table === "users") {
       return {
         select: () => {
@@ -778,6 +904,27 @@ export class MockPassportSupabase {
 
     if (table === "stamps") {
       return {
+        insert: (rowOrRows: Record<string, unknown> | Array<Record<string, unknown>>) => {
+          const rows = Array.isArray(rowOrRows) ? rowOrRows : [rowOrRows]
+          const insertedRows = rows.map((row) => {
+            const inserted = {
+              created_at: new Date().toISOString(),
+              id: this.stamps.length + 1,
+              ...row,
+            }
+            this.stamps.push(inserted)
+            return inserted
+          })
+          return {
+            error: null,
+            select: () => ({
+              maybeSingle: async () => ({
+                data: insertedRows[0] ?? null,
+                error: null,
+              }),
+            }),
+          }
+        },
         select: () => {
           const filters: Record<string, unknown> = {}
           const resolve = () => {
@@ -827,7 +974,14 @@ export class MockPassportSupabase {
             },
             maybeSingle: async () => {
               const row = this.dappUsers.get(String(filters.uuid))
-              if (!row || String(row.dapp_id) !== String(filters.dapp_id)) {
+              if (
+                !row ||
+                !Object.entries(filters).every(
+                  ([column, value]) =>
+                    String((row as Record<string, unknown>)[column]) ===
+                    String(value)
+                )
+              ) {
                 return { data: null, error: null }
               }
               return { data: { user_id: 1234, ...row }, error: null }
@@ -847,6 +1001,30 @@ export class MockPassportSupabase {
               )
               return Promise.resolve({ data: rows, error: null }).then(resolveThen)
             },
+          }
+          return query
+        },
+      }
+    }
+
+    if (table === "stamptypes") {
+      const stampTypes = new Map<number, Record<string, unknown>>([
+        [13, { id: 13, fields_to_use: {}, stamptype: "email" }],
+        [11, { id: 11, fields_to_use: {}, stamptype: "phone" }],
+        [71, { id: 71, fields_to_use: {}, stamptype: "clearpass_verify" }],
+      ])
+      return {
+        select: () => {
+          const filters: Record<string, unknown> = {}
+          const query = {
+            eq: (column: string, value: unknown) => {
+              filters[column] = value
+              return query
+            },
+            maybeSingle: async () => ({
+              data: stampTypes.get(Number(filters.id)) ?? null,
+              error: null,
+            }),
           }
           return query
         },

@@ -23,6 +23,7 @@ export const STAMP_TYPE_IDS = {
   "lens-protocol": 66,
   farcaster: 68,
   address: 70,
+  clearpass_verify: 71,
 } as const;
 
 export type StampTypeKey = keyof typeof STAMP_TYPE_IDS;
