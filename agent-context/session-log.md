@@ -5685,3 +5685,34 @@ after the SmarTrust passkey-wallet request was broken into follow-up todos.
 - when implementing SmarTrust wallet follow-ups, start from
   `agent-context/siwc-todo.md` and promote only the active slice into the main
   roadmap if needed
+
+### session: v190
+
+- timestamp: 2026-05-13T21:53:42Z
+- agent: **OpenAI Codex**
+- branch: **codex/smartrust-passkey-wallet-api-request**
+- head: **`99de69e`**
+- session name: **Remove exact SIWC roadmap duplicates**
+
+#### Objective
+
+Keep `agent-context/todo.md` from duplicating SIWC side-roadmap entries word for
+word.
+
+#### Actions Taken
+
+- compared SIWC entries in `agent-context/todo.md` and
+  `agent-context/siwc-todo.md`
+- removed exact duplicate SIWC03-SIWC08 entries from the main roadmap
+- left SIWC01 and SIWC02 in place because they are overlapping history but not
+  exact word-for-word duplicates
+
+#### Verification
+
+- `git diff --check`
+- SIWC03-SIWC15 now appear only in `agent-context/siwc-todo.md`
+
+#### Follow-up
+
+- use `agent-context/siwc-todo.md` as the detailed SIWC source of truth unless
+  a specific active SIWC slice needs to be promoted into the main roadmap
