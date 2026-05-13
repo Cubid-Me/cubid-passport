@@ -817,6 +817,83 @@ Evaluate whether Cubid should support smart accounts, scoped session keys, and p
 
 Create the operator runbook for SIWC custody and signing before exposing signing broadly. The runbook should cover Vault key ownership and rotation, generated-account custody boundaries, migration rollback, audit-log inspection, signing request triage, webhook replay, incident response, abuse monitoring, emergency app suspension, user support, and privacy review for app-scoped account visibility. It should explicitly document what is safe to expose to users and dapps, what is Admin-only, what is service-role-only, and what must never leave server memory. Include local/staging/prod environment requirements, smoke tests, and launch blockers. This todo should close the gap between a technically working signer and an operable platform surface.
 
+### SIWC09. Add passkey-approved account creation requests
+
+- Status: Not started
+- Timestamp started: TBD
+- Timestamp completed: TBD
+- Feature branch: TBD
+- Head: TBD
+- Session-log reference(s): TBD
+
+Add a user-approved account-generation lifecycle for apps that need "create a wallet with passkey" semantics, starting with SmarTrust. The current `/api/v3/accounts/generate` route is dapp-authenticated and policy-checked, but it does not create a Passport approval moment before account creation. This follow-up should let a dapp request account creation, show the human the requesting app, chain, label, and account intent in Passport, require a fresh passkey step-up when policy requires it, and create the app-scoped custody account only after approval. Support EVM and Solana first for SmarTrust, while keeping NEAR and Sui aligned with existing custody support. Preserve the current direct generate route for compatibility unless a later Admin policy explicitly disables direct generation.
+
+### SIWC10. Formalize SDK-facing wallet capability discovery and account lookup
+
+- Status: Not started
+- Timestamp started: TBD
+- Timestamp completed: TBD
+- Feature branch: TBD
+- Head: TBD
+- Session-log reference(s): TBD
+
+Define the exact API and SDK-facing contract downstream apps should use for wallet capability discovery, account lookup, and address retrieval. SmarTrust asked for lookup "by Cubid identity," but Cubid should translate that into app-scoped lookup by the authenticated dapp and `dapp_user_uuid`, never raw Cubid identity or cross-app account discovery. Expose non-secret metadata describing supported chains, whether account creation is direct or passkey-approved, supported request types, transaction-signing availability, required ACR, sandbox mode, policy status, and known unsupported actions. Document the backend contract in `cubid-passport`, add tests proving account responses remain redacted, and create a handoff note for `Cubid-Me/cubid-sdk` so SDK agents can implement ergonomic helpers without adding SDK code to this repo.
+
+### SIWC11. Harden browser-safe signing and approval error taxonomy
+
+- Status: Not started
+- Timestamp started: TBD
+- Timestamp completed: TBD
+- Feature branch: TBD
+- Head: TBD
+- Session-log reference(s): TBD
+
+Standardize stable browser-safe error codes across API v3 signing, Passport approval, and future SDK surfaces. SmarTrust escrow UX needs to distinguish user cancellation, expired requests, wrong user, missing or stale passkey step-up, unavailable credential, unsupported chain, unsupported action, policy denial, provider outage, rate limiting, and transaction signing disabled. This follow-up should map backend `ApiSecurityError` and domain errors to a documented set of public codes, update Passport approval pages to show user-safe messages, and keep internal details in logs/security events only. Add tests for representative API and Passport routes so retryable, user-actionable, and hard-block failures are stable enough for SmarTrust and other apps to build clear user flows around them.
+
+### SIWC12. Add EVM transaction signing pilot for escrow funding paths
+
+- Status: Not started
+- Timestamp started: TBD
+- Timestamp completed: TBD
+- Feature branch: TBD
+- Head: TBD
+- Session-log reference(s): TBD
+
+Enable the first production-shaped transaction signing pilot behind explicit Admin policy, limited to EVM escrow paths needed by SmarTrust and Paytrie. Target Ethereum, Base, and Arbitrum with conservative USDC/CADC-oriented transaction support, contract allowlists, declared value limits, readable transaction summaries, fresh passkey step-up, replay-safe request handling, audit events, and wallet webhooks. Transaction signing must remain policy-denied unless a dapp policy explicitly enables the pilot for the chain, request type, and contract/value envelope. Do not expose arbitrary EVM transaction signing by default. The implementation should re-check policy immediately before signing, never return private key material, and include tests for allowed and denied transactions, stale passkey sessions, policy changes after approval, signature output, and webhook emission.
+
+### SIWC13. Add Solana transaction-signing readiness after readable summaries
+
+- Status: Not started
+- Timestamp started: TBD
+- Timestamp completed: TBD
+- Feature branch: TBD
+- Head: TBD
+- Session-log reference(s): TBD
+
+Prepare Solana transaction signing as a separate readiness track after the EVM escrow pilot, while keeping current Solana message signing available. This follow-up should define supported Solana transaction shapes, account and chain matching, transaction parsing, human-readable summaries, simulation or dry-run strategy if available, policy checks, passkey approval requirements, safe response fields, and wallet webhook behavior. Until those pieces exist, Solana transaction signing should continue to fail closed with stable public error codes and clear risk reasons. This should not block SmarTrust's EVM/Paytrie funding path, but it is required before Cubid can honestly claim full EVM plus Solana passkey-wallet support for escrow workflows. Add tests for unsupported transaction types and eventual allowed shapes.
+
+### SIWC14. Coordinate public SDK implementation and release
+
+- Status: Not started
+- Timestamp started: TBD
+- Timestamp completed: TBD
+- Feature branch: TBD
+- Head: TBD
+- Session-log reference(s): TBD
+
+Coordinate the public SDK work needed for SmarTrust and other integrators to consume SIWC wallet APIs without touching SDK code in this repo. Create a handoff note in `Cubid-Me/cubid-sdk` requesting helpers for account creation requests, account list/address lookup, signing-request creation/status/cancel, hosted Passport approval launch, capability discovery, and browser-safe error classes. The SDK should preserve the preferred model from the SmarTrust inbox note: the app backend requests a challenge/session, the browser completes Cubid-hosted passkey approval, and the app receives only public addresses, request statuses, signatures, or safe errors. This todo should also define release/version expectations and ensure SDK docs warn that private keys, seed material, and key shares are never exposed to consumers.
+
+### SIWC15. Add SmarTrust integration smoke and reply note
+
+- Status: Not started
+- Timestamp started: TBD
+- Timestamp completed: TBD
+- Feature branch: TBD
+- Head: TBD
+- Session-log reference(s): TBD
+
+Close the SmarTrust inbox loop only after the required backend and SDK surfaces are available enough to unblock their fail-closed wallet scaffolding. Write a reply note into the SmarTrust repo's `agent-context/inbox/` explicitly referencing `PT-12`, `PT-14`, and `PT-15`. The note should include the API and SDK version or commit containing the feature, exact method names, required environment variables and ownership, supported wallet families, supported signing payloads, sample request and response payloads, known unsupported actions, and smoke-test guidance for EVM, Solana, and Paytrie-to-Cubid wallet funding. This todo should include at least one integration-oriented smoke pass or dry-run transcript so SmarTrust agents can proceed without guessing.
+
 ## F. Hosted Delivery and Release Operations
 
 ### F01. Add protected Supabase dev/preview migration deployment

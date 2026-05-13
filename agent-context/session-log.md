@@ -5621,3 +5621,36 @@ todos.
 - Cubid agents should answer back to SmarTrust with SDK/API version, exact
   methods, required envs, supported wallet families, signing payload support,
   unsupported actions, and smoke-test guidance.
+
+### session: v188
+
+- timestamp: 2026-05-13T21:47:17Z
+- agent: **OpenAI Codex**
+- branch: **codex/smartrust-passkey-wallet-api-request**
+- head: **`54b6543`**
+- session name: **Break SmarTrust passkey wallet request into SIWC todos**
+
+#### Objective
+
+Convert the SmarTrust passkey-powered wallet inbox note into precise Cubid
+follow-up todos that reflect the current SIWC backend and SDK boundary.
+
+#### Actions Taken
+
+- added SIWC09-SIWC15 to the main roadmap and SIWC side roadmap
+- split the request into passkey-approved account creation, wallet capability
+  discovery, browser-safe error taxonomy, EVM transaction-signing pilot,
+  Solana transaction readiness, public SDK coordination, and SmarTrust reply
+  smoke work
+- recorded that existing Cubid message signing and app-scoped custody surfaces
+  already cover part of the request, while transaction signing and SDK release
+  alignment remain the critical gaps
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- start SIWC09 when ready, then coordinate SDK-facing changes through
+  `Cubid-Me/cubid-sdk` instead of adding public SDK code to this repo
