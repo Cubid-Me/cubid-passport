@@ -5587,3 +5587,37 @@ malformed-token handling, migration portability, and user-safe error pages.
 
 - push the Copilot hardening fix, reply to and resolve all review threads, and
   re-check PR 163 CI
+
+### session: v187
+
+- timestamp: 2026-05-13T21:29:24Z
+- agent: **OpenAI Codex**
+- branch: **codex/smartrust-passkey-wallet-api-request**
+- head: **pending**
+- session name: **SmarTrust passkey wallet API request inbox note**
+
+#### Objective
+
+Record SmarTrust's request for Cubid passkey-backed wallet generation and
+signing APIs so Cubid agents can unblock SmarTrust's Paytrie/Cubid escrow
+todos.
+
+#### Actions Taken
+
+- created `agent-context/inbox/`
+- added a SmarTrust request note describing the required EVM/Solana wallet
+  generation, recovery, address lookup, transaction signing, message signing,
+  EIP-712/permit signing, and passkey re-auth API surface
+- instructed Cubid agents to reply into SmarTrust's `agent-context/inbox/`
+  when the feature is available, explicitly referencing SmarTrust PT-12,
+  PT-14, and PT-15
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- Cubid agents should answer back to SmarTrust with SDK/API version, exact
+  methods, required envs, supported wallet families, signing payload support,
+  unsupported actions, and smoke-test guidance.
