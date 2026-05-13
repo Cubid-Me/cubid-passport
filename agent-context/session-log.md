@@ -5654,3 +5654,34 @@ follow-up todos that reflect the current SIWC backend and SDK boundary.
 
 - start SIWC09 when ready, then coordinate SDK-facing changes through
   `Cubid-Me/cubid-sdk` instead of adding public SDK code to this repo
+
+### session: v189
+
+- timestamp: 2026-05-13T21:51:36Z
+- agent: **OpenAI Codex**
+- branch: **codex/smartrust-passkey-wallet-api-request**
+- head: **`bcb54a7`**
+- session name: **Deduplicate SmarTrust SIWC todos**
+
+#### Objective
+
+Remove unnecessary duplication between the main roadmap and SIWC side roadmap
+after the SmarTrust passkey-wallet request was broken into follow-up todos.
+
+#### Actions Taken
+
+- removed SIWC09-SIWC15 from `agent-context/todo.md`
+- kept SIWC09-SIWC15 in `agent-context/siwc-todo.md` as the detailed source of
+  truth for the SmarTrust wallet follow-up track
+- left the main roadmap's completed SIWC parent and SIWC01-SIWC08 history
+  intact
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- when implementing SmarTrust wallet follow-ups, start from
+  `agent-context/siwc-todo.md` and promote only the active slice into the main
+  roadmap if needed
