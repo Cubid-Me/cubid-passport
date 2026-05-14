@@ -3,6 +3,7 @@ import { ApiSecurityError } from "@cubid/auth/server"
 import { sendNotificationEmail } from "./emailOtp"
 import { decryptNotificationChannelDestination } from "./notificationChannels"
 import type { PassportDappContext } from "./passportApi"
+import { sendNotificationTelegram } from "./telegramNotifications"
 
 const NOTIFICATION_CATEGORIES = ["SECURITY", "TRANSACTIONAL", "WORKFLOW"] as const
 const NOTIFICATION_PRIORITIES = ["LOW", "NORMAL", "HIGH", "CRITICAL"] as const
@@ -352,6 +353,83 @@ const deliverEmailIfAvailable = async (
   }
 }
 
+const deliverTelegramIfAvailable = async (
+  context: PassportDappContext,
+  input: SendNotificationInput,
+  channel: ChannelRow,
+  eventId: string,
+  attempt: DeliveryAttemptRow,
+  userId: number | string
+) => {
+  if (channel.provider_key !== "telegram_bot") {
+    return
+  }
+
+  const attemptedAt = new Date().toISOString()
+
+  try {
+    const { data: destinationRow, error: destinationError } =
+      await context.supabase
+        .schema("private")
+        .from("notification_channel_destinations")
+        .select("*")
+        .eq("channel_id", channel.id)
+        .eq("user_id", userId)
+        .eq("status", "active")
+        .maybeSingle()
+
+    if (destinationError) {
+      throw destinationError
+    }
+
+    if (!destinationRow) {
+      throw new Error("Telegram notification channel destination was not found.")
+    }
+
+    const chatId = await decryptNotificationChannelDestination(
+      context.supabase,
+      destinationRow,
+      {
+        channelId: channel.id,
+        channelType: "telegram",
+        userId,
+      }
+    )
+
+    await sendNotificationTelegram({
+      body: input.body,
+      category: input.category,
+      chatId,
+      fromAppName: String(context.dapp.appname ?? `Dapp ${context.dapp.id}`),
+      priority: input.priority,
+      title: input.title,
+    })
+
+    await updateDeliveryAttempt(context, attempt.id, {
+      attempted_at: attemptedAt,
+      completed_at: new Date().toISOString(),
+      metadata: {
+        provider: "telegram_bot",
+      },
+      status: "sent",
+    })
+    await updateEventStatus(context, eventId, "queued")
+  } catch (error) {
+    await updateDeliveryAttempt(context, attempt.id, {
+      attempted_at: attemptedAt,
+      completed_at: new Date().toISOString(),
+      error_code: "telegram_delivery_failed",
+      error_message:
+        error instanceof Error ? error.message : "Telegram delivery failed.",
+      metadata: {
+        provider: "telegram_bot",
+      },
+      status: "failed",
+    })
+    await updateEventStatus(context, eventId, "failed")
+  }
+}
+
 export async function sendNotificationForDapp(
   context: PassportDappContext,
   input: SendNotificationInput
@@ -502,6 +580,14 @@ export async function sendNotificationForDapp(
     }
 
     await deliverEmailIfAvailable(
+      context,
+      input,
+      channel,
+      eventRow.id,
+      attempt as DeliveryAttemptRow,
+      typedDappUser.user_id
+    )
+    await deliverTelegramIfAvailable(
       context,
       input,
       channel,

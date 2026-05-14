@@ -177,12 +177,12 @@ marketing delivery unless later explicitly approved.
 
 ### FM07. Implement Telegram delivery provider integration
 
-- Status: Not started
-- Timestamp started: TBD
-- Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Status: Completed
+- Timestamp started: 2026-05-14T23:51:38Z
+- Timestamp completed: 2026-05-14T23:51:38Z
+- Feature branch: codex/vercel-app-root-cleanup
+- Head: 887fd58
+- Session-log reference(s): fm-v10, v208
 
 Add Telegram as the second MVP provider. Implement a verified channel
 handshake, store Telegram chat identifiers as encrypted retrievable channel

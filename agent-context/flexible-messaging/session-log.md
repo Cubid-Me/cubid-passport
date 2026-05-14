@@ -317,3 +317,39 @@ events while keeping channel destinations encrypted and hidden from apps.
 #### Follow-up
 
 - continue with `FM07` to add Telegram channel verification and delivery
+
+### session: fm-v10
+
+- timestamp: 2026-05-14T23:51:38Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`887fd58`**
+- session name: **Implement Telegram notification delivery provider**
+
+#### Objective
+
+Complete `FM07` by adding Telegram channel verification coverage and Bot
+API-backed notification delivery without exposing chat identifiers to apps.
+
+#### Actions Taken
+
+- added a Telegram notification sender with provider-test injection and
+  server-only bot-token loading
+- extended API v3 notification send delivery orchestration for verified
+  `telegram_bot` channels
+- added tests for Telegram setup-code verification, successful delivery,
+  provider failure recording, and response redaction
+- refreshed Passport Profile copy now that Telegram delivery is wired
+- updated env examples, architecture docs, and SDK handoff notes
+
+#### Verification
+
+- `pnpm --filter @cubid/passport lint`
+- `pnpm --filter @cubid/passport test`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- continue with `FM08` Admin notification control plane

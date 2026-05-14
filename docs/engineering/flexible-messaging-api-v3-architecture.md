@@ -156,6 +156,14 @@ Provider failures are best-effort operational evidence: they update
 `notification_delivery_attempts` and the parent event status without exposing
 the email address to the app or changing the send route into a raw SMTP proxy.
 
+FM07 adds Telegram as the second provider. Telegram setup uses the same
+one-time verification challenge model and stores chat identifiers in
+`private.notification_channel_destinations` with the notification-channel
+envelope encryption context. Delivery uses the configured Telegram Bot API
+token, decrypts the chat id only inside the provider adapter, and records
+`sent` or `failed` delivery-attempt evidence without returning chat ids,
+bot-token material, or provider internals to apps.
+
 Initial Admin routes:
 
 - `POST /api/admin/notifications/overview`
@@ -205,6 +213,9 @@ Rules:
 - Email delivery is attempted immediately for verified `email_smtp` channels
   when the provider is enabled and SMTP configuration is present. SMTP failure
   records a failed delivery attempt but never returns raw channel destinations.
+- Telegram delivery is attempted immediately for verified `telegram_bot`
+  channels when the provider is enabled and `TELEGRAM_BOT_TOKEN` is present.
+  Bot API failures record failed delivery attempts without returning chat ids.
 
 Success response:
 
@@ -237,7 +248,7 @@ service-role-only metadata.
 7. Record the notification event.
 8. Create delivery attempts for the selected provider.
 9. Deliver through the provider adapter when available. Email delivery uses the
-   SMTP adapter; Telegram delivery is deferred to FM07.
+   SMTP adapter; Telegram delivery uses the Telegram Bot API adapter.
 10. Record success/failure evidence and expose only safe status metadata.
 
 Fallback routing is deferred. The MVP should pick one best eligible channel

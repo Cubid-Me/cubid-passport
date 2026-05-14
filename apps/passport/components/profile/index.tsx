@@ -1735,8 +1735,9 @@ export const Profile = () => {
               <div className="rounded-lg border bg-background p-4">
                 <h3 className="font-semibold">Add Telegram</h3>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Telegram setup creates a one-time code now; bot delivery is
-                  wired in the provider slice.
+                  Add the Telegram destination you use with the Cubid bot.
+                  Delivery uses this verified channel without sharing it with
+                  apps.
                 </p>
                 <div className="mt-3 space-y-2">
                   <Input

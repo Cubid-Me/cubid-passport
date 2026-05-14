@@ -6341,3 +6341,38 @@ provider without leaking channel destinations to apps.
 #### Follow-up
 
 - continue with `FM07` Telegram delivery provider integration
+
+### session: v208
+
+- timestamp: 2026-05-14T23:51:38Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`887fd58`**
+- session name: **Implement Telegram notification delivery provider**
+
+#### Objective
+
+Complete `FM07` by adding Telegram as the second flexible messaging delivery
+provider while preserving encrypted destination storage and response redaction.
+
+#### Actions Taken
+
+- added a server-side Telegram Bot API sender with test injection and
+  `TELEGRAM_BOT_TOKEN` configuration
+- wired API v3 notification send delivery to verified Telegram channels and
+  provider success/failure attempt records
+- added Passport tests for Telegram verification, successful delivery, provider
+  failure handling, and no chat-id exposure
+- updated Profile copy, env examples, architecture docs, and SDK handoff notes
+
+#### Verification
+
+- `pnpm --filter @cubid/passport lint`
+- `pnpm --filter @cubid/passport test`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- continue with `FM08` Admin notification control plane

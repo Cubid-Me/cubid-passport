@@ -55,6 +55,7 @@ import {
 import { setPassportFirebaseAdminAuthForTests } from "../lib/server/firebaseAdmin"
 import { encryptNotificationChannelDestination } from "../lib/server/notificationChannels"
 import { setPassportSupabaseForTests } from "../lib/server/supabase"
+import { setSendNotificationTelegramForTests } from "../lib/server/telegramNotifications"
 
 import {
   createApiRequest,
@@ -78,6 +79,7 @@ test.afterEach(() => {
   setPassportSupabaseForTests(null)
   setPassportFirebaseAdminAuthForTests(null)
   setSendNotificationEmailForTests(null)
+  setSendNotificationTelegramForTests(null)
   setSendOtpEmailForTests(null)
 })
 
@@ -348,6 +350,74 @@ test("Passport notification channel verification stores encrypted destinations a
     "consumed"
   )
   assert.equal(supabase.notificationChannels[0]?.verification_status, "verified")
+})
+
+test("Passport Telegram notification setup stores encrypted destinations and one-time setup codes", async () => {
+  const supabase = new MockPassportSupabase()
+  setPassportSupabaseForTests(supabase as never)
+  addFirebaseUserAuth()
+  supabase.setUser({ email: "person@example.com", id: 1234 })
+
+  const startReq = createApiRequest({
+    body: {
+      channelType: "telegram",
+      destination: "@cubid_person",
+      isDefault: true,
+      label: "Telegram",
+    },
+    headers: {
+      authorization: "Bearer firebase-token",
+      origin: "https://passport.cubid.me",
+    },
+    url: "/api/notifications/channels/start-verification",
+  })
+  const startRes = createApiResponse()
+
+  await notificationChannelStartVerificationHandler(startReq, startRes)
+
+  assert.equal(startRes.statusCode, 200)
+  assert.equal(supabase.notificationChannels[0]?.provider_key, "telegram_bot")
+  assert.equal(supabase.notificationChannels[0]?.display_hint, "Telegram ending rson")
+  assert.equal(supabase.privateNotificationChannelDestinations.length, 1)
+  assert.equal(
+    supabase.privateNotificationChannelDestinations[0]?.destination_ciphertext ===
+      "cubid_person",
+    false
+  )
+  const setupCode = (startRes.body as DataResponse<{
+    challenge: { setupCode?: string; setupInstructions?: string }
+  }>).data.challenge.setupCode
+  assert.match(String(setupCode), /^\d{4}$/)
+  assert.match(
+    String(
+      (startRes.body as DataResponse<{
+        challenge: { setupInstructions?: string }
+      }>).data.challenge.setupInstructions
+    ),
+    /Cubid Telegram bot/
+  )
+  assert.equal(JSON.stringify(startRes.body).includes("cubid_person"), false)
+
+  const completeReq = createApiRequest({
+    body: {
+      challengeId: supabase.notificationVerificationChallenges[0]?.id,
+      code: setupCode,
+    },
+    headers: {
+      authorization: "Bearer firebase-token",
+      origin: "https://passport.cubid.me",
+    },
+    url: "/api/notifications/channels/complete-verification",
+  })
+  const completeRes = createApiResponse()
+  await notificationChannelCompleteVerificationHandler(completeReq, completeRes)
+
+  assert.equal(completeRes.statusCode, 200)
+  assert.equal(supabase.notificationChannels[0]?.verification_status, "verified")
+  assert.equal(
+    supabase.notificationVerificationChallenges[0]?.status,
+    "consumed"
+  )
 })
 
 test("Passport notification channel update redacts destinations and can revoke encrypted storage", async () => {
@@ -764,6 +834,181 @@ test("API v3 notification send records email provider failures without exposing 
   )
   assert.equal(supabase.notificationEvents[0]?.status, "failed")
   assert.equal(JSON.stringify(res.body).includes("person@example.com"), false)
+})
+
+test("API v3 notification send delivers verified Telegram channels through the bot adapter", async () => {
+  const supabase = new MockPassportSupabase()
+  setPassportSupabaseForTests(supabase as never)
+  const apiKey = addNotificationSendFixture(supabase)
+  supabase.notificationPreferences.push({
+    category_key: "TRANSACTIONAL",
+    channel_id: "telegram_channel_1",
+    dapp_id: null,
+    id: "preference_telegram",
+    priority_floor: "LOW",
+    status: "active",
+    user_id: 1234,
+  })
+  supabase.notificationChannels.push({
+    channel_type: "telegram",
+    created_at: "2026-05-01T00:00:00Z",
+    display_hint: "Telegram ending 6789",
+    id: "telegram_channel_1",
+    is_default: false,
+    label: "Telegram",
+    provider_key: "telegram_bot",
+    status: "active",
+    updated_at: "2026-05-01T00:00:00Z",
+    user_id: 1234,
+    verification_status: "verified",
+    verified_at: "2026-05-01T00:00:00Z",
+  })
+  const encryptedDestination = await encryptNotificationChannelDestination(
+    supabase as never,
+    "123456789",
+    {
+      channelId: "telegram_channel_1",
+      channelType: "telegram",
+      userId: 1234,
+    }
+  )
+  supabase.privateNotificationChannelDestinations.push({
+    ...encryptedDestination,
+    channel_id: "telegram_channel_1",
+    channel_type: "telegram",
+    id: "telegram_destination_1",
+    status: "active",
+    user_id: 1234,
+  })
+
+  const delivered: Array<{
+    chatId: string
+    fromAppName: string
+    title: string
+  }> = []
+  setSendNotificationTelegramForTests(async (input) => {
+    delivered.push({
+      chatId: input.chatId,
+      fromAppName: input.fromAppName,
+      title: input.title,
+    })
+  })
+
+  const req = createApiRequest({
+    body: {
+      apikey: apiKey,
+      body: "Milestone #4 was approved.",
+      category: "TRANSACTIONAL",
+      dapp_user_uuid: DAPP_USER_UUID,
+      priority: "NORMAL",
+      title: "Milestone approved",
+    },
+    headers: {
+      "idempotency-key": "notification_send_telegram_delivery",
+      origin: "https://passport.cubid.me",
+    },
+    url: "/api/v3/notifications/send",
+  })
+  const res = createApiResponse()
+
+  await notificationSendV3Handler(req, res)
+
+  assert.equal(res.statusCode, 200)
+  assert.deepEqual(delivered, [
+    {
+      chatId: "123456789",
+      fromAppName: "OTP Test App",
+      title: "Milestone approved",
+    },
+  ])
+  assert.equal(
+    (res.body as DataResponse<{ selectedChannelType: string }>).data
+      .selectedChannelType,
+    "telegram"
+  )
+  assert.equal(supabase.notificationDeliveryAttempts[0]?.status, "sent")
+  assert.equal(
+    supabase.notificationDeliveryAttempts[0]?.provider_key,
+    "telegram_bot"
+  )
+  assert.equal(JSON.stringify(res.body).includes("123456789"), false)
+})
+
+test("API v3 notification send records Telegram provider failures without exposing chat ids", async () => {
+  const supabase = new MockPassportSupabase()
+  setPassportSupabaseForTests(supabase as never)
+  const apiKey = addNotificationSendFixture(supabase)
+  supabase.notificationPreferences.push({
+    category_key: "TRANSACTIONAL",
+    channel_id: "telegram_channel_1",
+    dapp_id: null,
+    id: "preference_telegram",
+    priority_floor: "LOW",
+    status: "active",
+    user_id: 1234,
+  })
+  supabase.notificationChannels.push({
+    channel_type: "telegram",
+    created_at: "2026-05-01T00:00:00Z",
+    display_hint: "Telegram ending 6789",
+    id: "telegram_channel_1",
+    is_default: false,
+    label: "Telegram",
+    provider_key: "telegram_bot",
+    status: "active",
+    updated_at: "2026-05-01T00:00:00Z",
+    user_id: 1234,
+    verification_status: "verified",
+    verified_at: "2026-05-01T00:00:00Z",
+  })
+  const encryptedDestination = await encryptNotificationChannelDestination(
+    supabase as never,
+    "123456789",
+    {
+      channelId: "telegram_channel_1",
+      channelType: "telegram",
+      userId: 1234,
+    }
+  )
+  supabase.privateNotificationChannelDestinations.push({
+    ...encryptedDestination,
+    channel_id: "telegram_channel_1",
+    channel_type: "telegram",
+    id: "telegram_destination_1",
+    status: "active",
+    user_id: 1234,
+  })
+  setSendNotificationTelegramForTests(async () => {
+    throw new Error("telegram unavailable")
+  })
+
+  const req = createApiRequest({
+    body: {
+      apikey: apiKey,
+      body: "Milestone #4 was approved.",
+      category: "TRANSACTIONAL",
+      dapp_user_uuid: DAPP_USER_UUID,
+      priority: "NORMAL",
+      title: "Milestone approved",
+    },
+    headers: {
+      "idempotency-key": "notification_send_telegram_failure",
+      origin: "https://passport.cubid.me",
+    },
+    url: "/api/v3/notifications/send",
+  })
+  const res = createApiResponse()
+
+  await notificationSendV3Handler(req, res)
+
+  assert.equal(res.statusCode, 200)
+  assert.equal(supabase.notificationDeliveryAttempts[0]?.status, "failed")
+  assert.equal(
+    supabase.notificationDeliveryAttempts[0]?.error_code,
+    "telegram_delivery_failed"
+  )
+  assert.equal(supabase.notificationEvents[0]?.status, "failed")
+  assert.equal(JSON.stringify(res.body).includes("123456789"), false)
 })
 
 test("API v3 notification send replays idempotent accepted responses", async () => {
