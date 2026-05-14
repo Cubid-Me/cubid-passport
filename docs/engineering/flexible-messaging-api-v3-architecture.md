@@ -137,6 +137,17 @@ category-level app notification permission for `SECURITY`, `TRANSACTIONAL`,
 and `WORKFLOW`. These grants are distinct from identity/stamp disclosure
 grants and do not reveal channel destinations or app delivery capability.
 
+FM05 added the first dapp-facing send route:
+`POST /api/v3/notifications/send`. The route authenticates with hashed dapp
+API keys, requires `Idempotency-Key`, validates payload shape and content
+limits, confirms the target `dapp_user_uuid` belongs to the authenticated
+dapp, enforces `notification_app_policies`, checks active
+`notification_app_grants`, applies user preference mute/pause state, selects a
+verified eligible channel, records `notification_events`, and creates queued
+`notification_delivery_attempts`. Provider delivery remains deferred to FM06
+and FM07, so `accepted` means Cubid accepted and routed the event into the
+delivery pipeline, not that SMTP or Telegram delivery has completed.
+
 Initial Admin routes:
 
 - `POST /api/admin/notifications/overview`

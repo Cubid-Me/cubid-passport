@@ -51,6 +51,9 @@ export class MockPassportSupabase {
   readonly privateKeys: Array<Record<string, unknown>> = []
   readonly notificationChannels: Array<Record<string, unknown>> = []
   readonly notificationAppGrants: Array<Record<string, unknown>> = []
+  readonly notificationAppPolicies: Array<Record<string, unknown>> = []
+  readonly notificationDeliveryAttempts: Array<Record<string, unknown>> = []
+  readonly notificationEvents: Array<Record<string, unknown>> = []
   readonly notificationPreferences: Array<Record<string, unknown>> = []
   readonly notificationVerificationChallenges: Array<Record<string, unknown>> = []
   readonly privateNotificationChannelDestinations: Array<Record<string, unknown>> = []
@@ -1222,6 +1225,9 @@ export class MockPassportSupabase {
     > = {
       "notification_preferences": this.notificationPreferences,
       "notification_app_grants": this.notificationAppGrants,
+      "notification_app_policies": this.notificationAppPolicies,
+      "notification_delivery_attempts": this.notificationDeliveryAttempts,
+      "notification_events": this.notificationEvents,
       "notification_verification_challenges": this.notificationVerificationChallenges,
       "private.notification_channel_destinations":
         this.privateNotificationChannelDestinations,

@@ -6268,3 +6268,38 @@ build warnings from legacy wallet dependencies.
 
 - continue with `FM05` for the API v3 app send-notification contract when
   flexible messaging work resumes
+
+### session: v206
+
+- timestamp: 2026-05-14T23:41:22Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`7e7401d`**
+- session name: **Implement API v3 notification send contract**
+
+#### Objective
+
+Complete `FM05` by adding the dapp-authenticated API v3 route for accepted or
+denied flexible messaging send requests.
+
+#### Actions Taken
+
+- added `/api/v3/notifications/send` with the shared Passport dapp security
+  baseline and `Idempotency-Key` support
+- added notification send orchestration for dapp-user ownership, app policy,
+  user grants, preferences, verified channels, notification events, and queued
+  delivery attempts
+- kept provider-specific SMTP/Telegram delivery deferred to `FM06`/`FM07`
+- added Passport route coverage for acceptance, idempotent replay, grant
+  denial, malformed payload rejection, and idempotency conflicts
+- created an SDK handoff note for future public SDK notification-send helpers
+
+#### Verification
+
+- `pnpm --filter @cubid/passport test`
+- `pnpm --filter @cubid/passport typecheck`
+
+#### Follow-up
+
+- run final build/lint validation before committing, then continue with
+  `FM06` email delivery provider integration

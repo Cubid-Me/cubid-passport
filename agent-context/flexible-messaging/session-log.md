@@ -244,3 +244,39 @@ grants.
 
 - start `FM05` for the API v3 app send-notification contract, idempotency,
   grant/policy/preference checks, and delivery orchestration skeleton
+
+### session: fm-v8
+
+- timestamp: 2026-05-14T23:41:22Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`7e7401d`**
+- session name: **Implement API v3 notification send contract**
+
+#### Objective
+
+Complete `FM05` by adding the dapp-facing API v3 send-notification route with
+app policy, user grant, preference, channel, idempotency, and queued delivery
+evidence.
+
+#### Actions Taken
+
+- added `/api/v3/notifications/send` using the Passport dapp actor baseline
+- added server-side notification send orchestration for dapp-user ownership,
+  app policy checks, category grants, preference mute/pause checks, channel
+  selection, event creation, and queued delivery-attempt creation
+- preserved response redaction so apps receive event/routing metadata but no
+  channel destinations or provider internals
+- added route tests for success, idempotent replay, grant denial, malformed
+  payloads, and idempotency conflicts
+- wrote a public SDK handoff note for future SDK helpers
+
+#### Verification
+
+- `pnpm --filter @cubid/passport test`
+- `pnpm --filter @cubid/passport typecheck`
+
+#### Follow-up
+
+- run final build/lint validation before commit, then continue with `FM06`
+  email provider delivery integration

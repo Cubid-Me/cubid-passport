@@ -138,12 +138,12 @@ status rather than channel details.
 
 ### FM05. Implement API v3 app send-notification contract
 
-- Status: Not started
-- Timestamp started: TBD
-- Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Status: Completed
+- Timestamp started: 2026-05-14T23:41:22Z
+- Timestamp completed: 2026-05-14T23:41:22Z
+- Feature branch: codex/vercel-app-root-cleanup
+- Head: 7e7401d
+- Session-log reference(s): fm-v8, v206
 
 Add the dapp-authenticated API v3 route for sending structured notifications,
 centered on `/api/v3/notifications/send`. This slice owns send-route

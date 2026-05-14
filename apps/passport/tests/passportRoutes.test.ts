@@ -17,6 +17,7 @@ import notificationGrantAllowPageListHandler from "../pages/api/notifications/gr
 import notificationGrantAllowPageUpdateHandler from "../pages/api/notifications/grants/allow-page/update"
 import notificationPreferenceListHandler from "../pages/api/notifications/preferences/list"
 import notificationPreferenceUpdateHandler from "../pages/api/notifications/preferences/update"
+import notificationSendV3Handler from "../pages/api/v3/notifications/send"
 import consentListHandler from "../pages/api/oidc/consents/list"
 import siwcAccountListHandler from "../pages/api/siwc/accounts/list"
 import approveSiwcSigningRequestHandler from "../pages/api/siwc/signing/requests/approve"
@@ -112,6 +113,49 @@ const addSiwcWebhookSubscription = (
     webhook,
     webhook_url: `https://example.test/${webhook}`,
   })
+}
+
+const DAPP_USER_UUID = "00000000-0000-4000-8000-000000000042"
+
+const addNotificationSendFixture = (supabase: MockPassportSupabase) => {
+  const apiKey = addDappAuth(supabase)
+  supabase.setUser({ email: "person@example.com", id: 1234 })
+  supabase.setDappUser({
+    dapp_id: 42,
+    user_id: 1234,
+    uuid: DAPP_USER_UUID,
+  })
+  supabase.notificationAppPolicies.push({
+    allowed_categories: ["TRANSACTIONAL", "WORKFLOW"],
+    allowed_priorities: ["LOW", "NORMAL", "HIGH"],
+    allowed_providers: ["email_smtp", "telegram_bot"],
+    dapp_id: 42,
+    security_category_enabled: false,
+    status: "enabled",
+  })
+  supabase.notificationAppGrants.push({
+    category_key: "TRANSACTIONAL",
+    dapp_id: 42,
+    dapp_user_uuid: DAPP_USER_UUID,
+    id: "grant_1",
+    status: "active",
+    user_id: 1234,
+  })
+  supabase.notificationChannels.push({
+    channel_type: "email",
+    created_at: "2026-05-01T00:00:00Z",
+    display_hint: "p***@example.com",
+    id: "channel_1",
+    is_default: true,
+    label: "Personal email",
+    provider_key: "email_smtp",
+    status: "active",
+    updated_at: "2026-05-01T00:00:00Z",
+    user_id: 1234,
+    verification_status: "verified",
+    verified_at: "2026-05-01T00:00:00Z",
+  })
+  return apiKey
 }
 
 test("legacy Passport Supabase select endpoint is hard-disabled with a request id", async () => {
@@ -539,6 +583,215 @@ test("Passport Allow Page notification grants reject cross-dapp page and user pa
   assert.equal(res.statusCode, 404)
   assert.equal((res.body as { error: { code: string } }).error.code, "not_found")
   assert.equal(supabase.notificationAppGrants.length, 0)
+})
+
+test("API v3 notification send accepts and queues app-scoped granted notifications", async () => {
+  const supabase = new MockPassportSupabase()
+  setPassportSupabaseForTests(supabase as never)
+  const apiKey = addNotificationSendFixture(supabase)
+
+  const req = createApiRequest({
+    body: {
+      apikey: apiKey,
+      body: "Milestone #4 was approved.",
+      category: "TRANSACTIONAL",
+      dapp_user_uuid: DAPP_USER_UUID,
+      metadata: {
+        contract_id: "contract_123",
+      },
+      priority: "HIGH",
+      title: "Milestone approved",
+    },
+    headers: {
+      "idempotency-key": "notification_send_1",
+      origin: "https://passport.cubid.me",
+      "x-request-id": "passport_notifications_send_1",
+    },
+    url: "/api/v3/notifications/send",
+  })
+  const res = createApiResponse()
+
+  await notificationSendV3Handler(req, res)
+
+  assert.equal(res.statusCode, 200)
+  assert.equal(res.headers["x-request-id"], "passport_notifications_send_1")
+  assert.deepEqual(
+    (res.body as DataResponse<{
+      category: string
+      priority: string
+      selectedChannelType: string
+      status: string
+    }>).data,
+    {
+      category: "TRANSACTIONAL",
+      createdAt: (res.body as DataResponse<{ createdAt: string }>).data
+        .createdAt,
+      eventId: "notification-events-1",
+      priority: "HIGH",
+      selectedChannelType: "email",
+      status: "accepted",
+    }
+  )
+  assert.equal(supabase.notificationEvents.length, 1)
+  assert.equal(supabase.notificationDeliveryAttempts.length, 1)
+  assert.equal(
+    supabase.notificationDeliveryAttempts[0]?.provider_key,
+    "email_smtp"
+  )
+  assert.equal(JSON.stringify(res.body).includes("person@example.com"), false)
+  assert.equal(JSON.stringify(res.body).includes("ciphertext"), false)
+})
+
+test("API v3 notification send replays idempotent accepted responses", async () => {
+  const supabase = new MockPassportSupabase()
+  setPassportSupabaseForTests(supabase as never)
+  const apiKey = addNotificationSendFixture(supabase)
+  const requestBody = {
+    apikey: apiKey,
+    body: "Milestone #4 was approved.",
+    category: "TRANSACTIONAL",
+    dapp_user_uuid: DAPP_USER_UUID,
+    priority: "NORMAL",
+    title: "Milestone approved",
+  }
+
+  for (const requestId of ["passport_replay_1", "passport_replay_2"]) {
+    const req = createApiRequest({
+      body: requestBody,
+      headers: {
+        "idempotency-key": "notification_send_replay",
+        origin: "https://passport.cubid.me",
+        "x-request-id": requestId,
+      },
+      url: "/api/v3/notifications/send",
+    })
+    const res = createApiResponse()
+    await notificationSendV3Handler(req, res)
+    assert.equal(res.statusCode, 200)
+    assert.equal(
+      (res.body as DataResponse<{ eventId: string }>).data.eventId,
+      "notification-events-1"
+    )
+  }
+
+  assert.equal(supabase.notificationEvents.length, 1)
+  assert.equal(supabase.notificationDeliveryAttempts.length, 1)
+})
+
+test("API v3 notification send denies missing user grants without exposing channel data", async () => {
+  const supabase = new MockPassportSupabase()
+  setPassportSupabaseForTests(supabase as never)
+  const apiKey = addNotificationSendFixture(supabase)
+  supabase.notificationAppGrants.splice(0)
+
+  const req = createApiRequest({
+    body: {
+      apikey: apiKey,
+      body: "Milestone #4 was approved.",
+      category: "TRANSACTIONAL",
+      dapp_user_uuid: DAPP_USER_UUID,
+      priority: "NORMAL",
+      title: "Milestone approved",
+    },
+    headers: {
+      "idempotency-key": "notification_send_denied",
+      origin: "https://passport.cubid.me",
+    },
+    url: "/api/v3/notifications/send",
+  })
+  const res = createApiResponse()
+
+  await notificationSendV3Handler(req, res)
+
+  assert.equal(res.statusCode, 403)
+  assert.equal(
+    (res.body as { error: { code: string } }).error.code,
+    "notification_grant_required"
+  )
+  assert.equal(supabase.notificationEvents.length, 1)
+  assert.equal(supabase.notificationEvents[0]?.status, "denied")
+  assert.equal(
+    supabase.notificationEvents[0]?.denied_reason,
+    "notification_grant_required"
+  )
+  assert.equal(supabase.notificationDeliveryAttempts.length, 0)
+  assert.equal(JSON.stringify(res.body).includes("person@example.com"), false)
+})
+
+test("API v3 notification send rejects malformed payloads before event creation", async () => {
+  const supabase = new MockPassportSupabase()
+  setPassportSupabaseForTests(supabase as never)
+  const apiKey = addNotificationSendFixture(supabase)
+
+  const req = createApiRequest({
+    body: {
+      apikey: apiKey,
+      body: "Test",
+      category: "MARKETING",
+      dapp_user_uuid: DAPP_USER_UUID,
+      priority: "NORMAL",
+      title: "Nope",
+    },
+    headers: {
+      "idempotency-key": "notification_send_invalid",
+      origin: "https://passport.cubid.me",
+    },
+    url: "/api/v3/notifications/send",
+  })
+  const res = createApiResponse()
+
+  await notificationSendV3Handler(req, res)
+
+  assert.equal(res.statusCode, 400)
+  assert.equal((res.body as { error: { code: string } }).error.code, "invalid_request")
+  assert.equal(supabase.notificationEvents.length, 0)
+})
+
+test("API v3 notification send rejects idempotency-key request conflicts", async () => {
+  const supabase = new MockPassportSupabase()
+  setPassportSupabaseForTests(supabase as never)
+  const apiKey = addNotificationSendFixture(supabase)
+  const firstBody = {
+    apikey: apiKey,
+    body: "Milestone #4 was approved.",
+    category: "TRANSACTIONAL",
+    dapp_user_uuid: DAPP_USER_UUID,
+    priority: "NORMAL",
+    title: "Milestone approved",
+  }
+
+  const firstReq = createApiRequest({
+    body: firstBody,
+    headers: {
+      "idempotency-key": "notification_send_conflict",
+      origin: "https://passport.cubid.me",
+    },
+    url: "/api/v3/notifications/send",
+  })
+  const firstRes = createApiResponse()
+  await notificationSendV3Handler(firstReq, firstRes)
+  assert.equal(firstRes.statusCode, 200)
+
+  const conflictReq = createApiRequest({
+    body: {
+      ...firstBody,
+      title: "Different title",
+    },
+    headers: {
+      "idempotency-key": "notification_send_conflict",
+      origin: "https://passport.cubid.me",
+    },
+    url: "/api/v3/notifications/send",
+  })
+  const conflictRes = createApiResponse()
+  await notificationSendV3Handler(conflictReq, conflictRes)
+
+  assert.equal(conflictRes.statusCode, 409)
+  assert.equal(
+    (conflictRes.body as { error: { code: string } }).error.code,
+    "idempotency_conflict"
+  )
+  assert.equal(supabase.notificationEvents.length, 1)
 })
 
 test("Passport app disclosure grants list and revoke Allow Page grants", async () => {
