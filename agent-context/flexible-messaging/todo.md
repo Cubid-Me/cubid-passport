@@ -156,12 +156,12 @@ Error envelopes should follow the existing Passport API security baseline.
 
 ### FM06. Implement email delivery provider integration
 
-- Status: Not started
-- Timestamp started: TBD
-- Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Status: Completed
+- Timestamp started: 2026-05-14T23:47:14Z
+- Timestamp completed: 2026-05-14T23:47:14Z
+- Feature branch: codex/vercel-app-root-cleanup
+- Head: 975fe58
+- Session-log reference(s): fm-v9, v207
 
 Add email as the first flexible messaging provider. Use existing SMTP and
 operational-secret loading patterns, but route delivery through the new

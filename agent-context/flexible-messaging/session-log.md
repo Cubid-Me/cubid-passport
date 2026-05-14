@@ -280,3 +280,40 @@ evidence.
 
 - run final build/lint validation before commit, then continue with `FM06`
   email provider delivery integration
+
+### session: fm-v9
+
+- timestamp: 2026-05-14T23:47:14Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`975fe58`**
+- session name: **Implement email notification delivery provider**
+
+#### Objective
+
+Complete `FM06` by adding SMTP-backed email delivery for flexible messaging
+events while keeping channel destinations encrypted and hidden from apps.
+
+#### Actions Taken
+
+- added a server-side notification email sender that reuses the existing SMTP
+  configuration and supports test injection
+- extended `/api/v3/notifications/send` orchestration to decrypt verified
+  email destinations only inside the provider adapter
+- recorded delivery-attempt success or failure metadata without exposing raw
+  email addresses to dapps
+- added Passport tests for successful SMTP handoff and provider failure
+  redaction
+- updated the flexible messaging architecture doc and wrote an SDK handoff note
+
+#### Verification
+
+- `pnpm --filter @cubid/passport lint`
+- `pnpm --filter @cubid/passport test`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- continue with `FM07` to add Telegram channel verification and delivery

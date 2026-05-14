@@ -144,9 +144,17 @@ limits, confirms the target `dapp_user_uuid` belongs to the authenticated
 dapp, enforces `notification_app_policies`, checks active
 `notification_app_grants`, applies user preference mute/pause state, selects a
 verified eligible channel, records `notification_events`, and creates queued
-`notification_delivery_attempts`. Provider delivery remains deferred to FM06
-and FM07, so `accepted` means Cubid accepted and routed the event into the
-delivery pipeline, not that SMTP or Telegram delivery has completed.
+`notification_delivery_attempts`. FM06 adds SMTP email delivery for verified
+email channels; Telegram delivery remains deferred to FM07. `accepted` still
+means Cubid accepted and routed the event into the delivery pipeline, not that
+every provider has completed delivery.
+
+FM06 delivers email by decrypting the verified channel destination only inside
+the server-side provider adapter, sending through the existing SMTP
+configuration, and updating the delivery attempt as `sent` or `failed`.
+Provider failures are best-effort operational evidence: they update
+`notification_delivery_attempts` and the parent event status without exposing
+the email address to the app or changing the send route into a raw SMTP proxy.
 
 Initial Admin routes:
 
@@ -194,6 +202,9 @@ Rules:
   blocks the request.
 - A successful response means Cubid accepted and routed the event. Provider
   delivery may still be queued, pending, delivered, or failed.
+- Email delivery is attempted immediately for verified `email_smtp` channels
+  when the provider is enabled and SMTP configuration is present. SMTP failure
+  records a failed delivery attempt but never returns raw channel destinations.
 
 Success response:
 
@@ -225,7 +236,8 @@ service-role-only metadata.
 6. Apply rate limits.
 7. Record the notification event.
 8. Create delivery attempts for the selected provider.
-9. Deliver through the provider adapter when available.
+9. Deliver through the provider adapter when available. Email delivery uses the
+   SMTP adapter; Telegram delivery is deferred to FM07.
 10. Record success/failure evidence and expose only safe status metadata.
 
 Fallback routing is deferred. The MVP should pick one best eligible channel

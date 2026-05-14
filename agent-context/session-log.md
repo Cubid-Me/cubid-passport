@@ -6303,3 +6303,41 @@ denied flexible messaging send requests.
 
 - run final build/lint validation before committing, then continue with
   `FM06` email delivery provider integration
+
+### session: v207
+
+- timestamp: 2026-05-14T23:47:14Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`975fe58`**
+- session name: **Implement email notification delivery provider**
+
+#### Objective
+
+Complete `FM06` by wiring flexible messaging events to the email delivery
+provider without leaking channel destinations to apps.
+
+#### Actions Taken
+
+- added an SMTP-backed notification email sender using existing Passport
+  server mail configuration
+- extended API v3 notification send orchestration to decrypt email channel
+  destinations only server-side and update delivery-attempt records
+- recorded provider success/failure status while keeping the public response
+  redacted and stable
+- added Passport route tests for successful email delivery and provider
+  failure handling
+- updated the architecture doc, flexible messaging todo metadata, and SDK
+  handoff note
+
+#### Verification
+
+- `pnpm --filter @cubid/passport lint`
+- `pnpm --filter @cubid/passport test`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- continue with `FM07` Telegram delivery provider integration

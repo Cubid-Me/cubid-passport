@@ -49,9 +49,11 @@ import {
 } from "../lib/server/dappUserSecrets"
 import {
   hashEmailOtp,
+  setSendNotificationEmailForTests,
   setSendOtpEmailForTests,
 } from "../lib/server/emailOtp"
 import { setPassportFirebaseAdminAuthForTests } from "../lib/server/firebaseAdmin"
+import { encryptNotificationChannelDestination } from "../lib/server/notificationChannels"
 import { setPassportSupabaseForTests } from "../lib/server/supabase"
 
 import {
@@ -75,6 +77,7 @@ test.afterEach(() => {
   axios.post = originalAxiosPost
   setPassportSupabaseForTests(null)
   setPassportFirebaseAdminAuthForTests(null)
+  setSendNotificationEmailForTests(null)
   setSendOtpEmailForTests(null)
 })
 
@@ -640,6 +643,127 @@ test("API v3 notification send accepts and queues app-scoped granted notificatio
   )
   assert.equal(JSON.stringify(res.body).includes("person@example.com"), false)
   assert.equal(JSON.stringify(res.body).includes("ciphertext"), false)
+})
+
+test("API v3 notification send delivers verified email channels through the SMTP adapter", async () => {
+  const supabase = new MockPassportSupabase()
+  setPassportSupabaseForTests(supabase as never)
+  const apiKey = addNotificationSendFixture(supabase)
+  const encryptedDestination = await encryptNotificationChannelDestination(
+    supabase as never,
+    "person@example.com",
+    {
+      channelId: "channel_1",
+      channelType: "email",
+      userId: 1234,
+    }
+  )
+  supabase.privateNotificationChannelDestinations.push({
+    ...encryptedDestination,
+    channel_id: "channel_1",
+    channel_type: "email",
+    id: "destination_1",
+    status: "active",
+    user_id: 1234,
+  })
+
+  const delivered: Array<{
+    fromAppName: string
+    title: string
+    toEmail: string
+  }> = []
+  setSendNotificationEmailForTests(async (input) => {
+    delivered.push({
+      fromAppName: input.fromAppName,
+      title: input.title,
+      toEmail: input.toEmail,
+    })
+  })
+
+  const req = createApiRequest({
+    body: {
+      apikey: apiKey,
+      body: "Milestone #4 was approved.",
+      category: "TRANSACTIONAL",
+      dapp_user_uuid: DAPP_USER_UUID,
+      priority: "NORMAL",
+      title: "Milestone approved",
+    },
+    headers: {
+      "idempotency-key": "notification_send_email_delivery",
+      origin: "https://passport.cubid.me",
+    },
+    url: "/api/v3/notifications/send",
+  })
+  const res = createApiResponse()
+
+  await notificationSendV3Handler(req, res)
+
+  assert.equal(res.statusCode, 200)
+  assert.deepEqual(delivered, [
+    {
+      fromAppName: "OTP Test App",
+      title: "Milestone approved",
+      toEmail: "person@example.com",
+    },
+  ])
+  assert.equal(supabase.notificationDeliveryAttempts[0]?.status, "sent")
+  assert.equal(supabase.notificationEvents[0]?.status, "queued")
+  assert.equal(JSON.stringify(res.body).includes("person@example.com"), false)
+})
+
+test("API v3 notification send records email provider failures without exposing destinations", async () => {
+  const supabase = new MockPassportSupabase()
+  setPassportSupabaseForTests(supabase as never)
+  const apiKey = addNotificationSendFixture(supabase)
+  const encryptedDestination = await encryptNotificationChannelDestination(
+    supabase as never,
+    "person@example.com",
+    {
+      channelId: "channel_1",
+      channelType: "email",
+      userId: 1234,
+    }
+  )
+  supabase.privateNotificationChannelDestinations.push({
+    ...encryptedDestination,
+    channel_id: "channel_1",
+    channel_type: "email",
+    id: "destination_1",
+    status: "active",
+    user_id: 1234,
+  })
+  setSendNotificationEmailForTests(async () => {
+    throw new Error("smtp unavailable")
+  })
+
+  const req = createApiRequest({
+    body: {
+      apikey: apiKey,
+      body: "Milestone #4 was approved.",
+      category: "TRANSACTIONAL",
+      dapp_user_uuid: DAPP_USER_UUID,
+      priority: "NORMAL",
+      title: "Milestone approved",
+    },
+    headers: {
+      "idempotency-key": "notification_send_email_failure",
+      origin: "https://passport.cubid.me",
+    },
+    url: "/api/v3/notifications/send",
+  })
+  const res = createApiResponse()
+
+  await notificationSendV3Handler(req, res)
+
+  assert.equal(res.statusCode, 200)
+  assert.equal(supabase.notificationDeliveryAttempts[0]?.status, "failed")
+  assert.equal(
+    supabase.notificationDeliveryAttempts[0]?.error_code,
+    "email_delivery_failed"
+  )
+  assert.equal(supabase.notificationEvents[0]?.status, "failed")
+  assert.equal(JSON.stringify(res.body).includes("person@example.com"), false)
 })
 
 test("API v3 notification send replays idempotent accepted responses", async () => {

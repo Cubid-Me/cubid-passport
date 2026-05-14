@@ -1,5 +1,7 @@
 import { ApiSecurityError } from "@cubid/auth/server"
 
+import { sendNotificationEmail } from "./emailOtp"
+import { decryptNotificationChannelDestination } from "./notificationChannels"
 import type { PassportDappContext } from "./passportApi"
 
 const NOTIFICATION_CATEGORIES = ["SECURITY", "TRANSACTIONAL", "WORKFLOW"] as const
@@ -49,6 +51,10 @@ type ChannelRow = {
   status?: string | null
   user_id: number | string
   verification_status?: string | null
+}
+
+type DeliveryAttemptRow = {
+  id: string
 }
 
 type SendNotificationInput = {
@@ -233,6 +239,119 @@ const insertDeniedEvent = async (
   })
 }
 
+const updateDeliveryAttempt = async (
+  context: PassportDappContext,
+  attemptId: string,
+  patch: Record<string, unknown>
+) => {
+  const { error } = await context.supabase
+    .from("notification_delivery_attempts")
+    .update({
+      ...patch,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", attemptId)
+
+  if (error) {
+    throw error
+  }
+}
+
+const updateEventStatus = async (
+  context: PassportDappContext,
+  eventId: string,
+  status: "queued" | "failed"
+) => {
+  const { error } = await context.supabase
+    .from("notification_events")
+    .update({
+      status,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", eventId)
+
+  if (error) {
+    throw error
+  }
+}
+
+const deliverEmailIfAvailable = async (
+  context: PassportDappContext,
+  input: SendNotificationInput,
+  channel: ChannelRow,
+  eventId: string,
+  attempt: DeliveryAttemptRow,
+  userId: number | string
+) => {
+  if (channel.provider_key !== "email_smtp") {
+    return
+  }
+
+  const attemptedAt = new Date().toISOString()
+
+  try {
+    const { data: destinationRow, error: destinationError } =
+      await context.supabase
+        .schema("private")
+        .from("notification_channel_destinations")
+        .select("*")
+        .eq("channel_id", channel.id)
+        .eq("user_id", userId)
+        .eq("status", "active")
+        .maybeSingle()
+
+    if (destinationError) {
+      throw destinationError
+    }
+
+    if (!destinationRow) {
+      throw new Error("Email notification channel destination was not found.")
+    }
+
+    const toEmail = await decryptNotificationChannelDestination(
+      context.supabase,
+      destinationRow,
+      {
+        channelId: channel.id,
+        channelType: "email",
+        userId,
+      }
+    )
+
+    await sendNotificationEmail({
+      body: input.body,
+      category: input.category,
+      fromAppName: String(context.dapp.appname ?? `Dapp ${context.dapp.id}`),
+      priority: input.priority,
+      title: input.title,
+      toEmail,
+    })
+
+    await updateDeliveryAttempt(context, attempt.id, {
+      attempted_at: attemptedAt,
+      completed_at: new Date().toISOString(),
+      metadata: {
+        provider: "email_smtp",
+      },
+      status: "sent",
+    })
+    await updateEventStatus(context, eventId, "queued")
+  } catch (error) {
+    await updateDeliveryAttempt(context, attempt.id, {
+      attempted_at: attemptedAt,
+      completed_at: new Date().toISOString(),
+      error_code: "email_delivery_failed",
+      error_message:
+        error instanceof Error ? error.message : "Email delivery failed.",
+      metadata: {
+        provider: "email_smtp",
+      },
+      status: "failed",
+    })
+    await updateEventStatus(context, eventId, "failed")
+  }
+}
+
 export async function sendNotificationForDapp(
   context: PassportDappContext,
   input: SendNotificationInput
@@ -364,7 +483,7 @@ export async function sendNotificationForDapp(
     }
 
     const eventRow = event as { created_at?: string; id: string }
-    const { error: attemptError } = await context.supabase
+    const { data: attempt, error: attemptError } = await context.supabase
       .from("notification_delivery_attempts")
       .insert({
         channel_id: channel.id,
@@ -375,10 +494,21 @@ export async function sendNotificationForDapp(
         provider_key: channel.provider_key,
         status: "queued",
       })
+      .select("id")
+      .single()
 
     if (attemptError) {
       throw attemptError
     }
+
+    await deliverEmailIfAvailable(
+      context,
+      input,
+      channel,
+      eventRow.id,
+      attempt as DeliveryAttemptRow,
+      typedDappUser.user_id
+    )
 
     return {
       category: input.category,
