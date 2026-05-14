@@ -172,12 +172,12 @@ Build the user-facing and operator-facing surfaces that sit on top of the issuer
 
 ### B02.6 Register and smoke ClearPass Dashboard as a Login with Cubid relying party
 
-- Status: Not started
-- Timestamp started: TBD
+- Status: Started
+- Timestamp started: 2026-05-14T03:30:40Z
 - Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): incoming SDK note `agent-context/messages-from-clearpass/2026-05-13-dashboard-sign-in-with-cubid-blocker.md`; SDK handoff `agent-context/messages-from-cubid-passport/2026-05-14-clearpass-dashboard-oidc-contract.md`; session: v191
+- Feature branch: codex/smartrust-passkey-wallet-api-request
+- Head: b8bdd07
+- Session-log reference(s): incoming SDK note `agent-context/messages-from-clearpass/2026-05-13-dashboard-sign-in-with-cubid-blocker.md`; SDK handoff `agent-context/messages-from-cubid-passport/2026-05-14-clearpass-dashboard-oidc-contract.md`; incoming SDK ready note `agent-context/messages-from-cubid-sdk/2026-05-14-clearpass-dashboard-oidc-sdk-ready.md`; session: v191, session: v192
 
 Register ClearPass Dashboard as the first browser-delivered developer dashboard relying party for Login with Cubid. This is an OIDC relying-party readiness and smoke task, not a new SDK implementation task. Define the client as `public_web`, token endpoint auth method `none`, Authorization Code + PKCE, initial scopes `openid email profile`, and exact staging and production redirect/logout URIs supplied by ClearPass. Register or seed the client without exposing secrets, then run the hosted flow through `/authorize`, Passport login/consent, `/token`, `/userinfo`, and logout. The output should confirm ClearPass can authenticate dashboard developers without Cubid API keys or privileged credentials in browser code, and should feed any SDK-facing gaps back to `Cubid-Me/cubid-sdk`.
 

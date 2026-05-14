@@ -5751,3 +5751,43 @@ follow-up work without duplicating SIWC wallet todos or moving SDK code into
 
 - implement `B02.6` after the SDK auth package surface exists or when exact
   ClearPass Dashboard redirect/logout URIs are ready to register and smoke
+
+### session: v192
+
+- timestamp: 2026-05-14T03:30:40Z
+- agent: **OpenAI Codex**
+- branch: **codex/smartrust-passkey-wallet-api-request**
+- head: **`b8bdd07`**
+- session name: **Implement ClearPass Dashboard OIDC seed contract**
+
+#### Objective
+
+Start `B02.6` now that the public SDK auth surface is available, and add the
+repo-side relying-party seed/runbook path for ClearPass Dashboard.
+
+#### Actions Taken
+
+- reviewed the SDK-ready note from `Cubid-Me/cubid-sdk` confirming
+  `@cubid/auth`, `@cubid/auth-react`, and the ClearPass Vite auth example are
+  implemented
+- added an idempotent ClearPass Dashboard OIDC client seed script using stable
+  client id `clearpass-dashboard`, `public_web`, Authorization Code + PKCE,
+  token endpoint auth method `none`, and `openid email profile`
+- added a dry-run mode so operators can validate the client payload without
+  writing to Supabase
+- documented the ClearPass Dashboard relying-party contract, seed env vars, and
+  hosted smoke steps
+- updated OIDC deployment/readiness docs to reference the ClearPass Dashboard
+  client seed flow
+
+#### Verification
+
+- `git diff --check`
+- `pnpm --filter @cubid/oidc seed:clearpass-dashboard -- --dry-run`
+- `pnpm --filter @cubid/oidc typecheck`
+- `pnpm --filter @cubid/oidc test`
+
+#### Follow-up
+
+- run focused OIDC validation, then close or split the live hosted smoke
+  portion depending on what can be safely executed from this checkout

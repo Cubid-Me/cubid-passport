@@ -51,6 +51,18 @@ Optional TCOIN seed secrets can be set only if the issuer service itself will ru
 - `TCOIN_OIDC_TOS_URI`
 - `TCOIN_OIDC_LOGO_URI`
 
+Optional ClearPass Dashboard seed values can be set only when seeding that
+public-web relying party from the deployed environment:
+
+- `CLEARPASS_DASHBOARD_OIDC_CLIENT_ID`
+- `CLEARPASS_DASHBOARD_OIDC_CLIENT_NAME`
+- `CLEARPASS_DASHBOARD_OIDC_REDIRECT_URIS`
+- `CLEARPASS_DASHBOARD_OIDC_POST_LOGOUT_REDIRECT_URIS`
+- `CLEARPASS_DASHBOARD_OIDC_CONTACTS`
+- `CLEARPASS_DASHBOARD_OIDC_POLICY_URI`
+- `CLEARPASS_DASHBOARD_OIDC_TOS_URI`
+- `CLEARPASS_DASHBOARD_OIDC_LOGO_URI`
+
 ## DNS And Certificate
 
 Add the hostname to Fly:
@@ -93,6 +105,29 @@ pnpm --filter @cubid/oidc seed:tcoin
 ```
 
 Do not seed placeholder redirect URIs. The TCOIN client should start as a `public_web` client requesting only `openid email profile`.
+
+## ClearPass Dashboard Client Seed
+
+ClearPass Dashboard is also a `public_web` client using Authorization Code +
+PKCE, token endpoint auth method `none`, and initial scopes `openid email
+profile`. The SDK-side auth package surface lives in `Cubid-Me/cubid-sdk`; this
+repo only seeds and smokes the relying-party client.
+
+After setting exact callback and post-logout redirect URIs, seed from a trusted
+operator shell:
+
+```sh
+pnpm --filter @cubid/oidc seed:clearpass-dashboard
+```
+
+Validate the env payload without writing to Supabase:
+
+```sh
+pnpm --filter @cubid/oidc seed:clearpass-dashboard -- --dry-run
+```
+
+The detailed contract is in
+[clearpass-dashboard-oidc-readiness.md](./clearpass-dashboard-oidc-readiness.md).
 
 ## Rollback
 
