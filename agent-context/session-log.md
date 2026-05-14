@@ -5874,3 +5874,41 @@ smoke.
 
 - finish `B02.6.1` after the user completes hosted Passport login/consent in
   the browser session or provides an approved test identity path for the smoke
+
+### session: v195
+
+- timestamp: 2026-05-14T03:56:30Z
+- agent: **OpenAI Codex**
+- branch: **codex/smartrust-passkey-wallet-api-request**
+- head: **`549cfcb`**
+- session name: **Fix OIDC login challenge guest redirect**
+
+#### Objective
+
+Fix the hosted ClearPass Dashboard OIDC smoke blocker where completing
+Passport email/OTP auth from `/login?login_challenge=...` redirected to the
+normal Passport app instead of preserving and completing the OIDC login
+challenge.
+
+#### Actions Taken
+
+- reproduced the operator-observed behavior: the ClearPass authorization link
+  creates a hosted OIDC login challenge, but the Passport login shell redirects
+  authenticated users to `/app`
+- traced the redirect to the shared `Guest` component, which treated every
+  authenticated user as incompatible with the login page
+- added an `allowAuthenticated` escape hatch for challenge-specific login pages
+- updated `apps/passport/app/login/page.tsx` to allow authenticated users to
+  remain on `/login?login_challenge=...` so email/phone/passkey completion can
+  call the OIDC login completion endpoint
+
+#### Verification
+
+- `pnpm --filter @cubid/passport typecheck`
+- `git diff --check`
+
+#### Follow-up
+
+- deploy this Passport fix, then rerun `B02.6.1` from the hosted ClearPass
+  Dashboard authorization link through consent, callback, `/token`,
+  `/userinfo`, and logout

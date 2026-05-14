@@ -5,9 +5,10 @@ import { useAuth } from "hooks/useAuth"
 
 type GuestProps = {
   children: React.ReactNode
+  allowAuthenticated?: boolean
 }
 
-export const Guest = ({ children }: GuestProps) => {
+export const Guest = ({ children, allowAuthenticated = false }: GuestProps) => {
   const router = useRouter()
   const { user, loading } = useAuth({});
   const [unverified, setUnverified] = useState(false)
@@ -17,12 +18,12 @@ export const Guest = ({ children }: GuestProps) => {
       return
     }
 
-    if (user) {
+    if (user && !allowAuthenticated) {
       router.push('/app')
     } else {
       setUnverified(true)
     }
-  }, [loading, router, user])
+  }, [allowAuthenticated, loading, router, user])
 
   if (!unverified) {
     return null
