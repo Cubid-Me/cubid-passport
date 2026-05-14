@@ -177,7 +177,7 @@ function validateRedirectUri(clientType: CubidClientType, value: string): string
   return parsed.toString();
 }
 
-function normalizeRedirectUris(
+export function normalizeRedirectUris(
   clientType: CubidClientType,
   value: unknown,
   options: { requireForInteractiveClients?: boolean } = {},

@@ -170,6 +170,30 @@ Add the issuer-side production controls that should exist before broad rollout e
 
 Build the user-facing and operator-facing surfaces that sit on top of the issuer controls added in `B02.5`. Passport should let authenticated users review active OIDC consents by client, scope, claim set, grant time, and policy version, then revoke a consent without exposing raw human subject keys or Cubid user IDs to browser state. Admin should expose richer visibility for TCOIN and other OIDC clients: redirect URIs, allowed scopes, claim policy, client status, rate-limit tier, recent audit events, token/userinfo failure counts, and suspension controls. This follow-up must use authenticated server routes rather than the existing generic Supabase proxy helpers, because consent revocation and client operations are security-sensitive account-management actions.
 
+### B02.6 Register and smoke ClearPass Dashboard as a Login with Cubid relying party
+
+- Status: Completed
+- Timestamp started: 2026-05-14T03:30:40Z
+- Timestamp completed: 2026-05-14T03:31:43Z
+- Feature branch: codex/smartrust-passkey-wallet-api-request
+- Head: ac440b5
+- Session-log reference(s): SDK repo incoming ClearPass note `Cubid-Me/cubid-sdk:agent-context/messages-from-clearpass/2026-05-13-dashboard-sign-in-with-cubid-blocker.md`; SDK handoff `Cubid-Me/cubid-sdk:agent-context/messages-from-cubid-passport/2026-05-14-clearpass-dashboard-oidc-contract.md`; incoming SDK ready note `agent-context/messages-from-cubid-sdk/2026-05-14-clearpass-dashboard-oidc-sdk-ready.md`; session: v191, session: v192, session: v193
+
+Register ClearPass Dashboard as the first browser-delivered developer dashboard relying party for Login with Cubid. This is an OIDC relying-party readiness and smoke task, not a new SDK implementation task. Define the client as `public_web`, token endpoint auth method `none`, Authorization Code + PKCE, initial scopes `openid email profile`, and exact staging and production redirect/logout URIs supplied by ClearPass. Register or seed the client without exposing secrets, then run the hosted flow through `/authorize`, Passport login/consent, `/token`, `/userinfo`, and logout. The output should confirm ClearPass can authenticate dashboard developers without Cubid API keys or privileged credentials in browser code, and should feed any SDK-facing gaps back to `Cubid-Me/cubid-sdk`.
+
+Repo-side completion added the stable `clearpass-dashboard` seed command, dry-run validation, env examples, and relying-party runbook. The live hosted seed and browser smoke are split into `B02.6.1` because they require real target environment credentials and operator-controlled deployment state.
+
+### B02.6.1 Run hosted ClearPass Dashboard OIDC seed and browser smoke
+
+- Status: Started
+- Timestamp started: 2026-05-14T03:40:53Z
+- Timestamp completed: TBD
+- Feature branch: codex/smartrust-passkey-wallet-api-request
+- Head: ced0793
+- Session-log reference(s): session: v193, session: v194, session: v195
+
+Apply the ClearPass Dashboard OIDC client seed to the intended hosted Supabase/OIDC environment and capture the full browser smoke evidence. Confirm the exact staging and production dashboard redirect/logout URIs before running the seed, then execute `pnpm --filter @cubid/oidc seed:clearpass-dashboard` from a trusted operator shell with the target `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and `CLEARPASS_DASHBOARD_OIDC_*` values. Smoke the SDK-backed dashboard flow through discovery, `/authorize`, Passport login and consent, callback `code`/`state`, `/token`, `/userinfo`, and logout. Record the client id, issuer, redirect URI, SDK package versions, and result. Do not mark this complete from local dry-run output alone.
+
 ### B03. Build the custom claim registry and identity-depth policy controls in cubid-admin
 
 - Status: Completed
@@ -750,72 +774,6 @@ Design the first decision-complete signing architecture for app-scoped custody a
 - Session-log reference(s): session: v161, session: v162, session: v163
 
 Add Admin-side controls that let operators configure whether an app may request generated accounts, which chains are enabled, whether signing is enabled, and which approval rules apply. This should extend the existing Admin control-plane pattern rather than creating a separate wallet dashboard. Include fields for allowed chains, custody mode, signing status, allowed signature types, transaction limits, optional contract allowlists, required passkey ACR, webhook event subscriptions, and sandbox/production behavior. Admin list/detail views must not expose private keys, ciphertext, wrapped data keys, Vault key material, or cross-app user identifiers. This todo should also decide how policy names and versions are surfaced to API v3 responses and audit logs, and should treat policy changes as SDK-impacting only when they alter public route or webhook semantics.
-
-### SIWC03. Add Passport user-facing app account visibility
-
-- Status: Completed
-- Timestamp started: 2026-05-05T23:41:40Z
-- Timestamp completed: 2026-05-06T08:31:22Z
-- Feature branch: codex/siwc-roadmap-cleanup
-- Head: 774cd64
-- Session-log reference(s): session: v163, session: v164
-
-Add user-facing visibility for app-scoped custody accounts in Passport, likely inside the existing Profile and disclosure-management surface. Users should be able to see which apps have generated accounts for them, which chain each account belongs to, public addresses, labels, creation dates, custody status, and whether signing is enabled for that app. The UI should reinforce the privacy model: these accounts are scoped to individual apps, and other apps should not be able to correlate them. This slice should not add private-key export, signing, or cross-app wallet portability. It should only make the already-created v3 account metadata understandable and auditable for the human user, with no exposure of private or encrypted custody fields.
-
-### SIWC04. Implement v3 signing request lifecycle
-
-- Status: Completed
-- Timestamp started: 2026-05-06T08:31:22Z
-- Timestamp completed: 2026-05-06T08:57:01Z
-- Feature branch: codex/siwc-roadmap-cleanup
-- Head: a41f6ee
-- Session-log reference(s): session: v165, session: v166
-
-Implement the backend lifecycle for signing requests after SIWC01 chooses the architecture. Add API v3 routes for creating a signing request, reading request status, approving or rejecting through Passport, and returning the resulting signature or transaction hash when complete. Requests must be app-scoped, dapp-authenticated, idempotent where appropriate, bound to a specific `dapp_user_uuid` and `user_account_id`, and checked against Admin signing policy before user approval. Approval should be hosted in Passport and require passkey step-up when policy or ACR requires it. Responses must never return private keys, raw decrypted material, Vault wrapping keys, or internal human subject keys. All state changes should write audit/security events and be safe to retry.
-
-### SIWC05. Add transaction risk, policy evaluation, and passkey step-up
-
-- Status: Completed
-- Timestamp started: 2026-05-06T08:57:01Z
-- Timestamp completed: 2026-05-06T09:22:33Z
-- Feature branch: codex/siwc-roadmap-cleanup
-- Head: 313f4a5
-- Session-log reference(s): session: v167, session: v168
-
-Add the first transaction-policy and risk layer before broad transaction signing is considered production-ready. The initial version can be conservative: human-readable request summaries, chain/account matching, requested operation type, recipient or contract metadata where available, amount thresholds, contract allowlist checks, and mandatory passkey step-up for high-risk requests. The goal is not full transaction simulation across every chain in v1; it is to prevent blind signing from becoming the default. Passport approval screens should make the app, chain, public account, action, and risk posture clear. Admin should be able to configure policy strictness. Failed policy checks, rejected approvals, and passkey step-up failures should be auditable and webhook-eligible.
-
-### SIWC06. Add signing and wallet webhook contracts plus SDK handoff notes
-
-- Status: Completed
-- Timestamp started: 2026-05-06T09:22:33Z
-- Timestamp completed: 2026-05-06T10:25:43Z
-- Feature branch: codex/siwc-roadmap-cleanup
-- Head: 82fcdd6
-- Session-log reference(s): session: v169, session: v170
-
-Extend the API v3 webhook contract for app-scoped custody and signing events. Candidate events include `wallet.created`, `wallet.signing_request.created`, `wallet.signing_request.approved`, `wallet.signing_request.rejected`, `wallet.signature.completed`, `wallet.transaction.submitted`, `wallet.transaction.failed`, and `wallet.policy.denied`. Payloads must follow the existing API v3 webhook direction: stable event IDs, timestamps, HMAC signatures, replay-safe delivery semantics, retry metadata, and disclosure-safe payloads that do not leak cross-app identifiers or custody secrets. Because these events affect developer-facing SDK behavior, each implemented contract change must create a handoff note in the public SDK repo. Do not add SDK implementation code to `cubid-passport`.
-
-### SIWC07. Evaluate smart-account, session-key, and paymaster roadmap
-
-- Status: Completed
-- Timestamp started: 2026-05-06T10:25:43Z
-- Timestamp completed: 2026-05-06T10:40:40Z
-- Feature branch: codex/siwc-roadmap-cleanup
-- Head: e3fec1a
-- Session-log reference(s): session: v171, session: v172
-
-Evaluate whether Cubid should support smart accounts, scoped session keys, and paymaster/gas sponsorship after the basic signing lifecycle is secure. This should be a design and sequencing task, not an implementation shortcut. Compare the app-scoped privacy model against user expectations for portable wallets, recovery, gasless onboarding, and asset fragmentation. Decide whether smart accounts should wrap existing app-scoped custodial keys, replace generated EOAs for some chains, or remain a later optional custody mode. Define what would need to change in Admin policy, Passport approval UX, API v3 signing routes, webhook events, and SDK contracts. The output should be a recommendation with explicit "not yet" criteria if the platform is not ready.
-
-### SIWC08. Build production readiness runbook for SIWC custody and signing
-
-- Status: Completed
-- Timestamp started: 2026-05-06T10:40:40Z
-- Timestamp completed: 2026-05-06T11:49:35Z
-- Feature branch: codex/siwc-roadmap-cleanup
-- Head: 969385a
-- Session-log reference(s): session: v173, session: v174
-
-Create the operator runbook for SIWC custody and signing before exposing signing broadly. The runbook should cover Vault key ownership and rotation, generated-account custody boundaries, migration rollback, audit-log inspection, signing request triage, webhook replay, incident response, abuse monitoring, emergency app suspension, user support, and privacy review for app-scoped account visibility. It should explicitly document what is safe to expose to users and dapps, what is Admin-only, what is service-role-only, and what must never leave server memory. Include local/staging/prod environment requirements, smoke tests, and launch blockers. This todo should close the gap between a technically working signer and an operable platform surface.
 
 ## F. Hosted Delivery and Release Operations
 

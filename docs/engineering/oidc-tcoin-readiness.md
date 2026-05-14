@@ -4,6 +4,10 @@ This document records the repo-side production readiness contract for using Logi
 
 The staging hosted deployment adapter and Fly.io operator runbook now live in [docs/engineering/oidc-fly-hosted-deployment.md](./oidc-fly-hosted-deployment.md).
 
+ClearPass Dashboard follows the same public-web relying-party shape with its
+own seed and smoke contract in
+[docs/engineering/clearpass-dashboard-oidc-readiness.md](./clearpass-dashboard-oidc-readiness.md).
+
 ## Issuer Environments
 
 - Local issuer: `http://localhost:4280`

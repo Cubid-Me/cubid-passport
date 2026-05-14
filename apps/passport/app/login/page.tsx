@@ -302,7 +302,7 @@ export default function AuthenticationPage() {
   }
 
   return (
-    <Guest>
+    <Guest allowAuthenticated={Boolean(loginChallengeId)}>
       <div
         className="container relative mt-20 h-[100vh] flex-col items-center
        justify-center md:mt-0 md:grid lg:max-w-none lg:grid-cols-2 lg:px-0"

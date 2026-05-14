@@ -5587,3 +5587,363 @@ malformed-token handling, migration portability, and user-safe error pages.
 
 - push the Copilot hardening fix, reply to and resolve all review threads, and
   re-check PR 163 CI
+
+### session: v187
+
+- timestamp: 2026-05-13T21:29:24Z
+- agent: **OpenAI Codex**
+- branch: **codex/smartrust-passkey-wallet-api-request**
+- head: **pending**
+- session name: **SmarTrust passkey wallet API request inbox note**
+
+#### Objective
+
+Record SmarTrust's request for Cubid passkey-backed wallet generation and
+signing APIs so Cubid agents can unblock SmarTrust's Paytrie/Cubid escrow
+todos.
+
+#### Actions Taken
+
+- created `agent-context/inbox/`
+- added a SmarTrust request note describing the required EVM/Solana wallet
+  generation, recovery, address lookup, transaction signing, message signing,
+  EIP-712/permit signing, and passkey re-auth API surface
+- instructed Cubid agents to reply into SmarTrust's `agent-context/inbox/`
+  when the feature is available, explicitly referencing SmarTrust PT-12,
+  PT-14, and PT-15
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- Cubid agents should answer back to SmarTrust with SDK/API version, exact
+  methods, required envs, supported wallet families, signing payload support,
+  unsupported actions, and smoke-test guidance.
+
+### session: v188
+
+- timestamp: 2026-05-13T21:47:17Z
+- agent: **OpenAI Codex**
+- branch: **codex/smartrust-passkey-wallet-api-request**
+- head: **`54b6543`**
+- session name: **Break SmarTrust passkey wallet request into SIWC todos**
+
+#### Objective
+
+Convert the SmarTrust passkey-powered wallet inbox note into precise Cubid
+follow-up todos that reflect the current SIWC backend and SDK boundary.
+
+#### Actions Taken
+
+- added SIWC09-SIWC15 to the main roadmap and SIWC side roadmap
+- split the request into passkey-approved account creation, wallet capability
+  discovery, browser-safe error taxonomy, EVM transaction-signing pilot,
+  Solana transaction readiness, public SDK coordination, and SmarTrust reply
+  smoke work
+- recorded that existing Cubid message signing and app-scoped custody surfaces
+  already cover part of the request, while transaction signing and SDK release
+  alignment remain the critical gaps
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- start SIWC09 when ready, then coordinate SDK-facing changes through
+  `Cubid-Me/cubid-sdk` instead of adding public SDK code to this repo
+
+### session: v189
+
+- timestamp: 2026-05-13T21:51:36Z
+- agent: **OpenAI Codex**
+- branch: **codex/smartrust-passkey-wallet-api-request**
+- head: **`bcb54a7`**
+- session name: **Deduplicate SmarTrust SIWC todos**
+
+#### Objective
+
+Remove unnecessary duplication between the main roadmap and SIWC side roadmap
+after the SmarTrust passkey-wallet request was broken into follow-up todos.
+
+#### Actions Taken
+
+- removed SIWC09-SIWC15 from `agent-context/todo.md`
+- kept SIWC09-SIWC15 in `agent-context/siwc-todo.md` as the detailed source of
+  truth for the SmarTrust wallet follow-up track
+- left the main roadmap's completed SIWC parent and SIWC01-SIWC08 history
+  intact
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- when implementing SmarTrust wallet follow-ups, start from
+  `agent-context/siwc-todo.md` and promote only the active slice into the main
+  roadmap if needed
+
+### session: v190
+
+- timestamp: 2026-05-13T21:53:42Z
+- agent: **OpenAI Codex**
+- branch: **codex/smartrust-passkey-wallet-api-request**
+- head: **`99de69e`**
+- session name: **Remove exact SIWC roadmap duplicates**
+
+#### Objective
+
+Keep `agent-context/todo.md` from duplicating SIWC side-roadmap entries word for
+word.
+
+#### Actions Taken
+
+- compared SIWC entries in `agent-context/todo.md` and
+  `agent-context/siwc-todo.md`
+- removed exact duplicate SIWC03-SIWC08 entries from the main roadmap
+- left SIWC01 and SIWC02 in place because they are overlapping history but not
+  exact word-for-word duplicates
+
+#### Verification
+
+- `git diff --check`
+- SIWC03-SIWC15 now appear only in `agent-context/siwc-todo.md`
+
+#### Follow-up
+
+- use `agent-context/siwc-todo.md` as the detailed SIWC source of truth unless
+  a specific active SIWC slice needs to be promoted into the main roadmap
+
+### session: v191
+
+- timestamp: 2026-05-14T00:09:05Z
+- agent: **OpenAI Codex**
+- branch: **codex/smartrust-passkey-wallet-api-request**
+- head: **`727da38`**
+- session name: **Plan ClearPass Dashboard OIDC relying-party readiness**
+
+#### Objective
+
+Turn the ClearPass Dashboard Sign in with Cubid blocker into repo-specific
+follow-up work without duplicating SIWC wallet todos or moving SDK code into
+`cubid-passport`.
+
+#### Actions Taken
+
+- reviewed the ClearPass-origin SDK inbox note about browser-safe Dashboard
+  Sign in with Cubid
+- confirmed existing `B01`, `B02`, `B04`, and `E01` work already cover the
+  backend OIDC issuer, PKCE, Passport-hosted login/consent, pairwise subjects,
+  passkey ACR, and disclosure persistence
+- added `B02.6` as the specific Passport-side relying-party registration and
+  hosted smoke follow-up for ClearPass Dashboard
+- coordinated the SDK-side follow-up through a handoff note in
+  `Cubid-Me/cubid-sdk` instead of adding public SDK implementation here
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- implement `B02.6` after the SDK auth package surface exists or when exact
+  ClearPass Dashboard redirect/logout URIs are ready to register and smoke
+
+### session: v192
+
+- timestamp: 2026-05-14T03:30:40Z
+- agent: **OpenAI Codex**
+- branch: **codex/smartrust-passkey-wallet-api-request**
+- head: **`b8bdd07`**
+- session name: **Implement ClearPass Dashboard OIDC seed contract**
+
+#### Objective
+
+Start `B02.6` now that the public SDK auth surface is available, and add the
+repo-side relying-party seed/runbook path for ClearPass Dashboard.
+
+#### Actions Taken
+
+- reviewed the SDK-ready note from `Cubid-Me/cubid-sdk` confirming
+  `@cubid/auth`, `@cubid/auth-react`, and the ClearPass Vite auth example are
+  implemented
+- added an idempotent ClearPass Dashboard OIDC client seed script using stable
+  client id `clearpass-dashboard`, `public_web`, Authorization Code + PKCE,
+  token endpoint auth method `none`, and `openid email profile`
+- added a dry-run mode so operators can validate the client payload without
+  writing to Supabase
+- documented the ClearPass Dashboard relying-party contract, seed env vars, and
+  hosted smoke steps
+- updated OIDC deployment/readiness docs to reference the ClearPass Dashboard
+  client seed flow
+
+#### Verification
+
+- `git diff --check`
+- `pnpm --filter @cubid/oidc seed:clearpass-dashboard -- --dry-run`
+- `pnpm --filter @cubid/oidc typecheck`
+- `pnpm --filter @cubid/oidc test`
+
+#### Follow-up
+
+- run focused OIDC validation, then close or split the live hosted smoke
+  portion depending on what can be safely executed from this checkout
+
+### session: v193
+
+- timestamp: 2026-05-14T03:31:43Z
+- agent: **OpenAI Codex**
+- branch: **codex/smartrust-passkey-wallet-api-request**
+- head: **`ac440b5`**
+- session name: **Close B02.6 and split hosted ClearPass smoke**
+
+#### Objective
+
+Close the repo-side ClearPass Dashboard OIDC seed/readiness work and preserve
+the live hosted seed plus browser smoke as an explicit operational follow-up.
+
+#### Actions Taken
+
+- marked `B02.6` completed at implementation commit `ac440b5`
+- recorded that repo-side completion includes the stable client seed command,
+  dry-run validation, env examples, and relying-party runbook
+- added `B02.6.1` for hosted ClearPass Dashboard client seeding and full OIDC
+  browser smoke evidence
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- run `B02.6.1` once the target hosted environment credentials and exact
+  ClearPass Dashboard redirect/logout URIs are confirmed
+
+### session: v194
+
+- timestamp: 2026-05-14T03:40:53Z
+- agent: **OpenAI Codex**
+- branch: **codex/smartrust-passkey-wallet-api-request**
+- head: **`ced0793`**
+- session name: **Start hosted ClearPass Dashboard OIDC smoke**
+
+#### Objective
+
+Run `B02.6.1` against hosted `CubidDev` as far as possible from this machine
+and identify any remaining human/operator inputs needed for the full browser
+smoke.
+
+#### Actions Taken
+
+- confirmed `https://staging-id.cubid.me/.well-known/openid-configuration`
+  and `https://staging-id.cubid.me/jwks` return `200`
+- confirmed `https://dashboard.clearpass.app` returns `200`
+- used the linked Supabase CLI session for `CubidDev`
+  (`cggycnbvljcdptzyjpju`) to seed `clearpass-dashboard` into
+  `public.oidc_clients`
+- seeded the client as `public_web`, `active`, `internal`, token endpoint auth
+  method `none`, Authorization Code + PKCE, and scopes `openid email profile`
+- configured redirect URIs `http://localhost:5173/auth/callback` and
+  `https://dashboard.clearpass.app/auth/callback`
+- configured post-logout redirect URIs `http://localhost:5173/` and
+  `https://dashboard.clearpass.app/`
+- verified a hosted `/authorize` request for `clearpass-dashboard` returns a
+  `302` to `https://passport.cubid.me/login?login_challenge=...` with an
+  `X-Request-Id`
+- opened the hosted Passport login page through Playwright and confirmed it
+  renders the human login UI for the ClearPass authorization request
+
+#### Verification
+
+- `supabase db query --linked` seed/upsert returned the
+  `clearpass-dashboard` client row
+- `curl` discovery/JWKS checks returned `200`
+- hosted `/authorize` returned `302` to Passport login
+- Playwright browser reached the Passport hosted login page
+
+#### Blocker
+
+- Full login/consent/token/userinfo/logout smoke now requires a human
+  Passport login/consent session or a dedicated hosted test identity. This
+  agent should not invent a user credential or bypass the hosted auth boundary.
+
+#### Follow-up
+
+- finish `B02.6.1` after the user completes hosted Passport login/consent in
+  the browser session or provides an approved test identity path for the smoke
+
+### session: v195
+
+- timestamp: 2026-05-14T03:56:30Z
+- agent: **OpenAI Codex**
+- branch: **codex/smartrust-passkey-wallet-api-request**
+- head: **`549cfcb`**
+- session name: **Fix OIDC login challenge guest redirect**
+
+#### Objective
+
+Fix the hosted ClearPass Dashboard OIDC smoke blocker where completing
+Passport email/OTP auth from `/login?login_challenge=...` redirected to the
+normal Passport app instead of preserving and completing the OIDC login
+challenge.
+
+#### Actions Taken
+
+- reproduced the operator-observed behavior: the ClearPass authorization link
+  creates a hosted OIDC login challenge, but the Passport login shell redirects
+  authenticated users to `/app`
+- traced the redirect to the shared `Guest` component, which treated every
+  authenticated user as incompatible with the login page
+- added an `allowAuthenticated` escape hatch for challenge-specific login pages
+- updated `apps/passport/app/login/page.tsx` to allow authenticated users to
+  remain on `/login?login_challenge=...` so email/phone/passkey completion can
+  call the OIDC login completion endpoint
+
+#### Verification
+
+- `pnpm --filter @cubid/passport typecheck`
+- `git diff --check`
+
+#### Follow-up
+
+- deploy this Passport fix, then rerun `B02.6.1` from the hosted ClearPass
+  Dashboard authorization link through consent, callback, `/token`,
+  `/userinfo`, and logout
+
+### session: v196
+
+- timestamp: 2026-05-14T19:27:39Z
+- agent: **OpenAI Codex**
+- branch: **codex/smartrust-passkey-wallet-api-request**
+- head: **`7d2b1db`**
+- session name: **Address PR 164 OIDC seed review**
+
+#### Objective
+
+Patch PR 164 review feedback for the ClearPass Dashboard OIDC seed command,
+then validate and prepare the branch for review-thread replies and resolution.
+
+#### Actions Taken
+
+- deferred full OIDC runtime config loading until after `--dry-run` output so
+  dry runs no longer require Supabase service-role or pairwise secrets
+- reused shared OIDC redirect/logout URI normalization for seed validation
+- preserved existing optional metadata, client status, and rate-limit tier by
+  default unless explicit seed override env vars are provided
+- wrote OIDC audit events for ClearPass seed create/update operations
+- added script typecheck coverage for OIDC seed scripts
+- replaced local absolute handoff paths with repo-qualified references
+- corrected ClearPass seed docs so defaulted client id/name values are optional
+
+#### Verification
+
+- `pnpm --filter @cubid/oidc typecheck`
+- `pnpm --filter @cubid/oidc test`
+- `pnpm --filter @cubid/oidc seed:clearpass-dashboard -- --dry-run` with
+  placeholder non-secret env values
+- negative dry-run rejected `ftp://localhost/...` redirect URI through shared
+  OIDC validation
+- `git diff --check`
