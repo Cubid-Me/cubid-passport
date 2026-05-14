@@ -33,9 +33,9 @@ now implemented in `cubid-sdk-v2` on branch
 ## ClearPass-oriented example and handoff
 
 - SDK Vite example:
-  `/Users/botmaster/src/cubid/cubid-sdk-v2/docs/examples/clearpass-dashboard-auth-vite.md`
+  `Cubid-Me/cubid-sdk:docs/examples/clearpass-dashboard-auth-vite.md`
 - ClearPass-facing usage handoff:
-  `/Users/botmaster/src/clearpass/agent-context/messages-from-cubid/2026-05-14-dashboard-sign-in-with-cubid-sdk-handoff.md`
+  `ClearPass repo:agent-context/messages-from-cubid/2026-05-14-dashboard-sign-in-with-cubid-sdk-handoff.md`
 
 ## What this unblocks in Passport
 

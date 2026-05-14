@@ -5912,3 +5912,38 @@ challenge.
 - deploy this Passport fix, then rerun `B02.6.1` from the hosted ClearPass
   Dashboard authorization link through consent, callback, `/token`,
   `/userinfo`, and logout
+
+### session: v196
+
+- timestamp: 2026-05-14T19:27:39Z
+- agent: **OpenAI Codex**
+- branch: **codex/smartrust-passkey-wallet-api-request**
+- head: **`7d2b1db`**
+- session name: **Address PR 164 OIDC seed review**
+
+#### Objective
+
+Patch PR 164 review feedback for the ClearPass Dashboard OIDC seed command,
+then validate and prepare the branch for review-thread replies and resolution.
+
+#### Actions Taken
+
+- deferred full OIDC runtime config loading until after `--dry-run` output so
+  dry runs no longer require Supabase service-role or pairwise secrets
+- reused shared OIDC redirect/logout URI normalization for seed validation
+- preserved existing optional metadata, client status, and rate-limit tier by
+  default unless explicit seed override env vars are provided
+- wrote OIDC audit events for ClearPass seed create/update operations
+- added script typecheck coverage for OIDC seed scripts
+- replaced local absolute handoff paths with repo-qualified references
+- corrected ClearPass seed docs so defaulted client id/name values are optional
+
+#### Verification
+
+- `pnpm --filter @cubid/oidc typecheck`
+- `pnpm --filter @cubid/oidc test`
+- `pnpm --filter @cubid/oidc seed:clearpass-dashboard -- --dry-run` with
+  placeholder non-secret env values
+- negative dry-run rejected `ftp://localhost/...` redirect URI through shared
+  OIDC validation
+- `git diff --check`

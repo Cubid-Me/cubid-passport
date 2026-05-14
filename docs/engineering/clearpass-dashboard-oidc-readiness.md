@@ -56,10 +56,13 @@ pnpm --filter @cubid/oidc seed:clearpass-dashboard -- --dry-run
 
 Required seed variables:
 
-- `CLEARPASS_DASHBOARD_OIDC_CLIENT_ID`, normally `clearpass-dashboard`
-- `CLEARPASS_DASHBOARD_OIDC_CLIENT_NAME`, normally `ClearPass Dashboard`
 - `CLEARPASS_DASHBOARD_OIDC_REDIRECT_URIS`
 - `CLEARPASS_DASHBOARD_OIDC_POST_LOGOUT_REDIRECT_URIS`
+
+Optional client identity overrides:
+
+- `CLEARPASS_DASHBOARD_OIDC_CLIENT_ID`, defaults to `clearpass-dashboard`
+- `CLEARPASS_DASHBOARD_OIDC_CLIENT_NAME`, defaults to `ClearPass Dashboard`
 
 Optional metadata variables:
 
@@ -67,6 +70,13 @@ Optional metadata variables:
 - `CLEARPASS_DASHBOARD_OIDC_POLICY_URI`
 - `CLEARPASS_DASHBOARD_OIDC_TOS_URI`
 - `CLEARPASS_DASHBOARD_OIDC_LOGO_URI`
+- `CLEARPASS_DASHBOARD_OIDC_STATUS`
+- `CLEARPASS_DASHBOARD_OIDC_RATE_LIMIT_TIER`
+
+The seed command preserves existing optional metadata, status, and rate-limit
+tier unless the corresponding env value is set. This prevents routine redirect
+URI reseeds from accidentally clearing contact/logo/policy/TOS metadata or
+reactivating/downgrading a client that operators changed during an incident.
 
 The seed command creates or updates a stable public client. It stores no client
 secret and prints only non-secret registration metadata.

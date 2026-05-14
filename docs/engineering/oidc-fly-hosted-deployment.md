@@ -62,6 +62,13 @@ public-web relying party from the deployed environment:
 - `CLEARPASS_DASHBOARD_OIDC_POLICY_URI`
 - `CLEARPASS_DASHBOARD_OIDC_TOS_URI`
 - `CLEARPASS_DASHBOARD_OIDC_LOGO_URI`
+- `CLEARPASS_DASHBOARD_OIDC_STATUS`
+- `CLEARPASS_DASHBOARD_OIDC_RATE_LIMIT_TIER`
+
+The ClearPass seed preserves existing optional metadata, client status, and
+rate-limit tier by default. Set `CLEARPASS_DASHBOARD_OIDC_STATUS` or
+`CLEARPASS_DASHBOARD_OIDC_RATE_LIMIT_TIER` only when intentionally changing
+those operational controls.
 
 ## DNS And Certificate
 
