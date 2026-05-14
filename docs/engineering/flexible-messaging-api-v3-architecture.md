@@ -266,6 +266,15 @@ Provider registry rows are seeded disabled. Real delivery requires Admin/config
 enablement plus app policy, user grant, verified channel, and rate-limit
 approval.
 
+`notification_verification_challenges` stores only challenge hashes, not raw
+email OTPs, Telegram codes, or provider secrets. Challenges default to three
+attempts, one-time consumption, and explicit expiry. Runtime code must treat
+consumed/replayed/expired challenge reuse as a security event.
+
+`notification_app_policies` is fail-closed. A missing row or `disabled` status
+means the app cannot send notifications. `SECURITY` cannot appear in
+`allowed_categories` unless `security_category_enabled` is true.
+
 ## SDK Handoff Boundary
 
 When any backend route becomes real, create a message in

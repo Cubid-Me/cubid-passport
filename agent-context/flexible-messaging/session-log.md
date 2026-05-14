@@ -128,3 +128,35 @@ from decision-complete schema, policy, routing, and SDK-boundary guidance.
 #### Follow-up
 
 - implement `FM02.1` as the schema/policy follow-up before starting `FM03`
+
+### session: fm-v5
+
+- timestamp: 2026-05-14T22:33:52Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`47cefab`**
+- session name: **Implement flexible messaging policy gaps**
+
+#### Objective
+
+Complete `FM02.1` by adding verification challenge/session and app policy
+storage before Passport runtime APIs begin.
+
+#### Actions Taken
+
+- added notification verification challenge storage for email and Telegram
+  with hashed challenges, expiry, attempt limits, one-time consumption, and
+  replay evidence
+- added notification app policy storage for enabled categories, allowed
+  priorities/providers, sandbox/disabled state, security-category gating, and
+  minute/day caps
+- updated the architecture doc and todo metadata to close `FM02.1`
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- start `FM03` for Passport channel encryption helpers, user APIs, Profile UI,
+  and route tests

@@ -75,12 +75,12 @@ Implementation migration:
 
 ### FM02.1. Reconcile flexible messaging schema and policy gaps before runtime APIs
 
-- Status: Not started
-- Timestamp started: TBD
-- Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Status: Completed
+- Timestamp started: 2026-05-14T22:33:52Z
+- Timestamp completed: 2026-05-14T22:33:52Z
+- Feature branch: codex/vercel-app-root-cleanup
+- Head: 47cefab
+- Session-log reference(s): session: fm-v5; repo session: v202
 
 Add the missing schema and policy pieces discovered during roadmap review
 before Passport runtime APIs begin. Create verification challenge/session
@@ -93,6 +93,9 @@ Admin/config enablement. This todo should keep `SECURITY` app-originated
 messages policy-gated, define channel-selection precedence, and make clear that
 `CRITICAL` priority strengthens audit/rate-limit scrutiny but does not bypass
 user revocation or app/category denial.
+
+Implementation migration:
+`supabase/migrations/20260514223500_flexible_messaging_policy_gaps.sql`
 
 ### FM03. Add user channel verification and preference management
 

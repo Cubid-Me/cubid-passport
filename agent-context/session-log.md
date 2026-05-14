@@ -6119,3 +6119,37 @@ the schema/policy gaps found in the PRD, `FM01`, and `FM02` review.
 
 - commit this docs/metadata reconciliation, then implement `FM02.1` before
   beginning `FM03`
+
+### session: v202
+
+- timestamp: 2026-05-14T22:33:52Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`47cefab`**
+- session name: **Implement flexible messaging policy gaps**
+
+#### Objective
+
+Complete `FM02.1` by adding the missing verification challenge and app policy
+schema needed before flexible messaging runtime APIs.
+
+#### Actions Taken
+
+- added `supabase/migrations/20260514223500_flexible_messaging_policy_gaps.sql`
+  with `notification_verification_challenges` and
+  `notification_app_policies`
+- modeled channel verification as hashed, expiring, one-time challenge sessions
+  with attempt limits and replay evidence
+- modeled app notification enablement as fail-closed policy with allowed
+  categories, priorities, providers, security-category gating, sandbox state,
+  and minute/day caps
+- updated flexible messaging docs and metadata to close `FM02.1`
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- commit `FM02.1`, then start `FM03` for Passport channel verification and
+  preference management
