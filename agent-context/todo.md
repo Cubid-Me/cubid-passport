@@ -170,6 +170,17 @@ Add the issuer-side production controls that should exist before broad rollout e
 
 Build the user-facing and operator-facing surfaces that sit on top of the issuer controls added in `B02.5`. Passport should let authenticated users review active OIDC consents by client, scope, claim set, grant time, and policy version, then revoke a consent without exposing raw human subject keys or Cubid user IDs to browser state. Admin should expose richer visibility for TCOIN and other OIDC clients: redirect URIs, allowed scopes, claim policy, client status, rate-limit tier, recent audit events, token/userinfo failure counts, and suspension controls. This follow-up must use authenticated server routes rather than the existing generic Supabase proxy helpers, because consent revocation and client operations are security-sensitive account-management actions.
 
+### B02.6 Register and smoke ClearPass Dashboard as a Login with Cubid relying party
+
+- Status: Not started
+- Timestamp started: TBD
+- Timestamp completed: TBD
+- Feature branch: TBD
+- Head: TBD
+- Session-log reference(s): incoming SDK note `agent-context/messages-from-clearpass/2026-05-13-dashboard-sign-in-with-cubid-blocker.md`; SDK handoff `agent-context/messages-from-cubid-passport/2026-05-14-clearpass-dashboard-oidc-contract.md`; session: v191
+
+Register ClearPass Dashboard as the first browser-delivered developer dashboard relying party for Login with Cubid. This is an OIDC relying-party readiness and smoke task, not a new SDK implementation task. Define the client as `public_web`, token endpoint auth method `none`, Authorization Code + PKCE, initial scopes `openid email profile`, and exact staging and production redirect/logout URIs supplied by ClearPass. Register or seed the client without exposing secrets, then run the hosted flow through `/authorize`, Passport login/consent, `/token`, `/userinfo`, and logout. The output should confirm ClearPass can authenticate dashboard developers without Cubid API keys or privileged credentials in browser code, and should feed any SDK-facing gaps back to `Cubid-Me/cubid-sdk`.
+
 ### B03. Build the custom claim registry and identity-depth policy controls in cubid-admin
 
 - Status: Completed

@@ -5716,3 +5716,38 @@ word.
 
 - use `agent-context/siwc-todo.md` as the detailed SIWC source of truth unless
   a specific active SIWC slice needs to be promoted into the main roadmap
+
+### session: v191
+
+- timestamp: 2026-05-14T00:09:05Z
+- agent: **OpenAI Codex**
+- branch: **codex/smartrust-passkey-wallet-api-request**
+- head: **`727da38`**
+- session name: **Plan ClearPass Dashboard OIDC relying-party readiness**
+
+#### Objective
+
+Turn the ClearPass Dashboard Sign in with Cubid blocker into repo-specific
+follow-up work without duplicating SIWC wallet todos or moving SDK code into
+`cubid-passport`.
+
+#### Actions Taken
+
+- reviewed the ClearPass-origin SDK inbox note about browser-safe Dashboard
+  Sign in with Cubid
+- confirmed existing `B01`, `B02`, `B04`, and `E01` work already cover the
+  backend OIDC issuer, PKCE, Passport-hosted login/consent, pairwise subjects,
+  passkey ACR, and disclosure persistence
+- added `B02.6` as the specific Passport-side relying-party registration and
+  hosted smoke follow-up for ClearPass Dashboard
+- coordinated the SDK-side follow-up through a handoff note in
+  `Cubid-Me/cubid-sdk` instead of adding public SDK implementation here
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- implement `B02.6` after the SDK auth package surface exists or when exact
+  ClearPass Dashboard redirect/logout URIs are ready to register and smoke
