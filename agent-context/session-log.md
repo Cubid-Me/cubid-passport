@@ -5981,3 +5981,39 @@ of a duplicate root-level Passport project.
 
 - push this cleanup through a normal PR to `dev`, then confirm both Vercel
   app-rooted projects report successful preview checks on the next PR
+
+### session: v198
+
+- timestamp: 2026-05-14T22:16:35Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`4dbbc3e`**
+- session name: **Create flexible messaging side-roadmap**
+
+#### Objective
+
+Create the initial flexible messaging feature-folder todo and session log,
+grounded in the newly added PRD, without promoting the work into the main
+roadmap yet.
+
+#### Actions Taken
+
+- added `agent-context/flexible-messaging/todo.md` with `FM01` through `FM12`
+  covering architecture, schema, user preferences, app grants, API v3 sending,
+  email and Telegram providers, Admin controls, auditability, abuse prevention,
+  SDK coordination, and production readiness
+- added `agent-context/flexible-messaging/session-log.md` with `fm-v1` to mark
+  the PRD/todo/log creation point
+- kept the roadmap aligned with current repo boundaries: API v3 in this repo,
+  public SDK implementation in `Cubid-Me/cubid-sdk`, and encrypted channel
+  identifiers using C05-style custody patterns
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- commit the flexible messaging PRD, todo, and feature-local session log, then
+  start `FM01` only when the user promotes flexible messaging from side-roadmap
+  planning into active implementation
