@@ -98,3 +98,33 @@ destination storage foundation for future Passport/Admin/API v3 work.
 
 - start `FM03` by adding Passport channel verification and preference
   management APIs/UI on top of the schema
+
+### session: fm-v4
+
+- timestamp: 2026-05-14T22:32:22Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`a6ff751`**
+- session name: **Reconcile flexible messaging roadmap before runtime**
+
+#### Objective
+
+Tighten the flexible messaging roadmap before `FM03` so runtime work starts
+from decision-complete schema, policy, routing, and SDK-boundary guidance.
+
+#### Actions Taken
+
+- added `FM02.1` for verification challenge/session storage and app
+  notification policy/quota storage
+- clarified `SECURITY`, `CRITICAL`, channel-selection precedence, provider
+  enablement, and delivery-status semantics in the architecture doc
+- refined `FM03` through `FM12` so each slice has a safer implementation
+  boundary before Passport runtime work begins
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- implement `FM02.1` as the schema/policy follow-up before starting `FM03`

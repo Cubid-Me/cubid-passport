@@ -73,6 +73,27 @@ details to dapps.
 Implementation migration:
 `supabase/migrations/20260514222500_flexible_messaging_foundation.sql`
 
+### FM02.1. Reconcile flexible messaging schema and policy gaps before runtime APIs
+
+- Status: Not started
+- Timestamp started: TBD
+- Timestamp completed: TBD
+- Feature branch: TBD
+- Head: TBD
+- Session-log reference(s): TBD
+
+Add the missing schema and policy pieces discovered during roadmap review
+before Passport runtime APIs begin. Create verification challenge/session
+storage for email and Telegram with expiry, attempt limits, one-time
+consumption, pending lookup indexes, and replay prevention. Add app
+notification policy/quota storage for enabled categories, allowed priorities,
+allowed providers, sandbox/disabled state, and minute/day caps. Clarify in docs
+that provider registry rows are seeded disabled and real delivery requires
+Admin/config enablement. This todo should keep `SECURITY` app-originated
+messages policy-gated, define channel-selection precedence, and make clear that
+`CRITICAL` priority strengthens audit/rate-limit scrutiny but does not bypass
+user revocation or app/category denial.
+
 ### FM03. Add user channel verification and preference management
 
 - Status: Not started
@@ -82,16 +103,16 @@ Implementation migration:
 - Head: TBD
 - Session-log reference(s): TBD
 
-Implement the Passport-owned user surface for managing notification channels.
-Signed-in users should be able to add, verify, label, set defaults, mute,
-pause, revoke, and prioritize channels globally and per app/category. Email
-verification should reuse hardened OTP patterns where appropriate, while
-Telegram should use an explicit bot handshake rather than trusting unverified
-chat identifiers. The Profile UI should explain that Cubid routes messages on
-behalf of apps without exposing contact details to those apps. API responses
-must omit raw channel destinations, encrypted fields, provider secrets, and
-service-role metadata. This slice should establish the user-control model
-before apps can send notifications.
+Implement the Passport-owned user surface for managing notification channels
+and preferences. This slice owns server encryption helpers for notification
+channel destinations, authenticated Passport APIs for list/start verification/
+complete verification/update, and Profile UI for channel management. Signed-in
+users should be able to add, verify, label, set defaults, mute, pause, revoke,
+and prioritize channels globally and per app/category. Email verification
+should reuse hardened OTP-style semantics where appropriate, while Telegram
+should use an explicit bot handshake rather than trusting unverified chat
+identifiers. API responses must omit raw channel destinations, encrypted
+fields, provider secrets, and service-role metadata.
 
 ### FM04. Add app notification permission and category grants
 
@@ -102,15 +123,15 @@ before apps can send notifications.
 - Head: TBD
 - Session-log reference(s): TBD
 
-Extend Cubid's Allow Page and disclosure-grant model so users explicitly
-authorize which apps may send which notification categories through which
-channel classes. Grants should be app-scoped, revocable, auditable, and
-separate from identity/stamp disclosure grants even if they share UI patterns.
-The default should be fail-closed: no app can send notifications until the user
-has authorized the app and category. Marketing should remain disabled unless a
-future todo explicitly adds it. This slice should make permissions visible to
-users and enforceable by backend routes, while keeping app-facing responses
-limited to allowed categories and delivery status rather than channel details.
+Extend Cubid's Allow Page model so users explicitly authorize which apps may
+send which notification categories through selected channel classes. This slice
+owns notification grant UX and persistence, not generic identity/stamp
+disclosure grants. Grants should be app-scoped, revocable, auditable, and
+separate from identity disclosure even if they share UI patterns. The default
+is fail-closed: no app can send notifications until the user has authorized the
+app and category. Marketing remains disabled unless a future todo explicitly
+adds it. App-facing responses stay limited to allowed categories and delivery
+status rather than channel details.
 
 ### FM05. Implement API v3 app send-notification contract
 
@@ -122,15 +143,13 @@ limited to allowed categories and delivery status rather than channel details.
 - Session-log reference(s): TBD
 
 Add the dapp-authenticated API v3 route for sending structured notifications,
-centered on `/api/v3/notifications/send`. The route should accept app-scoped
-user identity, category, priority, title/body, deep link, metadata, and an
-idempotency key. It must validate payload shape, authenticate through hashed
-dapp API keys, enforce optional `dapp_id` matching, check user grants and
-preferences, apply rate limits, record a notification event, and enqueue or
-attempt delivery through supported providers. Responses should provide stable
-event and delivery status metadata without exposing channel destinations or
-provider internals. Error envelopes should follow the existing Passport API
-security baseline.
+centered on `/api/v3/notifications/send`. This slice owns send-route
+validation, idempotency, content limits, dapp-user ownership, app policy,
+grant/preference checks, event creation, and delivery orchestration. It should
+not implement provider-specific delivery beyond invoking adapter interfaces or
+recording queued attempts. Responses should provide stable event and routing
+status metadata without exposing channel destinations or provider internals.
+Error envelopes should follow the existing Passport API security baseline.
 
 ### FM06. Implement email delivery provider integration
 
@@ -146,9 +165,10 @@ operational-secret loading patterns, but route delivery through the new
 notification event and delivery-attempt records rather than ad hoc app email
 logic. The provider adapter should format sender identity clearly so the
 originating app remains front-and-center while Cubid behaves as infrastructure.
-It should support safe retries, provider error mapping, redacted logs, and
-delivery-status updates. Security and critical transactional messages may use
-stricter templates than workflow messages. This slice should not introduce
+It owns email-specific verification/delivery details, safe retries, provider
+error mapping, redacted logs, and delivery-status updates. Security and
+critical transactional messages may use stricter templates than workflow
+messages. This slice should not introduce
 general-purpose newsletter tooling, raw recipient disclosure to apps, or
 marketing delivery unless later explicitly approved.
 
@@ -167,10 +187,11 @@ data, and route messages through a provider adapter with clear app-originating
 copy. The implementation should support shared Telegram destinations across
 apps while preserving app-scoped permissions and mute behavior. It should also
 leave room for app-specific bots later without requiring that complexity in
-the MVP. Delivery attempts must record provider status and errors without
-logging chat IDs, bot tokens, or message contents beyond the sanitized event
-record. This slice should keep Telegram as notification routing, not a chat
-platform or social network.
+the MVP. This slice owns Telegram-specific verification and delivery details.
+Delivery attempts must record provider status and errors without logging chat
+IDs, bot tokens, or message contents beyond the sanitized event record. This
+slice should keep Telegram as notification routing, not a chat platform or
+social network.
 
 ### FM08. Add Admin notification control plane
 
@@ -206,7 +227,9 @@ delivery status, and revoke or adjust preferences from the same context. Apps
 should be able to query notification event status and delivery outcome for
 their own app-scoped users, but never access underlying channel addresses,
 other apps' events, provider secrets, raw Cubid user IDs, or cross-app channel
-bindings. This slice should use the existing request-id and structured-error
+bindings. If app delivery updates should be push-based as well as pull-based,
+extend the API v3 webhook contract with redacted notification status events in
+this slice. This slice should use the existing request-id and structured-error
 contract so support teams can trace a failed delivery from user/app evidence
 to internal security and provider logs.
 
@@ -245,8 +268,10 @@ real, write a handoff note in `Cubid-Me/cubid-sdk` under
 `agent-context/messages-from-cubid-passport/`. The note should explain whether
 the SDK change is additive or breaking, which helpers should be server-side
 only, which browser flows should launch Passport-hosted UX, and what example
-apps should demonstrate. Do not add SDK code to this repository. This closes
-when every implemented backend contract has a matching SDK-agent instruction.
+apps should demonstrate. Create notes immediately after each backend contract
+change rather than waiting until the end of the full feature. Do not add SDK
+code to this repository. This closes when every implemented backend contract
+has a matching SDK-agent instruction.
 
 ### FM12. Production readiness and smoke validation
 

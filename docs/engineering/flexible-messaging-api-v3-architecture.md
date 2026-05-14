@@ -43,6 +43,12 @@ are deferred. `CRITICAL` priority may receive stricter routing and audit
 requirements, but it must not become a preference-bypass loophole without an
 explicit later policy todo.
 
+`SECURITY` is a high-sensitivity category, not a generic way for apps to send
+their own OTP or password-reset systems through Cubid. App-originated security
+notifications must be allowed by Admin policy and user grant before delivery.
+Cubid-owned auth/recovery messages should continue to use first-party auth
+flows unless a later todo explicitly migrates them into this infrastructure.
+
 ## Ownership Model
 
 Passport owns user-facing channel and preference management:
@@ -154,6 +160,8 @@ Rules:
 - Delivery is denied when the user has no verified eligible channel, has muted
   the app/category, has paused notifications, or when rate/provider policy
   blocks the request.
+- A successful response means Cubid accepted and routed the event. Provider
+  delivery may still be queued, pending, delivered, or failed.
 
 Success response:
 
@@ -191,6 +199,19 @@ service-role-only metadata.
 Fallback routing is deferred. The MVP should pick one best eligible channel
 from explicit user preference, then global default, then a conservative
 provider/category default.
+
+Channel selection precedence for the MVP is:
+
+1. app/category preference
+2. app-level preference
+3. global category preference
+4. verified default channel for the selected channel type
+5. deny with a stable no eligible channel error
+
+`CRITICAL` priority may tighten audit, freshness, and rate-limit policy. It
+must not bypass revocation, app/category denial, provider disablement, or an
+explicit user mute/pause unless a later emergency-delivery policy is designed
+and approved.
 
 ## Event And Status Model
 
@@ -231,6 +252,19 @@ The FM02 schema foundation creates these storage groups:
 
 All tables enable RLS and grant access only to `service_role`; app and browser
 access must go through Passport/Admin/API v3 routes.
+
+The FM02.1 reconciliation layer adds the missing runtime prerequisites:
+
+- `notification_verification_challenges` records email and Telegram
+  verification sessions with expiry, one-time consumption, attempt limits, and
+  replay protection.
+- `notification_app_policies` records app-level enablement, allowed
+  categories, allowed providers, allowed priorities, sandbox state, and
+  send-rate caps.
+
+Provider registry rows are seeded disabled. Real delivery requires Admin/config
+enablement plus app policy, user grant, verified channel, and rate-limit
+approval.
 
 ## SDK Handoff Boundary
 

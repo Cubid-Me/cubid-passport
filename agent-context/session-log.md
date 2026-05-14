@@ -6085,3 +6085,37 @@ including encrypted private custody for retrievable channel destinations.
 
 - commit `FM02`, then start `FM03` for Passport channel verification and
   preference management
+
+### session: v201
+
+- timestamp: 2026-05-14T22:32:22Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`a6ff751`**
+- session name: **Reconcile flexible messaging roadmap before runtime**
+
+#### Objective
+
+Improve the flexible messaging plan before runtime implementation by filling
+the schema/policy gaps found in the PRD, `FM01`, and `FM02` review.
+
+#### Actions Taken
+
+- added `FM02.1` in
+  [agent-context/flexible-messaging/todo.md](/Users/botmaster/src/cubid/cubid-passport/agent-context/flexible-messaging/todo.md)
+  for verification challenge/session storage and app notification policy/quota
+  storage
+- clarified `SECURITY`, `CRITICAL`, provider enablement, channel-selection
+  precedence, and delivery-status semantics in
+  [docs/engineering/flexible-messaging-api-v3-architecture.md](/Users/botmaster/src/cubid/cubid-passport/docs/engineering/flexible-messaging-api-v3-architecture.md)
+- refined `FM03` through `FM12` to give runtime/API/provider/Admin/SDK slices
+  clearer ownership boundaries
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- commit this docs/metadata reconciliation, then implement `FM02.1` before
+  beginning `FM03`
