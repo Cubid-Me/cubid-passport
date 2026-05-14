@@ -6017,3 +6017,36 @@ roadmap yet.
 - commit the flexible messaging PRD, todo, and feature-local session log, then
   start `FM01` only when the user promotes flexible messaging from side-roadmap
   planning into active implementation
+
+### session: v199
+
+- timestamp: 2026-05-14T22:22:05Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`d30bce0`**
+- session name: **Define flexible messaging API v3 architecture**
+
+#### Objective
+
+Complete `FM01` by creating the repo-specific target-state architecture doc
+for Cubid flexible messaging before schema or runtime implementation begins.
+
+#### Actions Taken
+
+- added [docs/engineering/flexible-messaging-api-v3-architecture.md](/Users/botmaster/src/cubid/cubid-passport/docs/engineering/flexible-messaging-api-v3-architecture.md)
+  to define API v3 route families, MVP channels/categories, privacy boundaries,
+  app/user/Admin ownership, send-notification contract, routing flow, status
+  model, and SDK handoff expectations
+- marked `FM01` completed in
+  [agent-context/flexible-messaging/todo.md](/Users/botmaster/src/cubid/cubid-passport/agent-context/flexible-messaging/todo.md)
+- added feature-local session `fm-v2` in
+  [agent-context/flexible-messaging/session-log.md](/Users/botmaster/src/cubid/cubid-passport/agent-context/flexible-messaging/session-log.md)
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- commit `FM01`, then start `FM02` for the notification schema and encrypted
+  channel storage foundation

@@ -28,12 +28,12 @@ email and Telegram delivery, with initial categories `SECURITY`,
 
 ### FM01. Define the API v3 flexible messaging architecture
 
-- Status: Not started
-- Timestamp started: TBD
-- Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Status: Completed
+- Timestamp started: 2026-05-14T22:22:05Z
+- Timestamp completed: 2026-05-14T22:22:05Z
+- Feature branch: codex/vercel-app-root-cleanup
+- Head: d30bce0
+- Session-log reference(s): session: fm-v2; repo session: v199
 
 Create the target-state engineering doc for flexible messaging before adding
 runtime routes or tables. Map the PRD's notification concepts onto Cubid's
@@ -45,6 +45,9 @@ suggestion with API v3. Lock the MVP to email and Telegram delivery with
 `SECURITY`, `TRANSACTIONAL`, and `WORKFLOW` categories unless the user expands
 scope. The output should explain what belongs in Passport, Admin, shared
 packages, migrations, provider adapters, and the public SDK repo.
+
+Target-state doc:
+[docs/engineering/flexible-messaging-api-v3-architecture.md](/Users/botmaster/src/cubid/cubid-passport/docs/engineering/flexible-messaging-api-v3-architecture.md)
 
 ### FM02. Add notification domain schema and encrypted channel storage
 
