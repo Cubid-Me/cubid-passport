@@ -5791,3 +5791,33 @@ repo-side relying-party seed/runbook path for ClearPass Dashboard.
 
 - run focused OIDC validation, then close or split the live hosted smoke
   portion depending on what can be safely executed from this checkout
+
+### session: v193
+
+- timestamp: 2026-05-14T03:31:43Z
+- agent: **OpenAI Codex**
+- branch: **codex/smartrust-passkey-wallet-api-request**
+- head: **`ac440b5`**
+- session name: **Close B02.6 and split hosted ClearPass smoke**
+
+#### Objective
+
+Close the repo-side ClearPass Dashboard OIDC seed/readiness work and preserve
+the live hosted seed plus browser smoke as an explicit operational follow-up.
+
+#### Actions Taken
+
+- marked `B02.6` completed at implementation commit `ac440b5`
+- recorded that repo-side completion includes the stable client seed command,
+  dry-run validation, env examples, and relying-party runbook
+- added `B02.6.1` for hosted ClearPass Dashboard client seeding and full OIDC
+  browser smoke evidence
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- run `B02.6.1` once the target hosted environment credentials and exact
+  ClearPass Dashboard redirect/logout URIs are confirmed

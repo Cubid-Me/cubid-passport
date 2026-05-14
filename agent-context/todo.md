@@ -172,14 +172,27 @@ Build the user-facing and operator-facing surfaces that sit on top of the issuer
 
 ### B02.6 Register and smoke ClearPass Dashboard as a Login with Cubid relying party
 
-- Status: Started
+- Status: Completed
 - Timestamp started: 2026-05-14T03:30:40Z
-- Timestamp completed: TBD
+- Timestamp completed: 2026-05-14T03:31:43Z
 - Feature branch: codex/smartrust-passkey-wallet-api-request
-- Head: b8bdd07
-- Session-log reference(s): incoming SDK note `agent-context/messages-from-clearpass/2026-05-13-dashboard-sign-in-with-cubid-blocker.md`; SDK handoff `agent-context/messages-from-cubid-passport/2026-05-14-clearpass-dashboard-oidc-contract.md`; incoming SDK ready note `agent-context/messages-from-cubid-sdk/2026-05-14-clearpass-dashboard-oidc-sdk-ready.md`; session: v191, session: v192
+- Head: ac440b5
+- Session-log reference(s): incoming SDK note `agent-context/messages-from-clearpass/2026-05-13-dashboard-sign-in-with-cubid-blocker.md`; SDK handoff `agent-context/messages-from-cubid-passport/2026-05-14-clearpass-dashboard-oidc-contract.md`; incoming SDK ready note `agent-context/messages-from-cubid-sdk/2026-05-14-clearpass-dashboard-oidc-sdk-ready.md`; session: v191, session: v192, session: v193
 
 Register ClearPass Dashboard as the first browser-delivered developer dashboard relying party for Login with Cubid. This is an OIDC relying-party readiness and smoke task, not a new SDK implementation task. Define the client as `public_web`, token endpoint auth method `none`, Authorization Code + PKCE, initial scopes `openid email profile`, and exact staging and production redirect/logout URIs supplied by ClearPass. Register or seed the client without exposing secrets, then run the hosted flow through `/authorize`, Passport login/consent, `/token`, `/userinfo`, and logout. The output should confirm ClearPass can authenticate dashboard developers without Cubid API keys or privileged credentials in browser code, and should feed any SDK-facing gaps back to `Cubid-Me/cubid-sdk`.
+
+Repo-side completion added the stable `clearpass-dashboard` seed command, dry-run validation, env examples, and relying-party runbook. The live hosted seed and browser smoke are split into `B02.6.1` because they require real target environment credentials and operator-controlled deployment state.
+
+### B02.6.1 Run hosted ClearPass Dashboard OIDC seed and browser smoke
+
+- Status: Not started
+- Timestamp started: TBD
+- Timestamp completed: TBD
+- Feature branch: TBD
+- Head: TBD
+- Session-log reference(s): session: v193
+
+Apply the ClearPass Dashboard OIDC client seed to the intended hosted Supabase/OIDC environment and capture the full browser smoke evidence. Confirm the exact staging and production dashboard redirect/logout URIs before running the seed, then execute `pnpm --filter @cubid/oidc seed:clearpass-dashboard` from a trusted operator shell with the target `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and `CLEARPASS_DASHBOARD_OIDC_*` values. Smoke the SDK-backed dashboard flow through discovery, `/authorize`, Passport login and consent, callback `code`/`state`, `/token`, `/userinfo`, and logout. Record the client id, issuer, redirect URI, SDK package versions, and result. Do not mark this complete from local dry-run output alone.
 
 ### B03. Build the custom claim registry and identity-depth policy controls in cubid-admin
 
