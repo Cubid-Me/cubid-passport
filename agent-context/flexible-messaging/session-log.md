@@ -64,3 +64,37 @@ architecture contract for future flexible messaging implementation.
 
 - start `FM02` by adding the notification domain schema and encrypted channel
   storage foundation
+
+### session: fm-v3
+
+- timestamp: 2026-05-14T22:23:43Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`17f0ba5`**
+- session name: **Add flexible messaging schema foundation**
+
+#### Objective
+
+Complete `FM02` by adding the notification domain schema and encrypted channel
+destination storage foundation for future Passport/Admin/API v3 work.
+
+#### Actions Taken
+
+- added a Supabase migration for categories, providers, user channel metadata,
+  app notification grants, preferences, notification events, and delivery
+  attempts
+- added `private.notification_channel_destinations` for encrypted retrievable
+  email/Telegram destinations using the C05 envelope pattern
+- added the Vault helper for
+  `passport_notification_channel_wrapping_key_v1`
+- updated the architecture doc and todo metadata to reference the storage
+  foundation
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- start `FM03` by adding Passport channel verification and preference
+  management APIs/UI on top of the schema

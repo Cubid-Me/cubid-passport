@@ -211,6 +211,27 @@ Recommended status values:
 Apps may query only their own event status. Users may inspect their own
 history. Admin may inspect redacted operational evidence across apps.
 
+## Storage Foundation
+
+The FM02 schema foundation creates these storage groups:
+
+- `notification_categories` and `notification_providers` define the supported
+  MVP categories and email/Telegram provider registry.
+- `user_notification_channels` stores public, non-secret channel metadata such
+  as label, type, verification status, mute/pause state, and default status.
+- `private.notification_channel_destinations` stores encrypted retrievable
+  channel destinations using the C05 envelope pattern and Vault secret
+  `passport_notification_channel_wrapping_key_v1`.
+- `notification_app_grants` records app-scoped category authorization for a
+  dapp user.
+- `notification_preferences` records user routing preferences globally or per
+  app/category.
+- `notification_events` and `notification_delivery_attempts` record redacted
+  send intent, routing decisions, provider attempts, and status evidence.
+
+All tables enable RLS and grant access only to `service_role`; app and browser
+access must go through Passport/Admin/API v3 routes.
+
 ## SDK Handoff Boundary
 
 When any backend route becomes real, create a message in

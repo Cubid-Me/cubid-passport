@@ -51,12 +51,12 @@ Target-state doc:
 
 ### FM02. Add notification domain schema and encrypted channel storage
 
-- Status: Not started
-- Timestamp started: TBD
-- Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Status: Completed
+- Timestamp started: 2026-05-14T22:23:43Z
+- Timestamp completed: 2026-05-14T22:23:43Z
+- Feature branch: codex/vercel-app-root-cleanup
+- Head: 17f0ba5
+- Session-log reference(s): session: fm-v3; repo session: v200
 
 Add the database foundation for flexible messaging. Create tables for verified
 user notification channels, app/category preferences, notification events,
@@ -69,6 +69,9 @@ Design indexes for app-scoped lookup and user history without allowing
 cross-app channel discovery. The schema should support immediate revocation,
 future fallbacks, and provider-specific metadata without leaking contact
 details to dapps.
+
+Implementation migration:
+`supabase/migrations/20260514222500_flexible_messaging_foundation.sql`
 
 ### FM03. Add user channel verification and preference management
 

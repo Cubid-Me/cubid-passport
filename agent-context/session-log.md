@@ -6050,3 +6050,38 @@ for Cubid flexible messaging before schema or runtime implementation begins.
 
 - commit `FM01`, then start `FM02` for the notification schema and encrypted
   channel storage foundation
+
+### session: v200
+
+- timestamp: 2026-05-14T22:23:43Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`17f0ba5`**
+- session name: **Add flexible messaging schema foundation**
+
+#### Objective
+
+Complete `FM02` by adding the database foundation for flexible messaging,
+including encrypted private custody for retrievable channel destinations.
+
+#### Actions Taken
+
+- added `supabase/migrations/20260514222500_flexible_messaging_foundation.sql`
+  with notification categories, providers, user channel metadata, app grants,
+  preferences, events, delivery attempts, and private encrypted destinations
+- seeded the MVP category/provider registry for email and Telegram with
+  `SECURITY`, `TRANSACTIONAL`, and `WORKFLOW`
+- added the Vault helper for
+  `passport_notification_channel_wrapping_key_v1`
+- updated
+  [docs/engineering/flexible-messaging-api-v3-architecture.md](/Users/botmaster/src/cubid/cubid-passport/docs/engineering/flexible-messaging-api-v3-architecture.md)
+  and flexible messaging metadata to reflect the schema foundation
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- commit `FM02`, then start `FM03` for Passport channel verification and
+  preference management
