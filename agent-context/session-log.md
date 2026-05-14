@@ -5821,3 +5821,56 @@ the live hosted seed plus browser smoke as an explicit operational follow-up.
 
 - run `B02.6.1` once the target hosted environment credentials and exact
   ClearPass Dashboard redirect/logout URIs are confirmed
+
+### session: v194
+
+- timestamp: 2026-05-14T03:40:53Z
+- agent: **OpenAI Codex**
+- branch: **codex/smartrust-passkey-wallet-api-request**
+- head: **`ced0793`**
+- session name: **Start hosted ClearPass Dashboard OIDC smoke**
+
+#### Objective
+
+Run `B02.6.1` against hosted `CubidDev` as far as possible from this machine
+and identify any remaining human/operator inputs needed for the full browser
+smoke.
+
+#### Actions Taken
+
+- confirmed `https://staging-id.cubid.me/.well-known/openid-configuration`
+  and `https://staging-id.cubid.me/jwks` return `200`
+- confirmed `https://dashboard.clearpass.app` returns `200`
+- used the linked Supabase CLI session for `CubidDev`
+  (`cggycnbvljcdptzyjpju`) to seed `clearpass-dashboard` into
+  `public.oidc_clients`
+- seeded the client as `public_web`, `active`, `internal`, token endpoint auth
+  method `none`, Authorization Code + PKCE, and scopes `openid email profile`
+- configured redirect URIs `http://localhost:5173/auth/callback` and
+  `https://dashboard.clearpass.app/auth/callback`
+- configured post-logout redirect URIs `http://localhost:5173/` and
+  `https://dashboard.clearpass.app/`
+- verified a hosted `/authorize` request for `clearpass-dashboard` returns a
+  `302` to `https://passport.cubid.me/login?login_challenge=...` with an
+  `X-Request-Id`
+- opened the hosted Passport login page through Playwright and confirmed it
+  renders the human login UI for the ClearPass authorization request
+
+#### Verification
+
+- `supabase db query --linked` seed/upsert returned the
+  `clearpass-dashboard` client row
+- `curl` discovery/JWKS checks returned `200`
+- hosted `/authorize` returned `302` to Passport login
+- Playwright browser reached the Passport hosted login page
+
+#### Blocker
+
+- Full login/consent/token/userinfo/logout smoke now requires a human
+  Passport login/consent session or a dedicated hosted test identity. This
+  agent should not invent a user credential or bypass the hosted auth boundary.
+
+#### Follow-up
+
+- finish `B02.6.1` after the user completes hosted Passport login/consent in
+  the browser session or provides an approved test identity path for the smoke
