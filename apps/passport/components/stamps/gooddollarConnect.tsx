@@ -294,7 +294,7 @@ export const GooddollarConnect = ({
               "https://pbs.twimg.com/profile_images/1468937571954737157/Mi7uJpGm_400x400.jpg"
             }
             alt="Image"
-            className="mb-1 h-10 w-10 rounded-md"
+            className="mb-1 size-10 rounded-md"
           />
           <CardTitle>Gooddollar</CardTitle>
           <CardDescription>Connect your web3 gooddollar</CardDescription>

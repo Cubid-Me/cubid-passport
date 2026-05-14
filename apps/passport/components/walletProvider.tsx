@@ -27,7 +27,7 @@ export function SolanaAppWalletProvider({
             // manually add any legacy wallet adapters here
             // new UnsafeBurnerWalletAdapter(),
         ],
-        [network],
+        [],
     );
 
     return (

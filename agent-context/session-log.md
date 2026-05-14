@@ -6232,3 +6232,39 @@ notification grant controls, separate from identity and stamp disclosure.
 
 - commit `FM04`, then continue with `FM05` for the API v3 app
   send-notification contract
+
+### session: v205
+
+- timestamp: 2026-05-14T23:36:42Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`94b3a3e`**
+- session name: **Clean Passport frontend and bundle warnings**
+
+#### Objective
+
+Remove the pre-existing Passport frontend lint warnings plus the production
+build warnings from legacy wallet dependencies.
+
+#### Actions Taken
+
+- fixed remaining React hook dependency warnings and Tailwind lint warnings
+  in Passport frontend flows
+- moved Google font loading out of inline layout `<head>` links
+- added browser-safe Next webpack fallbacks for legacy ContractKit dependencies
+- routed `bigint-buffer` and `buffer-to-arraybuffer` through warning-free
+  browser bundle shims during Next builds
+- allowed `bigint-buffer` native build scripts in pnpm installs so Node
+  environments can keep native bindings where applicable
+
+#### Verification
+
+- `pnpm --filter @cubid/passport lint`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- continue with `FM05` for the API v3 app send-notification contract when
+  flexible messaging work resumes

@@ -57,7 +57,7 @@ export const NearFlow = () => {
           your Gitcoin Passport score will be reflected on Mear within 24h
         </p>
         <a
-          className="text-blue-500 text-md"
+          className="text-md text-blue-500"
           href="https://nearblocks.io/address/issuer.cubidme.near"
           rel="noreferrer"
           target="_blank"
@@ -86,7 +86,7 @@ export const NearFlow = () => {
       <div className="space-y-4">
         <div>
           <p className="p-2 text-xl font-semibold">Choose Chain</p>
-          <div className="flex flex-wrap md:space-x-2 space-y-2 md:space-y-0">
+          <div className="flex flex-wrap space-y-2 md:space-x-2 md:space-y-0">
             <button
               onClick={() => {
                 setStepFlow(1)
@@ -170,7 +170,7 @@ export const NearFlow = () => {
                   <div role="status">
                     <svg
                       aria-hidden="true"
-                      className="inline h-8 w-8 animate-spin fill-gray-300 text-gray-600"
+                      className="inline size-8 animate-spin fill-gray-300 text-gray-600"
                       viewBox="0 0 100 101"
                       fill="none"
                       xmlns="http://www.w3.org/2000/svg"
@@ -291,7 +291,7 @@ export const NearFlow = () => {
             <div role="status">
               <svg
                 aria-hidden="true"
-                className="inline h-8 w-8 animate-spin fill-gray-300 text-gray-600"
+                className="inline size-8 animate-spin fill-gray-300 text-gray-600"
                 viewBox="0 0 100 101"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"

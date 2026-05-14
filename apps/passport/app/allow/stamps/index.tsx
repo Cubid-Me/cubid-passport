@@ -186,6 +186,11 @@ export const Stamps = ({
   const [isPohVerified, setIsPohVerified] = useState<any>(null)
   const { disconnect } = useDisconnect()
   const { getIdForApp } = useCreatedByAppId()
+  const doesStampExist = useCallback(
+    (stamp_id: number | string) =>
+      allStamps?.filter(({ stamptype }) => stamptype == stamp_id)?.[0],
+    [allStamps]
+  )
 
   const mintEVM = useCallback(
     async (address: string) => {
@@ -206,7 +211,7 @@ export const Stamps = ({
       refreshUser()
       fetchStampData()
     },
-    [disconnect, fetchStampData, fetchUserData, getIdForApp, uuid]
+    [disconnect, fetchStampData, fetchUserData, getIdForApp, getUser, refreshUser, uuid]
   )
 
   const { publicKey, connected: solConnected } = useSolanaWallet()
@@ -229,8 +234,16 @@ export const Stamps = ({
         fetchStampData()
       }
     })()
-
-  }, [publicKey, solConnected])
+  }, [
+    doesStampExist,
+    fetchStampData,
+    fetchUserData,
+    getIdForApp,
+    getUser,
+    publicKey,
+    solConnected,
+    uuid,
+  ])
 
   const connectToWeb3Node = useCallback(
     async (address: string) => {
@@ -330,13 +343,13 @@ export const Stamps = ({
     },
     [
       disconnect,
-      email,
       fetchStampData,
       fetchUserData,
       getIdForApp,
       getUser,
       userState,
       fetchNearAndGitcoinStamps,
+      uuid,
     ]
   )
 
@@ -352,7 +365,7 @@ export const Stamps = ({
         mintEVM(address)
       }
     }
-  }, [address, stampToRender, isOpen])
+  }, [address, connectToWeb3Node, isOpen, mintEVM, stampToRender])
 
   useEffect(() => {
     if (email) {
@@ -481,8 +494,6 @@ export const Stamps = ({
     email,
     getUser,
     getIdForApp,
-    supabaseUser,
-    uuid,
     fetchUserData,
     fetchStampData,
   ])
@@ -514,12 +525,9 @@ export const Stamps = ({
     return result?.charAt?.(0)?.toUpperCase() + result?.slice(1)
   }
 
-  const doesStampExist = (stamp_id: number | string) =>
-    allStamps?.filter(({ stamptype }) => stamptype == stamp_id)?.[0]
-
   return (
     <div className="p-3 pb-16">
-      <div className="flex mb-3 items-center justify-between">
+      <div className="mb-3 flex items-center justify-between">
         {stampLoading && (
           <button
             disabled
@@ -658,7 +666,7 @@ export const Stamps = ({
                   "https://logos-world.net/wp-content/uploads/2024/01/Solana-Logo.png"
                 }
                 alt="Image"
-                className="mb-1 size-10 object-fit rounded-md"
+                className="object-fit mb-1 size-10 rounded-md"
               />
               <CardTitle>Solana</CardTitle>
               {doesStampExist(stampsWithId["solana"]) ? (
@@ -1290,7 +1298,7 @@ export const Stamps = ({
                 onClick={() => {
                   setEmailPanel(true)
                 }}
-                className="!text-white mb-2"
+                className="mb-2 !text-white"
                 variant="secondary"
                 style={{ width: "200px", backgroundColor: "#3b82f6" }}
               >

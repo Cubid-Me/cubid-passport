@@ -104,7 +104,7 @@ export default function IndexPage() {
                   viewBox="0 0 24 24"
                   strokeWidth={1.5}
                   stroke="currentColor"
-                  className="w-6 h-6"
+                  className="size-6"
                 >
                   <path
                     strokeLinecap="round"
@@ -120,7 +120,7 @@ export default function IndexPage() {
                   viewBox="0 0 24 24"
                   stroke-width="1.5"
                   stroke="currentColor"
-                  className="w-6 h-6"
+                  className="size-6"
                 >
                   <path
                     stroke-linecap="round"
@@ -135,7 +135,7 @@ export default function IndexPage() {
                   height="15"
                   viewBox="0 0 15 15"
                   fill="none"
-                  className="w-6 h-6"
+                  className="size-6"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path

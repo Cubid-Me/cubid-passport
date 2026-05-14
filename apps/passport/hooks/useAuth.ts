@@ -15,7 +15,6 @@ type hookProps =
   | undefined
 
 export const useAuth = (appHookProps: hookProps) => {
-  const appId = appHookProps?.appId
   const [loading, setLoading] = useState(true)
   const dispatch = useDispatch()
   const searchParams: any = useSearchParams()
@@ -88,7 +87,7 @@ export const useAuth = (appHookProps: hookProps) => {
       }
 
     }
-  }, [appId, searchParams])
+  }, [searchParams])
 
   return { loading, user, supabaseUser, getUser }
 }

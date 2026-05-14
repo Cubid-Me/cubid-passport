@@ -262,7 +262,7 @@ const AllowPage = () => {
 
   if (!loading && !Boolean(userUidData?.dapp_users?.[0]?.users?.id)) {
     return (
-      <div className="p-5 flex h-[100vh] w-[100vw] dark:bg-gray-900 items-center justify-center dark:text-white">
+      <div className="flex h-[100vh] w-[100vw] items-center justify-center p-5 dark:bg-gray-900 dark:text-white">
         <p>Invalid UID provided in URL</p>
       </div>)
   }
@@ -283,7 +283,7 @@ const AllowPage = () => {
 
       {loading || selectStampLoading ? (
         <>
-          <div className="flex h-[100vh] w-[100vw] dark:bg-gray-900 items-center justify-center">
+          <div className="flex h-[100vh] w-[100vw] items-center justify-center dark:bg-gray-900">
             <div className="w-[650px] rounded border border-gray-200 p-6 text-center dark:border-gray-800">
               <div role="status" className="w-full animate-pulse space-y-3">
                 <div className="mb-4 h-10 w-full rounded bg-gray-200 dark:bg-gray-700"></div>
@@ -298,7 +298,7 @@ const AllowPage = () => {
           </div>
         </>
       ) : (
-        <div className="dark:bg-gray-700 min-h-[100vh] dark:text-white">
+        <div className="min-h-[100vh] dark:bg-gray-700 dark:text-white">
           {isValid ? (
             <div className="px-4 pt-4">
               <p className="dark:text-white">
@@ -439,7 +439,7 @@ const AllowPage = () => {
                     leaveFrom="opacity-100"
                     leaveTo="opacity-0"
                   >
-                    <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
+                    <div className="fixed inset-0 bg-gray-500/75 transition-opacity" />
                   </Transition.Child>
 
                   <div className="fixed inset-0 overflow-hidden">

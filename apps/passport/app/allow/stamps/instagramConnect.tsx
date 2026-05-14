@@ -63,7 +63,7 @@ export const InstagramConnect = ({
   dbUser: any
 }) => {
   const searchParams = useSearchParams()
-  const authData = useAuth({ appId })
+  const { getUser } = useAuth({ appId })
   const router = useRouter()
   const { getIdForApp } = useCreatedByAppId()
 
@@ -79,7 +79,7 @@ export const InstagramConnect = ({
         })
         const allData: any = data
         if (user_id) {
-          const dbUser = await authData.getUser()
+          const dbUser = await getUser()
           await insertStamp({
             stamp_type: 'instagram',
             user_data: { user_id: dbUser?.id, uuid: uid },
@@ -94,7 +94,7 @@ export const InstagramConnect = ({
         }
       }
     },
-    [dbUser, email, fetchStamps, getIdForApp, uid]
+    [email, fetchStamps, getIdForApp, getUser, uid]
   )
   useEffect(() => {
     const code = searchParams?.get("code")
