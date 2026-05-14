@@ -5947,3 +5947,37 @@ then validate and prepare the branch for review-thread replies and resolution.
 - negative dry-run rejected `ftp://localhost/...` redirect URI through shared
   OIDC validation
 - `git diff --check`
+
+### session: v197
+
+- timestamp: 2026-05-14T22:12:58Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`04d9ea0`**
+- session name: **Clean up Vercel app-root deployment config**
+
+#### Objective
+
+Align repo-side Vercel configuration with the operator-updated Vercel project
+layout where Passport and Admin deploy as separate app-rooted projects instead
+of a duplicate root-level Passport project.
+
+#### Actions Taken
+
+- removed the stale root `vercel.json` that forced root deployments to build
+  Passport from `apps/passport`
+- simplified `apps/passport/vercel.json` so it keeps only Passport cron
+  schedules and no longer applies wildcard API CORS headers at the deployment
+  layer
+- added a Vercel monorepo deployment runbook documenting the two app-rooted
+  Vercel projects and the Fly.io boundary for the OIDC service
+
+#### Verification
+
+- parsed `apps/passport/vercel.json` and `apps/admin/vercel.json` as JSON
+- `git diff --check`
+
+#### Follow-up
+
+- push this cleanup through a normal PR to `dev`, then confirm both Vercel
+  app-rooted projects report successful preview checks on the next PR
