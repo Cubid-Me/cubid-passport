@@ -119,12 +119,12 @@ fields, provider secrets, and service-role metadata.
 
 ### FM04. Add app notification permission and category grants
 
-- Status: Not started
-- Timestamp started: TBD
-- Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Status: Completed
+- Timestamp started: 2026-05-14T22:53:33Z
+- Timestamp completed: 2026-05-14T22:53:33Z
+- Feature branch: codex/vercel-app-root-cleanup
+- Head: f6ee425
+- Session-log reference(s): fm-v7, v204
 
 Extend Cubid's Allow Page model so users explicitly authorize which apps may
 send which notification categories through selected channel classes. This slice

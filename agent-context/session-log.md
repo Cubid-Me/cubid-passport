@@ -6194,3 +6194,41 @@ messaging channels and user notification preferences.
 
 - commit `FM03`, then continue with `FM04` for app notification permission and
   category grants
+
+### session: v204
+
+- timestamp: 2026-05-14T22:53:33Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`f6ee425`**
+- session name: **Implement Allow Page notification grants**
+
+#### Objective
+
+Complete `FM04` by giving hosted Allow Page users explicit app/category
+notification grant controls, separate from identity and stamp disclosure.
+
+#### Actions Taken
+
+- added notification grant helpers that validate dapp user/page ownership
+  before granting categories
+- added anonymous Allow Page routes for listing and replacing app notification
+  category grants
+- added Allow Page UI for `SECURITY`, `TRANSACTIONAL`, and `WORKFLOW`
+  notification permissions with copy that keeps channel privacy and delivery
+  limits explicit
+- added Passport route tests for app-scoped replacement behavior and
+  cross-dapp rejection
+- updated flexible messaging docs and wrote an SDK coordination note
+
+#### Verification
+
+- `pnpm --filter @cubid/passport test`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- commit `FM04`, then continue with `FM05` for the API v3 app
+  send-notification contract

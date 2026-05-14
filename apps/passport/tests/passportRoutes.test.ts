@@ -13,6 +13,8 @@ import notificationChannelCompleteVerificationHandler from "../pages/api/notific
 import notificationChannelListHandler from "../pages/api/notifications/channels/list"
 import notificationChannelStartVerificationHandler from "../pages/api/notifications/channels/start-verification"
 import notificationChannelUpdateHandler from "../pages/api/notifications/channels/update"
+import notificationGrantAllowPageListHandler from "../pages/api/notifications/grants/allow-page/list"
+import notificationGrantAllowPageUpdateHandler from "../pages/api/notifications/grants/allow-page/update"
 import notificationPreferenceListHandler from "../pages/api/notifications/preferences/list"
 import notificationPreferenceUpdateHandler from "../pages/api/notifications/preferences/update"
 import consentListHandler from "../pages/api/oidc/consents/list"
@@ -428,6 +430,115 @@ test("Passport notification preferences can be listed and updated without raw ch
     "SECURITY"
   )
   assert.equal(JSON.stringify(listRes.body).includes("person@example.com"), false)
+})
+
+test("Passport Allow Page notification grants are app scoped and replace category permissions", async () => {
+  const supabase = new MockPassportSupabase()
+  setPassportSupabaseForTests(supabase as never)
+  supabase.setDapp({ appname: "Notify Test App", id: 42 })
+  supabase.setDappPage({ dapp_id: 42, id: 77 })
+  supabase.setDappUser({ dapp_id: 42, user_id: 1234, uuid: "dapp_user_1" })
+
+  const updateReq = createApiRequest({
+    body: {
+      categories: ["SECURITY", "TRANSACTIONAL"],
+      pageId: 77,
+      uid: "dapp_user_1",
+    },
+    headers: {
+      origin: "https://passport.cubid.me",
+    },
+    url: "/api/notifications/grants/allow-page/update",
+  })
+  const updateRes = createApiResponse()
+
+  await notificationGrantAllowPageUpdateHandler(updateReq, updateRes)
+
+  assert.equal(updateRes.statusCode, 200)
+  assert.deepEqual(
+    (updateRes.body as DataResponse<{
+      grants: Array<{ categoryKey: string; status: string }>
+    }>).data.grants
+      .filter((grant) => grant.status === "active")
+      .map((grant) => grant.categoryKey)
+      .sort(),
+    ["SECURITY", "TRANSACTIONAL"]
+  )
+  assert.equal(supabase.notificationAppGrants.length, 2)
+
+  const replaceReq = createApiRequest({
+    body: {
+      categories: ["WORKFLOW"],
+      pageId: 77,
+      uid: "dapp_user_1",
+    },
+    headers: {
+      origin: "https://passport.cubid.me",
+    },
+    url: "/api/notifications/grants/allow-page/update",
+  })
+  const replaceRes = createApiResponse()
+  await notificationGrantAllowPageUpdateHandler(replaceReq, replaceRes)
+
+  assert.equal(replaceRes.statusCode, 200)
+  const activeCategories = (
+    replaceRes.body as DataResponse<{
+      grants: Array<{ categoryKey: string; status: string }>
+    }>
+  ).data.grants
+    .filter((grant) => grant.status === "active")
+    .map((grant) => grant.categoryKey)
+  assert.deepEqual(activeCategories, ["WORKFLOW"])
+
+  const listReq = createApiRequest({
+    body: {
+      pageId: 77,
+      uid: "dapp_user_1",
+    },
+    headers: {
+      origin: "https://passport.cubid.me",
+    },
+    url: "/api/notifications/grants/allow-page/list",
+  })
+  const listRes = createApiResponse()
+  await notificationGrantAllowPageListHandler(listReq, listRes)
+
+  assert.equal(listRes.statusCode, 200)
+  assert.equal(
+    JSON.stringify(listRes.body).includes("person@example.com"),
+    false
+  )
+  assert.deepEqual(
+    (listRes.body as DataResponse<{ availableCategories: string[] }>).data
+      .availableCategories,
+    ["SECURITY", "TRANSACTIONAL", "WORKFLOW"]
+  )
+})
+
+test("Passport Allow Page notification grants reject cross-dapp page and user pairs", async () => {
+  const supabase = new MockPassportSupabase()
+  setPassportSupabaseForTests(supabase as never)
+  supabase.setDappPage({ dapp_id: 99, id: 77 })
+  supabase.setDappUser({ dapp_id: 42, user_id: 1234, uuid: "dapp_user_1" })
+
+  const req = createApiRequest({
+    body: {
+      categories: ["SECURITY"],
+      pageId: 77,
+      uid: "dapp_user_1",
+    },
+    headers: {
+      origin: "https://passport.cubid.me",
+    },
+    url: "/api/notifications/grants/allow-page/update",
+  })
+  const res = createApiResponse()
+
+  await notificationGrantAllowPageUpdateHandler(req, res)
+
+  assert.equal(res.statusCode, 404)
+  assert.equal((res.body as { error: { code: string } }).error.code, "not_found")
+  assert.equal(supabase.notificationAppGrants.length, 0)
 })
 
 test("Passport app disclosure grants list and revoke Allow Page grants", async () => {

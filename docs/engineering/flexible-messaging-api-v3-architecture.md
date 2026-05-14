@@ -115,6 +115,8 @@ Initial Passport user routes:
 - `POST /api/notifications/preferences/list`
 - `POST /api/notifications/preferences/update`
 - `POST /api/notifications/history/list`
+- `POST /api/notifications/grants/allow-page/list`
+- `POST /api/notifications/grants/allow-page/update`
 
 FM03 implemented the channel and preference routes above, excluding history.
 They are Passport-user-authenticated routes using Firebase bearer auth, shared
@@ -128,6 +130,12 @@ Email channel verification sends a short one-time code through the existing
 server SMTP path and stores only an HMAC challenge hash. Telegram verification
 starts with a temporary one-time setup code so users can prepare the channel;
 FM07 owns the real Telegram bot handshake and provider delivery adapter.
+
+FM04 added the Allow Page notification grant routes. They validate the
+`uid`/`pageId` pair against a single dapp, then let the user grant or revoke
+category-level app notification permission for `SECURITY`, `TRANSACTIONAL`,
+and `WORKFLOW`. These grants are distinct from identity/stamp disclosure
+grants and do not reveal channel destinations or app delivery capability.
 
 Initial Admin routes:
 

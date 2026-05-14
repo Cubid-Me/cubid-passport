@@ -205,3 +205,42 @@ Profile UI, and route coverage.
 
 - start `FM04` to add app notification permission and category grants through
   Allow Page-style authorization
+
+### session: fm-v7
+
+- timestamp: 2026-05-14T22:53:33Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`f6ee425`**
+- session name: **Implement Allow Page notification grants**
+
+#### Objective
+
+Complete `FM04` by adding app-scoped notification category grants to the
+hosted Allow Page flow without mixing them into identity/stamp disclosure
+grants.
+
+#### Actions Taken
+
+- added Passport server helpers that validate `uid` and `pageId` belong to the
+  same dapp before listing or replacing notification category grants
+- added Allow Page routes for listing and updating `SECURITY`,
+  `TRANSACTIONAL`, and `WORKFLOW` notification grants
+- added Allow Page UI checkboxes explaining that apps do not receive channel
+  addresses or delivery guarantees
+- added Passport tests for replace-style grant updates and cross-dapp
+  rejection
+- updated the architecture doc and wrote an SDK handoff note for future
+  permission-state modeling
+
+#### Verification
+
+- `pnpm --filter @cubid/passport test`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- start `FM05` for the API v3 app send-notification contract, idempotency,
+  grant/policy/preference checks, and delivery orchestration skeleton
