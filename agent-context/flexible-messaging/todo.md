@@ -99,12 +99,12 @@ Implementation migration:
 
 ### FM03. Add user channel verification and preference management
 
-- Status: Not started
-- Timestamp started: TBD
-- Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Status: Completed
+- Timestamp started: 2026-05-14T22:48:59Z
+- Timestamp completed: 2026-05-14T22:48:59Z
+- Feature branch: codex/vercel-app-root-cleanup
+- Head: ed00cd6
+- Session-log reference(s): fm-v6, v203
 
 Implement the Passport-owned user surface for managing notification channels
 and preferences. This slice owns server encryption helpers for notification

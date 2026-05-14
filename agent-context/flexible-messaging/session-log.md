@@ -160,3 +160,48 @@ storage before Passport runtime APIs begin.
 
 - start `FM03` for Passport channel encryption helpers, user APIs, Profile UI,
   and route tests
+
+### session: fm-v6
+
+- timestamp: 2026-05-14T22:48:59Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`ed00cd6`**
+- session name: **Implement Passport notification channel management**
+
+#### Objective
+
+Complete `FM03` by adding Passport-owned user channel verification,
+encrypted channel destination storage helpers, global preference management,
+Profile UI, and route coverage.
+
+#### Actions Taken
+
+- added a Vault-backed challenge hash helper for notification verification
+  codes, separate from the channel destination wrapping key
+- added Passport server helpers for encrypted email/Telegram destination
+  storage, channel verification challenge creation/completion, channel
+  updates, and global category preferences
+- added user-authenticated Passport routes for notification channel
+  list/start verification/complete verification/update and preference
+  list/update
+- added a Profile card for email and Telegram setup, verification completion,
+  safe channel listing, revocation/default controls, and global category
+  routing preferences
+- added Passport route tests for missing auth, encrypted/redacted channel
+  verification, one-time challenge consumption, channel revocation, and
+  preference updates
+- updated the flexible messaging architecture doc and created an SDK handoff
+  note for future user-profile SDK work
+
+#### Verification
+
+- `pnpm --filter @cubid/passport test`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- start `FM04` to add app notification permission and category grants through
+  Allow Page-style authorization

@@ -6153,3 +6153,44 @@ schema needed before flexible messaging runtime APIs.
 
 - commit `FM02.1`, then start `FM03` for Passport channel verification and
   preference management
+
+### session: v203
+
+- timestamp: 2026-05-14T22:48:59Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`ed00cd6`**
+- session name: **Implement Passport notification channel management**
+
+#### Objective
+
+Complete `FM03` with Passport user APIs and Profile UI for verified flexible
+messaging channels and user notification preferences.
+
+#### Actions Taken
+
+- added service-role-only Vault access for
+  `passport_notification_challenge_hash_secret_v1`
+- implemented Passport server helpers for notification channel destination
+  envelope encryption, one-time verification challenges, channel updates, and
+  global category preferences
+- added Passport routes under `/api/notifications/channels/*` and
+  `/api/notifications/preferences/*`
+- added a Profile notification-channel card with redacted destination display,
+  verification completion, default/revoke controls, and category preferences
+- extended Passport route tests and mocks for notification channel storage,
+  challenge verification, redaction, and preferences
+- updated the flexible messaging architecture doc and wrote an SDK handoff
+  note for future profile-management helpers
+
+#### Verification
+
+- `pnpm --filter @cubid/passport test`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- commit `FM03`, then continue with `FM04` for app notification permission and
+  category grants

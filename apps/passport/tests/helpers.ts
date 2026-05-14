@@ -49,6 +49,10 @@ export class MockPassportSupabase {
   readonly lastUsedUpdates: number[] = []
   readonly oidcHumanSubjects: Array<Record<string, unknown>> = []
   readonly privateKeys: Array<Record<string, unknown>> = []
+  readonly notificationChannels: Array<Record<string, unknown>> = []
+  readonly notificationPreferences: Array<Record<string, unknown>> = []
+  readonly notificationVerificationChallenges: Array<Record<string, unknown>> = []
+  readonly privateNotificationChannelDestinations: Array<Record<string, unknown>> = []
   readonly selectiveDisclosureGrants: Array<Record<string, unknown>> = []
   readonly siwcSigningRequests: Array<Record<string, unknown>> = []
   readonly siwcSigningPolicies: Array<Record<string, unknown>> = []
@@ -115,6 +119,22 @@ export class MockPassportSupabase {
         data: Buffer.from(
           "fedcba9876543210fedcba9876543210"
         ).toString("base64"),
+        error: null,
+      })
+    }
+
+    if (name === "get_notification_channel_wrapping_key_v1") {
+      return Promise.resolve({
+        data: Buffer.from(
+          "notif0123456789abcdef0123456789a"
+        ).toString("base64"),
+        error: null,
+      })
+    }
+
+    if (name === "get_notification_challenge_hash_secret_v1") {
+      return Promise.resolve({
+        data: "test-passport-notification-challenge-secret",
         error: null,
       })
     }
@@ -1192,6 +1212,154 @@ export class MockPassportSupabase {
             return { error: null }
           },
         }),
+      }
+    }
+
+    const notificationTableRows: Record<
+      string,
+      Array<Record<string, unknown>>
+    > = {
+      "notification_preferences": this.notificationPreferences,
+      "notification_verification_challenges": this.notificationVerificationChallenges,
+      "private.notification_channel_destinations":
+        this.privateNotificationChannelDestinations,
+      "user_notification_channels": this.notificationChannels,
+    }
+
+    if (notificationTableRows[table]) {
+      const rows = notificationTableRows[table]
+      const createQuery = () => {
+        const filters: Record<string, unknown> = {}
+        const nullFilters = new Set<string>()
+        const inFilters: Record<string, string[]> = {}
+        let limitValue: number | null = null
+        const resolveRows = () => {
+          let resolved = [...rows]
+          for (const [column, values] of Object.entries(inFilters)) {
+            resolved = resolved.filter((row) =>
+              values.includes(String(row[column]))
+            )
+          }
+          for (const [column, value] of Object.entries(filters)) {
+            resolved = resolved.filter(
+              (row) => String(row[column]) === String(value)
+            )
+          }
+          for (const column of nullFilters) {
+            resolved = resolved.filter(
+              (row) => row[column] === null || row[column] === undefined
+            )
+          }
+          resolved.sort((left, right) =>
+            String(right.created_at ?? "").localeCompare(
+              String(left.created_at ?? "")
+            )
+          )
+          if (limitValue !== null) {
+            resolved = resolved.slice(0, limitValue)
+          }
+          return resolved
+        }
+        const query = {
+          eq: (column: string, value: unknown) => {
+            filters[column] = value
+            return query
+          },
+          in: (column: string, values: unknown[]) => {
+            inFilters[column] = values.map(String)
+            return query
+          },
+          is: (column: string, value: unknown) => {
+            if (value === null) {
+              nullFilters.add(column)
+            } else {
+              filters[column] = value
+            }
+            return query
+          },
+          limit: (value: number) => {
+            limitValue = value
+            return query
+          },
+          maybeSingle: async () => ({
+            data: resolveRows()[0] ?? null,
+            error: null,
+          }),
+          order: () => query,
+          single: async () => ({
+            data: resolveRows()[0] ?? null,
+            error: null,
+          }),
+          then: (
+            resolveThen: (value: {
+              data: Record<string, unknown>[]
+              error: null
+            }) => unknown
+          ) => Promise.resolve({ data: resolveRows(), error: null }).then(resolveThen),
+        }
+        return query
+      }
+
+      return {
+        insert: (row: Record<string, unknown>) => {
+          const idPrefix = table
+            .replace("private.", "")
+            .replace(/_/g, "-")
+            .replace(/[^a-z-]/g, "")
+          const inserted = {
+            created_at: new Date().toISOString(),
+            id: `${idPrefix}-${rows.length + 1}`,
+            updated_at: new Date().toISOString(),
+            ...row,
+          }
+          rows.push(inserted)
+          return {
+            select: () => ({
+              maybeSingle: async () => ({ data: inserted, error: null }),
+              single: async () => ({ data: inserted, error: null }),
+            }),
+          }
+        },
+        select: createQuery,
+        update: (patch: Record<string, unknown>) => {
+          const filters: Record<string, unknown> = {}
+          const updateRows = () => {
+            const updatedRows: Record<string, unknown>[] = []
+            for (const row of rows) {
+              if (
+                Object.entries(filters).every(
+                  ([column, value]) => String(row[column]) === String(value)
+                )
+              ) {
+                Object.assign(row, patch)
+                updatedRows.push(row)
+              }
+            }
+            return updatedRows
+          }
+          const query = {
+            eq: (column: string, value: unknown) => {
+              filters[column] = value
+              return query
+            },
+            select: () => ({
+              maybeSingle: async () => ({
+                data: updateRows()[0] ?? null,
+                error: null,
+              }),
+              single: async () => ({
+                data: updateRows()[0] ?? null,
+                error: null,
+              }),
+            }),
+            then: (resolveThen: (value: { error: null }) => unknown) =>
+              Promise.resolve().then(() => {
+                updateRows()
+                return { error: null }
+              }).then(resolveThen),
+          }
+          return query
+        },
       }
     }
 

@@ -116,6 +116,19 @@ Initial Passport user routes:
 - `POST /api/notifications/preferences/update`
 - `POST /api/notifications/history/list`
 
+FM03 implemented the channel and preference routes above, excluding history.
+They are Passport-user-authenticated routes using Firebase bearer auth, shared
+request IDs, CORS, rate limits, and structured error envelopes. Channel
+responses expose only metadata such as `channelId`, `channelType`, label,
+masked `displayHint`, verification status, default status, and timestamps.
+They must never return raw destinations, ciphertext, IVs, auth tags, wrapped
+keys, provider secrets, or service-role metadata.
+
+Email channel verification sends a short one-time code through the existing
+server SMTP path and stores only an HMAC challenge hash. Telegram verification
+starts with a temporary one-time setup code so users can prepare the channel;
+FM07 owns the real Telegram bot handshake and provider delivery adapter.
+
 Initial Admin routes:
 
 - `POST /api/admin/notifications/overview`
@@ -270,6 +283,9 @@ approval.
 email OTPs, Telegram codes, or provider secrets. Challenges default to three
 attempts, one-time consumption, and explicit expiry. Runtime code must treat
 consumed/replayed/expired challenge reuse as a security event.
+Challenge hashing uses the service-role-only Vault secret
+`passport_notification_challenge_hash_secret_v1`, separate from the encryption
+wrapping key.
 
 `notification_app_policies` is fail-closed. A missing row or `disabled` status
 means the app cannot send notifications. `SECURITY` cannot appear in

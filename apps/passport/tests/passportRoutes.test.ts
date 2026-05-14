@@ -9,6 +9,12 @@ import actorProfileGetHandler from "../pages/api/actors/profile/get"
 import actorProfileUpsertHandler from "../pages/api/actors/profile/upsert"
 import appDisclosureGrantListHandler from "../pages/api/disclosures/app-grants/list"
 import appDisclosureGrantRevokeHandler from "../pages/api/disclosures/app-grants/revoke"
+import notificationChannelCompleteVerificationHandler from "../pages/api/notifications/channels/complete-verification"
+import notificationChannelListHandler from "../pages/api/notifications/channels/list"
+import notificationChannelStartVerificationHandler from "../pages/api/notifications/channels/start-verification"
+import notificationChannelUpdateHandler from "../pages/api/notifications/channels/update"
+import notificationPreferenceListHandler from "../pages/api/notifications/preferences/list"
+import notificationPreferenceUpdateHandler from "../pages/api/notifications/preferences/update"
 import consentListHandler from "../pages/api/oidc/consents/list"
 import siwcAccountListHandler from "../pages/api/siwc/accounts/list"
 import approveSiwcSigningRequestHandler from "../pages/api/siwc/signing/requests/approve"
@@ -156,6 +162,272 @@ test("Passport OIDC consent list uses the shared user baseline for missing beare
       requestId: res.headers["x-request-id"],
     },
   })
+})
+
+test("Passport notification channel list requires Firebase bearer auth", async () => {
+  const supabase = new MockPassportSupabase()
+  setPassportSupabaseForTests(supabase as never)
+
+  const req = createApiRequest({
+    body: {},
+    headers: {
+      origin: "https://passport.cubid.me",
+    },
+    url: "/api/notifications/channels/list",
+  })
+  const res = createApiResponse()
+
+  await notificationChannelListHandler(req, res)
+
+  assert.equal(res.statusCode, 401)
+  assert.match(String(res.headers["x-request-id"]), /^passport_/)
+  assert.deepEqual(res.body, {
+    error: {
+      code: "unauthorized",
+      message: "Missing Firebase bearer token.",
+      requestId: res.headers["x-request-id"],
+    },
+  })
+})
+
+test("Passport notification channel verification stores encrypted destinations and verifies one-time codes", async () => {
+  const supabase = new MockPassportSupabase()
+  setPassportSupabaseForTests(supabase as never)
+  addFirebaseUserAuth()
+  supabase.setUser({ email: "person@example.com", id: 1234 })
+
+  let deliveredCode: number | null = null
+  setSendOtpEmailForTests(async (toEmail, verificationCode) => {
+    assert.equal(toEmail, "person@example.com")
+    deliveredCode = verificationCode
+  })
+
+  const startReq = createApiRequest({
+    body: {
+      channelType: "email",
+      destination: "Person@Example.com",
+      isDefault: true,
+      label: "Personal email",
+    },
+    headers: {
+      authorization: "Bearer firebase-token",
+      origin: "https://passport.cubid.me",
+      "x-request-id": "passport_notifications_1",
+    },
+    url: "/api/notifications/channels/start-verification",
+  })
+  const startRes = createApiResponse()
+
+  await notificationChannelStartVerificationHandler(startReq, startRes)
+
+  assert.equal(startRes.statusCode, 200)
+  assert.equal(startRes.headers["x-request-id"], "passport_notifications_1")
+  assert.equal(supabase.notificationChannels.length, 1)
+  assert.equal(supabase.privateNotificationChannelDestinations.length, 1)
+  assert.equal(supabase.notificationVerificationChallenges.length, 1)
+  assert.equal(deliveredCode !== null, true)
+  assert.equal(
+    supabase.notificationChannels[0]?.display_hint,
+    "p***@example.com"
+  )
+  assert.equal(
+    supabase.privateNotificationChannelDestinations[0]?.destination_ciphertext ===
+      "person@example.com",
+    false
+  )
+  assert.equal(
+    (startRes.body as DataResponse<{
+      channel: { displayHint: string }
+      challenge: { setupCode?: string }
+    }>).data.channel.displayHint,
+    "p***@example.com"
+  )
+  assert.equal(
+    (startRes.body as DataResponse<{
+      channel: { displayHint: string }
+      challenge: { setupCode?: string }
+    }>).data.challenge.setupCode,
+    undefined
+  )
+  assert.equal(
+    JSON.stringify(startRes.body).includes("person@example.com"),
+    false
+  )
+
+  const wrongReq = createApiRequest({
+    body: {
+      challengeId: supabase.notificationVerificationChallenges[0]?.id,
+      code: "0000",
+    },
+    headers: {
+      authorization: "Bearer firebase-token",
+      origin: "https://passport.cubid.me",
+    },
+    url: "/api/notifications/channels/complete-verification",
+  })
+  const wrongRes = createApiResponse()
+  await notificationChannelCompleteVerificationHandler(wrongReq, wrongRes)
+
+  assert.equal(wrongRes.statusCode, 400)
+  assert.equal(
+    supabase.notificationVerificationChallenges[0]?.attempt_count,
+    1
+  )
+
+  const completeReq = createApiRequest({
+    body: {
+      challengeId: supabase.notificationVerificationChallenges[0]?.id,
+      code: String(deliveredCode),
+    },
+    headers: {
+      authorization: "Bearer firebase-token",
+      origin: "https://passport.cubid.me",
+    },
+    url: "/api/notifications/channels/complete-verification",
+  })
+  const completeRes = createApiResponse()
+  await notificationChannelCompleteVerificationHandler(completeReq, completeRes)
+
+  assert.equal(completeRes.statusCode, 200)
+  assert.equal(
+    (completeRes.body as DataResponse<{ verificationStatus: string }>).data
+      .verificationStatus,
+    "verified"
+  )
+  assert.equal(
+    supabase.notificationVerificationChallenges[0]?.status,
+    "consumed"
+  )
+  assert.equal(supabase.notificationChannels[0]?.verification_status, "verified")
+})
+
+test("Passport notification channel update redacts destinations and can revoke encrypted storage", async () => {
+  const supabase = new MockPassportSupabase()
+  setPassportSupabaseForTests(supabase as never)
+  addFirebaseUserAuth()
+  supabase.setUser({ email: "person@example.com", id: 1234 })
+  supabase.notificationChannels.push({
+    channel_type: "email",
+    created_at: "2026-05-01T00:00:00Z",
+    display_hint: "p***@example.com",
+    id: "channel_1",
+    is_default: false,
+    label: "Old label",
+    provider_key: "email_smtp",
+    status: "active",
+    updated_at: "2026-05-01T00:00:00Z",
+    user_id: 1234,
+    verification_status: "verified",
+    verified_at: "2026-05-01T00:00:00Z",
+  })
+  supabase.privateNotificationChannelDestinations.push({
+    channel_id: "channel_1",
+    status: "active",
+    user_id: 1234,
+  })
+
+  const updateReq = createApiRequest({
+    body: {
+      channelId: "channel_1",
+      isDefault: true,
+      label: "Updated label",
+      status: "revoked",
+    },
+    headers: {
+      authorization: "Bearer firebase-token",
+      origin: "https://passport.cubid.me",
+    },
+    url: "/api/notifications/channels/update",
+  })
+  const updateRes = createApiResponse()
+
+  await notificationChannelUpdateHandler(updateReq, updateRes)
+
+  assert.equal(updateRes.statusCode, 200)
+  assert.equal(
+    (updateRes.body as DataResponse<{ label: string; status: string }>).data
+      .label,
+    "Updated label"
+  )
+  assert.equal(
+    (updateRes.body as DataResponse<{ label: string; status: string }>).data
+      .status,
+    "revoked"
+  )
+  assert.equal(
+    supabase.privateNotificationChannelDestinations[0]?.status,
+    "revoked"
+  )
+  assert.equal(JSON.stringify(updateRes.body).includes("ciphertext"), false)
+})
+
+test("Passport notification preferences can be listed and updated without raw channel destinations", async () => {
+  const supabase = new MockPassportSupabase()
+  setPassportSupabaseForTests(supabase as never)
+  addFirebaseUserAuth()
+  supabase.setUser({ email: "person@example.com", id: 1234 })
+  supabase.notificationChannels.push({
+    channel_type: "email",
+    created_at: "2026-05-01T00:00:00Z",
+    display_hint: "p***@example.com",
+    id: "channel_1",
+    is_default: true,
+    label: "Personal email",
+    provider_key: "email_smtp",
+    status: "active",
+    updated_at: "2026-05-01T00:00:00Z",
+    user_id: 1234,
+    verification_status: "verified",
+    verified_at: "2026-05-01T00:00:00Z",
+  })
+
+  const updateReq = createApiRequest({
+    body: {
+      categoryKey: "SECURITY",
+      channelId: "channel_1",
+      priorityFloor: "HIGH",
+      status: "active",
+    },
+    headers: {
+      authorization: "Bearer firebase-token",
+      origin: "https://passport.cubid.me",
+    },
+    url: "/api/notifications/preferences/update",
+  })
+  const updateRes = createApiResponse()
+
+  await notificationPreferenceUpdateHandler(updateReq, updateRes)
+
+  assert.equal(updateRes.statusCode, 200)
+  assert.equal(
+    (updateRes.body as DataResponse<{ categoryKey: string; channelId: string }>)
+      .data.categoryKey,
+    "SECURITY"
+  )
+  assert.equal(
+    (updateRes.body as DataResponse<{ categoryKey: string; channelId: string }>)
+      .data.channelId,
+    "channel_1"
+  )
+
+  const listReq = createApiRequest({
+    body: {},
+    headers: {
+      authorization: "Bearer firebase-token",
+      origin: "https://passport.cubid.me",
+    },
+    url: "/api/notifications/preferences/list",
+  })
+  const listRes = createApiResponse()
+  await notificationPreferenceListHandler(listReq, listRes)
+
+  assert.equal(listRes.statusCode, 200)
+  assert.equal(
+    (listRes.body as DataResponse<Array<{ categoryKey: string }>>).data[0]
+      ?.categoryKey,
+    "SECURITY"
+  )
+  assert.equal(JSON.stringify(listRes.body).includes("person@example.com"), false)
 })
 
 test("Passport app disclosure grants list and revoke Allow Page grants", async () => {
