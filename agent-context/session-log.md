@@ -6480,6 +6480,39 @@ backend flexible messaging contracts implemented in this repo.
 
 - continue with `FM12` production readiness and smoke validation
 
+### session: v215
+
+- timestamp: 2026-05-15T15:17:34Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`fd0e8ac`**
+- session name: **Fix OIDC consent Allow Page guard**
+
+#### Objective
+
+Unblock the hosted ClearPass Dashboard OIDC smoke after OTP login reached the
+OIDC consent step but the Passport Allow Page showed a legacy UID error.
+
+#### Actions Taken
+
+- reproduced the OTP-to-consent handoff reaching
+  `/allow?consent_challenge=...`
+- identified the legacy Allow Page UID guard running before the OIDC consent
+  branch
+- moved the OIDC consent rendering branch ahead of the legacy UID validation
+  so consent challenges do not require a dapp-user `uid`
+- kept unrelated dirty coordination files unstaged
+
+#### Verification
+
+- `pnpm --filter @cubid/passport typecheck`
+- `git diff --check -- apps/passport/app/allow/page.tsx`
+
+#### Follow-up
+
+- deploy the fix and rerun the hosted ClearPass Dashboard OIDC consent,
+  authorization-code, token, and userinfo smoke
+
 ### session: v214
 
 - timestamp: 2026-05-15T15:08:21Z

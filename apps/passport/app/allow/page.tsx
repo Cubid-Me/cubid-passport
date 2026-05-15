@@ -260,13 +260,6 @@ const AllowPage = () => {
 
   const buttonDisabled = requiredStamps?.length !== isAllIncluded?.length
 
-  if (!loading && !Boolean(userUidData?.dapp_users?.[0]?.users?.id)) {
-    return (
-      <div className="flex h-[100vh] w-[100vw] items-center justify-center p-5 dark:bg-gray-900 dark:text-white">
-        <p>Invalid UID provided in URL</p>
-      </div>)
-  }
-
   if (isOidcConsentFlow) {
     return (
       <OidcConsentPanel
@@ -276,6 +269,13 @@ const AllowPage = () => {
         submitting={oidcSubmitting}
       />
     )
+  }
+
+  if (!loading && !Boolean(userUidData?.dapp_users?.[0]?.users?.id)) {
+    return (
+      <div className="flex h-[100vh] w-[100vw] items-center justify-center p-5 dark:bg-gray-900 dark:text-white">
+        <p>Invalid UID provided in URL</p>
+      </div>)
   }
 
   return (
