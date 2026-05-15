@@ -257,12 +257,12 @@ full anti-spam product in the MVP.
 
 ### FM11. Coordinate SDK and integration impact
 
-- Status: Not started
-- Timestamp started: TBD
-- Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Status: Completed
+- Timestamp started: 2026-05-15T04:39:31Z
+- Timestamp completed: 2026-05-15T04:39:31Z
+- Feature branch: codex/vercel-app-root-cleanup
+- Head: 1e1b409
+- Session-log reference(s): fm-v14, v212
 
 Coordinate all SDK-facing flexible messaging contracts with the public SDK
 repo. For each backend route, response shape, error code, category enum,

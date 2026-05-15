@@ -200,6 +200,13 @@ When a cap is exceeded, the send route returns a structured
 the policy row is already fail-closed by `status`; production rollout should
 set positive caps for approved apps.
 
+FM11 coordination is complete for the implemented backend contracts. Handoff
+notes were written for Passport channel routes, Allow Page notification grants,
+API v3 send, email provider behavior, Telegram provider behavior, status/history
+APIs, and abuse-control error codes. Public SDK implementation remains owned by
+`Cubid-Me/cubid-sdk`; this repository owns backend/API behavior and handoff
+notes only.
+
 Route implementation must use the shared Passport/Admin API security baselines:
 request IDs, explicit methods, zod validation, CORS policy, structured errors,
 dapp/user/admin actor guards, rate-limit handling, and security-event logging.

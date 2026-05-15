@@ -426,6 +426,37 @@ inside API v3 notification sending.
 
 - continue with `FM11` SDK and integration coordination closeout
 
+### session: fm-v14
+
+- timestamp: 2026-05-15T04:39:31Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`1e1b409`**
+- session name: **Coordinate flexible messaging SDK handoff**
+
+#### Objective
+
+Complete `FM11` by confirming every implemented flexible messaging backend
+contract has a public SDK handoff note.
+
+#### Actions Taken
+
+- reviewed existing SDK handoff notes for Passport channel routes, Allow Page
+  grants, API v3 send, email delivery, Telegram delivery, and status/history
+- added a missing SDK handoff note for provider-disabled and quota-exceeded
+  send denials
+- updated flexible messaging docs to record the SDK/repo boundary for the
+  implemented contracts
+- marked `FM11` complete without adding SDK code to this repository
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- continue with `FM12` production readiness and smoke validation
+
 ### session: fm-v11
 
 - timestamp: 2026-05-14T23:59:38Z

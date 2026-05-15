@@ -6449,6 +6449,37 @@ messaging send path.
 
 - continue with `FM11` SDK and integration coordination closeout
 
+### session: v212
+
+- timestamp: 2026-05-15T04:39:31Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`1e1b409`**
+- session name: **Coordinate flexible messaging SDK handoff**
+
+#### Objective
+
+Complete `FM11` by ensuring the public SDK repo has handoff notes for the
+backend flexible messaging contracts implemented in this repo.
+
+#### Actions Taken
+
+- confirmed handoff notes exist for channel management, Allow Page grants,
+  notification send, email delivery, Telegram delivery, and status/history
+  contracts
+- added the missing handoff note for provider-disabled and quota-exceeded
+  error behavior
+- updated the architecture doc and roadmap metadata
+- kept SDK implementation out of this repository
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- continue with `FM12` production readiness and smoke validation
+
 ### session: v209
 
 - timestamp: 2026-05-14T23:59:38Z
