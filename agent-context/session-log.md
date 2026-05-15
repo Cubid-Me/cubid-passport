@@ -6480,6 +6480,38 @@ backend flexible messaging contracts implemented in this repo.
 
 - continue with `FM12` production readiness and smoke validation
 
+### session: v213
+
+- timestamp: 2026-05-15T04:42:15Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`c8fb930`**
+- session name: **Close flexible messaging production readiness runbook**
+
+#### Objective
+
+Complete `FM12` by adding a production-readiness runbook and explicit hosted
+smoke checklist for the flexible messaging MVP.
+
+#### Actions Taken
+
+- created `docs/engineering/flexible-messaging-operations.md` with required
+  migrations, Supabase Vault secrets, provider env vars, Admin policy
+  prerequisites, launch gates, smoke steps, triage guidance, and emergency
+  provider/app controls
+- updated the flexible messaging architecture doc to reference the runbook and
+  avoid claiming hosted readiness without live evidence
+- updated flexible messaging todo metadata to close `FM12`
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- run the hosted flexible messaging smoke checklist before enabling production
+  app traffic
+
 ### session: v209
 
 - timestamp: 2026-05-14T23:59:38Z

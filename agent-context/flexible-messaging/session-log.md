@@ -457,6 +457,38 @@ contract has a public SDK handoff note.
 
 - continue with `FM12` production readiness and smoke validation
 
+### session: fm-v15
+
+- timestamp: 2026-05-15T04:42:15Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`c8fb930`**
+- session name: **Close flexible messaging production readiness runbook**
+
+#### Objective
+
+Complete `FM12` by adding the operator-facing production-readiness runbook and
+hosted smoke checklist for the flexible messaging MVP.
+
+#### Actions Taken
+
+- added a flexible messaging operations runbook covering required migrations,
+  Vault secrets, provider env vars, Admin policy prerequisites, launch gates,
+  smoke steps, triage, and emergency controls
+- updated the API v3 architecture doc to reference the runbook and preserve
+  the distinction between repo-side completion and hosted launch readiness
+- marked `FM12` complete with a note that live hosted smoke evidence is still
+  required before production enablement
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- execute the hosted smoke checklist against the target Supabase/Vercel
+  environment before enabling flexible messaging for production apps
+
 ### session: fm-v11
 
 - timestamp: 2026-05-14T23:59:38Z

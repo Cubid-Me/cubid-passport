@@ -3,6 +3,9 @@
 Last updated: 2026-05-14
 Status: FM01 target-state contract
 
+Operations runbook:
+[docs/engineering/flexible-messaging-operations.md](/Users/botmaster/src/cubid/cubid-passport/docs/engineering/flexible-messaging-operations.md)
+
 ## Purpose
 
 Flexible messaging lets apps ask Cubid to deliver user-authorized
@@ -206,6 +209,12 @@ API v3 send, email provider behavior, Telegram provider behavior, status/history
 APIs, and abuse-control error codes. Public SDK implementation remains owned by
 `Cubid-Me/cubid-sdk`; this repository owns backend/API behavior and handoff
 notes only.
+
+FM12 adds the operator runbook and hosted smoke checklist for production
+readiness. The runbook is intentionally evidence-oriented: flexible messaging
+should not be claimed launch-ready until hosted migrations, Supabase Vault
+secrets, provider secrets, Admin policy, Allow Page grants, send/status/history
+routes, provider delivery, and denial paths have live smoke evidence.
 
 Route implementation must use the shared Passport/Admin API security baselines:
 request IDs, explicit methods, zod validation, CORS policy, structured errors,

@@ -278,12 +278,12 @@ has a matching SDK-agent instruction.
 
 ### FM12. Production readiness and smoke validation
 
-- Status: Not started
-- Timestamp started: TBD
-- Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Status: Completed
+- Timestamp started: 2026-05-15T04:42:15Z
+- Timestamp completed: 2026-05-15T04:42:15Z
+- Feature branch: codex/vercel-app-root-cleanup
+- Head: c8fb930
+- Session-log reference(s): fm-v15, v213
 
 Close the flexible messaging MVP with operator documentation, hosted validation,
 and smoke checks. Add runbooks for provider secret ownership, channel
@@ -295,3 +295,11 @@ notification, email delivery, Telegram delivery, user history, app status
 lookup, muted/unauthorized denial, rate-limit denial, and redaction of channel
 destinations. This todo should leave a precise launch checklist rather than a
 vague "messaging is done" claim.
+
+Runbook:
+[docs/engineering/flexible-messaging-operations.md](/Users/botmaster/src/cubid/cubid-passport/docs/engineering/flexible-messaging-operations.md)
+
+Completion note: FM12 closes the repo-side runbook and smoke checklist. Hosted
+launch readiness still requires operators to execute the checklist against the
+target Supabase/Vercel environment and record live evidence before enabling
+production app traffic.
