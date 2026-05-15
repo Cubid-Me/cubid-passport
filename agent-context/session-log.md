@@ -6480,6 +6480,45 @@ backend flexible messaging contracts implemented in this repo.
 
 - continue with `FM12` production readiness and smoke validation
 
+### session: v217
+
+- timestamp: 2026-05-15T17:46:32Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`19ee23e`**
+- session name: **Normalize cross-repo comms mailbox**
+
+#### Objective
+
+Move active cross-repo notes into the new sibling-note structure, update agent
+guidance, and answer the current SmarTrust wallet/signing blocker where the
+backend and SDK surfaces are ready enough to continue.
+
+#### Actions Taken
+
+- updated `AGENTS.md` to explain the new `agent-context/cross-repo-comms/`
+  workflow and the dirty-sibling notification convention
+- moved legacy incoming notes into `agent-context/cross-repo-comms/` with the
+  required frontmatter and removed duplicated legacy copies
+- added the ClearPass Dashboard SDK readiness thread to the new mailbox and
+  marked it resolved from Passport's side
+- marked the SDK wallet helper handoff resolved after the SDK side confirmed
+  published package versions and exported helper names
+- replied to the SmarTrust passkey-wallet request with the currently available
+  account, signing, SDK, and limitation boundaries
+- left synchronized sibling-note edits dirty in `cubid-sdk-v2` and
+  `smartrust-monorepo` so agents in those repos can pick them up
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- let the SDK and SmarTrust agents ingest their dirty sibling notes
+- yeet the Passport branch after the current Passport fixes and comms cleanup
+  are ready for review
+
 ### session: v216
 
 - timestamp: 2026-05-15T15:40:14Z
