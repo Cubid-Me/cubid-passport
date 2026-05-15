@@ -6480,6 +6480,36 @@ backend flexible messaging contracts implemented in this repo.
 
 - continue with `FM12` production readiness and smoke validation
 
+### session: v214
+
+- timestamp: 2026-05-15T15:08:21Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`13d112a`**
+- session name: **Fix Passport production Firebase env guard**
+
+#### Objective
+
+Unblock the hosted ClearPass Dashboard OIDC smoke by fixing the Passport login
+page blank screen caused by the browser Firebase configuration guard.
+
+#### Actions Taken
+
+- diagnosed the production blank page as a client-side Firebase env guard crash
+- confirmed Vercel now builds the Passport project from `apps/passport`
+- updated the Firebase config helper to use direct `NEXT_PUBLIC_FIREBASE_*`
+  references so Next.js can inline browser-safe public env values
+- kept unrelated dirty coordination files unstaged
+
+#### Verification
+
+- `pnpm --filter @cubid/passport typecheck`
+- `git diff --check -- apps/passport/lib/firebase.ts`
+
+#### Follow-up
+
+- deploy the fix and rerun the hosted ClearPass Dashboard OIDC smoke
+
 ### session: v213
 
 - timestamp: 2026-05-15T04:42:15Z
