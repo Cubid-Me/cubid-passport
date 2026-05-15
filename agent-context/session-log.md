@@ -6377,6 +6377,42 @@ provider while preserving encrypted destination storage and response redaction.
 
 - continue with `FM08` Admin notification control plane
 
+### session: v210
+
+- timestamp: 2026-05-15T04:35:21Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`840a15b`**
+- session name: **Add notification history and status surfaces**
+
+#### Objective
+
+Complete `FM09` by exposing safe notification audit/status surfaces for users
+and dapp callers.
+
+#### Actions Taken
+
+- added `/api/notifications/history/list` for Passport-authenticated users to
+  inspect redacted notification history
+- added `/api/v3/notifications/status` for dapp-authenticated delivery status
+  lookup scoped to the authenticated dapp and dapp user
+- added Profile UI history visibility near notification channel controls
+- added Passport tests for history redaction, dapp-owned status lookup, and
+  cross-dapp event denial
+- updated flexible messaging docs, todo metadata, and SDK handoff note
+
+#### Verification
+
+- `pnpm --filter @cubid/passport lint`
+- `pnpm --filter @cubid/passport test`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- continue with `FM10` rate limits, abuse prevention, and trust controls
+
 ### session: v209
 
 - timestamp: 2026-05-14T23:59:38Z

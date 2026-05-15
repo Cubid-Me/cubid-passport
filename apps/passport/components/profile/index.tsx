@@ -131,6 +131,28 @@ type NotificationPreferenceSummary = {
   updatedAt: string
 }
 
+type NotificationHistorySummary = {
+  app: {
+    appName: string | null
+    dappId: string | null
+    dappUid: string | null
+  }
+  category: string | null
+  createdAt: string | null
+  deliveryStatus: string | null
+  deniedReason: string | null
+  eventId: string
+  priority: string | null
+  selectedChannel: {
+    channelType: string | null
+    displayHint: string | null
+    label: string | null
+    providerKey: string | null
+  } | null
+  status: string | null
+  title: string | null
+}
+
 type SiwcSigningRequestSummary = {
   approvedAt: string | null
   chain: string
@@ -302,6 +324,9 @@ export const Profile = () => {
   >([])
   const [notificationPreferences, setNotificationPreferences] = useState<
     NotificationPreferenceSummary[]
+  >([])
+  const [notificationHistory, setNotificationHistory] = useState<
+    NotificationHistorySummary[]
   >([])
   const [notificationChannelsLoading, setNotificationChannelsLoading] =
     useState(false)
@@ -783,26 +808,34 @@ export const Profile = () => {
     if (!email && !phone) {
       setNotificationChannels([])
       setNotificationPreferences([])
+      setNotificationHistory([])
       return
     }
 
     setNotificationChannelsLoading(true)
     try {
       const headers = await getOidcAuthHeaders()
-      const [channelsResponse, preferencesResponse] = await Promise.all([
-        axios.post<{ data: NotificationChannelSummary[] }>(
-          "/api/notifications/channels/list",
-          {},
-          { headers }
-        ),
-        axios.post<{ data: NotificationPreferenceSummary[] }>(
-          "/api/notifications/preferences/list",
-          {},
-          { headers }
-        ),
-      ])
+      const [channelsResponse, preferencesResponse, historyResponse] =
+        await Promise.all([
+          axios.post<{ data: NotificationChannelSummary[] }>(
+            "/api/notifications/channels/list",
+            {},
+            { headers }
+          ),
+          axios.post<{ data: NotificationPreferenceSummary[] }>(
+            "/api/notifications/preferences/list",
+            {},
+            { headers }
+          ),
+          axios.post<{ data: NotificationHistorySummary[] }>(
+            "/api/notifications/history/list",
+            { limit: 10 },
+            { headers }
+          ),
+        ])
       setNotificationChannels(channelsResponse.data.data ?? [])
       setNotificationPreferences(preferencesResponse.data.data ?? [])
+      setNotificationHistory(historyResponse.data.data ?? [])
     } catch (error) {
       console.error(error)
       toast.error("Failed to load notification channels")
@@ -1982,6 +2015,72 @@ export const Profile = () => {
                 </div>
               </div>
             )}
+
+            <div className="mt-6">
+              <h3 className="font-semibold">Recent notification history</h3>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Delivery evidence is redacted. You can see the app, category,
+                selected channel label, and status, but not hidden provider
+                identifiers.
+              </p>
+              <div className="mt-3 space-y-3">
+                {notificationHistory.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    No routed notifications yet.
+                  </p>
+                ) : (
+                  notificationHistory.map((event) => (
+                    <div
+                      key={event.eventId}
+                      className="rounded-lg border bg-background p-3"
+                    >
+                      <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                        <div>
+                          <p className="text-sm font-medium">
+                            {event.title ?? "Notification"}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {event.app.appName ?? "Unknown app"} ·{" "}
+                            {event.category ?? "unknown"} ·{" "}
+                            {event.priority ?? "unknown"}
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <span className="rounded-full bg-muted px-2 py-1 text-xs uppercase">
+                            {event.status ?? "unknown"}
+                          </span>
+                          {event.deliveryStatus && (
+                            <span className="rounded-full bg-blue-100 px-2 py-1 text-xs text-blue-700">
+                              {event.deliveryStatus}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="mt-2 grid gap-2 text-xs text-muted-foreground md:grid-cols-3">
+                        <p>
+                          Channel:{" "}
+                          {event.selectedChannel?.label ??
+                            event.selectedChannel?.displayHint ??
+                            event.selectedChannel?.channelType ??
+                            "none"}
+                        </p>
+                        <p>
+                          Sent:{" "}
+                          {event.createdAt
+                            ? dayjs(event.createdAt).format(
+                                "YYYY-MM-DD HH:mm"
+                              )
+                            : "unknown"}
+                        </p>
+                        <p>
+                          Reason: {event.deniedReason ?? "N/A"}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
           </CardContent>
         </Card>
 

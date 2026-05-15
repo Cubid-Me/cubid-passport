@@ -354,6 +354,43 @@ API-backed notification delivery without exposing chat identifiers to apps.
 
 - continue with `FM08` Admin notification control plane
 
+### session: fm-v12
+
+- timestamp: 2026-05-15T04:35:21Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`840a15b`**
+- session name: **Add notification history and status surfaces**
+
+#### Objective
+
+Complete `FM09` by adding redacted user notification history and dapp-owned
+delivery status APIs.
+
+#### Actions Taken
+
+- added a Passport user history helper and `/api/notifications/history/list`
+  route for user-visible event and delivery evidence
+- added a dapp-authenticated `/api/v3/notifications/status` route scoped to
+  the authenticated app and app-scoped user
+- added a Profile history section that shows app, category, channel label,
+  event status, delivery status, and denial reason without raw destinations
+- added route tests for user history redaction, dapp status lookup, and
+  cross-dapp status denial
+- updated the flexible messaging architecture doc and SDK handoff notes
+
+#### Verification
+
+- `pnpm --filter @cubid/passport lint`
+- `pnpm --filter @cubid/passport test`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- continue with `FM10` rate limits, abuse prevention, and trust controls
+
 ### session: fm-v11
 
 - timestamp: 2026-05-14T23:59:38Z

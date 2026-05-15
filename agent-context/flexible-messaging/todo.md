@@ -217,12 +217,12 @@ for why a notification was denied, muted, failed, or delivered.
 
 ### FM09. Add auditability and delivery-status APIs
 
-- Status: Not started
-- Timestamp started: TBD
-- Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Status: Completed
+- Timestamp started: 2026-05-15T04:35:21Z
+- Timestamp completed: 2026-05-15T04:35:21Z
+- Feature branch: codex/vercel-app-root-cleanup
+- Head: 840a15b
+- Session-log reference(s): fm-v12, v210
 
 Expose safe history and delivery-status surfaces. Users should be able to see
 which app sent a notification, category, timestamp, selected channel label,

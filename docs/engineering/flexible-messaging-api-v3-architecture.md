@@ -180,6 +180,16 @@ and save app-level category/provider/priority/quota policy. Provider secrets,
 raw email addresses, Telegram chat ids, encrypted destinations, and user-owned
 channel details are never returned to Admin.
 
+FM09 adds redacted status and history surfaces. Passport users can call
+`POST /api/notifications/history/list` and see their own recent notification
+events with app name, category, title, selected channel label/display hint,
+event status, and delivery-attempt status. Dapps can call
+`POST /api/v3/notifications/status` for an event id plus their own
+`dapp_user_uuid` to inspect accepted/denied/provider delivery status for their
+own app-scoped user only. Neither surface returns raw user ids, email
+addresses, Telegram chat ids, encrypted destinations, provider credentials, or
+cross-app events.
+
 Route implementation must use the shared Passport/Admin API security baselines:
 request IDs, explicit methods, zod validation, CORS policy, structured errors,
 dapp/user/admin actor guards, rate-limit handling, and security-event logging.
@@ -242,6 +252,28 @@ Success response:
 Responses must never include channel destinations, provider credentials,
 ciphertext, wrapped keys, human subject keys, raw Cubid user IDs, or
 service-role-only metadata.
+
+## Status And History Contracts
+
+`POST /api/v3/notifications/status` is dapp-authenticated and accepts:
+
+```json
+{
+  "apikey": "cubid_live_...",
+  "dapp_user_uuid": "00000000-0000-4000-8000-000000000000",
+  "event_id": "notification event id"
+}
+```
+
+It returns the event status, selected channel type, latest delivery status,
+and redacted delivery-attempt evidence for the authenticated dapp only. A
+valid event id from another dapp returns `404`.
+
+`POST /api/notifications/history/list` is Passport-user authenticated and
+accepts an optional `{ "limit": 25 }` body. It returns user-facing event
+history with app name, category, priority, title, selected channel
+label/display hint, event status, denied reason, and delivery attempt status.
+It is intentionally a user support/history view, not an app API.
 
 ## Routing And Delivery Flow
 
