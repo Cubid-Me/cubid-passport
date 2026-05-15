@@ -6480,6 +6480,48 @@ backend flexible messaging contracts implemented in this repo.
 
 - continue with `FM12` production readiness and smoke validation
 
+### session: v216
+
+- timestamp: 2026-05-15T15:40:14Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`4eff0e1`**
+- session name: **Complete hosted ClearPass Dashboard OIDC smoke**
+
+#### Objective
+
+Finish `B02.6.1` by validating the hosted ClearPass Dashboard Login with
+Cubid flow against the deployed OIDC issuer, Passport login/consent UI, and
+browser callback.
+
+#### Actions Taken
+
+- confirmed the ClearPass Dashboard OIDC client was seeded in hosted CubidDev
+  with client id `clearpass-dashboard`
+- deployed the Passport production fixes needed for browser Firebase config and
+  OIDC consent rendering
+- completed a fresh hosted Authorization Code + PKCE browser flow through OTP,
+  optional passkey skip, consent approval, and callback
+- exchanged the returned authorization code with the saved PKCE verifier and
+  verified `/userinfo` returned the expected email/profile claims
+- confirmed logout redirect validation succeeds when `client_id` is supplied
+
+#### Verification
+
+- browser callback reached
+  `http://localhost:5173/auth/callback?code=...&state=smoke_8nCre8IbNlzajseiEPvmpw`
+- token exchange returned `200` with request id
+  `oidc_d390424d-adb9-4345-aed5-fbdbde4d3812`
+- `/userinfo` returned `200` with request id
+  `oidc_9124417f-b0fb-4186-b81b-d8fc3e7ead4d`
+- logout check returned `302` to `https://dashboard.clearpass.app/` with
+  request id `oidc_e1c8ecb2-fa97-4b66-8596-6453f1642d86`
+
+#### Follow-up
+
+- open a PR for the Passport fixes and B02.6.1 completion metadata after the
+  remaining unrelated dirty coordination files are handled or left unstaged
+
 ### session: v215
 
 - timestamp: 2026-05-15T15:17:34Z

@@ -185,12 +185,12 @@ Repo-side completion added the stable `clearpass-dashboard` seed command, dry-ru
 
 ### B02.6.1 Run hosted ClearPass Dashboard OIDC seed and browser smoke
 
-- Status: Started
+- Status: Completed
 - Timestamp started: 2026-05-14T03:40:53Z
-- Timestamp completed: TBD
-- Feature branch: codex/smartrust-passkey-wallet-api-request
-- Head: ced0793
-- Session-log reference(s): session: v193, session: v194, session: v195
+- Timestamp completed: 2026-05-15T15:40:14Z
+- Feature branch: codex/vercel-app-root-cleanup
+- Head: 4eff0e1
+- Session-log reference(s): session: v193, session: v194, session: v195, session: v214, session: v215, session: v216
 
 Apply the ClearPass Dashboard OIDC client seed to the intended hosted Supabase/OIDC environment and capture the full browser smoke evidence. Confirm the exact staging and production dashboard redirect/logout URIs before running the seed, then execute `pnpm --filter @cubid/oidc seed:clearpass-dashboard` from a trusted operator shell with the target `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and `CLEARPASS_DASHBOARD_OIDC_*` values. Smoke the SDK-backed dashboard flow through discovery, `/authorize`, Passport login and consent, callback `code`/`state`, `/token`, `/userinfo`, and logout. Record the client id, issuer, redirect URI, SDK package versions, and result. Do not mark this complete from local dry-run output alone.
 
