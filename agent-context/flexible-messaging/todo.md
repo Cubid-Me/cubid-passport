@@ -238,12 +238,12 @@ to internal security and provider logs.
 
 ### FM10. Add rate limits, abuse prevention, and trust controls
 
-- Status: Not started
-- Timestamp started: TBD
-- Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Status: Completed
+- Timestamp started: 2026-05-15T04:38:17Z
+- Timestamp completed: 2026-05-15T04:38:17Z
+- Feature branch: codex/vercel-app-root-cleanup
+- Head: 402d207
+- Session-log reference(s): fm-v13, v211
 
 Harden flexible messaging against spam and abuse before broad enablement.
 Enforce per-app, per-user, per-category, and per-priority rate limits, with

@@ -6413,6 +6413,42 @@ and dapp callers.
 
 - continue with `FM10` rate limits, abuse prevention, and trust controls
 
+### session: v211
+
+- timestamp: 2026-05-15T04:38:17Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`402d207`**
+- session name: **Harden notification send abuse controls**
+
+#### Objective
+
+Complete `FM10` by adding concrete abuse controls to the API v3 flexible
+messaging send path.
+
+#### Actions Taken
+
+- added provider-registry status enforcement for selected notification
+  channels
+- added app/user minute and daily quota enforcement using
+  `notification_app_policies`
+- kept denials redacted while recording operational evidence in
+  `notification_events`
+- added Passport tests for disabled-provider and quota-exhaustion paths
+- updated flexible messaging architecture docs and metadata
+
+#### Verification
+
+- `pnpm --filter @cubid/passport lint`
+- `pnpm --filter @cubid/passport test`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- continue with `FM11` SDK and integration coordination closeout
+
 ### session: v209
 
 - timestamp: 2026-05-14T23:59:38Z

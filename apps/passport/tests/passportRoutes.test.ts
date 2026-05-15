@@ -140,6 +140,16 @@ const addNotificationSendFixture = (supabase: MockPassportSupabase) => {
     security_category_enabled: false,
     status: "enabled",
   })
+  supabase.notificationProviders.push(
+    {
+      provider_key: "email_smtp",
+      status: "active",
+    },
+    {
+      provider_key: "telegram_bot",
+      status: "active",
+    }
+  )
   supabase.notificationAppGrants.push({
     category_key: "TRANSACTIONAL",
     dapp_id: 42,
@@ -1087,6 +1097,101 @@ test("API v3 notification send denies missing user grants without exposing chann
   )
   assert.equal(supabase.notificationDeliveryAttempts.length, 0)
   assert.equal(JSON.stringify(res.body).includes("person@example.com"), false)
+})
+
+test("API v3 notification send denies disabled providers before delivery", async () => {
+  const supabase = new MockPassportSupabase()
+  setPassportSupabaseForTests(supabase as never)
+  const apiKey = addNotificationSendFixture(supabase)
+  const provider = supabase.notificationProviders.find(
+    (row) => row.provider_key === "email_smtp"
+  )
+  if (provider) {
+    provider.status = "disabled"
+  }
+
+  const req = createApiRequest({
+    body: {
+      apikey: apiKey,
+      body: "Milestone #4 was approved.",
+      category: "TRANSACTIONAL",
+      dapp_user_uuid: DAPP_USER_UUID,
+      priority: "NORMAL",
+      title: "Milestone approved",
+    },
+    headers: {
+      "idempotency-key": "notification_send_provider_disabled",
+      origin: "https://passport.cubid.me",
+    },
+    url: "/api/v3/notifications/send",
+  })
+  const res = createApiResponse()
+
+  await notificationSendV3Handler(req, res)
+
+  assert.equal(res.statusCode, 403)
+  assert.equal(
+    (res.body as { error: { code: string } }).error.code,
+    "notification_provider_disabled"
+  )
+  assert.equal(supabase.notificationEvents[0]?.status, "denied")
+  assert.equal(
+    supabase.notificationEvents[0]?.denied_reason,
+    "notification_provider_disabled"
+  )
+  assert.equal(supabase.notificationDeliveryAttempts.length, 0)
+})
+
+test("API v3 notification send enforces per-user app quotas with denial evidence", async () => {
+  const supabase = new MockPassportSupabase()
+  setPassportSupabaseForTests(supabase as never)
+  const apiKey = addNotificationSendFixture(supabase)
+  const policy = supabase.notificationAppPolicies[0]
+  if (policy) {
+    policy.minute_limit = 1
+    policy.daily_limit = 5
+  }
+  supabase.notificationEvents.push({
+    category_key: "TRANSACTIONAL",
+    created_at: new Date().toISOString(),
+    dapp_id: 42,
+    dapp_user_uuid: DAPP_USER_UUID,
+    id: "quota_event_1",
+    status: "accepted",
+    user_id: 1234,
+  })
+
+  const req = createApiRequest({
+    body: {
+      apikey: apiKey,
+      body: "Milestone #4 was approved.",
+      category: "TRANSACTIONAL",
+      dapp_user_uuid: DAPP_USER_UUID,
+      priority: "NORMAL",
+      title: "Milestone approved",
+    },
+    headers: {
+      "idempotency-key": "notification_send_quota_denied",
+      origin: "https://passport.cubid.me",
+    },
+    url: "/api/v3/notifications/send",
+  })
+  const res = createApiResponse()
+
+  await notificationSendV3Handler(req, res)
+
+  assert.equal(res.statusCode, 429)
+  assert.equal(
+    (res.body as { error: { code: string } }).error.code,
+    "notification_quota_exceeded"
+  )
+  assert.equal(supabase.notificationEvents.length, 2)
+  assert.equal(supabase.notificationEvents[1]?.status, "denied")
+  assert.equal(
+    supabase.notificationEvents[1]?.denied_reason,
+    "notification_quota_exceeded"
+  )
+  assert.equal(supabase.notificationDeliveryAttempts.length, 0)
 })
 
 test("API v3 notification send rejects malformed payloads before event creation", async () => {

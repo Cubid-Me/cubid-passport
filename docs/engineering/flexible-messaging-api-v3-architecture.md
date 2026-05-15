@@ -190,6 +190,16 @@ own app-scoped user only. Neither surface returns raw user ids, email
 addresses, Telegram chat ids, encrypted destinations, provider credentials, or
 cross-app events.
 
+FM10 hardens the send path with provider enablement and app/user quota checks.
+The selected provider must be active in `notification_providers`; suspended or
+disabled providers fail before delivery attempts are created. App policies can
+set per-user minute and daily caps through `minute_limit` and `daily_limit`.
+When a cap is exceeded, the send route returns a structured
+`notification_quota_exceeded` denial and records a redacted denied
+`notification_events` row. A `0` cap currently means "no explicit cap" because
+the policy row is already fail-closed by `status`; production rollout should
+set positive caps for approved apps.
+
 Route implementation must use the shared Passport/Admin API security baselines:
 request IDs, explicit methods, zod validation, CORS policy, structured errors,
 dapp/user/admin actor guards, rate-limit handling, and security-event logging.
@@ -225,6 +235,8 @@ Rules:
 - Delivery is denied when the user has no verified eligible channel, has muted
   the app/category, has paused notifications, or when rate/provider policy
   blocks the request.
+- Provider registry status must be `active`, and app policy quota caps must
+  allow the request for that app-scoped user.
 - A successful response means Cubid accepted and routed the event. Provider
   delivery may still be queued, pending, delivered, or failed.
 - Email delivery is attempted immediately for verified `email_smtp` channels

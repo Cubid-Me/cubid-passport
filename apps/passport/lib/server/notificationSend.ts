@@ -28,6 +28,11 @@ type AppPolicyRow = {
   status?: string | null
 }
 
+type ProviderRow = {
+  provider_key: string
+  status?: string | null
+}
+
 type GrantRow = {
   category_key: string
   status: string
@@ -125,6 +130,62 @@ const assertPolicyAllowsRequest = (
       403,
       "notification_priority_denied",
       "This notification priority is not enabled for the app."
+    )
+  }
+}
+
+const assertProviderEnabled = (provider: ProviderRow | null) => {
+  if (!provider || provider.status !== "active") {
+    throw new ApiSecurityError(
+      403,
+      "notification_provider_disabled",
+      "The selected notification provider is not enabled."
+    )
+  }
+}
+
+const assertQuotaAllowsDelivery = async (
+  context: PassportDappContext,
+  policy: AppPolicyRow | null,
+  input: SendNotificationInput
+) => {
+  const minuteLimit = Number(policy?.minute_limit ?? 0)
+  const dailyLimit = Number(policy?.daily_limit ?? 0)
+
+  if (minuteLimit <= 0 && dailyLimit <= 0) {
+    return
+  }
+
+  const { data, error } = await context.supabase
+    .from("notification_events")
+    .select("created_at,status")
+    .eq("dapp_id", context.dapp.id)
+    .eq("dapp_user_uuid", input.dappUserUuid)
+
+  if (error) {
+    throw error
+  }
+
+  const now = Date.now()
+  const events = ((data ?? []) as Array<{
+    created_at?: string | null
+    status?: string | null
+  }>).filter((event) => event.status !== "denied" && event.created_at)
+  const minuteCount = events.filter(
+    (event) => now - new Date(String(event.created_at)).getTime() < 60_000
+  ).length
+  const dayCount = events.filter(
+    (event) => now - new Date(String(event.created_at)).getTime() < 86_400_000
+  ).length
+
+  if (
+    (minuteLimit > 0 && minuteCount >= minuteLimit) ||
+    (dailyLimit > 0 && dayCount >= dailyLimit)
+  ) {
+    throw new ApiSecurityError(
+      429,
+      "notification_quota_exceeded",
+      "This app has exceeded its notification quota for this user."
     )
   }
 }
@@ -533,6 +594,19 @@ export async function sendNotificationForDapp(
         "The user does not have a verified eligible channel for this notification."
       )
     }
+
+    const { data: provider, error: providerError } = await context.supabase
+      .from("notification_providers")
+      .select("provider_key,status")
+      .eq("provider_key", channel.provider_key)
+      .maybeSingle()
+
+    if (providerError) {
+      throw providerError
+    }
+
+    assertProviderEnabled(provider as ProviderRow | null)
+    await assertQuotaAllowsDelivery(context, policy, input)
 
     const createdAt = new Date().toISOString()
     const { data: event, error: eventError } = await context.supabase

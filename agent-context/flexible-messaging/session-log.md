@@ -391,6 +391,41 @@ delivery status APIs.
 
 - continue with `FM10` rate limits, abuse prevention, and trust controls
 
+### session: fm-v13
+
+- timestamp: 2026-05-15T04:38:17Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`402d207`**
+- session name: **Harden notification send abuse controls**
+
+#### Objective
+
+Complete `FM10` by enforcing provider enablement and app/user quota controls
+inside API v3 notification sending.
+
+#### Actions Taken
+
+- required selected notification providers to be active before delivery
+  attempts are created
+- enforced per-app/per-user minute and daily quota caps from
+  `notification_app_policies`
+- recorded redacted denial events for disabled providers and quota exhaustion
+- added Passport route tests for provider-disabled and quota-denied sends
+- updated flexible messaging docs and todo/session metadata
+
+#### Verification
+
+- `pnpm --filter @cubid/passport lint`
+- `pnpm --filter @cubid/passport test`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- continue with `FM11` SDK and integration coordination closeout
+
 ### session: fm-v11
 
 - timestamp: 2026-05-14T23:59:38Z
