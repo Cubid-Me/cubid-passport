@@ -51,9 +51,8 @@ const listApps = async (req: NextApiRequest, res: NextApiResponse) => {
     );
 
     const mapped = (data ?? []).map((dapp) => {
-      const { apikey: _apikey, ...safeDapp } = dapp;
       return {
-        ...safeDapp,
+        ...dapp,
         ...mapDappApiKeySummary(keyByDappId.get(Number(dapp.id))),
       };
     });

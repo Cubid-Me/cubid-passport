@@ -90,14 +90,12 @@ const createApp = async (req: NextApiRequest, res: NextApiResponse) => {
       }
     }
 
-    const { apikey: _apikey, ...safeApp } = createdApp;
-
     return res.status(200).json({
       data: {
         apiKey,
         apiKeyPrefix: keyRecord.key_prefix,
         app: {
-          ...safeApp,
+          ...createdApp,
           apiKeyLastUsedAt: keyRecord.last_used_at ?? null,
           apiKeyPrefix: keyRecord.key_prefix,
           apiKeyRotatedAt: keyRecord.rotated_at ?? null,

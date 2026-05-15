@@ -15,9 +15,9 @@ The active storage surface is `public.dapp_api_keys`:
 - `last_used_at`, `rotated_at`, and `revoked_at` support operations.
 
 New keys use the format `cubid_live_<prefix>_<secret>` and are stored with a
-server-side `scrypt:v1` hash. Existing `dapps.apikey` UUID values are migrated
-into `dapp_api_keys` with a `sha256:v1` hash because those legacy keys are
-already high-entropy random UUIDs and must keep working after the migration.
+server-side `scrypt:v1` hash. Legacy `dapps.apikey` UUID values were migrated
+into `dapp_api_keys` with a `sha256:v1` hash because those legacy keys were
+already high-entropy random UUIDs and needed to keep working during rollout.
 
 ## Runtime Contract
 
@@ -32,6 +32,11 @@ and last-used time.
 
 ## Legacy Column
 
-`dapps.apikey` remains in the schema during C04.1 so production can be smoked
-before destructive cleanup. C04.1.1 owns dropping the legacy constraint and
-column after active dapps are confirmed to authenticate through `dapp_api_keys`.
+`dapps.apikey` was removed in C04.1.1 after hosted preflight confirmed every
+CubidDev dapp had exactly one active `dapp_api_keys` row. The destructive
+migration includes its own guard and fails before dropping the column if any
+dapp is missing an active key or has multiple active keys.
+
+After C04.1.1, `public.dapps` no longer stores raw or recoverable API keys.
+`public.dapp_api_keys` is the only supported verifier table, and raw key
+material is only returned once from Admin create/rotate responses.

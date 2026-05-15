@@ -6480,6 +6480,55 @@ backend flexible messaging contracts implemented in this repo.
 
 - continue with `FM12` production readiness and smoke validation
 
+### session: v218
+
+- timestamp: 2026-05-15T19:58:23Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`7f77d07`**
+- session name: **Drop legacy dapp API key column**
+
+#### Objective
+
+Complete `C04.1.1` by removing the legacy plaintext-style `dapps.apikey`
+storage surface after verifying active dapps have hash-only verifier rows.
+
+#### Actions Taken
+
+- ran a read-only hosted CubidDev preflight showing 38 dapps, 38 with exactly
+  one active `dapp_api_keys` row, 0 missing active keys, and 0 duplicate active
+  keys
+- added a forward migration that fails closed if any dapp is missing an active
+  key row or has multiple active key rows, then drops `dapps_apikey_key` and
+  `dapps.apikey`
+- updated local seed data to stop inserting the removed `dapps.apikey` column
+- removed remaining Admin response plumbing that named the old `apikey` field
+- updated the dapp API-key hardening doc to record the final non-retrievable
+  key contract
+- marked `C04.1.1` completed in the roadmap
+
+#### Verification
+
+- hosted read-only preflight query against linked CubidDev for active key
+  coverage
+- `git diff --check`
+- `pnpm --filter @cubid/admin typecheck`
+- `pnpm --filter @cubid/admin test`
+- `pnpm --filter @cubid/admin build`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport test`
+- `pnpm --filter @cubid/passport build`
+- `pnpm exec supabase db lint --linked` reported a pre-existing
+  `public.create_user_check_family` ambiguous `user_id` lint finding unrelated
+  to this migration
+
+#### Follow-up
+
+- apply the guarded migration through the protected Supabase deployment
+  workflow, not directly from a local shell
+- consider a separate database-function cleanup for the pre-existing
+  `create_user_check_family` lint finding
+
 ### session: v217
 
 - timestamp: 2026-05-15T17:46:32Z

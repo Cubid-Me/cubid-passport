@@ -414,12 +414,12 @@ Migrate dapp API keys from plaintext `dapps.apikey` lookup to a verification-onl
 
 ### C04.1.1 Remove legacy `dapps.apikey` after production smoke
 
-- Status: Not started
-- Timestamp started: TBD
-- Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Status: Completed
+- Timestamp started: 2026-05-15T17:46:32Z
+- Timestamp completed: 2026-05-15T19:58:23Z
+- Feature branch: codex/vercel-app-root-cleanup
+- Head: 7f77d07
+- Session-log reference(s): session: v218
 
 Physically remove the legacy `dapps.apikey` column only after the C04.1 migration and app changes have been deployed and production smoke confirms that existing Cubid dapps authenticate through `dapp_api_keys`. This follow-up should query or otherwise verify that every active dapp has exactly one active hashed key row, that Passport dapp-auth logs show successful new-table verification, and that Admin create/rotate/list no longer reads or returns plaintext keys. Once confirmed, add a migration that drops the old unique constraint and column, remove any remaining compatibility types or seed data references, and update engineering docs to state that dapp API keys are permanently non-retrievable. This is intentionally separate from C04.1 so deployment validation can happen before destructive schema cleanup.
 
