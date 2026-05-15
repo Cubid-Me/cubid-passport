@@ -353,3 +353,39 @@ API-backed notification delivery without exposing chat identifiers to apps.
 #### Follow-up
 
 - continue with `FM08` Admin notification control plane
+
+### session: fm-v11
+
+- timestamp: 2026-05-14T23:59:38Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`ad3c4a9`**
+- session name: **Implement Admin notification control plane**
+
+#### Objective
+
+Complete `FM08` by adding Admin API and UI controls for flexible messaging
+categories, providers, app quotas, and redacted delivery evidence.
+
+#### Actions Taken
+
+- added Admin server helpers for notification overview, category updates,
+  provider status updates, and app notification policy upserts
+- added Admin routes using the shared admin auth, validation, rate-limit, and
+  error-envelope baseline
+- added a Notifications tab with provider controls, category controls, app
+  policy/quota controls, and recent event visibility
+- added Admin route baseline tests for read and sensitive notification routes
+- updated the flexible messaging architecture doc and todo metadata
+
+#### Verification
+
+- `pnpm --filter @cubid/admin lint`
+- `pnpm --filter @cubid/admin test`
+- `pnpm --filter @cubid/admin typecheck`
+- `pnpm --filter @cubid/admin build`
+- `git diff --check`
+
+#### Follow-up
+
+- continue with `FM09` auditability and delivery-status APIs

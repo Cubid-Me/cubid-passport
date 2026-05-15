@@ -6376,3 +6376,39 @@ provider while preserving encrypted destination storage and response redaction.
 #### Follow-up
 
 - continue with `FM08` Admin notification control plane
+
+### session: v209
+
+- timestamp: 2026-05-14T23:59:38Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`ad3c4a9`**
+- session name: **Implement Admin notification control plane**
+
+#### Objective
+
+Complete `FM08` by giving Admin users redacted controls and status visibility
+for the flexible messaging MVP.
+
+#### Actions Taken
+
+- added notification Admin operations for overview, provider updates,
+  category updates, and app policy/quota upserts
+- added Admin API routes on the existing shared baseline for read and
+  sensitive operations
+- added a Notifications Admin tab with provider/category/app policy controls
+  and recent event evidence
+- added Admin route tests for the new notification routes
+- updated flexible messaging docs and metadata
+
+#### Verification
+
+- `pnpm --filter @cubid/admin lint`
+- `pnpm --filter @cubid/admin test`
+- `pnpm --filter @cubid/admin typecheck`
+- `pnpm --filter @cubid/admin build`
+- `git diff --check`
+
+#### Follow-up
+
+- continue with `FM09` auditability and delivery-status APIs

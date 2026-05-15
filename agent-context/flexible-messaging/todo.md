@@ -198,12 +198,12 @@ social network.
 
 ### FM08. Add Admin notification control plane
 
-- Status: Not started
-- Timestamp started: TBD
-- Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Status: Completed
+- Timestamp started: 2026-05-14T23:59:38Z
+- Timestamp completed: 2026-05-14T23:59:38Z
+- Feature branch: codex/vercel-app-root-cleanup
+- Head: ad3c4a9
+- Session-log reference(s): fm-v11, v209
 
 Add Admin APIs and UI for operating flexible messaging. Admin users should be
 able to view and manage category registry entries, provider enablement, app

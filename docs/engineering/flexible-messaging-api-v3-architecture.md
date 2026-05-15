@@ -167,11 +167,18 @@ bot-token material, or provider internals to apps.
 Initial Admin routes:
 
 - `POST /api/admin/notifications/overview`
-- `POST /api/admin/notifications/categories/list`
 - `POST /api/admin/notifications/categories/upsert`
-- `POST /api/admin/notifications/providers/list`
 - `POST /api/admin/notifications/providers/update`
 - `POST /api/admin/notifications/app-policy/upsert`
+
+FM08 implements the Admin control plane for these routes and adds the
+Notifications tab in the Admin UI. The overview response is redacted
+operator evidence: category registry rows, provider status, per-app policy and
+quota controls, recent event status, and delivery-attempt aggregates. Admins
+can enable/suspend providers, update category display/default priority/status,
+and save app-level category/provider/priority/quota policy. Provider secrets,
+raw email addresses, Telegram chat ids, encrypted destinations, and user-owned
+channel details are never returned to Admin.
 
 Route implementation must use the shared Passport/Admin API security baselines:
 request IDs, explicit methods, zod validation, CORS policy, structured errors,

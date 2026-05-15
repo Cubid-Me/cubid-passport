@@ -6,6 +6,7 @@ import React, { useState } from 'react';
 
 import AppList from './appList';
 import DisclosureOps from './disclosureOps';
+import NotificationOps from './notificationOps';
 import OidcOps from './oidcOps';
 import OidcRegistry from './oidcRegistry';
 import SiwcPolicy from './siwcPolicy';
@@ -15,6 +16,7 @@ import Webhooks from './webhook';
 type Tab =
   | 'apps'
   | 'disclosure-ops'
+  | 'notifications'
   | 'oidc'
   | 'oidc-ops'
   | 'siwc-policy'
@@ -54,6 +56,12 @@ export default function Admin() {
               Disclosure Ops
             </button>
             <button
+              onClick={() => setActiveTab('notifications')}
+              className={`pb-2 ${activeTab === 'notifications' ? 'border-b-2 border-blue-500 text-blue-500' : ''}`}
+            >
+              Notifications
+            </button>
+            <button
               onClick={() => setActiveTab('siwc-policy')}
               className={`pb-2 ${activeTab === 'siwc-policy' ? 'border-b-2 border-blue-500 text-blue-500' : ''}`}
             >
@@ -71,6 +79,7 @@ export default function Admin() {
             {activeTab === 'oidc' && <OidcRegistry />}
             {activeTab === 'oidc-ops' && <OidcOps />}
             {activeTab === 'disclosure-ops' && <DisclosureOps />}
+            {activeTab === 'notifications' && <NotificationOps />}
             {activeTab === 'siwc-policy' && <SiwcPolicy />}
             {activeTab === 'webhooks' && <Webhooks />}
           </div>
