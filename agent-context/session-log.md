@@ -6673,6 +6673,70 @@ page blank screen caused by the browser Firebase configuration guard.
 
 - deploy the fix and rerun the hosted ClearPass Dashboard OIDC smoke
 
+### session: v217
+
+- timestamp: 2026-05-16T05:14:28Z
+- agent: **OpenAI Codex**
+- branch: **codex/post-166-status-and-messaging-smoke**
+- head: **`eade36e`**
+- session name: **Reconcile post-166 repo status**
+
+#### Objective
+
+Update repo status truth after PR #166 merged the flexible messaging MVP,
+Vercel app-root cleanup, hosted OIDC smoke fixes, and guarded legacy
+`dapps.apikey` removal.
+
+#### Actions Taken
+
+- updated `agent-context/repo-status.md` to mark `C04.1.1` as completed rather
+  than intentionally pending
+- clarified that PR #166 added newer hosted migrations whose protected apply
+  and smoke evidence are still separate launch-readiness work
+- kept the production-readiness status conservative until flexible messaging
+  Vault/runtime secrets and hosted smoke checks are verified
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- run the hosted flexible messaging smoke checklist from
+  `docs/engineering/flexible-messaging-operations.md`
+
+### session: v218
+
+- timestamp: 2026-05-16T05:18:23Z
+- agent: **OpenAI Codex**
+- branch: **codex/post-166-status-and-messaging-smoke**
+- head: **`3c3783b`**
+- session name: **Fix ClearPass hosted migration apply blocker**
+
+#### Objective
+
+Unblock protected CubidDev migration apply so the flexible messaging hosted
+smoke checklist can proceed against the actual deployed schema.
+
+#### Actions Taken
+
+- ran the protected Supabase migration workflow in `check` mode and confirmed
+  five pending migrations on CubidDev
+- ran the protected `apply` workflow and found it failed on
+  `20260509183000_clearpass_verify_stamp.sql`
+- patched the ClearPass scoring seed migration to handle both schema shapes:
+  use quoted `"is_GP_replacement"` when present, otherwise omit the optional
+  legacy Gitcoin Passport replacement column
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- push the migration fix, rerun the protected Supabase apply workflow, then
+  continue the hosted flexible messaging smoke checklist
+
 ### session: v216
 
 - timestamp: 2026-05-16T02:38:19Z

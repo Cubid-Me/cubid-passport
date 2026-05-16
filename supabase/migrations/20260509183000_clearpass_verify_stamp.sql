@@ -78,27 +78,61 @@ on conflict (id) do update set
   short_description = excluded.short_description,
   "Notes" = excluded."Notes";
 
-insert into public.stampscores_available (
-  schema_id,
-  stamptype_id,
-  is_simple_stamp,
-  description,
-  criteria,
-  is_GP_replacement,
-  score
-)
-select
-  schemas.id,
-  71,
-  true,
-  'High-value ClearPass third-party KYC/personhood verification.',
-  'Active clearpass_verify stamp created from a signed ClearPass completion token.',
-  false,
-  25
-from public.stampscore_schemas schemas
-where not exists (
-  select 1
-  from public.stampscores_available existing
-  where existing.schema_id = schemas.id
-    and existing.stamptype_id = 71
-);
+do $$
+begin
+  if exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'stampscores_available'
+      and column_name = 'is_GP_replacement'
+  ) then
+    insert into public.stampscores_available (
+      schema_id,
+      stamptype_id,
+      is_simple_stamp,
+      description,
+      criteria,
+      "is_GP_replacement",
+      score
+    )
+    select
+      schemas.id,
+      71,
+      true,
+      'High-value ClearPass third-party KYC/personhood verification.',
+      'Active clearpass_verify stamp created from a signed ClearPass completion token.',
+      false,
+      25
+    from public.stampscore_schemas schemas
+    where not exists (
+      select 1
+      from public.stampscores_available existing
+      where existing.schema_id = schemas.id
+        and existing.stamptype_id = 71
+    );
+  else
+    insert into public.stampscores_available (
+      schema_id,
+      stamptype_id,
+      is_simple_stamp,
+      description,
+      criteria,
+      score
+    )
+    select
+      schemas.id,
+      71,
+      true,
+      'High-value ClearPass third-party KYC/personhood verification.',
+      'Active clearpass_verify stamp created from a signed ClearPass completion token.',
+      25
+    from public.stampscore_schemas schemas
+    where not exists (
+      select 1
+      from public.stampscores_available existing
+      where existing.schema_id = schemas.id
+        and existing.stamptype_id = 71
+    );
+  end if;
+end $$;
