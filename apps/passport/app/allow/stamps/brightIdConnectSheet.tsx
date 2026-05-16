@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react"
 
-import useAuth from "@/hooks/useAuth"
 import { listPassportStampsByUser } from "@/lib/passportDataApi"
 import {
   Sheet,
@@ -21,7 +20,6 @@ export const BrightIdConnectSheet = ({
   supabaseUser: any
 }) => {
   const [brightIdData, setBrightIdData] = useState()
-  const { getUser } = useAuth({})
 
   const fetchUserData = useCallback(async () => {
     const user = supabaseUser
@@ -36,7 +34,7 @@ export const BrightIdConnectSheet = ({
       return data?.[0]
     }
 
-  }, [email, getUser, supabaseUser])
+  }, [supabaseUser])
 
   useEffect(() => {
     fetchUserData()

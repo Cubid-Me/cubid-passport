@@ -1,12 +1,16 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
+import rotateKey from '../../pages/api/admin/apps/rotate-key';
 import syncAdminUser from '../../pages/api/admin/auth/sync';
-import metadata from '../../pages/api/admin/metadata';
 import disclosureOpsOverviewRoute from '../../pages/api/admin/disclosures/operations/overview';
+import metadata from '../../pages/api/admin/metadata';
+import upsertNotificationAppPolicyRoute from '../../pages/api/admin/notifications/app-policy/upsert';
+import upsertNotificationCategoryRoute from '../../pages/api/admin/notifications/categories/upsert';
+import notificationOverviewRoute from '../../pages/api/admin/notifications/overview';
+import updateNotificationProviderRoute from '../../pages/api/admin/notifications/providers/update';
 import updateOidcClientOpsRoute from '../../pages/api/admin/oidc/clients/update-ops';
 import listSiwcPoliciesRoute from '../../pages/api/admin/siwc/policies/list';
 import upsertSiwcPolicyRoute from '../../pages/api/admin/siwc/policies/upsert';
-import rotateKey from '../../pages/api/admin/apps/rotate-key';
 import createWebhook from '../../pages/api/admin/webhooks/create';
 import listWebhooks from '../../pages/api/admin/webhooks/list';
 import rotateWebhookSecret from '../../pages/api/admin/webhooks/rotate-secret';
@@ -23,6 +27,10 @@ const normalizeClientOpsUpdateInputMock = jest.fn();
 const encryptWebhookSigningSecretMock = jest.fn();
 const listSiwcPoliciesMock = jest.fn();
 const upsertSiwcPolicyMock = jest.fn();
+const loadNotificationAdminOverviewMock = jest.fn();
+const upsertNotificationAppPolicyMock = jest.fn();
+const upsertNotificationCategoryMock = jest.fn();
+const upsertNotificationProviderMock = jest.fn();
 
 jest.mock('./adminApi', () => ({
   getOwnedDapp: (...args: unknown[]) => getOwnedDappMock(...args),
@@ -65,6 +73,18 @@ jest.mock('./siwcPolicies', () => ({
   isSiwcPolicyInputError: () => false,
   listSiwcPolicies: (...args: unknown[]) => listSiwcPoliciesMock(...args),
   upsertSiwcPolicy: (...args: unknown[]) => upsertSiwcPolicyMock(...args),
+}));
+
+jest.mock('./notificationOperations', () => ({
+  isNotificationInputError: () => false,
+  loadNotificationAdminOverview: (...args: unknown[]) =>
+    loadNotificationAdminOverviewMock(...args),
+  upsertNotificationAppPolicy: (...args: unknown[]) =>
+    upsertNotificationAppPolicyMock(...args),
+  upsertNotificationCategory: (...args: unknown[]) =>
+    upsertNotificationCategoryMock(...args),
+  upsertNotificationProvider: (...args: unknown[]) =>
+    upsertNotificationProviderMock(...args),
 }));
 
 const createResponse = () => {
@@ -288,6 +308,132 @@ describe('Admin route baseline wiring', () => {
     expect(upsertSiwcPolicyMock).toHaveBeenCalledWith(
       expect.objectContaining({ adminUser: { uid: 'admin_uid' } }),
       { dappId: 42, signingEnabled: true }
+    );
+  });
+
+  it('uses the admin read policy for notification overview', async () => {
+    const context = { adminUser: { uid: 'admin_uid' }, supabase: {} };
+    prepareAdminApiRequestMock.mockResolvedValue({
+      body: {},
+      context,
+      requestId: 'admin_request_notifications',
+    });
+    loadNotificationAdminOverviewMock.mockResolvedValue({
+      appPolicies: [],
+      categories: [],
+      generatedAt: '2026-05-14T00:00:00.000Z',
+      providers: [],
+      recentEvents: [],
+      totals: {
+        attemptsByProvider: {},
+        attemptsByStatus: {},
+        eventsByStatus: {},
+      },
+    });
+
+    await notificationOverviewRoute({} as NextApiRequest, createResponse());
+
+    expect(prepareAdminApiRequestMock).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      expect.objectContaining({
+        actor: 'admin',
+        rateLimitGroup: 'admin_read',
+        route: 'admin/notifications/overview',
+      })
+    );
+    expect(loadNotificationAdminOverviewMock).toHaveBeenCalledWith(context);
+  });
+
+  it('uses sensitive policies for notification control updates', async () => {
+    const context = { adminUser: { uid: 'admin_uid' }, supabase: {} };
+    prepareAdminApiRequestMock.mockResolvedValueOnce({
+      body: { providerKey: 'email_smtp', status: 'active' },
+      context,
+      requestId: 'admin_request_provider',
+    });
+    upsertNotificationProviderMock.mockResolvedValue({
+      providerKey: 'email_smtp',
+      status: 'active',
+    });
+
+    await updateNotificationProviderRoute(
+      {} as NextApiRequest,
+      createResponse()
+    );
+
+    prepareAdminApiRequestMock.mockResolvedValueOnce({
+      body: {
+        categoryKey: 'TRANSACTIONAL',
+        defaultPriority: 'HIGH',
+        displayName: 'Transactional',
+        status: 'active',
+      },
+      context,
+      requestId: 'admin_request_category',
+    });
+    upsertNotificationCategoryMock.mockResolvedValue({
+      categoryKey: 'TRANSACTIONAL',
+      status: 'active',
+    });
+
+    await upsertNotificationCategoryRoute(
+      {} as NextApiRequest,
+      createResponse()
+    );
+
+    prepareAdminApiRequestMock.mockResolvedValueOnce({
+      body: {
+        allowedCategories: ['TRANSACTIONAL'],
+        allowedPriorities: ['LOW', 'NORMAL'],
+        allowedProviders: ['email_smtp'],
+        dailyLimit: 10,
+        dappId: 42,
+        minuteLimit: 2,
+        policyName: 'Default notification policy',
+        sandboxMode: true,
+        securityCategoryEnabled: false,
+        status: 'enabled',
+      },
+      context,
+      requestId: 'admin_request_policy',
+    });
+    upsertNotificationAppPolicyMock.mockResolvedValue({
+      dappId: 42,
+      status: 'enabled',
+    });
+
+    await upsertNotificationAppPolicyRoute(
+      {} as NextApiRequest,
+      createResponse()
+    );
+
+    expect(prepareAdminApiRequestMock).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      expect.objectContaining({
+        actor: 'admin',
+        rateLimitGroup: 'admin_sensitive',
+        route: 'admin/notifications/providers/update',
+      })
+    );
+    expect(prepareAdminApiRequestMock).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      expect.objectContaining({
+        actor: 'admin',
+        rateLimitGroup: 'admin_sensitive',
+        route: 'admin/notifications/categories/upsert',
+      })
+    );
+    expect(prepareAdminApiRequestMock).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      expect.objectContaining({
+        actor: 'admin',
+        rateLimitGroup: 'admin_sensitive',
+        route: 'admin/notifications/app-policy/upsert',
+      })
     );
   });
 

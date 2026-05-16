@@ -9,6 +9,11 @@ import {
 } from '../../../../lib/server/adminApi';
 import { rotateDappApiKey } from '../../../../lib/server/dappApiKeys';
 
+const omitLegacyApiKey = <T extends Record<string, unknown>>(dapp: T) => {
+  const { apikey: _legacyApiKey, ...safeDapp } = dapp;
+  return safeDapp;
+};
+
 const rotateKey = async (req: NextApiRequest, res: NextApiResponse) => {
   const request = await prepareAdminApiRequest(req, res, {
     actor: 'admin',
@@ -32,14 +37,12 @@ const rotateKey = async (req: NextApiRequest, res: NextApiResponse) => {
       request.context.supabase,
       request.body.dappId
     );
-    const { apikey: _apikey, ...safeApp } = ownedDapp;
-
     return res.status(200).json({
       data: {
         apiKey,
         apiKeyPrefix: keyRecord.key_prefix,
         app: {
-          ...safeApp,
+          ...omitLegacyApiKey(ownedDapp),
           apiKeyLastUsedAt: keyRecord.last_used_at ?? null,
           apiKeyPrefix: keyRecord.key_prefix,
           apiKeyRotatedAt: keyRecord.rotated_at ?? null,

@@ -186,3 +186,38 @@ export const adminSiwcPolicyUpsertSchema = z
     webhookEventSubscriptions: z.array(z.string().trim().min(1)).optional(),
   })
   .passthrough();
+
+export const adminNotificationOverviewSchema = z.object({}).passthrough();
+
+export const adminNotificationProviderUpdateSchema = z
+  .object({
+    metadata: z.record(z.unknown()).optional(),
+    providerKey: z.enum(['email_smtp', 'telegram_bot']),
+    status: z.enum(['active', 'disabled', 'suspended']),
+  })
+  .passthrough();
+
+export const adminNotificationCategoryUpsertSchema = z
+  .object({
+    categoryKey: z.enum(['SECURITY', 'TRANSACTIONAL', 'WORKFLOW']),
+    defaultPriority: z.enum(['LOW', 'NORMAL', 'HIGH', 'CRITICAL']),
+    description: z.string().trim().nullable().optional(),
+    displayName: z.string().trim().min(1),
+    status: z.enum(['active', 'disabled']),
+  })
+  .passthrough();
+
+export const adminNotificationAppPolicyUpsertSchema = z
+  .object({
+    allowedCategories: z.array(z.enum(['SECURITY', 'TRANSACTIONAL', 'WORKFLOW'])),
+    allowedPriorities: z.array(z.enum(['LOW', 'NORMAL', 'HIGH', 'CRITICAL'])),
+    allowedProviders: z.array(z.enum(['email_smtp', 'telegram_bot'])),
+    dailyLimit: z.coerce.number().int().nonnegative(),
+    dappId: z.coerce.number().int().positive(),
+    minuteLimit: z.coerce.number().int().nonnegative(),
+    policyName: z.string().trim().min(1),
+    sandboxMode: z.boolean(),
+    securityCategoryEnabled: z.boolean(),
+    status: z.enum(['disabled', 'enabled', 'suspended']),
+  })
+  .passthrough();

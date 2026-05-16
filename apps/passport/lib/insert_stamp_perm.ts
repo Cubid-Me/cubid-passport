@@ -1,5 +1,4 @@
-import axios from "axios"
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 
 import {
   grantPassportStampPermission,
@@ -19,12 +18,12 @@ export const useSelectStampPerm = (dapp_user_id: any) => {
   const [loading, setLoading] = useState(true)
   const [stampInsertLoading, setStampInsertLoading] = useState(false)
 
-  const fetchStampPerm = async () => {
+  const fetchStampPerm = useCallback(async () => {
     setLoading(true)
     const data = await listPassportStampPermissions(dapp_user_id)
     setAllDappStampPerms(data)
     setLoading(false)
-  }
+  }, [dapp_user_id])
 
   useEffect(() => {
     if (Boolean(dapp_user_id)) {
@@ -32,13 +31,12 @@ export const useSelectStampPerm = (dapp_user_id: any) => {
     } else {
       setLoading(false)
     }
-  }, [dapp_user_id])
+  }, [dapp_user_id, fetchStampPerm])
 
   const insertStampDappPerm = async (stampId: any) => {
     setStampInsertLoading(true)
-    await insertStampPerm(stampId, dapp_user_id);
-    const data = await listPassportStampPermissions(dapp_user_id)
-    setAllDappStampPerms(data)
+    await insertStampPerm(stampId, dapp_user_id)
+    await fetchStampPerm()
     setStampInsertLoading(false)
   }
 

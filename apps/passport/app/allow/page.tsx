@@ -36,6 +36,14 @@ const AllowPage = () => {
   const [stampsList, setStampsList] = useState<any[]>([])
   const [oidcConsentChallenge, setOidcConsentChallenge] = useState<any>(null)
   const [oidcSubmitting, setOidcSubmitting] = useState(false)
+  const [notificationGrantCategories, setNotificationGrantCategories] = useState<string[]>([])
+  const [availableNotificationCategories, setAvailableNotificationCategories] = useState<string[]>([
+    "SECURITY",
+    "TRANSACTIONAL",
+    "WORKFLOW",
+  ])
+  const [notificationGrantsLoading, setNotificationGrantsLoading] = useState(false)
+  const [notificationGrantsSaving, setNotificationGrantsSaving] = useState(false)
 
   const uuid = searchParams.get("uid")
   const page_id = searchParams.get("page_id")
@@ -66,6 +74,65 @@ const AllowPage = () => {
     setStampsList(data)
   }, [])
 
+  const fetchNotificationGrants = useCallback(async () => {
+    if (isOidcConsentFlow || !uuid || !page_id) {
+      return
+    }
+
+    setNotificationGrantsLoading(true)
+    try {
+      const { data } = await axios.post("/api/notifications/grants/allow-page/list", {
+        pageId: page_id,
+        uid: uuid,
+      })
+      const grants = data?.data?.grants ?? []
+      setAvailableNotificationCategories(
+        data?.data?.availableCategories ?? [
+          "SECURITY",
+          "TRANSACTIONAL",
+          "WORKFLOW",
+        ]
+      )
+      setNotificationGrantCategories(
+        grants
+          .filter((grant: any) => grant.status === "active")
+          .map((grant: any) => grant.categoryKey)
+      )
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setNotificationGrantsLoading(false)
+    }
+  }, [isOidcConsentFlow, page_id, uuid])
+
+  const toggleNotificationCategory = useCallback((categoryKey: string) => {
+    setNotificationGrantCategories((current) =>
+      current.includes(categoryKey)
+        ? current.filter((entry) => entry !== categoryKey)
+        : [...current, categoryKey]
+    )
+  }, [])
+
+  const saveNotificationGrants = useCallback(async () => {
+    if (!uuid || !page_id) {
+      return
+    }
+
+    setNotificationGrantsSaving(true)
+    try {
+      await axios.post("/api/notifications/grants/allow-page/update", {
+        categories: notificationGrantCategories,
+        pageId: page_id,
+        uid: uuid,
+      })
+      await fetchNotificationGrants()
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setNotificationGrantsSaving(false)
+    }
+  }, [fetchNotificationGrants, notificationGrantCategories, page_id, uuid])
+
   const fetchUserUidData = useCallback(async () => {
     if (isOidcConsentFlow) {
       return
@@ -77,9 +144,16 @@ const AllowPage = () => {
     })
     setUserUidData(data)
     await fetchAllStamps(data?.dapp_users?.[0]?.users?.id)
+    await fetchNotificationGrants()
     setIsValid(true)
     setLoading(false)
-  }, [isOidcConsentFlow, uuid, page_id, fetchAllStamps])
+  }, [
+    fetchAllStamps,
+    fetchNotificationGrants,
+    isOidcConsentFlow,
+    page_id,
+    uuid,
+  ])
 
   const fetchOidcConsentChallenge = useCallback(async () => {
     if (!consentChallengeId) {
@@ -186,13 +260,6 @@ const AllowPage = () => {
 
   const buttonDisabled = requiredStamps?.length !== isAllIncluded?.length
 
-  if (!loading && !Boolean(userUidData?.dapp_users?.[0]?.users?.id)) {
-    return (
-      <div className="p-5 flex h-[100vh] w-[100vw] dark:bg-gray-900 items-center justify-center dark:text-white">
-        <p>Invalid UID provided in URL</p>
-      </div>)
-  }
-
   if (isOidcConsentFlow) {
     return (
       <OidcConsentPanel
@@ -204,12 +271,19 @@ const AllowPage = () => {
     )
   }
 
+  if (!loading && !Boolean(userUidData?.dapp_users?.[0]?.users?.id)) {
+    return (
+      <div className="flex h-[100vh] w-[100vw] items-center justify-center p-5 dark:bg-gray-900 dark:text-white">
+        <p>Invalid UID provided in URL</p>
+      </div>)
+  }
+
   return (
     <WagmiConfig config={passportWagmiConfig as any}>
 
       {loading || selectStampLoading ? (
         <>
-          <div className="flex h-[100vh] w-[100vw] dark:bg-gray-900 items-center justify-center">
+          <div className="flex h-[100vh] w-[100vw] items-center justify-center dark:bg-gray-900">
             <div className="w-[650px] rounded border border-gray-200 p-6 text-center dark:border-gray-800">
               <div role="status" className="w-full animate-pulse space-y-3">
                 <div className="mb-4 h-10 w-full rounded bg-gray-200 dark:bg-gray-700"></div>
@@ -224,7 +298,7 @@ const AllowPage = () => {
           </div>
         </>
       ) : (
-        <div className="dark:bg-gray-700 min-h-[100vh] dark:text-white">
+        <div className="min-h-[100vh] dark:bg-gray-700 dark:text-white">
           {isValid ? (
             <div className="px-4 pt-4">
               <p className="dark:text-white">
@@ -261,6 +335,64 @@ const AllowPage = () => {
                     setStampToAdd={setStampToAdd}
                     stamps={userUidData?.stampsToSend}
                   />
+                  <div className="mx-auto mt-4 max-w-3xl rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+                    <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                      <div>
+                        <h2 className="text-lg font-semibold">
+                          App notification permissions
+                        </h2>
+                        <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                          Choose which notification categories this app may ask
+                          Cubid to route. The app never receives your email,
+                          Telegram id, or encrypted channel details.
+                        </p>
+                      </div>
+                      <button
+                        className="rounded-lg border bg-blue-500 px-4 py-2 text-sm text-white disabled:opacity-60"
+                        disabled={notificationGrantsLoading || notificationGrantsSaving}
+                        onClick={saveNotificationGrants}
+                        type="button"
+                      >
+                        {notificationGrantsSaving ? "Saving..." : "Save"}
+                      </button>
+                    </div>
+                    <div className="mt-4 grid gap-3 md:grid-cols-3">
+                      {availableNotificationCategories.map((categoryKey) => (
+                        <label
+                          key={categoryKey}
+                          className="flex cursor-pointer items-start gap-3 rounded-lg border border-gray-200 p-3 text-sm dark:border-gray-700"
+                        >
+                          <input
+                            checked={notificationGrantCategories.includes(
+                              categoryKey
+                            )}
+                            className="mt-1"
+                            onChange={() =>
+                              toggleNotificationCategory(categoryKey)
+                            }
+                            type="checkbox"
+                          />
+                          <span>
+                            <span className="block font-semibold">
+                              {categoryKey}
+                            </span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                              {categoryKey === "SECURITY"
+                                ? "Account and identity alerts only."
+                                : categoryKey === "TRANSACTIONAL"
+                                  ? "Receipts, payments, and status updates."
+                                  : "Workflow reminders and collaboration updates."}
+                            </span>
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                    <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
+                      Saving these permissions does not guarantee delivery. Cubid
+                      still checks app policy, user preferences, verified
+                      channels, and rate limits.
+                    </p>
+                  </div>
                   <div className="mt-2 flex items-center justify-center space-x-2">
                     {buttonDisabled ? (
                       <>
@@ -307,7 +439,7 @@ const AllowPage = () => {
                     leaveFrom="opacity-100"
                     leaveTo="opacity-0"
                   >
-                    <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
+                    <div className="fixed inset-0 bg-gray-500/75 transition-opacity" />
                   </Transition.Child>
 
                   <div className="fixed inset-0 overflow-hidden">

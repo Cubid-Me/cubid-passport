@@ -286,7 +286,7 @@ export default function IndexPage() {
         setLocationDetailsJSON(data)
       })()
     }
-  }, [userData, coordinates])
+  }, [coordinates, searchParams, userData])
 
   const onSubmit = async (data) => {
     await updatePassportUserProfile({
@@ -391,7 +391,7 @@ export default function IndexPage() {
         }
       })
     }
-  }, [watch])
+  }, [fetchUserUidData, searchParams, setValue, watch])
 
   useEffect(() => {
     fetchCurrentAppIdStamps()
@@ -431,7 +431,7 @@ export default function IndexPage() {
             {!manualLocation ? (
               <>
                 <input
-                  className="focus:shadow-outline w-full dark:text-white appearance-none rounded-lg px-3 py-2 leading-tight text-gray-700 shadow focus:outline-none"
+                  className="focus:shadow-outline w-full appearance-none rounded-lg px-3 py-2 leading-tight text-gray-700 shadow focus:outline-none dark:text-white"
                   id="location"
                   type="text"
                   placeholder="Search and select home or work address"
@@ -452,7 +452,7 @@ export default function IndexPage() {
                         }}
                         className={
                           selectedLocation?.name === item.name
-                            ? "font-bold pb-2"
+                            ? "pb-2 font-bold"
                             : "cursor-pointer pb-2"
                         }
                       >
@@ -471,7 +471,7 @@ export default function IndexPage() {
             ) : (
               <>
                 <select
-                  className="focus:shadow-outline w-full dark:text-white appearance-none rounded-lg px-3 py-2 leading-tight text-gray-700 shadow focus:outline-none"
+                  className="focus:shadow-outline w-full appearance-none rounded-lg px-3 py-2 leading-tight text-gray-700 shadow focus:outline-none dark:text-white"
                   id="country"
                   {...register("country", { required: manualLocation })}
                 >
@@ -483,7 +483,7 @@ export default function IndexPage() {
                   ))}
                 </select>
                 <input
-                  className="focus:shadow-outline w-full dark:text-white appearance-none rounded-lg px-3 py-2 leading-tight text-gray-700 shadow focus:outline-none mt-2"
+                  className="focus:shadow-outline mt-2 w-full appearance-none rounded-lg px-3 py-2 leading-tight text-gray-700 shadow focus:outline-none dark:text-white"
                   id="postcode"
                   type="text"
                   placeholder="Postcode"
@@ -523,13 +523,13 @@ export default function IndexPage() {
             </label>
             <label
               htmlFor="phone"
-              className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+              className="mb-2 block text-sm font-medium text-gray-900 dark:text-white"
             >
               Select an option
             </label>
             <select
               id="phone"
-              className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+              className="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-blue-500 dark:focus:ring-blue-500"
               {...register("phone", { required: true })}
               value={watch("phone")}
             >
@@ -542,7 +542,7 @@ export default function IndexPage() {
             </select>
             <button
               type="button"
-              className="text-white mt-2 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
+              className="my-2 rounded-lg bg-blue-700 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
               onClick={() => {
                 setStampToAdd("phone")
               }}
@@ -597,12 +597,12 @@ export default function IndexPage() {
             )}
           </div> */}
           {Boolean(selectedLocation) && Boolean(watch("phone")) ? (
-            <div className="text-xs mb-2">
+            <div className="mb-2 text-xs">
               <p className="text-xs">
                 After clicking submit you agree to share this location data with
                 the APP
               </p>
-              <div className="p-5 rounded-lg shadow-md">
+              <div className="rounded-lg p-5 shadow-md">
                 {Boolean(selectedLocation?.formatted_address) && (
                   <div className="mb-2">
                     <strong>Place Name:</strong> <span>{selectedLocation.formatted_address}</span>
@@ -636,7 +636,7 @@ export default function IndexPage() {
             </>
           )}
           <button
-            className="focus:shadow-outline w-full rounded bg-blue-500 py-2 px-4 font-bold text-white hover:bg-blue-700 focus:outline-none"
+            className="focus:shadow-outline w-full rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700 focus:outline-none"
             type="submit"
           >
             Submit

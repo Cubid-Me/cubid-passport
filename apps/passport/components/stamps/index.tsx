@@ -220,6 +220,11 @@ export const Stamps = () => {
   const [isPohVerified, setIsPohVerified] = useState<any>(null)
   const { disconnect } = useDisconnect()
   const { getIdForApp } = useCreatedByAppId()
+  const doesStampExist = useCallback(
+    (stamp_id: number | string) =>
+      allStamps?.filter(({ stamptype }) => stamptype == stamp_id)?.[0],
+    [allStamps]
+  )
 
   const { publicKey, connected: solConnected } = useSolanaWallet()
 
@@ -241,8 +246,15 @@ export const Stamps = () => {
         fetchStampData()
       }
     })()
-
-  }, [publicKey, solConnected])
+  }, [
+    doesStampExist,
+    fetchStampData,
+    fetchUserData,
+    getIdForApp,
+    getUser,
+    publicKey,
+    solConnected,
+  ])
 
   const connectToWeb3Node = useCallback(
     async (address: string) => {
@@ -342,7 +354,6 @@ export const Stamps = () => {
     },
     [
       disconnect,
-      email,
       fetchStampData,
       fetchUserData,
       getIdForApp,
@@ -471,10 +482,6 @@ export const Stamps = () => {
     return result?.charAt?.(0)?.toUpperCase() + result?.slice(1)
   }
 
-  const doesStampExist = (stamp_id: number | string) =>
-    allStamps?.filter(({ stamptype }) => stamptype == stamp_id)?.[0]
-
-
   const [lensModalOpen, setLensModalOpen] = useState(false)
   const [gitcoinModalOpen, setGitcoinModalOpen] = useState(false)
 
@@ -509,12 +516,12 @@ export const Stamps = () => {
     window.addEventListener("message", messageReceiver);
 
     return () => window.removeEventListener("message", messageReceiver);
-  }, []);
+  }, [messageReceiver]);
 
 
   return (
     <div className="p-3 pb-16">
-      <div className="flex mb-3 items-center justify-between">
+      <div className="mb-3 flex items-center justify-between">
         <h1 className=" text-3xl font-semibold">Stamps</h1>
         {stampLoading && (
           <button
@@ -785,11 +792,11 @@ export const Stamps = () => {
                     }}
                   >
                     <SheetContent>
-                      <p className="text-xl font-bold mb-5">Connect Web3 Wallet for Lens</p>
+                      <p className="mb-5 text-xl font-bold">Connect Web3 Wallet for Lens</p>
                       {connectors.map((connector) => (
                         <Button
                           variant="secondary"
-                          className="bg-blue-500 mb-4 text-white"
+                          className="mb-4 bg-blue-500 text-white"
                           style={{ width: "200px" }}
                           key={connector.uid}
                           onClick={() => {
@@ -856,7 +863,7 @@ export const Stamps = () => {
                 </div>
               </div>
             ) : (
-              <div className="bg-white w-[fit-content] rounded-lg">
+              <div className="w-[fit-content] rounded-lg bg-white">
                 <Button onClick={() => {
                   setFractalModalVisible(true)
                 }}>Verify Yourself</Button>
@@ -873,7 +880,7 @@ export const Stamps = () => {
           >
             <SheetContent className="w-screen">
               <div className="w-[50vw]">
-                <p className="text-xl font-bold mb-5">Connect with Fractal</p>
+                <p className="mb-5 text-xl font-bold">Connect with Fractal</p>
                 <iframe
                   allow="camera *; fullscreen *"
                   height={'550px'}
@@ -929,7 +936,7 @@ export const Stamps = () => {
                 </div>
               </div>
             ) : (
-              <div className="bg-white w-[fit-content] rounded-lg">
+              <div className="w-[fit-content] rounded-lg bg-white">
                 <SignInButton />
               </div>
             )}
@@ -1053,7 +1060,7 @@ export const Stamps = () => {
                 "https://logowik.com/content/uploads/images/worldcoin2094.logowik.com.webp"
               }
               alt="Image"
-              className="mb-1 size-10 object-fit rounded-md"
+              className="object-fit mb-1 size-10 rounded-md"
             />
             <CardTitle>Worldcoin</CardTitle>
             {doesStampExist(stampsWithId["iah"]) ? (
@@ -1213,7 +1220,7 @@ export const Stamps = () => {
                 "https://logos-world.net/wp-content/uploads/2024/01/Solana-Logo.png"
               }
               alt="Image"
-              className="mb-1 size-10 object-fit rounded-md"
+              className="object-fit mb-1 size-10 rounded-md"
             />
             <CardTitle>Solana</CardTitle>
             {doesStampExist(stampsWithId["solana"]) ? (
@@ -1316,11 +1323,11 @@ export const Stamps = () => {
                   }}
                 >
                   <SheetContent>
-                    <p className="text-xl font-bold mb-5">Connect Web3 Wallet for Gitcoin Passport</p>
+                    <p className="mb-5 text-xl font-bold">Connect Web3 Wallet for Gitcoin Passport</p>
                     {connectors.map((connector) => (
                       <Button
                         variant="secondary"
-                        className="bg-blue-500 mb-4 text-white"
+                        className="mb-4 bg-blue-500 text-white"
                         style={{ width: "200px" }}
                         key={connector.uid}
                         onClick={() => {

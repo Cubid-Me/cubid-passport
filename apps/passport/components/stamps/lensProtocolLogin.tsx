@@ -58,7 +58,7 @@ export function LoginOptions({ wallet, onSuccess }: LoginOptionsProps) {
         if (profiles?.length !== 0) {
             onSuccess(profiles?.[0])
         }
-    }, [loading, profiles, onSuccess])
+    }, [disconnect, loading, profiles, onSuccess])
 
     if (loading) {
         return <p>Loading...</p>;

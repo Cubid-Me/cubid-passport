@@ -8,6 +8,16 @@ const nodemailer = require("nodemailer")
 let sendOtpEmailForTests:
   | ((toEmail: string, verificationCode: number) => Promise<void>)
   | null = null
+let sendNotificationEmailForTests:
+  | ((input: {
+      body: string
+      category: string
+      fromAppName: string
+      priority: string
+      title: string
+      toEmail: string
+    }) => Promise<void>)
+  | null = null
 
 export const EMAIL_OTP_EXPIRY_MS = 10 * 60 * 1000
 export const EMAIL_OTP_MAX_ATTEMPTS = 3
@@ -85,6 +95,21 @@ export const setSendOtpEmailForTests = (
   sendOtpEmailForTests = sender
 }
 
+export const setSendNotificationEmailForTests = (
+  sender:
+    | ((input: {
+        body: string
+        category: string
+        fromAppName: string
+        priority: string
+        title: string
+        toEmail: string
+      }) => Promise<void>)
+    | null
+) => {
+  sendNotificationEmailForTests = sender
+}
+
 export const sendOtpEmail = async (toEmail: string, verificationCode: number) => {
   if (sendOtpEmailForTests) {
     await sendOtpEmailForTests(toEmail, verificationCode)
@@ -98,5 +123,42 @@ export const sendOtpEmail = async (toEmail: string, verificationCode: number) =>
     subject: "Email Verification Code",
     text: `Your verification code is: ${verificationCode}`,
     to: toEmail,
+  })
+}
+
+export const sendNotificationEmail = async (input: {
+  body: string
+  category: string
+  fromAppName: string
+  priority: string
+  title: string
+  toEmail: string
+}) => {
+  if (sendNotificationEmailForTests) {
+    await sendNotificationEmailForTests(input)
+    return
+  }
+
+  const transporter = getTransporter()
+  const fromEmail = getRequiredEnv("SMTP_FROM_EMAIL")
+  const subjectAppName = input.fromAppName.replace(/[\r\n]+/g, " ").trim()
+  const subjectTitle = input.title.replace(/[\r\n]+/g, " ").trim()
+  const subject = `[${subjectAppName}] ${subjectTitle}`.slice(0, 180)
+
+  await transporter.sendMail({
+    from: fromEmail,
+    subject,
+    text: [
+      `${input.title}`,
+      "",
+      input.body,
+      "",
+      `From: ${input.fromAppName}`,
+      `Category: ${input.category}`,
+      `Priority: ${input.priority}`,
+      "",
+      "This message was routed by Cubid using your notification preferences.",
+    ].join("\n"),
+    to: input.toEmail,
   })
 }

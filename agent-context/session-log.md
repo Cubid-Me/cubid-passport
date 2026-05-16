@@ -5947,3 +5947,833 @@ then validate and prepare the branch for review-thread replies and resolution.
 - negative dry-run rejected `ftp://localhost/...` redirect URI through shared
   OIDC validation
 - `git diff --check`
+
+### session: v197
+
+- timestamp: 2026-05-14T22:12:58Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`04d9ea0`**
+- session name: **Clean up Vercel app-root deployment config**
+
+#### Objective
+
+Align repo-side Vercel configuration with the operator-updated Vercel project
+layout where Passport and Admin deploy as separate app-rooted projects instead
+of a duplicate root-level Passport project.
+
+#### Actions Taken
+
+- removed the stale root `vercel.json` that forced root deployments to build
+  Passport from `apps/passport`
+- simplified `apps/passport/vercel.json` so it keeps only Passport cron
+  schedules and no longer applies wildcard API CORS headers at the deployment
+  layer
+- added a Vercel monorepo deployment runbook documenting the two app-rooted
+  Vercel projects and the Fly.io boundary for the OIDC service
+
+#### Verification
+
+- parsed `apps/passport/vercel.json` and `apps/admin/vercel.json` as JSON
+- `git diff --check`
+
+#### Follow-up
+
+- push this cleanup through a normal PR to `dev`, then confirm both Vercel
+  app-rooted projects report successful preview checks on the next PR
+
+### session: v198
+
+- timestamp: 2026-05-14T22:16:35Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`4dbbc3e`**
+- session name: **Create flexible messaging side-roadmap**
+
+#### Objective
+
+Create the initial flexible messaging feature-folder todo and session log,
+grounded in the newly added PRD, without promoting the work into the main
+roadmap yet.
+
+#### Actions Taken
+
+- added `agent-context/flexible-messaging/todo.md` with `FM01` through `FM12`
+  covering architecture, schema, user preferences, app grants, API v3 sending,
+  email and Telegram providers, Admin controls, auditability, abuse prevention,
+  SDK coordination, and production readiness
+- added `agent-context/flexible-messaging/session-log.md` with `fm-v1` to mark
+  the PRD/todo/log creation point
+- kept the roadmap aligned with current repo boundaries: API v3 in this repo,
+  public SDK implementation in `Cubid-Me/cubid-sdk`, and encrypted channel
+  identifiers using C05-style custody patterns
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- commit the flexible messaging PRD, todo, and feature-local session log, then
+  start `FM01` only when the user promotes flexible messaging from side-roadmap
+  planning into active implementation
+
+### session: v199
+
+- timestamp: 2026-05-14T22:22:05Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`d30bce0`**
+- session name: **Define flexible messaging API v3 architecture**
+
+#### Objective
+
+Complete `FM01` by creating the repo-specific target-state architecture doc
+for Cubid flexible messaging before schema or runtime implementation begins.
+
+#### Actions Taken
+
+- added [docs/engineering/flexible-messaging-api-v3-architecture.md](/Users/botmaster/src/cubid/cubid-passport/docs/engineering/flexible-messaging-api-v3-architecture.md)
+  to define API v3 route families, MVP channels/categories, privacy boundaries,
+  app/user/Admin ownership, send-notification contract, routing flow, status
+  model, and SDK handoff expectations
+- marked `FM01` completed in
+  [agent-context/flexible-messaging/todo.md](/Users/botmaster/src/cubid/cubid-passport/agent-context/flexible-messaging/todo.md)
+- added feature-local session `fm-v2` in
+  [agent-context/flexible-messaging/session-log.md](/Users/botmaster/src/cubid/cubid-passport/agent-context/flexible-messaging/session-log.md)
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- commit `FM01`, then start `FM02` for the notification schema and encrypted
+  channel storage foundation
+
+### session: v200
+
+- timestamp: 2026-05-14T22:23:43Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`17f0ba5`**
+- session name: **Add flexible messaging schema foundation**
+
+#### Objective
+
+Complete `FM02` by adding the database foundation for flexible messaging,
+including encrypted private custody for retrievable channel destinations.
+
+#### Actions Taken
+
+- added `supabase/migrations/20260514222500_flexible_messaging_foundation.sql`
+  with notification categories, providers, user channel metadata, app grants,
+  preferences, events, delivery attempts, and private encrypted destinations
+- seeded the MVP category/provider registry for email and Telegram with
+  `SECURITY`, `TRANSACTIONAL`, and `WORKFLOW`
+- added the Vault helper for
+  `passport_notification_channel_wrapping_key_v1`
+- updated
+  [docs/engineering/flexible-messaging-api-v3-architecture.md](/Users/botmaster/src/cubid/cubid-passport/docs/engineering/flexible-messaging-api-v3-architecture.md)
+  and flexible messaging metadata to reflect the schema foundation
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- commit `FM02`, then start `FM03` for Passport channel verification and
+  preference management
+
+### session: v201
+
+- timestamp: 2026-05-14T22:32:22Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`a6ff751`**
+- session name: **Reconcile flexible messaging roadmap before runtime**
+
+#### Objective
+
+Improve the flexible messaging plan before runtime implementation by filling
+the schema/policy gaps found in the PRD, `FM01`, and `FM02` review.
+
+#### Actions Taken
+
+- added `FM02.1` in
+  [agent-context/flexible-messaging/todo.md](/Users/botmaster/src/cubid/cubid-passport/agent-context/flexible-messaging/todo.md)
+  for verification challenge/session storage and app notification policy/quota
+  storage
+- clarified `SECURITY`, `CRITICAL`, provider enablement, channel-selection
+  precedence, and delivery-status semantics in
+  [docs/engineering/flexible-messaging-api-v3-architecture.md](/Users/botmaster/src/cubid/cubid-passport/docs/engineering/flexible-messaging-api-v3-architecture.md)
+- refined `FM03` through `FM12` to give runtime/API/provider/Admin/SDK slices
+  clearer ownership boundaries
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- commit this docs/metadata reconciliation, then implement `FM02.1` before
+  beginning `FM03`
+
+### session: v202
+
+- timestamp: 2026-05-14T22:33:52Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`47cefab`**
+- session name: **Implement flexible messaging policy gaps**
+
+#### Objective
+
+Complete `FM02.1` by adding the missing verification challenge and app policy
+schema needed before flexible messaging runtime APIs.
+
+#### Actions Taken
+
+- added `supabase/migrations/20260514223500_flexible_messaging_policy_gaps.sql`
+  with `notification_verification_challenges` and
+  `notification_app_policies`
+- modeled channel verification as hashed, expiring, one-time challenge sessions
+  with attempt limits and replay evidence
+- modeled app notification enablement as fail-closed policy with allowed
+  categories, priorities, providers, security-category gating, sandbox state,
+  and minute/day caps
+- updated flexible messaging docs and metadata to close `FM02.1`
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- commit `FM02.1`, then start `FM03` for Passport channel verification and
+  preference management
+
+### session: v203
+
+- timestamp: 2026-05-14T22:48:59Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`ed00cd6`**
+- session name: **Implement Passport notification channel management**
+
+#### Objective
+
+Complete `FM03` with Passport user APIs and Profile UI for verified flexible
+messaging channels and user notification preferences.
+
+#### Actions Taken
+
+- added service-role-only Vault access for
+  `passport_notification_challenge_hash_secret_v1`
+- implemented Passport server helpers for notification channel destination
+  envelope encryption, one-time verification challenges, channel updates, and
+  global category preferences
+- added Passport routes under `/api/notifications/channels/*` and
+  `/api/notifications/preferences/*`
+- added a Profile notification-channel card with redacted destination display,
+  verification completion, default/revoke controls, and category preferences
+- extended Passport route tests and mocks for notification channel storage,
+  challenge verification, redaction, and preferences
+- updated the flexible messaging architecture doc and wrote an SDK handoff
+  note for future profile-management helpers
+
+#### Verification
+
+- `pnpm --filter @cubid/passport test`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- commit `FM03`, then continue with `FM04` for app notification permission and
+  category grants
+
+### session: v204
+
+- timestamp: 2026-05-14T22:53:33Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`f6ee425`**
+- session name: **Implement Allow Page notification grants**
+
+#### Objective
+
+Complete `FM04` by giving hosted Allow Page users explicit app/category
+notification grant controls, separate from identity and stamp disclosure.
+
+#### Actions Taken
+
+- added notification grant helpers that validate dapp user/page ownership
+  before granting categories
+- added anonymous Allow Page routes for listing and replacing app notification
+  category grants
+- added Allow Page UI for `SECURITY`, `TRANSACTIONAL`, and `WORKFLOW`
+  notification permissions with copy that keeps channel privacy and delivery
+  limits explicit
+- added Passport route tests for app-scoped replacement behavior and
+  cross-dapp rejection
+- updated flexible messaging docs and wrote an SDK coordination note
+
+#### Verification
+
+- `pnpm --filter @cubid/passport test`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- commit `FM04`, then continue with `FM05` for the API v3 app
+  send-notification contract
+
+### session: v205
+
+- timestamp: 2026-05-14T23:36:42Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`94b3a3e`**
+- session name: **Clean Passport frontend and bundle warnings**
+
+#### Objective
+
+Remove the pre-existing Passport frontend lint warnings plus the production
+build warnings from legacy wallet dependencies.
+
+#### Actions Taken
+
+- fixed remaining React hook dependency warnings and Tailwind lint warnings
+  in Passport frontend flows
+- moved Google font loading out of inline layout `<head>` links
+- added browser-safe Next webpack fallbacks for legacy ContractKit dependencies
+- routed `bigint-buffer` and `buffer-to-arraybuffer` through warning-free
+  browser bundle shims during Next builds
+- allowed `bigint-buffer` native build scripts in pnpm installs so Node
+  environments can keep native bindings where applicable
+
+#### Verification
+
+- `pnpm --filter @cubid/passport lint`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- continue with `FM05` for the API v3 app send-notification contract when
+  flexible messaging work resumes
+
+### session: v206
+
+- timestamp: 2026-05-14T23:41:22Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`7e7401d`**
+- session name: **Implement API v3 notification send contract**
+
+#### Objective
+
+Complete `FM05` by adding the dapp-authenticated API v3 route for accepted or
+denied flexible messaging send requests.
+
+#### Actions Taken
+
+- added `/api/v3/notifications/send` with the shared Passport dapp security
+  baseline and `Idempotency-Key` support
+- added notification send orchestration for dapp-user ownership, app policy,
+  user grants, preferences, verified channels, notification events, and queued
+  delivery attempts
+- kept provider-specific SMTP/Telegram delivery deferred to `FM06`/`FM07`
+- added Passport route coverage for acceptance, idempotent replay, grant
+  denial, malformed payload rejection, and idempotency conflicts
+- created an SDK handoff note for future public SDK notification-send helpers
+
+#### Verification
+
+- `pnpm --filter @cubid/passport test`
+- `pnpm --filter @cubid/passport typecheck`
+
+#### Follow-up
+
+- run final build/lint validation before committing, then continue with
+  `FM06` email delivery provider integration
+
+### session: v207
+
+- timestamp: 2026-05-14T23:47:14Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`975fe58`**
+- session name: **Implement email notification delivery provider**
+
+#### Objective
+
+Complete `FM06` by wiring flexible messaging events to the email delivery
+provider without leaking channel destinations to apps.
+
+#### Actions Taken
+
+- added an SMTP-backed notification email sender using existing Passport
+  server mail configuration
+- extended API v3 notification send orchestration to decrypt email channel
+  destinations only server-side and update delivery-attempt records
+- recorded provider success/failure status while keeping the public response
+  redacted and stable
+- added Passport route tests for successful email delivery and provider
+  failure handling
+- updated the architecture doc, flexible messaging todo metadata, and SDK
+  handoff note
+
+#### Verification
+
+- `pnpm --filter @cubid/passport lint`
+- `pnpm --filter @cubid/passport test`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- continue with `FM07` Telegram delivery provider integration
+
+### session: v208
+
+- timestamp: 2026-05-14T23:51:38Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`887fd58`**
+- session name: **Implement Telegram notification delivery provider**
+
+#### Objective
+
+Complete `FM07` by adding Telegram as the second flexible messaging delivery
+provider while preserving encrypted destination storage and response redaction.
+
+#### Actions Taken
+
+- added a server-side Telegram Bot API sender with test injection and
+  `TELEGRAM_BOT_TOKEN` configuration
+- wired API v3 notification send delivery to verified Telegram channels and
+  provider success/failure attempt records
+- added Passport tests for Telegram verification, successful delivery, provider
+  failure handling, and no chat-id exposure
+- updated Profile copy, env examples, architecture docs, and SDK handoff notes
+
+#### Verification
+
+- `pnpm --filter @cubid/passport lint`
+- `pnpm --filter @cubid/passport test`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- continue with `FM08` Admin notification control plane
+
+### session: v210
+
+- timestamp: 2026-05-15T04:35:21Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`840a15b`**
+- session name: **Add notification history and status surfaces**
+
+#### Objective
+
+Complete `FM09` by exposing safe notification audit/status surfaces for users
+and dapp callers.
+
+#### Actions Taken
+
+- added `/api/notifications/history/list` for Passport-authenticated users to
+  inspect redacted notification history
+- added `/api/v3/notifications/status` for dapp-authenticated delivery status
+  lookup scoped to the authenticated dapp and dapp user
+- added Profile UI history visibility near notification channel controls
+- added Passport tests for history redaction, dapp-owned status lookup, and
+  cross-dapp event denial
+- updated flexible messaging docs, todo metadata, and SDK handoff note
+
+#### Verification
+
+- `pnpm --filter @cubid/passport lint`
+- `pnpm --filter @cubid/passport test`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- continue with `FM10` rate limits, abuse prevention, and trust controls
+
+### session: v211
+
+- timestamp: 2026-05-15T04:38:17Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`402d207`**
+- session name: **Harden notification send abuse controls**
+
+#### Objective
+
+Complete `FM10` by adding concrete abuse controls to the API v3 flexible
+messaging send path.
+
+#### Actions Taken
+
+- added provider-registry status enforcement for selected notification
+  channels
+- added app/user minute and daily quota enforcement using
+  `notification_app_policies`
+- kept denials redacted while recording operational evidence in
+  `notification_events`
+- added Passport tests for disabled-provider and quota-exhaustion paths
+- updated flexible messaging architecture docs and metadata
+
+#### Verification
+
+- `pnpm --filter @cubid/passport lint`
+- `pnpm --filter @cubid/passport test`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- continue with `FM11` SDK and integration coordination closeout
+
+### session: v212
+
+- timestamp: 2026-05-15T04:39:31Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`1e1b409`**
+- session name: **Coordinate flexible messaging SDK handoff**
+
+#### Objective
+
+Complete `FM11` by ensuring the public SDK repo has handoff notes for the
+backend flexible messaging contracts implemented in this repo.
+
+#### Actions Taken
+
+- confirmed handoff notes exist for channel management, Allow Page grants,
+  notification send, email delivery, Telegram delivery, and status/history
+  contracts
+- added the missing handoff note for provider-disabled and quota-exceeded
+  error behavior
+- updated the architecture doc and roadmap metadata
+- kept SDK implementation out of this repository
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- continue with `FM12` production readiness and smoke validation
+
+### session: v218
+
+- timestamp: 2026-05-15T19:58:23Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`7f77d07`**
+- session name: **Drop legacy dapp API key column**
+
+#### Objective
+
+Complete `C04.1.1` by removing the legacy plaintext-style `dapps.apikey`
+storage surface after verifying active dapps have hash-only verifier rows.
+
+#### Actions Taken
+
+- ran a read-only hosted CubidDev preflight showing 38 dapps, 38 with exactly
+  one active `dapp_api_keys` row, 0 missing active keys, and 0 duplicate active
+  keys
+- added a forward migration that fails closed if any dapp is missing an active
+  key row or has multiple active key rows, then drops `dapps_apikey_key` and
+  `dapps.apikey`
+- updated local seed data to stop inserting the removed `dapps.apikey` column
+- removed remaining Admin response plumbing that named the old `apikey` field
+- updated the dapp API-key hardening doc to record the final non-retrievable
+  key contract
+- marked `C04.1.1` completed in the roadmap
+
+#### Verification
+
+- hosted read-only preflight query against linked CubidDev for active key
+  coverage
+- `git diff --check`
+- `pnpm --filter @cubid/admin typecheck`
+- `pnpm --filter @cubid/admin test`
+- `pnpm --filter @cubid/admin build`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport test`
+- `pnpm --filter @cubid/passport build`
+- `pnpm exec supabase db lint --linked` reported a pre-existing
+  `public.create_user_check_family` ambiguous `user_id` lint finding unrelated
+  to this migration
+
+#### Follow-up
+
+- apply the guarded migration through the protected Supabase deployment
+  workflow, not directly from a local shell
+- consider a separate database-function cleanup for the pre-existing
+  `create_user_check_family` lint finding
+
+### session: v217
+
+- timestamp: 2026-05-15T17:46:32Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`19ee23e`**
+- session name: **Normalize cross-repo comms mailbox**
+
+#### Objective
+
+Move active cross-repo notes into the new sibling-note structure, update agent
+guidance, and answer the current SmarTrust wallet/signing blocker where the
+backend and SDK surfaces are ready enough to continue.
+
+#### Actions Taken
+
+- updated `AGENTS.md` to explain the new `agent-context/cross-repo-comms/`
+  workflow and the dirty-sibling notification convention
+- moved legacy incoming notes into `agent-context/cross-repo-comms/` with the
+  required frontmatter and removed duplicated legacy copies
+- added the ClearPass Dashboard SDK readiness thread to the new mailbox and
+  marked it resolved from Passport's side
+- marked the SDK wallet helper handoff resolved after the SDK side confirmed
+  published package versions and exported helper names
+- replied to the SmarTrust passkey-wallet request with the currently available
+  account, signing, SDK, and limitation boundaries
+- left synchronized sibling-note edits dirty in `cubid-sdk-v2` and
+  `smartrust-monorepo` so agents in those repos can pick them up
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- let the SDK and SmarTrust agents ingest their dirty sibling notes
+- yeet the Passport branch after the current Passport fixes and comms cleanup
+  are ready for review
+
+### session: v216
+
+- timestamp: 2026-05-15T15:40:14Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`4eff0e1`**
+- session name: **Complete hosted ClearPass Dashboard OIDC smoke**
+
+#### Objective
+
+Finish `B02.6.1` by validating the hosted ClearPass Dashboard Login with
+Cubid flow against the deployed OIDC issuer, Passport login/consent UI, and
+browser callback.
+
+#### Actions Taken
+
+- confirmed the ClearPass Dashboard OIDC client was seeded in hosted CubidDev
+  with client id `clearpass-dashboard`
+- deployed the Passport production fixes needed for browser Firebase config and
+  OIDC consent rendering
+- completed a fresh hosted Authorization Code + PKCE browser flow through OTP,
+  optional passkey skip, consent approval, and callback
+- exchanged the returned authorization code with the saved PKCE verifier and
+  verified `/userinfo` returned the expected email/profile claims
+- confirmed logout redirect validation succeeds when `client_id` is supplied
+
+#### Verification
+
+- browser callback reached
+  `http://localhost:5173/auth/callback?code=...&state=smoke_8nCre8IbNlzajseiEPvmpw`
+- token exchange returned `200` with request id
+  `oidc_d390424d-adb9-4345-aed5-fbdbde4d3812`
+- `/userinfo` returned `200` with request id
+  `oidc_9124417f-b0fb-4186-b81b-d8fc3e7ead4d`
+- logout check returned `302` to `https://dashboard.clearpass.app/` with
+  request id `oidc_e1c8ecb2-fa97-4b66-8596-6453f1642d86`
+
+#### Follow-up
+
+- open a PR for the Passport fixes and B02.6.1 completion metadata after the
+  remaining unrelated dirty coordination files are handled or left unstaged
+
+### session: v215
+
+- timestamp: 2026-05-15T15:17:34Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`fd0e8ac`**
+- session name: **Fix OIDC consent Allow Page guard**
+
+#### Objective
+
+Unblock the hosted ClearPass Dashboard OIDC smoke after OTP login reached the
+OIDC consent step but the Passport Allow Page showed a legacy UID error.
+
+#### Actions Taken
+
+- reproduced the OTP-to-consent handoff reaching
+  `/allow?consent_challenge=...`
+- identified the legacy Allow Page UID guard running before the OIDC consent
+  branch
+- moved the OIDC consent rendering branch ahead of the legacy UID validation
+  so consent challenges do not require a dapp-user `uid`
+- kept unrelated dirty coordination files unstaged
+
+#### Verification
+
+- `pnpm --filter @cubid/passport typecheck`
+- `git diff --check -- apps/passport/app/allow/page.tsx`
+
+#### Follow-up
+
+- deploy the fix and rerun the hosted ClearPass Dashboard OIDC consent,
+  authorization-code, token, and userinfo smoke
+
+### session: v214
+
+- timestamp: 2026-05-15T15:08:21Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`13d112a`**
+- session name: **Fix Passport production Firebase env guard**
+
+#### Objective
+
+Unblock the hosted ClearPass Dashboard OIDC smoke by fixing the Passport login
+page blank screen caused by the browser Firebase configuration guard.
+
+#### Actions Taken
+
+- diagnosed the production blank page as a client-side Firebase env guard crash
+- confirmed Vercel now builds the Passport project from `apps/passport`
+- updated the Firebase config helper to use direct `NEXT_PUBLIC_FIREBASE_*`
+  references so Next.js can inline browser-safe public env values
+- kept unrelated dirty coordination files unstaged
+
+#### Verification
+
+- `pnpm --filter @cubid/passport typecheck`
+- `git diff --check -- apps/passport/lib/firebase.ts`
+
+#### Follow-up
+
+- deploy the fix and rerun the hosted ClearPass Dashboard OIDC smoke
+
+### session: v216
+
+- timestamp: 2026-05-16T02:38:19Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`77de025`**
+- session name: **Address PR 166 review comments**
+
+#### Objective
+
+Resolve actionable Copilot and Codex review comments on PR 166 without changing
+the flexible messaging public route contracts.
+
+#### Actions Taken
+
+- sorted notification delivery attempts before deriving latest status
+- escaped Telegram MarkdownV2 notification content and sanitized notification
+  email subjects against header injection
+- kept legacy `dapps.apikey` redaction in Admin create/list/rotate responses
+  for rollout safety
+- scoped Admin delivery-attempt overview totals to events owned by the current
+  admin's apps
+- preserved existing notification preference fields on partial updates
+- replaced local absolute docs links with repo-relative or repo-generic paths
+
+#### Verification
+
+- `pnpm --filter @cubid/passport test`
+- `pnpm --filter @cubid/admin test`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/admin typecheck`
+- `git diff --check`
+
+#### Follow-up
+
+- push the patch, reply to the review threads, and resolve them in GitHub
+
+### session: v213
+
+- timestamp: 2026-05-15T04:42:15Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`c8fb930`**
+- session name: **Close flexible messaging production readiness runbook**
+
+#### Objective
+
+Complete `FM12` by adding a production-readiness runbook and explicit hosted
+smoke checklist for the flexible messaging MVP.
+
+#### Actions Taken
+
+- created `docs/engineering/flexible-messaging-operations.md` with required
+  migrations, Supabase Vault secrets, provider env vars, Admin policy
+  prerequisites, launch gates, smoke steps, triage guidance, and emergency
+  provider/app controls
+- updated the flexible messaging architecture doc to reference the runbook and
+  avoid claiming hosted readiness without live evidence
+- updated flexible messaging todo metadata to close `FM12`
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- run the hosted flexible messaging smoke checklist before enabling production
+  app traffic
+
+### session: v209
+
+- timestamp: 2026-05-14T23:59:38Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`ad3c4a9`**
+- session name: **Implement Admin notification control plane**
+
+#### Objective
+
+Complete `FM08` by giving Admin users redacted controls and status visibility
+for the flexible messaging MVP.
+
+#### Actions Taken
+
+- added notification Admin operations for overview, provider updates,
+  category updates, and app policy/quota upserts
+- added Admin API routes on the existing shared baseline for read and
+  sensitive operations
+- added a Notifications Admin tab with provider/category/app policy controls
+  and recent event evidence
+- added Admin route tests for the new notification routes
+- updated flexible messaging docs and metadata
+
+#### Verification
+
+- `pnpm --filter @cubid/admin lint`
+- `pnpm --filter @cubid/admin test`
+- `pnpm --filter @cubid/admin typecheck`
+- `pnpm --filter @cubid/admin build`
+- `git diff --check`
+
+#### Follow-up
+
+- continue with `FM09` auditability and delivery-status APIs

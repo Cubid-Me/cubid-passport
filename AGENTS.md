@@ -19,8 +19,9 @@ At the start of a new session, inspect and summarize the relevant work from:
 3. `agent-context/cubid-backgrounder.md` for product and protocol principles
 4. `docs/engineering/sdk-package-target-state.md` before SDK/package work, then move public SDK implementation work to the canonical `Cubid-Me/cubid-sdk` repo
 5. open GitHub issues or PR comments when repository access is available
-6. dirty files in `agent-context/messages-from-cubid-sdk/`, treating each as an incoming message from the public SDK agents that must be read and addressed in this repo
-7. `agent-context/future-ideas.md` only as a last resort when `agent-context/todo.md` is depleted and the user asks for "what's next"
+6. dirty files in `agent-context/cross-repo-comms/`, treating each as an incoming sibling note from another repo agent that must be read and addressed in this repo
+7. legacy dirty files in `agent-context/messages-from-cubid-sdk/`, treating each as an incoming archived-style message from the public SDK agents that must be read and addressed in this repo
+8. `agent-context/future-ideas.md` only as a last resort when `agent-context/todo.md` is depleted and the user asks for "what's next"
 
 ## Repository Map
 
@@ -31,8 +32,9 @@ At the start of a new session, inspect and summarize the relevant work from:
 - `packages/types/`: shared type contracts that can be consumed by multiple workspaces
 - `apps/passport/public/`: Passport static assets
 - `agent-context/`: session logging, feature notes, and small local follow-ups
+- `agent-context/cross-repo-comms/`: git-backed sibling notes for agent-to-agent communication across repos
 - `agent-context/future-ideas.md`: deferred feature-expansion ideas only; do not implement from it until active todos are depleted and the user asks what to do next
-- `agent-context/messages-from-cubid-sdk/`: incoming coordination notes from the public SDK repo agents
+- `agent-context/messages-from-cubid-sdk/`: legacy incoming coordination notes from the public SDK repo agents
 - `docs/engineering/`: architecture and operating-model docs
 - `.github/`: CI workflows
 
@@ -53,7 +55,9 @@ At the start of a new session, inspect and summarize the relevant work from:
 - The open-source API and SDK implementation lives outside this repo in `Cubid-Me/cubid-sdk`; use your local clone of that repo for SDK implementation work.
 - Do not add public API or SDK implementation code to this repo. `packages/core/` is a historical snapshot retained for migration context only, not a publication target.
 - Before implementing changes here that affect public API shape, SDK behavior, integration docs, app-scoped identity semantics, stamp/claim contracts, or developer-facing compatibility, evaluate the impact on `Cubid-Me/cubid-sdk`.
-- When a change here impacts the public SDK, create a note for the SDK agents in the SDK repo's `agent-context/messages-from-cubid-passport/` directory describing the change, expected SDK impact, and any follow-up needed.
-- Public SDK agents may leave notes for this repo in `agent-context/messages-from-cubid-sdk/`; when new dirty files appear there, read and address them before continuing related product work.
+- When a change here impacts the public SDK, create or update a sibling thread in both repos under `agent-context/cross-repo-comms/` describing the change, expected SDK impact, and any follow-up needed.
+- Public SDK agents may leave sibling notes for this repo in `agent-context/cross-repo-comms/`; when new dirty files appear there, read and address them before continuing related product work.
+- Cross-repo comms are intentionally git-dirty notification surfaces: leave sibling-note edits dirty in other repos so their agents see them, but when sibling notes appear dirty in this repo, address them and commit them here as part of the local work.
+- Legacy `messages-from-*` and `inbox` folders are retained as archives. Do not create new live cross-repo notes there unless the user explicitly asks for the old path.
 - When suggesting "what's next", use active `todo.md` items, incoming SDK messages, review feedback, and runbook blockers first. Consult `agent-context/future-ideas.md` only if those sources are exhausted.
 - During repo-cleanup passes, verify that `agent-context/future-ideas.md` exists and clearly states that it is deferred-reference material, not an active implementation roadmap. Create or refresh it only as a documentation hygiene task.

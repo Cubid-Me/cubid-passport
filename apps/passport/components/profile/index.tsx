@@ -101,6 +101,58 @@ type SiwcAccountSummary = {
   updatedAt: string
 }
 
+type NotificationChannelSummary = {
+  channelId: string
+  channelType: "email" | "telegram"
+  createdAt: string
+  displayHint: string | null
+  isDefault: boolean
+  label: string | null
+  mutedUntil: string | null
+  pausedUntil: string | null
+  providerKey: string
+  revokedAt: string | null
+  status: string
+  updatedAt: string
+  verificationStatus: string
+  verifiedAt: string | null
+}
+
+type NotificationPreferenceSummary = {
+  categoryKey: "SECURITY" | "TRANSACTIONAL" | "WORKFLOW"
+  channelId: string | null
+  createdAt: string
+  dappId: string | null
+  mutedUntil: string | null
+  pausedUntil: string | null
+  preferenceId: string
+  priorityFloor: "LOW" | "NORMAL" | "HIGH" | "CRITICAL"
+  status: string
+  updatedAt: string
+}
+
+type NotificationHistorySummary = {
+  app: {
+    appName: string | null
+    dappId: string | null
+    dappUid: string | null
+  }
+  category: string | null
+  createdAt: string | null
+  deliveryStatus: string | null
+  deniedReason: string | null
+  eventId: string
+  priority: string | null
+  selectedChannel: {
+    channelType: string | null
+    displayHint: string | null
+    label: string | null
+    providerKey: string | null
+  } | null
+  status: string | null
+  title: string | null
+}
+
 type SiwcSigningRequestSummary = {
   approvedAt: string | null
   chain: string
@@ -266,6 +318,37 @@ export const Profile = () => {
   const [appDisclosureGrantsLoading, setAppDisclosureGrantsLoading] =
     useState(false)
   const [revokingAppDisclosureGrantId, setRevokingAppDisclosureGrantId] =
+    useState<string | null>(null)
+  const [notificationChannels, setNotificationChannels] = useState<
+    NotificationChannelSummary[]
+  >([])
+  const [notificationPreferences, setNotificationPreferences] = useState<
+    NotificationPreferenceSummary[]
+  >([])
+  const [notificationHistory, setNotificationHistory] = useState<
+    NotificationHistorySummary[]
+  >([])
+  const [notificationChannelsLoading, setNotificationChannelsLoading] =
+    useState(false)
+  const [notificationPreferenceSaving, setNotificationPreferenceSaving] =
+    useState<string | null>(null)
+  const [notificationEmailDestination, setNotificationEmailDestination] =
+    useState("")
+  const [notificationEmailLabel, setNotificationEmailLabel] = useState("")
+  const [notificationTelegramDestination, setNotificationTelegramDestination] =
+    useState("")
+  const [notificationTelegramLabel, setNotificationTelegramLabel] = useState("")
+  const [notificationVerificationChallenge, setNotificationVerificationChallenge] =
+    useState<{
+      challengeId: string
+      channelType: "email" | "telegram"
+      expiresAt: string
+      setupCode?: string
+      setupInstructions?: string
+    } | null>(null)
+  const [notificationVerificationCode, setNotificationVerificationCode] =
+    useState("")
+  const [notificationChannelActionId, setNotificationChannelActionId] =
     useState<string | null>(null)
   const [siwcAccounts, setSiwcAccounts] = useState<SiwcAccountSummary[]>([])
   const [siwcAccountsLoading, setSiwcAccountsLoading] = useState(false)
@@ -719,6 +802,227 @@ export const Profile = () => {
       }
     },
     [fetchAppDisclosureGrants, getOidcAuthHeaders]
+  )
+
+  const fetchNotificationSettings = useCallback(async () => {
+    if (!email && !phone) {
+      setNotificationChannels([])
+      setNotificationPreferences([])
+      setNotificationHistory([])
+      return
+    }
+
+    setNotificationChannelsLoading(true)
+    try {
+      const headers = await getOidcAuthHeaders()
+      const [channelsResponse, preferencesResponse, historyResponse] =
+        await Promise.all([
+          axios.post<{ data: NotificationChannelSummary[] }>(
+            "/api/notifications/channels/list",
+            {},
+            { headers }
+          ),
+          axios.post<{ data: NotificationPreferenceSummary[] }>(
+            "/api/notifications/preferences/list",
+            {},
+            { headers }
+          ),
+          axios.post<{ data: NotificationHistorySummary[] }>(
+            "/api/notifications/history/list",
+            { limit: 10 },
+            { headers }
+          ),
+        ])
+      setNotificationChannels(channelsResponse.data.data ?? [])
+      setNotificationPreferences(preferencesResponse.data.data ?? [])
+      setNotificationHistory(historyResponse.data.data ?? [])
+    } catch (error) {
+      console.error(error)
+      toast.error("Failed to load notification channels")
+    } finally {
+      setNotificationChannelsLoading(false)
+    }
+  }, [email, phone, getOidcAuthHeaders])
+
+  useEffect(() => {
+    fetchNotificationSettings()
+  }, [fetchNotificationSettings])
+
+  const startNotificationVerification = useCallback(
+    async (channelType: "email" | "telegram") => {
+      const destination =
+        channelType === "email"
+          ? notificationEmailDestination
+          : notificationTelegramDestination
+      const label =
+        channelType === "email" ? notificationEmailLabel : notificationTelegramLabel
+
+      if (!destination.trim()) {
+        toast.error("Add a destination before starting verification")
+        return
+      }
+
+      setNotificationChannelActionId(`start-${channelType}`)
+      try {
+        const headers = await getOidcAuthHeaders()
+        const { data } = await axios.post<{
+          data: {
+            challenge: {
+              challengeId: string
+              expiresAt: string
+              setupCode?: string
+              setupInstructions?: string
+            }
+          }
+        }>(
+          "/api/notifications/channels/start-verification",
+          {
+            channelType,
+            destination,
+            isDefault: notificationChannels.length === 0,
+            label: label || null,
+          },
+          { headers }
+        )
+        setNotificationVerificationChallenge({
+          channelType,
+          ...data.data.challenge,
+        })
+        setNotificationVerificationCode("")
+        if (channelType === "email") {
+          setNotificationEmailDestination("")
+          setNotificationEmailLabel("")
+          toast.success("Verification code sent")
+        } else {
+          setNotificationTelegramDestination("")
+          setNotificationTelegramLabel("")
+          toast.success("Telegram verification started")
+        }
+        await fetchNotificationSettings()
+      } catch (error: any) {
+        console.error(error)
+        toast.error(
+          error?.response?.data?.error?.message ??
+            "Failed to start channel verification"
+        )
+      } finally {
+        setNotificationChannelActionId(null)
+      }
+    },
+    [
+      fetchNotificationSettings,
+      getOidcAuthHeaders,
+      notificationChannels.length,
+      notificationEmailDestination,
+      notificationEmailLabel,
+      notificationTelegramDestination,
+      notificationTelegramLabel,
+    ]
+  )
+
+  const completeNotificationVerification = useCallback(async () => {
+    if (!notificationVerificationChallenge) {
+      return
+    }
+
+    setNotificationChannelActionId("complete-verification")
+    try {
+      const headers = await getOidcAuthHeaders()
+      await axios.post(
+        "/api/notifications/channels/complete-verification",
+        {
+          challengeId: notificationVerificationChallenge.challengeId,
+          code: notificationVerificationCode,
+        },
+        { headers }
+      )
+      setNotificationVerificationChallenge(null)
+      setNotificationVerificationCode("")
+      toast.success("Notification channel verified")
+      await fetchNotificationSettings()
+    } catch (error: any) {
+      console.error(error)
+      toast.error(
+        error?.response?.data?.error?.message ??
+          "Failed to verify notification channel"
+      )
+    } finally {
+      setNotificationChannelActionId(null)
+    }
+  }, [
+    fetchNotificationSettings,
+    getOidcAuthHeaders,
+    notificationVerificationChallenge,
+    notificationVerificationCode,
+  ])
+
+  const updateNotificationChannelState = useCallback(
+    async (
+      channel: NotificationChannelSummary,
+      patch: Partial<{
+        isDefault: boolean
+        label: string | null
+        status: "active" | "muted" | "paused" | "revoked"
+      }>
+    ) => {
+      if (
+        patch.status === "revoked" &&
+        !window.confirm(`Revoke ${channel.label ?? channel.displayHint}?`)
+      ) {
+        return
+      }
+
+      setNotificationChannelActionId(channel.channelId)
+      try {
+        const headers = await getOidcAuthHeaders()
+        await axios.post(
+          "/api/notifications/channels/update",
+          { channelId: channel.channelId, ...patch },
+          { headers }
+        )
+        toast.success("Notification channel updated")
+        await fetchNotificationSettings()
+      } catch (error: any) {
+        console.error(error)
+        toast.error(
+          error?.response?.data?.error?.message ??
+            "Failed to update notification channel"
+        )
+      } finally {
+        setNotificationChannelActionId(null)
+      }
+    },
+    [fetchNotificationSettings, getOidcAuthHeaders]
+  )
+
+  const updateNotificationPreferenceState = useCallback(
+    async (categoryKey: "SECURITY" | "TRANSACTIONAL" | "WORKFLOW", channelId: string) => {
+      setNotificationPreferenceSaving(categoryKey)
+      try {
+        const headers = await getOidcAuthHeaders()
+        await axios.post(
+          "/api/notifications/preferences/update",
+          {
+            categoryKey,
+            channelId: channelId === "none" ? null : channelId,
+            priorityFloor: categoryKey === "SECURITY" ? "HIGH" : "LOW",
+            status: channelId === "none" ? "revoked" : "active",
+          },
+          { headers }
+        )
+        toast.success("Notification preference updated")
+        await fetchNotificationSettings()
+      } catch (error: any) {
+        console.error(error)
+        toast.error(
+          error?.response?.data?.error?.message ??
+            "Failed to update notification preference"
+        )
+      } finally {
+        setNotificationPreferenceSaving(null)
+      }
+    },
+    [fetchNotificationSettings, getOidcAuthHeaders]
   )
 
   const fetchSiwcAccounts = useCallback(async () => {
@@ -1404,6 +1708,378 @@ export const Profile = () => {
                   </div>
                 )
               })}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="md:col-span-2">
+          <CardHeader>
+            <CardTitle>Notification channels</CardTitle>
+            <CardDescription>
+              Manage where Cubid may route app notifications after you grant an
+              app permission. Apps see only channel status and labels, never raw
+              email addresses, Telegram identifiers, or encrypted channel data.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="mb-4 flex justify-end">
+              <Button
+                disabled={notificationChannelsLoading}
+                onClick={fetchNotificationSettings}
+                variant="outline"
+              >
+                {notificationChannelsLoading ? "Refreshing..." : "Refresh"}
+              </Button>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="rounded-lg border bg-background p-4">
+                <h3 className="font-semibold">Add email</h3>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Email channels are verified with a short one-time code.
+                </p>
+                <div className="mt-3 space-y-2">
+                  <Input
+                    onChange={(event) =>
+                      setNotificationEmailDestination(event.target.value)
+                    }
+                    placeholder="person@example.com"
+                    value={notificationEmailDestination}
+                  />
+                  <Input
+                    onChange={(event) =>
+                      setNotificationEmailLabel(event.target.value)
+                    }
+                    placeholder="Label, for example Personal email"
+                    value={notificationEmailLabel}
+                  />
+                  <Button
+                    disabled={notificationChannelActionId === "start-email"}
+                    onClick={() => startNotificationVerification("email")}
+                    variant="outline"
+                  >
+                    {notificationChannelActionId === "start-email"
+                      ? "Sending..."
+                      : "Send verification code"}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="rounded-lg border bg-background p-4">
+                <h3 className="font-semibold">Add Telegram</h3>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Add the Telegram destination you use with the Cubid bot.
+                  Delivery uses this verified channel without sharing it with
+                  apps.
+                </p>
+                <div className="mt-3 space-y-2">
+                  <Input
+                    onChange={(event) =>
+                      setNotificationTelegramDestination(event.target.value)
+                    }
+                    placeholder="Telegram username or chat id"
+                    value={notificationTelegramDestination}
+                  />
+                  <Input
+                    onChange={(event) =>
+                      setNotificationTelegramLabel(event.target.value)
+                    }
+                    placeholder="Label, for example Telegram"
+                    value={notificationTelegramLabel}
+                  />
+                  <Button
+                    disabled={notificationChannelActionId === "start-telegram"}
+                    onClick={() => startNotificationVerification("telegram")}
+                    variant="outline"
+                  >
+                    {notificationChannelActionId === "start-telegram"
+                      ? "Starting..."
+                      : "Start Telegram setup"}
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {notificationVerificationChallenge && (
+              <div className="mt-4 rounded-lg border bg-muted/30 p-4">
+                <h3 className="font-semibold">Finish verification</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Enter the code for your{" "}
+                  {notificationVerificationChallenge.channelType} channel before{" "}
+                  {dayjs(notificationVerificationChallenge.expiresAt).format(
+                    "HH:mm"
+                  )}
+                  .
+                </p>
+                {notificationVerificationChallenge.setupCode && (
+                  <p className="mt-2 rounded bg-background p-2 text-sm">
+                    Telegram setup code:{" "}
+                    <span className="font-mono">
+                      {notificationVerificationChallenge.setupCode}
+                    </span>
+                  </p>
+                )}
+                {notificationVerificationChallenge.setupInstructions && (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    {notificationVerificationChallenge.setupInstructions}
+                  </p>
+                )}
+                <div className="mt-3 flex flex-col gap-2 md:flex-row">
+                  <Input
+                    onChange={(event) =>
+                      setNotificationVerificationCode(event.target.value)
+                    }
+                    placeholder="Verification code"
+                    value={notificationVerificationCode}
+                  />
+                  <Button
+                    disabled={
+                      notificationChannelActionId === "complete-verification"
+                    }
+                    onClick={completeNotificationVerification}
+                  >
+                    {notificationChannelActionId === "complete-verification"
+                      ? "Verifying..."
+                      : "Verify channel"}
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            <div className="mt-4 space-y-3">
+              {notificationChannelsLoading &&
+                notificationChannels.length === 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    Loading notification channels...
+                  </p>
+                )}
+              {!notificationChannelsLoading &&
+                notificationChannels.length === 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    No notification channels connected yet.
+                  </p>
+                )}
+              {notificationChannels.map((channel) => (
+                <div
+                  key={channel.channelId}
+                  className="rounded-lg border bg-background p-4"
+                >
+                  <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="font-semibold">
+                          {channel.label ?? channel.displayHint}
+                        </h3>
+                        <span className="rounded-full bg-muted px-2 py-1 text-xs uppercase">
+                          {channel.channelType}
+                        </span>
+                        <span
+                          className={`rounded-full px-2 py-1 text-xs ${
+                            channel.verificationStatus === "verified"
+                              ? "bg-emerald-100 text-emerald-700"
+                              : "bg-amber-100 text-amber-700"
+                          }`}
+                        >
+                          {channel.verificationStatus}
+                        </span>
+                        {channel.isDefault && (
+                          <span className="rounded-full bg-blue-100 px-2 py-1 text-xs text-blue-700">
+                            Default
+                          </span>
+                        )}
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {channel.displayHint ?? "Hidden destination"} ·{" "}
+                        {channel.status}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {!channel.isDefault && channel.status !== "revoked" && (
+                        <Button
+                          disabled={
+                            notificationChannelActionId === channel.channelId
+                          }
+                          onClick={() =>
+                            updateNotificationChannelState(channel, {
+                              isDefault: true,
+                              status: "active",
+                            })
+                          }
+                          variant="outline"
+                        >
+                          Make default
+                        </Button>
+                      )}
+                      {channel.status !== "revoked" && (
+                        <Button
+                          disabled={
+                            notificationChannelActionId === channel.channelId
+                          }
+                          onClick={() =>
+                            updateNotificationChannelState(channel, {
+                              status: "revoked",
+                            })
+                          }
+                          variant="outline"
+                        >
+                          Revoke
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="mt-3 grid gap-2 text-sm md:grid-cols-2">
+                    <p>
+                      <span className="text-muted-foreground">Provider:</span>{" "}
+                      {channel.providerKey}
+                    </p>
+                    <p>
+                      <span className="text-muted-foreground">Verified:</span>{" "}
+                      {channel.verifiedAt
+                        ? dayjs(channel.verifiedAt).format("YYYY-MM-DD HH:mm")
+                        : "No"}
+                    </p>
+                    <p>
+                      <span className="text-muted-foreground">Created:</span>{" "}
+                      {dayjs(channel.createdAt).format("YYYY-MM-DD HH:mm")}
+                    </p>
+                    <p>
+                      <span className="text-muted-foreground">Updated:</span>{" "}
+                      {dayjs(channel.updatedAt).format("YYYY-MM-DD HH:mm")}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {notificationChannels.length > 0 && (
+              <div className="mt-6">
+                <h3 className="font-semibold">Global category preferences</h3>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  These are your default routes. App-specific notification
+                  grants are added through Allow Page in the next slice.
+                </p>
+                <div className="mt-3 grid gap-3 md:grid-cols-3">
+                  {["SECURITY", "TRANSACTIONAL", "WORKFLOW"].map(
+                    (categoryKey) => {
+                      const preference = notificationPreferences.find(
+                        (entry) => entry.categoryKey === categoryKey
+                      )
+                      return (
+                        <div
+                          key={categoryKey}
+                          className="rounded-lg border bg-background p-3"
+                        >
+                          <p className="text-sm font-medium">{categoryKey}</p>
+                          <Select
+                            disabled={
+                              notificationPreferenceSaving === categoryKey
+                            }
+                            onValueChange={(value) =>
+                              updateNotificationPreferenceState(
+                                categoryKey as
+                                  | "SECURITY"
+                                  | "TRANSACTIONAL"
+                                  | "WORKFLOW",
+                                value
+                              )
+                            }
+                            value={preference?.channelId ?? "none"}
+                          >
+                            <SelectTrigger className="mt-2">
+                              <SelectValue placeholder="Choose channel" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">No default</SelectItem>
+                              {notificationChannels
+                                .filter(
+                                  (channel) =>
+                                    channel.status !== "revoked" &&
+                                    channel.verificationStatus === "verified"
+                                )
+                                .map((channel) => (
+                                  <SelectItem
+                                    key={`${categoryKey}-${channel.channelId}`}
+                                    value={channel.channelId}
+                                  >
+                                    {channel.label ??
+                                      channel.displayHint ??
+                                      channel.channelType}
+                                  </SelectItem>
+                                ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )
+                    }
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="mt-6">
+              <h3 className="font-semibold">Recent notification history</h3>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Delivery evidence is redacted. You can see the app, category,
+                selected channel label, and status, but not hidden provider
+                identifiers.
+              </p>
+              <div className="mt-3 space-y-3">
+                {notificationHistory.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    No routed notifications yet.
+                  </p>
+                ) : (
+                  notificationHistory.map((event) => (
+                    <div
+                      key={event.eventId}
+                      className="rounded-lg border bg-background p-3"
+                    >
+                      <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                        <div>
+                          <p className="text-sm font-medium">
+                            {event.title ?? "Notification"}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {event.app.appName ?? "Unknown app"} ·{" "}
+                            {event.category ?? "unknown"} ·{" "}
+                            {event.priority ?? "unknown"}
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <span className="rounded-full bg-muted px-2 py-1 text-xs uppercase">
+                            {event.status ?? "unknown"}
+                          </span>
+                          {event.deliveryStatus && (
+                            <span className="rounded-full bg-blue-100 px-2 py-1 text-xs text-blue-700">
+                              {event.deliveryStatus}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="mt-2 grid gap-2 text-xs text-muted-foreground md:grid-cols-3">
+                        <p>
+                          Channel:{" "}
+                          {event.selectedChannel?.label ??
+                            event.selectedChannel?.displayHint ??
+                            event.selectedChannel?.channelType ??
+                            "none"}
+                        </p>
+                        <p>
+                          Sent:{" "}
+                          {event.createdAt
+                            ? dayjs(event.createdAt).format(
+                                "YYYY-MM-DD HH:mm"
+                              )
+                            : "unknown"}
+                        </p>
+                        <p>
+                          Reason: {event.deniedReason ?? "N/A"}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>

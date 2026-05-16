@@ -2,7 +2,7 @@
 /* eslint-disable @next/next/no-img-element */
 "use client"
 
-import React, { useEffect } from "react"
+import React, { useCallback, useEffect } from "react"
 
 import "@near-wallet-selector/modal-ui/styles.css"
 import { useSearchParams } from "next/navigation"
@@ -23,18 +23,18 @@ const Stamps = ({
 }: any) => {
     const searchParams: any = useSearchParams()
 
-    const signInWithSocial = async (socialName: any) => {
+    const signInWithSocial = useCallback(async (socialName: any) => {
         localStorage.clear()
         await supabase.auth.signOut()
         localStorage.setItem("socialName", socialName)
-        const { data: d, error: e } = await supabase.auth.signInWithOAuth({
+        await supabase.auth.signInWithOAuth({
             provider: socialName,
             options: {
                 redirectTo: `${window.location.href}&success=true`,
 
             },
         })
-    }
+    }, [])
     const successParamter = searchParams.get("success")
 
     useEffect(() => {
@@ -42,7 +42,7 @@ const Stamps = ({
             const social_provider_to_trigger = searchParams.get("social_provider")
             signInWithSocial(social_provider_to_trigger)
         }
-    }, [])
+    }, [searchParams, signInWithSocial, successParamter])
 
     const { getUser } = useAuth({})
     const { getIdForApp } = useCreatedByAppId()
@@ -50,7 +50,7 @@ const Stamps = ({
     const uuid = searchParams.get("uid")
 
     useEffect(() => {
-        supabase.auth.onAuthStateChange(async (event, session) => {
+        const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
             if (session?.user) {
                 const { user_metadata } = session?.user
                 const providerKey: any = localStorage.getItem("socialName") ?? ""
@@ -74,10 +74,12 @@ const Stamps = ({
                 window.location.href = data?.redirect_url;
             }
         })
+        return () => authListener.subscription.unsubscribe()
 
     }, [
         getUser,
         getIdForApp,
+        searchParams,
         uuid,
     ])
 
@@ -86,10 +88,10 @@ const Stamps = ({
             <div className="h-screen bg-black p-5">
                 <div className="text-center">
                     <div
-                        className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-blue-500 mx-auto"
+                        className="mx-auto size-16 animate-spin rounded-full border-4 border-dashed border-blue-500"
                     ></div>
-                    <h2 className="text-zinc-900 dark:text-white mt-4 animate-pulse ">Loading...</h2>
-                    <p className="text-zinc-600 dark:text-zinc-400 animate-pulse">
+                    <h2 className="mt-4 animate-pulse text-zinc-900 dark:text-white ">Loading...</h2>
+                    <p className="animate-pulse text-zinc-600 dark:text-zinc-400">
                         Initializing your credentials and redirecting you back
                     </p>
                 </div>

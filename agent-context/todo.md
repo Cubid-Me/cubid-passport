@@ -185,12 +185,12 @@ Repo-side completion added the stable `clearpass-dashboard` seed command, dry-ru
 
 ### B02.6.1 Run hosted ClearPass Dashboard OIDC seed and browser smoke
 
-- Status: Started
+- Status: Completed
 - Timestamp started: 2026-05-14T03:40:53Z
-- Timestamp completed: TBD
-- Feature branch: codex/smartrust-passkey-wallet-api-request
-- Head: ced0793
-- Session-log reference(s): session: v193, session: v194, session: v195
+- Timestamp completed: 2026-05-15T15:40:14Z
+- Feature branch: codex/vercel-app-root-cleanup
+- Head: 4eff0e1
+- Session-log reference(s): session: v193, session: v194, session: v195, session: v214, session: v215, session: v216
 
 Apply the ClearPass Dashboard OIDC client seed to the intended hosted Supabase/OIDC environment and capture the full browser smoke evidence. Confirm the exact staging and production dashboard redirect/logout URIs before running the seed, then execute `pnpm --filter @cubid/oidc seed:clearpass-dashboard` from a trusted operator shell with the target `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and `CLEARPASS_DASHBOARD_OIDC_*` values. Smoke the SDK-backed dashboard flow through discovery, `/authorize`, Passport login and consent, callback `code`/`state`, `/token`, `/userinfo`, and logout. Record the client id, issuer, redirect URI, SDK package versions, and result. Do not mark this complete from local dry-run output alone.
 
@@ -414,12 +414,12 @@ Migrate dapp API keys from plaintext `dapps.apikey` lookup to a verification-onl
 
 ### C04.1.1 Remove legacy `dapps.apikey` after production smoke
 
-- Status: Not started
-- Timestamp started: TBD
-- Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Status: Completed
+- Timestamp started: 2026-05-15T17:46:32Z
+- Timestamp completed: 2026-05-15T19:58:23Z
+- Feature branch: codex/vercel-app-root-cleanup
+- Head: 7f77d07
+- Session-log reference(s): session: v218
 
 Physically remove the legacy `dapps.apikey` column only after the C04.1 migration and app changes have been deployed and production smoke confirms that existing Cubid dapps authenticate through `dapp_api_keys`. This follow-up should query or otherwise verify that every active dapp has exactly one active hashed key row, that Passport dapp-auth logs show successful new-table verification, and that Admin create/rotate/list no longer reads or returns plaintext keys. Once confirmed, add a migration that drops the old unique constraint and column, remove any remaining compatibility types or seed data references, and update engineering docs to state that dapp API keys are permanently non-retrievable. This is intentionally separate from C04.1 so deployment validation can happen before destructive schema cleanup.
 

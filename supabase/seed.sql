@@ -8,7 +8,6 @@ insert into public.dapps (
   appname,
   url,
   uid,
-  apikey,
   admin_uid,
   is_cubid_native,
   redirect_url
@@ -18,7 +17,6 @@ values (
   'Local Passport Test App',
   'http://localhost:3000',
   '11111111-1111-1111-1111-111111111111',
-  '22222222-2222-2222-2222-222222222222',
   'local-admin',
   true,
   'http://localhost:3000/auth/callback'
