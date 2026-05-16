@@ -7,6 +7,11 @@ import {
 } from '../../../../lib/server/adminApi';
 import { mapDappApiKeySummary } from '../../../../lib/server/dappApiKeys';
 
+const omitLegacyApiKey = <T extends Record<string, unknown>>(dapp: T) => {
+  const { apikey: _legacyApiKey, ...safeDapp } = dapp;
+  return safeDapp;
+};
+
 const listApps = async (req: NextApiRequest, res: NextApiResponse) => {
   const request = await prepareAdminApiRequest(req, res, {
     actor: 'admin',
@@ -52,7 +57,7 @@ const listApps = async (req: NextApiRequest, res: NextApiResponse) => {
 
     const mapped = (data ?? []).map((dapp) => {
       return {
-        ...dapp,
+        ...omitLegacyApiKey(dapp),
         ...mapDappApiKeySummary(keyByDappId.get(Number(dapp.id))),
       };
     });

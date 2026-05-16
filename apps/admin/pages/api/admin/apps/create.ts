@@ -7,6 +7,11 @@ import {
 } from '../../../../lib/server/adminApi';
 import { createDappApiKey } from '../../../../lib/server/dappApiKeys';
 
+const omitLegacyApiKey = <T extends Record<string, unknown>>(dapp: T) => {
+  const { apikey: _legacyApiKey, ...safeDapp } = dapp;
+  return safeDapp;
+};
+
 const createApp = async (req: NextApiRequest, res: NextApiResponse) => {
   const request = await prepareAdminApiRequest(req, res, {
     actor: 'admin',
@@ -95,7 +100,7 @@ const createApp = async (req: NextApiRequest, res: NextApiResponse) => {
         apiKey,
         apiKeyPrefix: keyRecord.key_prefix,
         app: {
-          ...createdApp,
+          ...omitLegacyApiKey(createdApp),
           apiKeyLastUsedAt: keyRecord.last_used_at ?? null,
           apiKeyPrefix: keyRecord.key_prefix,
           apiKeyRotatedAt: keyRecord.rotated_at ?? null,

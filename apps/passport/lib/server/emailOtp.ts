@@ -141,10 +141,13 @@ export const sendNotificationEmail = async (input: {
 
   const transporter = getTransporter()
   const fromEmail = getRequiredEnv("SMTP_FROM_EMAIL")
+  const subjectAppName = input.fromAppName.replace(/[\r\n]+/g, " ").trim()
+  const subjectTitle = input.title.replace(/[\r\n]+/g, " ").trim()
+  const subject = `[${subjectAppName}] ${subjectTitle}`.slice(0, 180)
 
   await transporter.sendMail({
     from: fromEmail,
-    subject: `[${input.fromAppName}] ${input.title}`,
+    subject,
     text: [
       `${input.title}`,
       "",

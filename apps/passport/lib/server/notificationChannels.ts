@@ -925,14 +925,25 @@ export async function updateNotificationPreference(
     throw existingError
   }
 
+  const existingPreference = existing as PreferenceRow | null
   const payload = {
     category_key: input.categoryKey,
-    channel_id: input.channelId ?? null,
+    channel_id:
+      input.channelId !== undefined
+        ? input.channelId
+        : existingPreference?.channel_id ?? null,
     dapp_id: input.dappId ?? null,
-    muted_until: input.mutedUntil ?? null,
-    paused_until: input.pausedUntil ?? null,
-    priority_floor: input.priorityFloor ?? "LOW",
-    status: input.status ?? "active",
+    muted_until:
+      input.mutedUntil !== undefined
+        ? input.mutedUntil
+        : existingPreference?.muted_until ?? null,
+    paused_until:
+      input.pausedUntil !== undefined
+        ? input.pausedUntil
+        : existingPreference?.paused_until ?? null,
+    priority_floor:
+      input.priorityFloor ?? existingPreference?.priority_floor ?? "LOW",
+    status: input.status ?? existingPreference?.status ?? "active",
     updated_at: now,
     user_id: userId,
   }

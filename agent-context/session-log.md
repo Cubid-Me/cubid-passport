@@ -6673,6 +6673,43 @@ page blank screen caused by the browser Firebase configuration guard.
 
 - deploy the fix and rerun the hosted ClearPass Dashboard OIDC smoke
 
+### session: v216
+
+- timestamp: 2026-05-16T02:38:19Z
+- agent: **OpenAI Codex**
+- branch: **codex/vercel-app-root-cleanup**
+- head: **`77de025`**
+- session name: **Address PR 166 review comments**
+
+#### Objective
+
+Resolve actionable Copilot and Codex review comments on PR 166 without changing
+the flexible messaging public route contracts.
+
+#### Actions Taken
+
+- sorted notification delivery attempts before deriving latest status
+- escaped Telegram MarkdownV2 notification content and sanitized notification
+  email subjects against header injection
+- kept legacy `dapps.apikey` redaction in Admin create/list/rotate responses
+  for rollout safety
+- scoped Admin delivery-attempt overview totals to events owned by the current
+  admin's apps
+- preserved existing notification preference fields on partial updates
+- replaced local absolute docs links with repo-relative or repo-generic paths
+
+#### Verification
+
+- `pnpm --filter @cubid/passport test`
+- `pnpm --filter @cubid/admin test`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/admin typecheck`
+- `git diff --check`
+
+#### Follow-up
+
+- push the patch, reply to the review threads, and resolve them in GitHub
+
 ### session: v213
 
 - timestamp: 2026-05-15T04:42:15Z

@@ -4,7 +4,7 @@ Last updated: 2026-05-14
 Status: FM01 target-state contract
 
 Operations runbook:
-[docs/engineering/flexible-messaging-operations.md](/Users/botmaster/src/cubid/cubid-passport/docs/engineering/flexible-messaging-operations.md)
+[docs/engineering/flexible-messaging-operations.md](./flexible-messaging-operations.md)
 
 ## Purpose
 
@@ -403,7 +403,7 @@ means the app cannot send notifications. `SECURITY` cannot appear in
 ## SDK Handoff Boundary
 
 When any backend route becomes real, create a message in
-`/Users/botmaster/src/cubid/cubid-sdk-v2/agent-context/messages-from-cubid-passport/`
+the public SDK repo's `agent-context/cross-repo-comms/`
 covering:
 
 - route paths and request/response shapes

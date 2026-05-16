@@ -98,6 +98,24 @@ const mapAttempts = (attempts: DeliveryAttemptRow[]) =>
     updatedAt: attempt.updated_at ?? null,
   }))
 
+const attemptSortKey = (attempt: DeliveryAttemptRow) => ({
+  attemptNumber: Number(attempt.attempt_number ?? 0),
+  createdAt: attempt.created_at ?? "",
+  id: String(attempt.id),
+})
+
+const sortAttempts = (attempts: DeliveryAttemptRow[]) =>
+  [...attempts].sort((left, right) => {
+    const leftKey = attemptSortKey(left)
+    const rightKey = attemptSortKey(right)
+
+    return (
+      leftKey.attemptNumber - rightKey.attemptNumber ||
+      leftKey.createdAt.localeCompare(rightKey.createdAt) ||
+      leftKey.id.localeCompare(rightKey.id)
+    )
+  })
+
 const groupByEventId = (attempts: DeliveryAttemptRow[]) => {
   const grouped = new Map<string, DeliveryAttemptRow[]>()
 
@@ -106,7 +124,10 @@ const groupByEventId = (attempts: DeliveryAttemptRow[]) => {
     if (!eventId) {
       continue
     }
-    grouped.set(eventId, [...(grouped.get(eventId) ?? []), attempt])
+    grouped.set(
+      eventId,
+      sortAttempts([...(grouped.get(eventId) ?? []), attempt])
+    )
   }
 
   return grouped
@@ -168,6 +189,8 @@ export async function listNotificationHistoryForUser(
           .from("notification_delivery_attempts")
           .select("*")
           .in("event_id", eventIds)
+          .order("attempt_number", { ascending: true })
+          .order("created_at", { ascending: true })
       : Promise.resolve({ data: [], error: null }),
     dappIds.length > 0
       ? context.supabase.from("dapps").select("id,appname,uid").in("id", dappIds)
@@ -293,18 +316,21 @@ export async function getNotificationStatusForDapp(
     .from("notification_delivery_attempts")
     .select("*")
     .eq("event_id", input.eventId)
+    .order("attempt_number", { ascending: true })
+    .order("created_at", { ascending: true })
 
   if (attemptsError) {
     throw attemptsError
   }
 
-  const deliveryAttempts = mapAttempts((attempts ?? []) as DeliveryAttemptRow[])
+  const sortedAttempts = sortAttempts((attempts ?? []) as DeliveryAttemptRow[])
+  const deliveryAttempts = mapAttempts(sortedAttempts)
 
   return {
     category: typedEvent.category_key ?? null,
     createdAt: typedEvent.created_at ?? null,
     deliveryAttempts,
-    deliveryStatus: latestAttemptStatus((attempts ?? []) as DeliveryAttemptRow[]),
+    deliveryStatus: latestAttemptStatus(sortedAttempts),
     deniedReason: typedEvent.denied_reason ?? null,
     eventId: String(typedEvent.id),
     priority: typedEvent.priority ?? null,

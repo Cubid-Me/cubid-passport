@@ -19,15 +19,18 @@ export const setSendNotificationTelegramForTests = (
   sendNotificationTelegramForTests = sender
 }
 
+const escapeTelegramMarkdownV2 = (value: string) =>
+  value.replace(/([_*\[\]()~`>#+\-=|{}.!\\])/g, "\\$1")
+
 const buildTelegramMessage = (input: TelegramNotificationInput) =>
   [
-    `*${input.title}*`,
+    `*${escapeTelegramMarkdownV2(input.title)}*`,
     "",
-    input.body,
+    escapeTelegramMarkdownV2(input.body),
     "",
-    `From: ${input.fromAppName}`,
-    `Category: ${input.category}`,
-    `Priority: ${input.priority}`,
+    `From: ${escapeTelegramMarkdownV2(input.fromAppName)}`,
+    `Category: ${escapeTelegramMarkdownV2(input.category)}`,
+    `Priority: ${escapeTelegramMarkdownV2(input.priority)}`,
   ].join("\n")
 
 export const sendNotificationTelegram = async (
@@ -47,7 +50,7 @@ export const sendNotificationTelegram = async (
     body: JSON.stringify({
       chat_id: input.chatId,
       disable_web_page_preview: true,
-      parse_mode: "Markdown",
+      parse_mode: "MarkdownV2",
       text: buildTelegramMessage(input),
     }),
     headers: {

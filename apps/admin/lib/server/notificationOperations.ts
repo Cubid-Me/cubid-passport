@@ -209,7 +209,6 @@ export async function loadNotificationAdminOverview(
     dappsResponse,
     policiesResponse,
     eventsResponse,
-    attemptsResponse,
   ] = await Promise.all([
     context.supabase.from('notification_categories').select('*'),
     context.supabase.from('notification_providers').select('*'),
@@ -227,11 +226,6 @@ export async function loadNotificationAdminOverview(
       .in('dapp_id', ownedDappIds)
       .order('created_at', { ascending: false })
       .limit(25),
-    context.supabase
-      .from('notification_delivery_attempts')
-      .select('provider_key,status')
-      .order('created_at', { ascending: false })
-      .limit(100),
   ]);
 
   const error =
@@ -239,11 +233,28 @@ export async function loadNotificationAdminOverview(
     providersResponse.error ??
     dappsResponse.error ??
     policiesResponse.error ??
-    eventsResponse.error ??
-    attemptsResponse.error;
+    eventsResponse.error;
 
   if (error) {
     throw error;
+  }
+
+  const eventIds = ((eventsResponse.data ?? []) as NotificationEventRow[])
+    .map((event) => event.id)
+    .filter((eventId): eventId is string => Boolean(eventId));
+
+  const attemptsResponse =
+    eventIds.length > 0
+      ? await context.supabase
+          .from('notification_delivery_attempts')
+          .select('provider_key,status')
+          .in('event_id', eventIds)
+          .order('created_at', { ascending: false })
+          .limit(100)
+      : { data: [], error: null };
+
+  if (attemptsResponse.error) {
+    throw attemptsResponse.error;
   }
 
   const policiesByDappId = new Map<number, AppPolicyRow>();
