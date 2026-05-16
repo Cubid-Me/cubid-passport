@@ -6673,6 +6673,47 @@ page blank screen caused by the browser Firebase configuration guard.
 
 - deploy the fix and rerun the hosted ClearPass Dashboard OIDC smoke
 
+### session: v219
+
+- timestamp: 2026-05-16T05:30:39Z
+- agent: **OpenAI Codex**
+- branch: **codex/hosted-messaging-smoke-evidence**
+- head: **`05d1949`**
+- session name: **Record hosted flexible messaging smoke status**
+
+#### Objective
+
+Record the hosted migration and flexible messaging smoke evidence after PR #167
+unblocked the ClearPass migration drift.
+
+#### Actions Taken
+
+- reran protected Supabase `apply` for Preview/CubidDev and confirmed it
+  succeeded in run `25953794914`
+- reran protected Supabase `check` and confirmed run `25953809761` reported
+  `Remote database is up to date` through `20260515175000`
+- used Vercel protected preview access to hit flexible messaging API routes and
+  confirmed structured Passport envelopes plus `X-Request-Id` on invalid
+  request, invalid dapp key, and missing Firebase bearer-token paths
+- recorded remaining hosted happy-path blockers: provider secrets are not
+  visible/configured for Passport Preview(dev), and no hosted test
+  dapp/user credential bundle is documented for end-to-end channel and send
+  smoke
+
+#### Verification
+
+- protected Supabase apply run `25953794914`
+- protected Supabase check run `25953809761`
+- Vercel protected preview checks against `/api/v3/notifications/send`,
+  `/api/v3/notifications/status`, and `/api/notifications/history/list`
+- `git diff --check`
+
+#### Follow-up
+
+- provision Preview(dev) `SMTP_*` and `TELEGRAM_BOT_*` runtime secrets
+- document or create a hosted test dapp/user credential bundle for flexible
+  messaging happy-path smoke
+
 ### session: v217
 
 - timestamp: 2026-05-16T05:14:28Z
