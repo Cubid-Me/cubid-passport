@@ -489,6 +489,10 @@ tables and begin hosted smoke readiness without overstating launch readiness.
 - checked local env availability and confirmed Firebase Admin private values
   are blank locally, blocking a real hosted Firebase ID-token flow for the
   user-authorized recovery release completion route
+- after the operator shared Vercel deployment `2Fp9gPxYho8vCKCE6hMRhC9Zwn75`,
+  attempted Chrome-authenticated preview access; Chrome could inspect the
+  Vercel deployment but blocked both the preview app URL and Vercel SSO handoff
+  with `ERR_BLOCKED_BY_CLIENT`
 
 #### Verification
 
@@ -496,6 +500,8 @@ tables and begin hosted smoke readiness without overstating launch readiness.
 - protected Supabase apply run `26194292885`
 - protected Supabase post-apply check run `26194319925`
 - attempted PR preview API smoke; blocked by Vercel Deployment Protection
+- attempted Chrome-authenticated preview access; blocked locally by
+  `ERR_BLOCKED_BY_CLIENT`
 
 #### Follow-up
 

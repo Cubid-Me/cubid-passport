@@ -181,6 +181,9 @@ behind Deployment Protection and returns Vercel's `Authentication Required`
 page to shell-based API smoke calls before requests reach Passport. The local
 checkout also has blank Firebase Admin private values, so this session could
 not mint a hosted Firebase ID token to complete the user-authorized release
-path. Finish RW10 after a Vercel automation bypass token or unprotected preview
-smoke target is available, and after a real Firebase ID-token path is available
-for the recovery release completion route.
+path. A follow-up Chrome-authenticated attempt against Vercel deployment
+`2Fp9gPxYho8vCKCE6hMRhC9Zwn75` could inspect the Vercel deployment page, but
+the local Chrome profile blocked both the preview app URL and the Vercel SSO
+handoff with `ERR_BLOCKED_BY_CLIENT`. Finish RW10 after a Vercel automation
+bypass token or unblocked preview smoke target is available, and after a real
+Firebase ID-token path is available for the recovery release completion route.

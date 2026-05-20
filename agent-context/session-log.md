@@ -7441,6 +7441,10 @@ record the remaining hosted smoke blockers truthfully.
 - confirmed local Firebase Admin private values are blank, so this shell cannot
   mint the real Firebase ID token needed for user-authorized recovery release
   completion smoke
+- after the operator shared Vercel deployment `2Fp9gPxYho8vCKCE6hMRhC9Zwn75`,
+  attempted Chrome-authenticated preview access and confirmed the local Chrome
+  profile blocks both the preview app URL and Vercel SSO handoff with
+  `ERR_BLOCKED_BY_CLIENT`
 - updated recoverable-wallet todo metadata and repo status with the exact
   migration evidence and smoke blockers
 
@@ -7451,6 +7455,8 @@ record the remaining hosted smoke blockers truthfully.
 - protected Supabase post-apply check run `26194319925`
 - attempted hosted PR preview API smoke; blocked by Vercel Deployment
   Protection
+- attempted Chrome-authenticated preview access; blocked locally by
+  `ERR_BLOCKED_BY_CLIENT`
 
 #### Follow-up
 
