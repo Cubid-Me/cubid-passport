@@ -1,7 +1,25 @@
 # SIWC V3 Signing And Transaction Authorization Architecture
 
-Last updated: 2026-05-06
-Status: SIWC08 production runbook added; transaction signing remains disabled
+Last updated: 2026-05-20
+Status: Superseded for wallet generation and normal signing on 2026-05-20
+
+## Superseded Direction Notice
+
+This document records the earlier SIWC V3 signing architecture. Its
+server-side custodial wallet generation and normal-signing direction is now
+superseded by the recoverable wallet SDK target state in
+`docs/engineering/recoverable-wallet-sdk.md`.
+
+The still-valid parts of the SIWC work are Login with Cubid, passkey ACR,
+app-scoped identity, selective disclosure, API v3 security primitives, Admin
+policy patterns, redacted historical account visibility, and webhook/audit
+infrastructure. The superseded parts are Cubid-generated wallet creation,
+Cubid normal signing, and any product direction that treats Cubid Passport as a
+typical third-party wallet provider.
+
+New integrations should not use `/api/v3/accounts/generate` or
+`/api/v3/signing/requests/create`. Those routes are being quarantined for
+historical support and should fail closed for new product traffic.
 
 ## Purpose
 

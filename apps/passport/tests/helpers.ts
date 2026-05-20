@@ -49,6 +49,8 @@ export class MockPassportSupabase {
   readonly lastUsedUpdates: number[] = []
   readonly oidcHumanSubjects: Array<Record<string, unknown>> = []
   readonly privateKeys: Array<Record<string, unknown>> = []
+  readonly recoverableWalletRecoveryBundles: Array<Record<string, unknown>> = []
+  readonly recoverableWalletRecoverySessions: Array<Record<string, unknown>> = []
   readonly notificationChannels: Array<Record<string, unknown>> = []
   readonly notificationAppGrants: Array<Record<string, unknown>> = []
   readonly notificationAppPolicies: Array<Record<string, unknown>> = []
@@ -140,6 +142,17 @@ export class MockPassportSupabase {
     if (name === "get_notification_challenge_hash_secret_v1") {
       return Promise.resolve({
         data: "test-passport-notification-challenge-secret",
+        error: null,
+      })
+    }
+
+    if (
+      name === "get_recoverable_wallet_recovery_bundle_wrapping_key_v1"
+    ) {
+      return Promise.resolve({
+        data: Buffer.from(
+          "recover0123456789abcdef012345678"
+        ).toString("base64"),
         error: null,
       })
     }
@@ -1233,6 +1246,10 @@ export class MockPassportSupabase {
       "notification_providers": this.notificationProviders,
       "private.notification_channel_destinations":
         this.privateNotificationChannelDestinations,
+      "private.recoverable_wallet_recovery_bundles":
+        this.recoverableWalletRecoveryBundles,
+      "recoverable_wallet_recovery_sessions":
+        this.recoverableWalletRecoverySessions,
       "user_notification_channels": this.notificationChannels,
     }
 

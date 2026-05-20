@@ -32,6 +32,13 @@ import verifyEmailOtpHandler from "../pages/api/v2/email/verify_otp"
 import saveSecretV2Handler from "../pages/api/v2/save_secret"
 import generateAccountV3Handler from "../pages/api/v3/accounts/generate"
 import listAccountsV3Handler from "../pages/api/v3/accounts/list"
+import completeRecoveryReleaseHandler from "../pages/api/recovery-bundles/release/complete"
+import listRecoveryBundlesHandler from "../pages/api/recovery-bundles/list"
+import enrollRecoveryBundleV3Handler from "../pages/api/v3/recovery-bundles/enroll"
+import rotateRecoveryBundleV3Handler from "../pages/api/v3/recovery-bundles/rotate"
+import startRecoveryReleaseV3Handler from "../pages/api/v3/recovery-bundles/release/start"
+import revokeRecoveryBundleV3Handler from "../pages/api/v3/recovery-bundles/revoke"
+import recoveryBundleStatusV3Handler from "../pages/api/v3/recovery-bundles/status"
 import saveSecretV3Handler from "../pages/api/v3/save_secret"
 import cancelSiwcSigningRequestHandler from "../pages/api/v3/signing/requests/cancel"
 import createSiwcSigningRequestHandler from "../pages/api/v3/signing/requests/create"
@@ -1795,7 +1802,151 @@ const addSiwcSigningFixtures = (
   }
 }
 
-test("Passport API v3 SIWC signing request create/get/list use policy and idempotency", async () => {
+const addLegacyVisibleAccount = (
+  supabase: MockPassportSupabase,
+  input: {
+    chain: string
+    dappId?: number
+    dappUserUuid: string
+    id: string
+    label?: string
+    publicAddress: string
+    userId?: number
+  }
+) => {
+  supabase.userAccounts.push({
+    account_label: input.label ?? null,
+    chain_key: input.chain,
+    created_at: "2026-05-01T00:00:00.000Z",
+    custody_status: "legacy_cubid_custodied",
+    id: input.id,
+    public_address: input.publicAddress,
+    public_address_normalized:
+      input.chain === "solana"
+        ? input.publicAddress
+        : input.publicAddress.toLowerCase(),
+    status: "active",
+    updated_at: "2026-05-01T00:00:00.000Z",
+    user_id: input.userId ?? 1234,
+  })
+  supabase.dappUserAccounts.push({
+    created_at: "2026-05-01T00:00:00.000Z",
+    dapp_id: input.dappId ?? 42,
+    dapp_user_uuid: input.dappUserUuid,
+    id: `${input.id}_link`,
+    status: "active",
+    updated_at: "2026-05-01T00:00:00.000Z",
+    user_account_id: input.id,
+  })
+}
+
+test("Passport API v3 rejects new Cubid-generated wallet creation", async () => {
+  const supabase = new MockPassportSupabase()
+  const apiKey = addDappAuth(supabase)
+  const dappUserUuid = "00000000-0000-4000-8000-000000000152"
+  supabase.setDappUser({ dapp_id: 42, user_id: 1234, uuid: dappUserUuid })
+  setPassportSupabaseForTests(supabase as never)
+
+  const res = createApiResponse()
+  await generateAccountV3Handler(
+    createApiRequest({
+      body: {
+        api_key: apiKey,
+        chain: "evm",
+        dapp_user_uuid: dappUserUuid,
+      },
+      headers: {
+        "idempotency-key": "deprecated-generate-wallet",
+        origin: "https://passport.cubid.me",
+        "x-request-id": "passport_deprecated_generate",
+      },
+      url: "/api/v3/accounts/generate",
+    }),
+    res
+  )
+
+  assert.equal(res.statusCode, 410)
+  assert.equal(
+    (res.body as { error: { code: string; requestId: string } }).error.code,
+    "cubid_generated_wallets_deprecated"
+  )
+  assert.equal(
+    (res.body as { error: { code: string; requestId: string } }).error
+      .requestId,
+    "passport_deprecated_generate"
+  )
+  assert.equal(supabase.userAccounts.length, 0)
+  assert.equal(supabase.privateKeys.length, 0)
+  assert.equal(supabase.dappUserAccounts.length, 0)
+})
+
+test("Passport API v3 rejects new Cubid normal-signing requests", async () => {
+  const supabase = new MockPassportSupabase()
+  setPassportSupabaseForTests(supabase as never)
+  const fixtures = addSiwcSigningFixtures(supabase)
+
+  const res = createApiResponse()
+  await createSiwcSigningRequestHandler(
+    createApiRequest({
+      body: {
+        apikey: fixtures.apiKey,
+        dapp_user_uuid: fixtures.dappUserUuid,
+        payload: { message: "deprecated signing" },
+        request_type: "message",
+        user_account_id: fixtures.userAccountId,
+      },
+      headers: {
+        "idempotency-key": "deprecated-signing-request",
+        origin: "https://passport.cubid.me",
+        "x-request-id": "passport_deprecated_signing",
+      },
+      url: "/api/v3/signing/requests/create",
+    }),
+    res
+  )
+
+  assert.equal(res.statusCode, 410)
+  assert.equal(
+    (res.body as { error: { code: string; requestId: string } }).error.code,
+    "cubid_signing_deprecated"
+  )
+  assert.equal(
+    (res.body as { error: { code: string; requestId: string } }).error
+      .requestId,
+    "passport_deprecated_signing"
+  )
+  assert.equal(supabase.siwcSigningRequests.length, 0)
+})
+
+test("Passport SIWC approval refuses legacy signing without decrypting keys", async () => {
+  const supabase = new MockPassportSupabase()
+  setPassportSupabaseForTests(supabase as never)
+  addFirebaseUserAuth()
+  addSiwcSigningFixtures(supabase)
+
+  const res = createApiResponse()
+  await approveSiwcSigningRequestHandler(
+    createApiRequest({
+      body: { signingRequestId: "legacy_signing_request" },
+      headers: {
+        authorization: "Bearer firebase-test-token",
+        origin: "https://passport.cubid.me",
+        "x-request-id": "passport_deprecated_approval",
+      },
+      url: "/api/siwc/signing/requests/approve",
+    }),
+    res
+  )
+
+  assert.equal(res.statusCode, 410)
+  assert.equal(
+    (res.body as { error: { code: string; requestId: string } }).error.code,
+    "cubid_signing_deprecated"
+  )
+  assert.equal(supabase.privateKeys.length, 1)
+})
+
+test.skip("legacy Cubid signing request creation used policy and idempotency", async () => {
   const supabase = new MockPassportSupabase()
   setPassportSupabaseForTests(supabase as never)
   const fixtures = addSiwcSigningFixtures(supabase)
@@ -1870,7 +2021,7 @@ test("Passport API v3 SIWC signing request create/get/list use policy and idempo
   assert.equal((listRes.body as DataResponse<unknown[]>).data.length, 1)
 })
 
-test("Passport API v3 SIWC signing request policy-denies deferred transactions", async () => {
+test.skip("legacy Cubid signing request policy-denied deferred transactions", async () => {
   const supabase = new MockPassportSupabase()
   setPassportSupabaseForTests(supabase as never)
   const fixtures = addSiwcSigningFixtures(supabase, {
@@ -1913,7 +2064,7 @@ test("Passport API v3 SIWC signing request policy-denies deferred transactions",
   assert.equal(data.stepUpRequired, true)
 })
 
-test("Passport API v3 SIWC transaction risk records value and allowlist denials", async () => {
+test.skip("legacy Cubid signing transaction risk recorded value and allowlist denials", async () => {
   const supabase = new MockPassportSupabase()
   setPassportSupabaseForTests(supabase as never)
   const fixtures = addSiwcSigningFixtures(supabase, {
@@ -1958,7 +2109,7 @@ test("Passport API v3 SIWC transaction risk records value and allowlist denials"
   ])
 })
 
-test("Passport API v3 SIWC transaction risk fails closed for unsupported chains", async () => {
+test.skip("legacy Cubid signing transaction risk failed closed for unsupported chains", async () => {
   const supabase = new MockPassportSupabase()
   setPassportSupabaseForTests(supabase as never)
   const fixtures = addSiwcSigningFixtures(supabase, {
@@ -2010,7 +2161,7 @@ test("Passport API v3 SIWC transaction risk fails closed for unsupported chains"
   assert.deepEqual(data.riskReasons, ["transaction_chain_risk_unsupported"])
 })
 
-test("Passport API v3 SIWC signing request emits created and policy-denied webhooks", async () => {
+test.skip("legacy Cubid signing request emitted created and policy-denied webhooks", async () => {
   const supabase = new MockPassportSupabase()
   setPassportSupabaseForTests(supabase as never)
   const fixtures = addSiwcSigningFixtures(supabase, {
@@ -2081,7 +2232,7 @@ test("Passport API v3 SIWC signing request emits created and policy-denied webho
   assert.equal(JSON.stringify(delivered).includes("human_subject_key"), false)
 })
 
-test("Passport SIWC signing approval requires passkey step-up then completes EVM message signatures", async () => {
+test.skip("legacy Cubid signing approval completed EVM message signatures", async () => {
   const supabase = new MockPassportSupabase()
   setPassportSupabaseForTests(supabase as never)
   addFirebaseUserAuth()
@@ -2165,7 +2316,7 @@ test("Passport SIWC signing approval requires passkey step-up then completes EVM
   assert.equal(JSON.stringify(approveRes.body).includes(fixtures.wallet.privateKey), false)
 })
 
-test("Passport SIWC signing approval emits approved and signature completed webhooks", async () => {
+test.skip("legacy Cubid signing approval emitted completed webhooks", async () => {
   const supabase = new MockPassportSupabase()
   setPassportSupabaseForTests(supabase as never)
   addFirebaseUserAuth()
@@ -2264,7 +2415,7 @@ test("Passport SIWC signing approval emits approved and signature completed webh
   assert.equal(JSON.stringify(completed).includes(fixtures.wallet.privateKey), false)
 })
 
-test("Passport SIWC signing approval rejects stale passkey step-up sessions", async () => {
+test.skip("legacy Cubid signing approval rejected stale passkey step-up sessions", async () => {
   const supabase = new MockPassportSupabase()
   setPassportSupabaseForTests(supabase as never)
   addFirebaseUserAuth()
@@ -2354,7 +2505,7 @@ test("Passport SIWC signing approval rejects stale passkey step-up sessions", as
   )
 })
 
-test("Passport SIWC signing requests can be listed, rejected, and cancelled", async () => {
+test.skip("legacy Cubid signing requests could be listed rejected and cancelled", async () => {
   const supabase = new MockPassportSupabase()
   setPassportSupabaseForTests(supabase as never)
   addFirebaseUserAuth()
@@ -3213,7 +3364,702 @@ test("Passport v3 save_secret rejects dapp-id mismatches and rate-limit denials"
   assert.equal(supabase.privateDappUserSecrets.length, 0)
 })
 
-test("Passport v3 account generation encrypts private keys and links only the triggering dapp user", async () => {
+test("Passport v3 recovery bundle enrollment stores encrypted bundle metadata only", async () => {
+  const supabase = new MockPassportSupabase()
+  const apiKey = addDappAuth(supabase)
+  const dappUserUuid = "00000000-0000-4000-8000-000000000260"
+  supabase.setDappUser({ dapp_id: 42, user_id: 1234, uuid: dappUserUuid })
+  setPassportSupabaseForTests(supabase as never)
+
+  const res = createApiResponse()
+  await enrollRecoveryBundleV3Handler(
+    createApiRequest({
+      body: {
+        api_key: apiKey,
+        bundle_material: "recoverable-wallet-client-share",
+        bundle_version: 1,
+        dapp_user_uuid: dappUserUuid,
+        provider_key: "cubid",
+        recovery_bundle_id: "rw_bundle_test_primary",
+        recovery_reference: "provider-reference-1",
+      },
+      headers: {
+        "idempotency-key": "recovery-bundle-enroll-primary",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/recovery-bundles/enroll",
+    }),
+    res
+  )
+
+  assert.equal(res.statusCode, 200)
+  const data = (res.body as DataResponse<Record<string, unknown>>).data
+  assert.equal(data.recoveryBundleId, "rw_bundle_test_primary")
+  assert.equal(data.dappUserUuid, dappUserUuid)
+  assert.equal(data.providerKey, "cubid")
+  assert.equal(data.status, "active")
+  assert.equal(JSON.stringify(res.body).includes("bundle_material"), false)
+  assert.equal(JSON.stringify(res.body).includes("ciphertext"), false)
+  assert.equal(JSON.stringify(res.body).includes("wrapped_data_key"), false)
+  assert.equal(JSON.stringify(res.body).includes("auth_tag"), false)
+  assert.equal(supabase.recoverableWalletRecoveryBundles.length, 1)
+
+  const storedBundle = supabase.recoverableWalletRecoveryBundles[0]
+  assert.equal(
+    storedBundle.encryption_key_id,
+    "passport_recoverable_wallet_recovery_bundle_wrapping_key_v1"
+  )
+  assert.equal(storedBundle.encryption_algorithm, "aes-256-gcm-envelope")
+  assert.notEqual(
+    storedBundle.bundle_ciphertext,
+    "recoverable-wallet-client-share"
+  )
+  assert.equal(
+    String(storedBundle.bundle_ciphertext).includes(
+      "recoverable-wallet-client-share"
+    ),
+    false
+  )
+})
+
+test("Passport v3 recovery bundle status returns safe metadata and not enrolled state", async () => {
+  const supabase = new MockPassportSupabase()
+  const apiKey = addDappAuth(supabase)
+  const dappUserUuid = "00000000-0000-4000-8000-000000000261"
+  supabase.setDappUser({ dapp_id: 42, user_id: 1234, uuid: dappUserUuid })
+  setPassportSupabaseForTests(supabase as never)
+
+  const emptyRes = createApiResponse()
+  await recoveryBundleStatusV3Handler(
+    createApiRequest({
+      body: {
+        api_key: apiKey,
+        dapp_user_uuid: dappUserUuid,
+      },
+      headers: {
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/recovery-bundles/status",
+    }),
+    emptyRes
+  )
+
+  assert.equal(emptyRes.statusCode, 200)
+  assert.equal(
+    (emptyRes.body as DataResponse<Record<string, unknown>>).data.status,
+    "not_enrolled"
+  )
+
+  const enrollRes = createApiResponse()
+  await enrollRecoveryBundleV3Handler(
+    createApiRequest({
+      body: {
+        api_key: apiKey,
+        bundle_material: "status-visible-client-share",
+        dapp_user_uuid: dappUserUuid,
+        provider_key: "cubid",
+        recovery_bundle_id: "rw_bundle_status_visible",
+      },
+      headers: {
+        "idempotency-key": "recovery-bundle-status-visible",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/recovery-bundles/enroll",
+    }),
+    enrollRes
+  )
+
+  const statusRes = createApiResponse()
+  await recoveryBundleStatusV3Handler(
+    createApiRequest({
+      body: {
+        api_key: apiKey,
+        dapp_user_uuid: dappUserUuid,
+        recovery_bundle_id: "rw_bundle_status_visible",
+      },
+      headers: {
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/recovery-bundles/status",
+    }),
+    statusRes
+  )
+
+  assert.equal(statusRes.statusCode, 200)
+  const data = (statusRes.body as DataResponse<Record<string, unknown>>).data
+  assert.equal(data.recoveryBundleId, "rw_bundle_status_visible")
+  assert.equal(data.status, "active")
+  assert.equal(JSON.stringify(statusRes.body).includes("bundle_ciphertext"), false)
+  assert.equal(JSON.stringify(statusRes.body).includes("wrapped_data_key"), false)
+  assert.equal(JSON.stringify(statusRes.body).includes("client-share"), false)
+})
+
+test("Passport v3 recovery bundle APIs reject cross-dapp users and replay idempotent enrollment", async () => {
+  const supabase = new MockPassportSupabase()
+  const apiKey = addDappAuth(supabase)
+  const dappUserUuid = "00000000-0000-4000-8000-000000000262"
+  supabase.setDappUser({ dapp_id: 42, user_id: 1234, uuid: dappUserUuid })
+  supabase.setDappUser({
+    dapp_id: 99,
+    user_id: 9999,
+    uuid: "00000000-0000-4000-8000-000000000263",
+  })
+  setPassportSupabaseForTests(supabase as never)
+
+  const body = {
+    api_key: apiKey,
+    bundle_material: "idempotent-client-share",
+    dapp_user_uuid: dappUserUuid,
+    recovery_bundle_id: "rw_bundle_idempotent",
+  }
+  const makeReq = () =>
+    createApiRequest({
+      body,
+      headers: {
+        "idempotency-key": "recovery-bundle-idempotent",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/recovery-bundles/enroll",
+    })
+
+  const firstRes = createApiResponse()
+  await enrollRecoveryBundleV3Handler(makeReq(), firstRes)
+  const replayRes = createApiResponse()
+  await enrollRecoveryBundleV3Handler(makeReq(), replayRes)
+
+  assert.equal(firstRes.statusCode, 200)
+  assert.equal(replayRes.statusCode, 200)
+  assert.deepEqual(replayRes.body, firstRes.body)
+  assert.equal(supabase.recoverableWalletRecoveryBundles.length, 1)
+
+  supabase.setDappUser({
+    dapp_id: 42,
+    user_id: 4321,
+    uuid: "00000000-0000-4000-8000-000000000269",
+  })
+  const reboundRes = createApiResponse()
+  await enrollRecoveryBundleV3Handler(
+    createApiRequest({
+      body: {
+        api_key: apiKey,
+        bundle_material: "rebound-client-share",
+        dapp_user_uuid: "00000000-0000-4000-8000-000000000269",
+        recovery_bundle_id: "rw_bundle_idempotent",
+      },
+      headers: {
+        "idempotency-key": "recovery-bundle-rebind",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/recovery-bundles/enroll",
+    }),
+    reboundRes
+  )
+  assert.equal(reboundRes.statusCode, 409)
+  assert.equal(
+    (reboundRes.body as { error: { code: string } }).error.code,
+    "unsupported_app_context"
+  )
+  assert.equal(supabase.recoverableWalletRecoveryBundles.length, 1)
+  assert.equal(
+    supabase.recoverableWalletRecoveryBundles[0].dapp_user_uuid,
+    dappUserUuid
+  )
+
+  const crossDappRes = createApiResponse()
+  await enrollRecoveryBundleV3Handler(
+    createApiRequest({
+      body: {
+        api_key: apiKey,
+        bundle_material: "cross-dapp-client-share",
+        dapp_user_uuid: "00000000-0000-4000-8000-000000000263",
+      },
+      headers: {
+        "idempotency-key": "recovery-bundle-cross-dapp",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/recovery-bundles/enroll",
+    }),
+    crossDappRes
+  )
+
+  assert.equal(crossDappRes.statusCode, 404)
+  assert.equal(
+    (crossDappRes.body as { error: { code: string } }).error.code,
+    "unsupported_app_context"
+  )
+  assert.equal(supabase.recoverableWalletRecoveryBundles.length, 1)
+})
+
+test("Passport v3 recovery release start creates a user-only release session", async () => {
+  const supabase = new MockPassportSupabase()
+  const apiKey = addDappAuth(supabase)
+  const dappUserUuid = "00000000-0000-4000-8000-000000000264"
+  supabase.setUser({ email: "person@example.com", id: 1234 })
+  supabase.setDappUser({ dapp_id: 42, user_id: 1234, uuid: dappUserUuid })
+  setPassportSupabaseForTests(supabase as never)
+
+  await enrollRecoveryBundleV3Handler(
+    createApiRequest({
+      body: {
+        api_key: apiKey,
+        bundle_material: "release-session-client-share",
+        dapp_user_uuid: dappUserUuid,
+        recovery_bundle_id: "rw_bundle_release_start",
+      },
+      headers: {
+        "idempotency-key": "recovery-release-start-enroll",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/recovery-bundles/enroll",
+    }),
+    createApiResponse()
+  )
+
+  const res = createApiResponse()
+  await startRecoveryReleaseV3Handler(
+    createApiRequest({
+      body: {
+        api_key: apiKey,
+        dapp_user_uuid: dappUserUuid,
+        recovery_bundle_id: "rw_bundle_release_start",
+      },
+      headers: {
+        "idempotency-key": "recovery-release-start-primary",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/recovery-bundles/release/start",
+    }),
+    res
+  )
+
+  assert.equal(res.statusCode, 200)
+  const data = (res.body as DataResponse<Record<string, unknown>>).data
+  assert.equal(data.recoveryBundleId, "rw_bundle_release_start")
+  assert.equal(data.dappUserUuid, dappUserUuid)
+  assert.equal(data.status, "pending")
+  assert.equal(String(data.recoveryUrl).includes("/recovery/wallet"), true)
+  assert.equal(JSON.stringify(res.body).includes("client-share"), false)
+  assert.equal(JSON.stringify(res.body).includes("bundleMaterial"), false)
+  assert.equal(supabase.recoverableWalletRecoverySessions.length, 1)
+})
+
+test("Passport v3 recovery release start does not leak revoked bundles across app contexts", async () => {
+  const supabase = new MockPassportSupabase()
+  const apiKey = addDappAuth(supabase)
+  const dappUserUuid = "00000000-0000-4000-8000-000000000270"
+  supabase.setUser({ email: "person@example.com", id: 1234 })
+  supabase.setDappUser({ dapp_id: 42, user_id: 1234, uuid: dappUserUuid })
+  supabase.recoverableWalletRecoveryBundles.push({
+    created_at: new Date().toISOString(),
+    dapp_id: 99,
+    dapp_user_uuid: "00000000-0000-4000-8000-000000000271",
+    id: "foreign-revoked-bundle",
+    provider_key: "cubid",
+    recovery_bundle_id: "rw_bundle_foreign_revoked",
+    status: "revoked",
+    updated_at: new Date().toISOString(),
+    user_id: 9999,
+  })
+  setPassportSupabaseForTests(supabase as never)
+
+  const res = createApiResponse()
+  await startRecoveryReleaseV3Handler(
+    createApiRequest({
+      body: {
+        api_key: apiKey,
+        dapp_user_uuid: dappUserUuid,
+        recovery_bundle_id: "rw_bundle_foreign_revoked",
+      },
+      headers: {
+        "idempotency-key": "recovery-release-foreign-revoked",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/recovery-bundles/release/start",
+    }),
+    res
+  )
+
+  assert.equal(res.statusCode, 404)
+  assert.equal(
+    (res.body as { error: { code: string } }).error.code,
+    "recovery_bundle_not_found"
+  )
+  assert.equal(supabase.recoverableWalletRecoverySessions.length, 0)
+})
+
+test("Passport user recovery release returns bundle material once to the verified user", async () => {
+  const supabase = new MockPassportSupabase()
+  const apiKey = addDappAuth(supabase)
+  const dappUserUuid = "00000000-0000-4000-8000-000000000265"
+  supabase.setUser({ email: "person@example.com", id: 1234 })
+  supabase.setDappUser({ dapp_id: 42, user_id: 1234, uuid: dappUserUuid })
+  setPassportSupabaseForTests(supabase as never)
+  addFirebaseUserAuth()
+
+  await enrollRecoveryBundleV3Handler(
+    createApiRequest({
+      body: {
+        api_key: apiKey,
+        bundle_material: "verified-user-client-share",
+        dapp_user_uuid: dappUserUuid,
+        recovery_bundle_id: "rw_bundle_release_complete",
+      },
+      headers: {
+        "idempotency-key": "recovery-release-complete-enroll",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/recovery-bundles/enroll",
+    }),
+    createApiResponse()
+  )
+
+  const startRes = createApiResponse()
+  await startRecoveryReleaseV3Handler(
+    createApiRequest({
+      body: {
+        api_key: apiKey,
+        dapp_user_uuid: dappUserUuid,
+        recovery_bundle_id: "rw_bundle_release_complete",
+      },
+      headers: {
+        "idempotency-key": "recovery-release-complete-start",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/recovery-bundles/release/start",
+    }),
+    startRes
+  )
+
+  const recoverySessionId = String(
+    (startRes.body as DataResponse<Record<string, unknown>>).data
+      .recoverySessionId
+  )
+  const completeRes = createApiResponse()
+  await completeRecoveryReleaseHandler(
+    createApiRequest({
+      body: {
+        recovery_session_id: recoverySessionId,
+      },
+      headers: {
+        authorization: "Bearer firebase-test-token",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/recovery-bundles/release/complete",
+    }),
+    completeRes
+  )
+
+  assert.equal(completeRes.statusCode, 200)
+  const data = (completeRes.body as DataResponse<Record<string, unknown>>).data
+  assert.equal(data.recoverySessionId, recoverySessionId)
+  assert.equal(data.bundleMaterial, "verified-user-client-share")
+  assert.equal(data.status, "released")
+  assert.equal(supabase.recoverableWalletRecoverySessions[0].status, "released")
+  assert.equal(
+    typeof supabase.recoverableWalletRecoveryBundles[0].last_released_at,
+    "string"
+  )
+
+  const replayRes = createApiResponse()
+  await completeRecoveryReleaseHandler(
+    createApiRequest({
+      body: {
+        recovery_session_id: recoverySessionId,
+      },
+      headers: {
+        authorization: "Bearer firebase-test-token",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/recovery-bundles/release/complete",
+    }),
+    replayRes
+  )
+  assert.equal(replayRes.statusCode, 409)
+  assert.equal(
+    (replayRes.body as { error: { code: string } }).error.code,
+    "recovery_session_consumed"
+  )
+})
+
+test("Passport user recovery release rejects wrong users and expired sessions", async () => {
+  const supabase = new MockPassportSupabase()
+  const apiKey = addDappAuth(supabase)
+  const dappUserUuid = "00000000-0000-4000-8000-000000000266"
+  supabase.setUser({ email: "person@example.com", id: 1234 })
+  supabase.setUser({ email: "other@example.com", id: 9999 })
+  supabase.setDappUser({ dapp_id: 42, user_id: 1234, uuid: dappUserUuid })
+  setPassportSupabaseForTests(supabase as never)
+
+  await enrollRecoveryBundleV3Handler(
+    createApiRequest({
+      body: {
+        api_key: apiKey,
+        bundle_material: "wrong-user-client-share",
+        dapp_user_uuid: dappUserUuid,
+        recovery_bundle_id: "rw_bundle_release_guards",
+      },
+      headers: {
+        "idempotency-key": "recovery-release-guards-enroll",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/recovery-bundles/enroll",
+    }),
+    createApiResponse()
+  )
+
+  const startRes = createApiResponse()
+  await startRecoveryReleaseV3Handler(
+    createApiRequest({
+      body: {
+        api_key: apiKey,
+        dapp_user_uuid: dappUserUuid,
+        recovery_bundle_id: "rw_bundle_release_guards",
+      },
+      headers: {
+        "idempotency-key": "recovery-release-guards-start",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/recovery-bundles/release/start",
+    }),
+    startRes
+  )
+  const recoverySessionId = String(
+    (startRes.body as DataResponse<Record<string, unknown>>).data
+      .recoverySessionId
+  )
+
+  setPassportFirebaseAdminAuthForTests({
+    verifyIdToken: async () =>
+      ({
+        email: "other@example.com",
+        uid: "firebase_other",
+      }) as never,
+  })
+  const wrongUserRes = createApiResponse()
+  await completeRecoveryReleaseHandler(
+    createApiRequest({
+      body: {
+        recovery_session_id: recoverySessionId,
+      },
+      headers: {
+        authorization: "Bearer firebase-test-token",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/recovery-bundles/release/complete",
+    }),
+    wrongUserRes
+  )
+  assert.equal(wrongUserRes.statusCode, 403)
+  assert.equal(
+    (wrongUserRes.body as { error: { code: string } }).error.code,
+    "wrong_user"
+  )
+
+  supabase.recoverableWalletRecoverySessions[0].expires_at = new Date(
+    Date.now() - 1000
+  ).toISOString()
+  addFirebaseUserAuth()
+  const expiredRes = createApiResponse()
+  await completeRecoveryReleaseHandler(
+    createApiRequest({
+      body: {
+        recovery_session_id: recoverySessionId,
+      },
+      headers: {
+        authorization: "Bearer firebase-test-token",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/recovery-bundles/release/complete",
+    }),
+    expiredRes
+  )
+  assert.equal(expiredRes.statusCode, 410)
+  assert.equal(
+    (expiredRes.body as { error: { code: string } }).error.code,
+    "recovery_session_expired"
+  )
+})
+
+test("Passport v3 recovery bundle rotation retires the prior active bundle", async () => {
+  const supabase = new MockPassportSupabase()
+  const apiKey = addDappAuth(supabase)
+  const dappUserUuid = "00000000-0000-4000-8000-000000000267"
+  supabase.setUser({ email: "person@example.com", id: 1234 })
+  supabase.setDappUser({ dapp_id: 42, user_id: 1234, uuid: dappUserUuid })
+  setPassportSupabaseForTests(supabase as never)
+
+  await enrollRecoveryBundleV3Handler(
+    createApiRequest({
+      body: {
+        api_key: apiKey,
+        bundle_material: "old-client-share",
+        dapp_user_uuid: dappUserUuid,
+        recovery_bundle_id: "rw_bundle_rotate_old",
+      },
+      headers: {
+        "idempotency-key": "recovery-rotate-enroll",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/recovery-bundles/enroll",
+    }),
+    createApiResponse()
+  )
+
+  const rotateRes = createApiResponse()
+  await rotateRecoveryBundleV3Handler(
+    createApiRequest({
+      body: {
+        api_key: apiKey,
+        bundle_material: "new-client-share",
+        dapp_user_uuid: dappUserUuid,
+        new_recovery_bundle_id: "rw_bundle_rotate_new",
+        recovery_bundle_id: "rw_bundle_rotate_old",
+      },
+      headers: {
+        "idempotency-key": "recovery-rotate-primary",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/recovery-bundles/rotate",
+    }),
+    rotateRes
+  )
+
+  assert.equal(rotateRes.statusCode, 200)
+  const data = (rotateRes.body as DataResponse<Record<string, unknown>>).data
+  assert.equal(data.recoveryBundleId, "rw_bundle_rotate_new")
+  assert.equal(data.bundleVersion, 2)
+  assert.equal(supabase.recoverableWalletRecoveryBundles.length, 2)
+  assert.equal(supabase.recoverableWalletRecoveryBundles[0].status, "rotated")
+  assert.equal(supabase.recoverableWalletRecoveryBundles[1].status, "active")
+  assert.equal(JSON.stringify(rotateRes.body).includes("new-client-share"), false)
+  assert.equal(
+    supabase.eventInserts.some(
+      (event) => event.event_type === "recoverable_wallet.bundle.rotated"
+    ),
+    true
+  )
+})
+
+test("Passport v3 recovery bundle revocation and user list return redacted lifecycle state", async () => {
+  const supabase = new MockPassportSupabase()
+  const apiKey = addDappAuth(supabase)
+  const dappUserUuid = "00000000-0000-4000-8000-000000000268"
+  supabase.setUser({ email: "person@example.com", id: 1234 })
+  supabase.setDappUser({ dapp_id: 42, user_id: 1234, uuid: dappUserUuid })
+  setPassportSupabaseForTests(supabase as never)
+  addFirebaseUserAuth()
+
+  await enrollRecoveryBundleV3Handler(
+    createApiRequest({
+      body: {
+        api_key: apiKey,
+        bundle_material: "revoked-client-share",
+        dapp_user_uuid: dappUserUuid,
+        recovery_bundle_id: "rw_bundle_revoke",
+      },
+      headers: {
+        "idempotency-key": "recovery-revoke-enroll",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/recovery-bundles/enroll",
+    }),
+    createApiResponse()
+  )
+
+  const startRes = createApiResponse()
+  await startRecoveryReleaseV3Handler(
+    createApiRequest({
+      body: {
+        api_key: apiKey,
+        dapp_user_uuid: dappUserUuid,
+        recovery_bundle_id: "rw_bundle_revoke",
+      },
+      headers: {
+        "idempotency-key": "recovery-revoke-start-before-revoke",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/recovery-bundles/release/start",
+    }),
+    startRes
+  )
+  assert.equal(startRes.statusCode, 200)
+
+  const revokeRes = createApiResponse()
+  await revokeRecoveryBundleV3Handler(
+    createApiRequest({
+      body: {
+        api_key: apiKey,
+        dapp_user_uuid: dappUserUuid,
+        recovery_bundle_id: "rw_bundle_revoke",
+      },
+      headers: {
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/recovery-bundles/revoke",
+    }),
+    revokeRes
+  )
+
+  assert.equal(revokeRes.statusCode, 200)
+  assert.equal(
+    (revokeRes.body as DataResponse<Record<string, unknown>>).data.status,
+    "revoked"
+  )
+  assert.equal(
+    supabase.eventInserts.some(
+      (event) => event.event_type === "recoverable_wallet.bundle.revoked"
+    ),
+    true
+  )
+
+  const revokedReleaseRes = createApiResponse()
+  await completeRecoveryReleaseHandler(
+    createApiRequest({
+      body: {
+        recovery_session_id: String(
+          (startRes.body as DataResponse<Record<string, unknown>>).data
+            .recoverySessionId
+        ),
+      },
+      headers: {
+        authorization: "Bearer firebase-test-token",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/recovery-bundles/release/complete",
+    }),
+    revokedReleaseRes
+  )
+  assert.equal(revokedReleaseRes.statusCode, 409)
+  assert.equal(
+    (revokedReleaseRes.body as { error: { code: string } }).error.code,
+    "bundle_revoked"
+  )
+
+  const listRes = createApiResponse()
+  await listRecoveryBundlesHandler(
+    createApiRequest({
+      body: {},
+      headers: {
+        authorization: "Bearer firebase-test-token",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/recovery-bundles/list",
+    }),
+    listRes
+  )
+
+  assert.equal(listRes.statusCode, 200)
+  const listData = (listRes.body as DataResponse<Array<Record<string, unknown>>>)
+    .data
+  assert.equal(listData.length, 1)
+  assert.equal(listData[0].status, "revoked")
+  assert.equal(listData[0].recoveryBundleId, "rw_bundle_revoke")
+  assert.equal(JSON.stringify(listRes.body).includes("revoked-client-share"), false)
+  assert.equal(JSON.stringify(listRes.body).includes("bundle_ciphertext"), false)
+  assert.equal(JSON.stringify(listRes.body).includes("wrapped_data_key"), false)
+})
+
+test.skip("legacy Cubid account generation encrypted private keys and linked the triggering dapp user", async () => {
   const supabase = new MockPassportSupabase()
   const apiKey = addDappAuth(supabase)
   const dappUserUuid = "00000000-0000-4000-8000-000000000052"
@@ -3277,7 +4123,7 @@ test("Passport v3 account generation encrypts private keys and links only the tr
   assert.equal(decrypted.startsWith("0x"), true)
 })
 
-test("Passport v3 account generation rejects dapp users outside the authenticated app", async () => {
+test.skip("legacy Cubid account generation rejected dapp users outside the authenticated app", async () => {
   const supabase = new MockPassportSupabase()
   const apiKey = addDappAuth(supabase)
   const dappUserUuid = "00000000-0000-4000-8000-000000000053"
@@ -3306,7 +4152,7 @@ test("Passport v3 account generation rejects dapp users outside the authenticate
   assert.equal(supabase.dappUserAccounts.length, 0)
 })
 
-test("Passport v3 account generation supports Sui without exposing private keys", async () => {
+test.skip("legacy Cubid account generation supported Sui without exposing private keys", async () => {
   const supabase = new MockPassportSupabase()
   const apiKey = addDappAuth(supabase)
   const dappUserUuid = "00000000-0000-4000-8000-000000000054"
@@ -3343,7 +4189,7 @@ test("Passport v3 account generation supports Sui without exposing private keys"
   assert.equal(supabase.dappUserAccounts.length, 1)
 })
 
-test("Passport v3 account generation replays Idempotency-Key writes without creating duplicate accounts", async () => {
+test.skip("legacy Cubid account generation replayed Idempotency-Key writes", async () => {
   const supabase = new MockPassportSupabase()
   const apiKey = addDappAuth(supabase)
   const dappUserUuid = "00000000-0000-4000-8000-000000000056"
@@ -3379,7 +4225,7 @@ test("Passport v3 account generation replays Idempotency-Key writes without crea
   assert.equal(supabase.dappUserAccounts.length, 1)
 })
 
-test("Passport v3 account generation rejects idempotency conflicts and pending requests", async () => {
+test.skip("legacy Cubid account generation rejected idempotency conflicts and pending requests", async () => {
   const supabase = new MockPassportSupabase()
   const apiKey = addDappAuth(supabase)
   const dappUserUuid = "00000000-0000-4000-8000-000000000057"
@@ -3453,7 +4299,7 @@ test("Passport v3 account generation rejects idempotency conflicts and pending r
   )
 })
 
-test("Passport v3 account generation cleans up public account rows on private-key failure", async () => {
+test.skip("legacy Cubid account generation cleaned up public rows on private-key failure", async () => {
   const supabase = new MockPassportSupabase()
   const apiKey = addDappAuth(supabase)
   const dappUserUuid = "00000000-0000-4000-8000-000000000058"
@@ -3485,7 +4331,7 @@ test("Passport v3 account generation cleans up public account rows on private-ke
   assert.equal(supabase.apiIdempotencyKeys[0]?.status, "failed")
 })
 
-test("Passport v3 account generation emits safe wallet.created webhooks", async () => {
+test.skip("legacy Cubid account generation emitted safe wallet.created webhooks", async () => {
   const supabase = new MockPassportSupabase()
   const apiKey = addDappAuth(supabase)
   const dappUserUuid = "00000000-0000-4000-8000-000000000057"
@@ -3538,7 +4384,7 @@ test("Passport v3 account generation emits safe wallet.created webhooks", async 
   assert.equal(JSON.stringify(payload).includes("human_subject_key"), false)
 })
 
-test("Passport v3 account generation skips SIWC webhooks not enabled by policy", async () => {
+test.skip("legacy Cubid account generation skipped SIWC webhooks not enabled by policy", async () => {
   const supabase = new MockPassportSupabase()
   const apiKey = addDappAuth(supabase)
   const dappUserUuid = "00000000-0000-4000-8000-000000000053"
@@ -3579,7 +4425,7 @@ test("Passport v3 account generation skips SIWC webhooks not enabled by policy",
   assert.equal(supabase.webhookEventDeliveries.length, 0)
 })
 
-test("Passport v3 account generation records failed SIWC webhook delivery without failing the response", async () => {
+test.skip("legacy Cubid account generation recorded failed SIWC webhook delivery", async () => {
   const supabase = new MockPassportSupabase()
   const apiKey = addDappAuth(supabase)
   const dappUserUuid = "00000000-0000-4000-8000-000000000054"
@@ -3629,19 +4475,12 @@ test("Passport v3 account list returns dapp-user-visible metadata without secret
   supabase.setDappUser({ dapp_id: 42, user_id: 1234, uuid: dappUserUuid })
   setPassportSupabaseForTests(supabase as never)
 
-  const generateReq = createApiRequest({
-    body: {
-      api_key: apiKey,
-      chain: "solana",
-      dapp_user_uuid: dappUserUuid,
-    },
-    headers: {
-      "idempotency-key": "generate-solana-for-list",
-      origin: "https://passport.cubid.me",
-    },
-    url: "/api/v3/accounts/generate",
+  addLegacyVisibleAccount(supabase, {
+    chain: "solana",
+    dappUserUuid,
+    id: "00000000-0000-4000-8000-000000000155",
+    publicAddress: "solana-visible-account",
   })
-  await generateAccountV3Handler(generateReq, createApiResponse())
 
   const listReq = createApiRequest({
     body: {
@@ -3721,36 +4560,18 @@ test("Passport v3 account list validates auth, payloads, ownership, and chain fi
   )
   assert.equal(crossDappRes.statusCode, 404)
 
-  await generateAccountV3Handler(
-    createApiRequest({
-      body: {
-        api_key: apiKey,
-        chain: "evm",
-        dapp_user_uuid: dappUserUuid,
-      },
-      headers: {
-        "idempotency-key": "generate-evm-for-filter",
-        origin: "https://passport.cubid.me",
-      },
-      url: "/api/v3/accounts/generate",
-    }),
-    createApiResponse()
-  )
-  await generateAccountV3Handler(
-    createApiRequest({
-      body: {
-        api_key: apiKey,
-        chain: "sui",
-        dapp_user_uuid: dappUserUuid,
-      },
-      headers: {
-        "idempotency-key": "generate-sui-for-filter",
-        origin: "https://passport.cubid.me",
-      },
-      url: "/api/v3/accounts/generate",
-    }),
-    createApiResponse()
-  )
+  addLegacyVisibleAccount(supabase, {
+    chain: "evm",
+    dappUserUuid,
+    id: "00000000-0000-4000-8000-000000000159",
+    publicAddress: "0x0000000000000000000000000000000000000159",
+  })
+  addLegacyVisibleAccount(supabase, {
+    chain: "sui",
+    dappUserUuid,
+    id: "00000000-0000-4000-8000-000000000160",
+    publicAddress: "0x0000000000000000000000000000000000000160",
+  })
 
   const filteredRes = createApiResponse()
   await listAccountsV3Handler(

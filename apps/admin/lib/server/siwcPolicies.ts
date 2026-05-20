@@ -182,6 +182,12 @@ export const normalizeSiwcPolicyInput = (
     throw new SiwcPolicyInputError('status must be disabled, enabled, or suspended');
   }
 
+  if (input.custodyEnabled || input.signingEnabled) {
+    throw new SiwcPolicyInputError(
+      'Legacy Cubid wallet custody and signing controls are deprecated. Use recoverable-wallet recovery bundles instead.'
+    );
+  }
+
   if (input.signingEnabled && input.requiredAcr !== PASSKEY_ACR) {
     throw new SiwcPolicyInputError('Signing policies must require passkey ACR');
   }

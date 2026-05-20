@@ -1,7 +1,7 @@
 # API v3 Developer Platform
 
-Last updated: 2026-05-06
-Status: E02.5 canonical contract
+Last updated: 2026-05-20
+Status: E02.5 canonical contract with recoverable-wallet correction
 
 ## Purpose
 
@@ -22,19 +22,35 @@ The current backend-owned API v3 routes are:
 
 - `POST /api/v3/save_secret`: dapp-authenticated encrypted dapp-user secret
   write path backed by `private.dapp_user_secrets`.
-- `POST /api/v3/accounts/generate`: dapp-authenticated custodial account
-  generation for supported chains, storing encrypted private-key material in
-  the `private` schema and returning only public account metadata.
+- `POST /api/v3/accounts/generate`: legacy Cubid-generated wallet creation
+  endpoint. This route is deprecated and fails closed for new use.
 - `POST /api/v3/accounts/list`: dapp-authenticated account metadata listing
-  scoped to the target dapp user.
-- `POST /api/v3/signing/requests/create`: dapp-authenticated creation of a
-  Passport-hosted signing request for an app-scoped account.
+  scoped to the target dapp user, retained for historical visibility.
+- `POST /api/v3/signing/requests/create`: legacy Cubid normal-signing request
+  creation endpoint. This route is deprecated and fails closed for new use.
 - `POST /api/v3/signing/requests/get`: dapp-authenticated signing request
   status lookup.
 - `POST /api/v3/signing/requests/list`: dapp-authenticated signing request
   listing for the authenticated app.
 - `POST /api/v3/signing/requests/cancel`: dapp-authenticated cancellation for
   pending signing requests.
+- `POST /api/v3/recovery-bundles/enroll`: dapp-authenticated recoverable
+  wallet bundle enrollment backed by private-schema envelope encryption.
+- `POST /api/v3/recovery-bundles/status`: dapp-authenticated safe recovery
+  bundle status lookup for one app-scoped dapp user.
+- `POST /api/v3/recovery-bundles/release/start`: dapp-authenticated
+  short-lived recovery release session creation for a previously enrolled
+  bundle.
+- `POST /api/recovery-bundles/release/complete`: Passport user-authenticated
+  one-time recovery release completion. This is intentionally not a dapp API v3
+  credential route because it may return recovery material to the verified
+  browser/client path.
+- `POST /api/v3/recovery-bundles/rotate`: dapp-authenticated recovery bundle
+  rotation that retires the previous active bundle and stores a replacement.
+- `POST /api/v3/recovery-bundles/revoke`: dapp-authenticated recovery bundle
+  revocation.
+- `POST /api/recovery-bundles/list`: Passport user-authenticated redacted
+  recovery bundle lifecycle visibility.
 
 Existing `/api/v2/*` routes remain legacy compatibility surfaces unless a
 future todo explicitly promotes a capability into API v3. New developer-facing
@@ -96,10 +112,194 @@ Success response:
 No response may contain the raw secret, ciphertext, wrapped data key, IVs, auth
 tags, human subject keys, raw Cubid user ids, or service-role data.
 
+### `POST /api/v3/recovery-bundles/enroll`
+
+Purpose: store app-provided recoverable-wallet recovery bundle material using
+the private-schema Supabase Vault envelope-encryption pattern. This is Cubid's
+replacement direction for wallet-adjacent recovery support; it does not create
+wallets and does not enable normal transaction signing.
+
+Request body:
+
+```json
+{
+  "api_key": "cubid_live_...",
+  "dapp_user_uuid": "00000000-0000-4000-8000-000000000000",
+  "bundle_material": "opaque encrypted or sealed recovery material from the app",
+  "provider_key": "cubid",
+  "bundle_version": 1,
+  "recovery_bundle_id": "rw_bundle_...",
+  "recovery_reference": "optional provider reference"
+}
+```
+
+Rules:
+
+- `Idempotency-Key` is required.
+- `dapp_user_uuid` must belong to the authenticated dapp.
+- `bundle_material` is encrypted before storage in
+  `private.recoverable_wallet_recovery_bundles`.
+- Supplying an existing `recovery_bundle_id` updates the encrypted bundle
+  metadata for the authenticated dapp.
+- The route returns status metadata only.
+
+Success response shape:
+
+```json
+{
+  "data": {
+    "bundleVersion": 1,
+    "dappUserUuid": "00000000-0000-4000-8000-000000000000",
+    "providerKey": "cubid",
+    "recoveryBundleId": "rw_bundle_...",
+    "recoveryReference": "optional provider reference",
+    "status": "active",
+    "createdAt": "2026-05-20T00:00:00.000Z",
+    "updatedAt": "2026-05-20T00:00:00.000Z"
+  }
+}
+```
+
+No response may contain bundle plaintext, ciphertext, wrapped data keys, IVs,
+auth tags, raw Cubid user ids, or service-role metadata.
+
+### `POST /api/v3/recovery-bundles/status`
+
+Purpose: let a dapp inspect whether one of its dapp users has an active or
+historical Cubid recovery bundle, without exposing recovery material.
+
+Request body:
+
+```json
+{
+  "api_key": "cubid_live_...",
+  "dapp_user_uuid": "00000000-0000-4000-8000-000000000000",
+  "provider_key": "cubid",
+  "recovery_bundle_id": "rw_bundle_..."
+}
+```
+
+Rules:
+
+- `dapp_user_uuid` must belong to the authenticated dapp.
+- `provider_key` and `recovery_bundle_id` are optional filters.
+- Missing bundles return a successful `status: "not_enrolled"` response.
+- The route returns safe metadata only.
+
+### `POST /api/v3/recovery-bundles/release/start`
+
+Purpose: let a dapp request a user-authorized recovery release session for an
+existing active bundle. This route starts recovery, but does not retrieve or
+return recovery material.
+
+Request body:
+
+```json
+{
+  "api_key": "cubid_live_...",
+  "dapp_user_uuid": "00000000-0000-4000-8000-000000000000",
+  "recovery_bundle_id": "rw_bundle_...",
+  "provider_key": "cubid"
+}
+```
+
+Rules:
+
+- `Idempotency-Key` is required.
+- `dapp_user_uuid` must belong to the authenticated dapp.
+- The referenced bundle must exist, be active, and belong to the same dapp user.
+- The route creates a short-lived pending release session.
+- The response includes a Passport-hosted `recoveryUrl`; it never includes
+  recovery material or encrypted custody fields.
+
+### `POST /api/recovery-bundles/release/complete`
+
+Purpose: complete a recovery release from the Passport browser/client path
+after Cubid verifies the user. This route is user-authenticated, not
+dapp-authenticated.
+
+Request body:
+
+```json
+{
+  "recovery_session_id": "rw_release_..."
+}
+```
+
+Rules:
+
+- The request must include a valid Passport/Firebase bearer token.
+- The signed-in user must resolve to the Cubid user bound to the release
+  session.
+- The session must be pending, unexpired, and unconsumed.
+- On success, the session is consumed before returning the recovery bundle
+  material to the verified browser/client path.
+- Replays return `409 recovery_session_consumed`; expired sessions return
+  `410 recovery_session_expired`; wrong users return `403 wrong_user`.
+
+Browser-safe recovery error taxonomy:
+
+- `verification_required`
+- `wrong_user`
+- `recovery_session_expired`
+- `recovery_session_consumed`
+- `recovery_cancelled`
+- `unsupported_app_context`
+- `recovery_bundle_not_found`
+- `bundle_revoked`
+- `unavailable_credential`
+- `cooldown_active`
+- `provider_outage`
+
+### `POST /api/v3/recovery-bundles/rotate`
+
+Purpose: rotate an app-scoped recovery bundle after recovery, app-side share
+rotation, passkey changes, or provider-side refresh.
+
+Rules:
+
+- `Idempotency-Key` is required.
+- The old bundle must be active and belong to the authenticated dapp user.
+- The old bundle is marked `rotated`; the replacement is encrypted and stored
+  as the next bundle version.
+- The response returns only safe metadata for the replacement bundle.
+- A `recoverable_wallet.bundle.rotated` event is recorded.
+
+### `POST /api/v3/recovery-bundles/revoke`
+
+Purpose: invalidate an app-scoped recovery bundle so it can no longer be used
+for release.
+
+Rules:
+
+- `dapp_user_uuid` must belong to the authenticated dapp.
+- The target bundle is marked `revoked`.
+- The response returns only safe metadata.
+- A `recoverable_wallet.bundle.revoked` event is recorded.
+
+### `POST /api/recovery-bundles/list`
+
+Purpose: show a signed-in Passport user their recovery bundle lifecycle state.
+This is user-facing visibility, not dapp credential access.
+
+Rules:
+
+- The request must include a valid Passport/Firebase bearer token.
+- The route lists bundles for Cubid users resolved from the signed-in email or
+  phone.
+- The response may include lifecycle state and timestamps, but never includes
+  bundle material, ciphertext, wrapped keys, IVs, auth tags, raw Cubid user ids,
+  or service-role metadata.
+
 ### `POST /api/v3/accounts/generate`
 
 Purpose: generate a Cubid-custodied blockchain account for one dapp user and
 store the private key using the v3 encrypted private-key custody model.
+
+Current status: **deprecated and fail-closed**. Cubid no longer generates
+wallets for new integrations. Host apps should create app-mediated
+recoverable wallets using audited threshold/MPC infrastructure and enroll
+Cubid recovery bundles instead.
 
 Request body:
 
@@ -141,8 +341,20 @@ Success response shape:
 }
 ```
 
-The route never returns the raw private key, encrypted private-key material,
-wrapped data keys, or internal custody metadata.
+Current failure response:
+
+```json
+{
+  "error": {
+    "code": "cubid_generated_wallets_deprecated",
+    "message": "Cubid-generated wallet creation is deprecated. Use app-mediated recoverable wallets with Cubid recovery bundles instead.",
+    "requestId": "passport_..."
+  }
+}
+```
+
+The route must not create new account rows, private-key rows, dapp-user-account
+links, or `wallet.created` webhook events.
 
 ### `POST /api/v3/accounts/list`
 
@@ -197,6 +409,11 @@ custodial account. The route records the request, evaluates the current Admin
 SIWC policy, and returns a polling-safe state. It does not sign until the
 Passport user approves the request.
 
+Current status: **deprecated and fail-closed**. Cubid no longer performs normal
+wallet signing for host apps. Normal signing belongs to the host app or a
+specialized threshold/MPC signing service; Cubid should provide recovery-bundle
+storage and release.
+
 Request body:
 
 ```json
@@ -248,15 +465,20 @@ Success response shape:
 }
 ```
 
-Responses must not include private keys, encrypted custody material, Vault key
-material, raw Cubid user ids, human subject keys, or the raw `payload` field.
+Current failure response:
 
-Transaction responses may include `riskLevel`, `riskReasons`,
-`transactionOperationType`, `transactionRecipient`,
-`transactionContractAddress`, and `transactionDeclaredValueUsd`. These are
-non-secret summaries for SDKs and Passport UI. They are not a transaction
-simulation result, and they do not mean Cubid will sign the transaction in this
-slice.
+```json
+{
+  "error": {
+    "code": "cubid_signing_deprecated",
+    "message": "Cubid normal wallet signing is deprecated. Use app-mediated threshold signing with Cubid recovery bundles instead.",
+    "requestId": "passport_..."
+  }
+}
+```
+
+The route must not create new signing requests, decrypt private-key material,
+or emit signing lifecycle webhooks for new product traffic.
 
 ### `POST /api/v3/signing/requests/get`
 

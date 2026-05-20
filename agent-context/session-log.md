@@ -6882,3 +6882,536 @@ for the flexible messaging MVP.
 #### Follow-up
 
 - continue with `FM09` auditability and delivery-status APIs
+### session: v214
+
+- timestamp: 2026-05-20T18:46:01Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`f288f35`**
+- session name: **Preserve recoverable wallet direction reset**
+
+#### Objective
+
+Anchor the new app-recoverable wallet direction before changing repo behavior.
+
+#### Actions Taken
+
+- preserved the recoverable wallet SDK agent specification as the new product
+  direction source for passkey-first, app-mediated, recoverable embedded
+  wallets
+- preserved the new SmarTrust recovery-only cross-repo handoff
+- preserved the old SmarTrust wallet-generation/signing thread as archived and
+  superseded
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- rewrite wallet/SIWC docs and roadmap metadata, then hard-disable Cubid
+  wallet generation and normal signing surfaces
+### session: v215
+
+- timestamp: 2026-05-20T18:53:13Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`bd9de8e`**
+- session name: **Quarantine legacy Cubid wallet generation and signing**
+
+#### Objective
+
+Pivot the repo away from Cubid-generated wallets and Cubid normal signing while
+preserving historical data surfaces and establishing the recoverable-wallet
+roadmap.
+
+#### Actions Taken
+
+- added the recoverable wallet roadmap and engineering direction doc
+- marked SIWC generated-wallet and normal-signing docs as superseded or legacy
+  quarantine surfaces
+- hard-disabled new `/api/v3/accounts/generate`,
+  `/api/v3/signing/requests/create`, and Passport SIWC signing approval
+  traffic with structured `410` errors
+- updated Admin SIWC policy helpers/UI to prevent enabling legacy custody or
+  signing controls
+- added Passport/Admin tests for fail-closed behavior and updated legacy route
+  tests to preserve read-only visibility
+- created SDK and SmarTrust cross-repo handoff notes for the recovery-only
+  direction
+
+#### Verification
+
+- `pnpm --filter @cubid/passport test`
+- `pnpm --filter @cubid/admin test`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/admin typecheck`
+- `pnpm --filter @cubid/passport build`
+- `pnpm --filter @cubid/admin build`
+- `git diff --check`
+
+#### Follow-up
+
+- close RW01/RW02 metadata with the implementation commit SHA, then continue
+  with RW03 recovery-bundle storage schema
+### session: v216
+
+- timestamp: 2026-05-20T18:53:34Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`8593e12`**
+- session name: **Close RW01 and RW02 metadata**
+
+#### Objective
+
+Close the completed recoverable-wallet target-state and route-quarantine todos
+and start the recovery-bundle schema follow-up.
+
+#### Actions Taken
+
+- marked `RW01` and `RW02` completed in the recoverable-wallet roadmap
+- started `RW03` for private-schema recovery-bundle storage
+- added the feature-folder session-log closeout entry
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- implement `RW03` recovery-bundle storage schema
+### session: v217
+
+- timestamp: 2026-05-20T19:07:55Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`a2b82d8`**
+- session name: **Implement RW03 recovery-bundle storage**
+
+#### Objective
+
+Add the storage and encryption foundation for Cubid recoverable-wallet recovery
+bundles.
+
+#### Actions Taken
+
+- added a private-schema recovery-bundle table with service-role-only access
+- added a Supabase Vault-backed wrapping-key helper function
+- added Passport server helpers for recovery-bundle envelope encryption and
+  decryption
+- documented the recovery-bundle storage contract and required Vault secret
+- added focused helper tests for encryption context binding
+
+#### Verification
+
+- `pnpm --filter @cubid/passport test`
+- `pnpm --filter @cubid/passport typecheck`
+- `git diff --check`
+
+#### Follow-up
+
+- start `RW04` for API v3 recovery-bundle enrollment and status routes
+
+### session: v218
+
+- timestamp: 2026-05-20T19:12:59Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`bcb2c37`**
+- session name: **Implement RW04 recovery-bundle APIs**
+
+#### Objective
+
+Add API v3 recovery-bundle enrollment and status routes that let dapps store and
+inspect recovery-bundle state without retrieving recovery material.
+
+#### Actions Taken
+
+- added dapp-authenticated recovery-bundle enrollment with `Idempotency-Key`
+  replay protection
+- added dapp-authenticated recovery-bundle status lookup
+- wired enrollment to the private-schema Vault envelope-encryption helper
+- kept responses limited to safe status metadata
+- updated API v3 and recoverable-wallet engineering docs
+- added Passport route tests for encryption, redaction, ownership, and
+  idempotency
+
+#### Verification
+
+- `pnpm --filter @cubid/passport test`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+
+#### Follow-up
+
+- start `RW05` for user-authorized recovery release
+
+### session: v219
+
+- timestamp: 2026-05-20T19:13:33Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`9dbc7e3`**
+- session name: **Start RW05 recovery release flow**
+
+#### Objective
+
+Start the Passport-hosted, user-authorized recovery release follow-up after the
+backend enrollment/status API landed.
+
+#### Actions Taken
+
+- recorded the RW04 commit SHA in the recoverable-wallet roadmap
+- marked `RW05` started with current branch/head metadata
+- added the feature-folder session-log handoff entry
+
+#### Verification
+
+- not run; metadata-only handoff
+
+#### Follow-up
+
+- implement one-time recovery release sessions without backend credential
+  retrieval of recovery material
+
+### session: v220
+
+- timestamp: 2026-05-20T19:17:18Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`558429f`**
+- session name: **Implement RW05 user-authorized recovery release**
+
+#### Objective
+
+Add a user-authorized recovery release path that keeps dapp backend credentials
+limited to release-session creation and status metadata.
+
+#### Actions Taken
+
+- added recovery release session persistence with service-role-only access
+- added dapp-authenticated API v3 release-session creation
+- added Passport user-authenticated release completion
+- verified the signed-in user owns the Cubid user bound to the session
+- enforced session expiry and one-time consumption
+- returned recovery material only from the user-authenticated completion route
+- documented the RW05 API contract
+
+#### Verification
+
+- `pnpm --filter @cubid/passport test`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+
+#### Follow-up
+
+- start `RW06` for recovery rotation and revocation
+
+### session: v221
+
+- timestamp: 2026-05-20T19:17:50Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`9186853`**
+- session name: **Start RW06 recovery rotation and revocation**
+
+#### Objective
+
+Start the recovery lifecycle-management follow-up after the Passport
+user-authorized release route landed.
+
+#### Actions Taken
+
+- recorded the RW05 commit SHA in the recoverable-wallet roadmap
+- marked `RW06` started with current branch/head metadata
+- added the feature-folder session-log handoff entry
+
+#### Verification
+
+- not run; metadata-only handoff
+
+#### Follow-up
+
+- add rotation, revocation, visibility, and audit events for recovery bundles
+
+### session: v222
+
+- timestamp: 2026-05-20T19:21:16Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`154f668`**
+- session name: **Implement RW06 recovery lifecycle controls**
+
+#### Objective
+
+Add the recovery bundle lifecycle controls needed after enrollment and release:
+rotation, revocation, user-visible state, and audit events.
+
+#### Actions Taken
+
+- added dapp-authenticated recovery bundle rotation and revocation routes
+- added Passport user-authenticated recovery bundle list visibility
+- added lifecycle audit events for enroll, update, release, rotate, and revoke
+- kept all lifecycle responses redacted of bundle material and encrypted custody
+  fields
+- updated API v3 and recoverable-wallet docs
+- added Passport route coverage for rotation, revocation, visibility, and audit
+  evidence
+
+#### Verification
+
+- `pnpm --filter @cubid/passport test`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+
+#### Follow-up
+
+- start `RW07` for browser-safe recovery error taxonomy
+
+### session: v223
+
+- timestamp: 2026-05-20T19:21:49Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`0afeb5e`**
+- session name: **Start RW07 recovery error taxonomy**
+
+#### Objective
+
+Start standardizing recovery error codes after rotation, revocation, and
+user-visible lifecycle state landed.
+
+#### Actions Taken
+
+- recorded the RW06 commit SHA in the recoverable-wallet roadmap
+- marked `RW07` started with current branch/head metadata
+- added the feature-folder session-log handoff entry
+
+#### Verification
+
+- not run; metadata-only handoff
+
+#### Follow-up
+
+- document and code the browser-safe recovery error taxonomy, then coordinate
+  SDK impact through cross-repo comms
+
+### session: v224
+
+- timestamp: 2026-05-20T19:26:38Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`9a86130`**
+- session name: **Implement RW07 recovery error taxonomy**
+
+#### Objective
+
+Make recoverable-wallet errors stable for browsers and SDK consumers, and
+coordinate the contract with the public SDK repo.
+
+#### Actions Taken
+
+- added recoverable-wallet error code constants
+- updated backend recovery flows to emit browser-safe error codes
+- documented the taxonomy and route mapping
+- added a live cross-repo comms handoff note for SDK agents
+- covered the changed error codes in Passport route tests
+
+#### Verification
+
+- `pnpm --filter @cubid/passport test`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+
+#### Follow-up
+
+- start `RW08` for SDK package direction coordination
+
+### session: v225
+
+- timestamp: 2026-05-20T19:27:09Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`1c72827`**
+- session name: **Start RW08 SDK coordination**
+
+#### Objective
+
+Start coordinating the public SDK package direction now that Passport has
+concrete recovery-bundle APIs and error codes.
+
+#### Actions Taken
+
+- recorded the RW07 commit SHA in the recoverable-wallet roadmap
+- marked `RW08` started with current branch/head metadata
+- added the feature-folder session-log handoff entry
+
+#### Verification
+
+- not run; metadata-only handoff
+
+#### Follow-up
+
+- update the SDK direction cross-repo note with concrete backend route and
+  package-boundary guidance
+
+### session: v226
+
+- timestamp: 2026-05-20T19:28:10Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`1c7c6fa`**
+- session name: **Implement RW08 SDK coordination**
+
+#### Objective
+
+Send concrete SDK package-boundary and route guidance now that the
+recoverable-wallet backend surfaces exist.
+
+#### Actions Taken
+
+- updated the Passport-owned recoverable wallet SDK direction cross-repo note
+- mirrored the sibling note in `cubid-sdk-v2` and intentionally left it dirty
+- documented the backend routes available for SDK wrapping
+- reiterated that the SDK should deprecate generated-wallet and normal-signing
+  helper direction
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- start `RW09` for the SmarTrust recovery-only handoff
+
+### session: v227
+
+- timestamp: 2026-05-20T19:28:42Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`571fa36`**
+- session name: **Start RW09 SmarTrust handoff**
+
+#### Objective
+
+Start the SmarTrust recovery-only handoff after SDK package direction was
+coordinated.
+
+#### Actions Taken
+
+- recorded the RW08 commit SHA in the recoverable-wallet roadmap
+- marked `RW09` started with current branch/head metadata
+- added the feature-folder session-log handoff entry
+
+#### Verification
+
+- not run; metadata-only handoff
+
+#### Follow-up
+
+- update the SmarTrust cross-repo thread with current Passport recovery API
+  contracts and SmarTrust-owned responsibilities
+
+### session: v228
+
+- timestamp: 2026-05-20T19:29:37Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`32f4618`**
+- session name: **Implement RW09 SmarTrust handoff**
+
+#### Objective
+
+Reply to SmarTrust with the current recovery-only Passport API contract and
+clear division of responsibilities.
+
+#### Actions Taken
+
+- updated the Passport-owned SmarTrust recovery-only cross-repo note
+- mirrored the SmarTrust sibling note and left it dirty in SmarTrust
+- listed current route names and smoke guidance
+- clarified blocked/deprecated generated-wallet and normal-signing surfaces
+- referenced SmarTrust-owned `AW-01`, `AW-09`, and `AW-12` responsibilities
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- start `RW10` for hosted migration and smoke readiness after review/merge
+
+### session: v229
+
+- timestamp: 2026-05-20T19:35:52Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`ac5edcd`**
+- session name: **Clarify SmarTrust recovery handoff timing**
+
+#### Objective
+
+Clarify the SmarTrust cross-repo recovery handoff so SmarTrust agents hold off
+on direct implementation until Cubid SDK orchestration support lands.
+
+#### Actions Taken
+
+- rewrote the latest SmarTrust recovery-only handoff entry in the Passport
+  sibling note
+- mirrored the same clarification into the SmarTrust sibling note and left it
+  dirty for their agents
+- clarified that Cubid SDK support will cover much of the recovery
+  orchestration
+- clarified that SmarTrust still owns wallet/MPC policy, backend state,
+  business logic, retries, escrow logic, and product UX
+
+#### Verification
+
+- `git diff --check`
+- `git -C /Users/botmaster/src/smartrust/smartrust-monorepo diff --check -- agent-context/cross-repo-comms/2026-05-20-app-recoverable-wallet-recovery-handoff.md`
+
+#### Follow-up
+
+- keep the SmarTrust sibling note dirty so SmarTrust agents see the updated
+  guidance
+
+### session: v230
+
+- timestamp: 2026-05-20T20:02:49Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`1fa38ac`**
+- session name: **Address PR 169 recovery review comments**
+
+#### Objective
+
+Patch the PR review findings around recoverable-wallet bundle ownership,
+revoked-bundle lookup scoping, release-session state handling, rotation safety,
+and stale SIWC doc metadata.
+
+#### Actions Taken
+
+- scoped recovery bundle re-enrollment to the full app/user/provider ownership
+  tuple
+- tightened revoked-bundle checks so other app contexts do not leak bundle
+  lifecycle state
+- checked expired recovery-session update errors before returning expiry
+  failures
+- made post-release bundle bookkeeping and security-event writes non-blocking
+  after the release session is durably consumed
+- reordered bundle rotation so the replacement is written before the old bundle
+  is marked rotated
+- updated SIWC signing architecture metadata and added regression tests for the
+  ownership and cross-app leak cases
+
+#### Verification
+
+- `pnpm --filter @cubid/passport test`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- push the review-fix commit, then reply to and resolve the addressed PR
+  threads
