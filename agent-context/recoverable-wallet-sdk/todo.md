@@ -21,12 +21,12 @@ release.
 
 ### RW01. Adopt recoverable-wallet target state and supersede SIWC custody/signing
 
-- Status: Started
+- Status: Completed
 - Timestamp started: 2026-05-20T18:46:01Z
-- Timestamp completed: TBD
+- Timestamp completed: 2026-05-20T18:53:34Z
 - Feature branch: codex/recoverable-wallet-direction-reset
-- Head: bd9de8e
-- Session-log reference(s): session: rw-v1
+- Head: 8593e12
+- Session-log reference(s): session: rw-v1, session: rw-v2
 
 Create the canonical engineering doc for Cubid's new wallet role:
 passkey-first, app-mediated, recoverable embedded wallets with Cubid as recovery
@@ -37,12 +37,12 @@ host app or specialized signing infrastructure, not Cubid Passport.
 
 ### RW02. Hard-disable Cubid-generated wallet creation and Cubid normal signing
 
-- Status: Started
+- Status: Completed
 - Timestamp started: 2026-05-20T18:46:01Z
-- Timestamp completed: TBD
+- Timestamp completed: 2026-05-20T18:53:34Z
 - Feature branch: codex/recoverable-wallet-direction-reset
-- Head: TBD
-- Session-log reference(s): TBD
+- Head: 8593e12
+- Session-log reference(s): session: rw-v2
 
 Disable `/api/v3/accounts/generate` and new
 `/api/v3/signing/requests/create` flows with stable structured errors.
@@ -53,12 +53,12 @@ visibility remains redacted.
 
 ### RW03. Add recovery-bundle storage schema
 
-- Status: Not started
-- Timestamp started: TBD
+- Status: Started
+- Timestamp started: 2026-05-20T18:53:34Z
 - Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Feature branch: codex/recoverable-wallet-direction-reset
+- Head: 8593e12
+- Session-log reference(s): session: rw-v2
 
 Add service-role-only storage for app-scoped recovery bundle references and
 encrypted recovery payloads. The schema should support dapp id, dapp user UUID,
@@ -167,4 +167,3 @@ After RW03-RW06 land, run protected migration delivery and hosted smoke checks
 for recovery enrollment, status lookup, user-authorized recovery release,
 revocation, and fail-closed backend-only recovery reads. Record evidence in
 repo status/docs before calling the recovery API ready.
-

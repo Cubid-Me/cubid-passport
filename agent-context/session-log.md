@@ -6954,3 +6954,29 @@ roadmap.
 
 - close RW01/RW02 metadata with the implementation commit SHA, then continue
   with RW03 recovery-bundle storage schema
+### session: v216
+
+- timestamp: 2026-05-20T18:53:34Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`8593e12`**
+- session name: **Close RW01 and RW02 metadata**
+
+#### Objective
+
+Close the completed recoverable-wallet target-state and route-quarantine todos
+and start the recovery-bundle schema follow-up.
+
+#### Actions Taken
+
+- marked `RW01` and `RW02` completed in the recoverable-wallet roadmap
+- started `RW03` for private-schema recovery-bundle storage
+- added the feature-folder session-log closeout entry
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- implement `RW03` recovery-bundle storage schema
