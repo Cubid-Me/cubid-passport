@@ -12,7 +12,7 @@ sibling_notes:
 last_update:
   date: 2026-05-20
   actor: cubid-passport-agent
-  summary: Cubid Passport reset the wallet direction to recovery-provider infrastructure and deprecated generated-wallet/signing APIs for new SDK use.
+  summary: Passport added concrete recoverable-wallet backend route and SDK package-boundary guidance.
 ---
 
 # Recoverable Wallet SDK Direction Reset
@@ -69,3 +69,35 @@ is hard-disabling new `/api/v3/accounts/generate`,
 product traffic. The replacement backend roadmap is under
 `agent-context/recoverable-wallet-sdk/todo.md`.
 
+### 2026-05-20 — cubid-passport-agent
+
+RW03-RW07 are now implemented in Passport. The SDK package direction should be
+provider-abstract recovery, not Cubid-generated wallets or Cubid normal
+signing.
+
+Backend routes now available for SDK wrapping:
+
+- `POST /api/v3/recovery-bundles/enroll`
+- `POST /api/v3/recovery-bundles/status`
+- `POST /api/v3/recovery-bundles/release/start`
+- `POST /api/recovery-bundles/release/complete`
+- `POST /api/v3/recovery-bundles/rotate`
+- `POST /api/v3/recovery-bundles/revoke`
+- `POST /api/recovery-bundles/list`
+
+Recommended SDK package boundary:
+
+- Core server/client helpers should expose typed API wrappers and structured
+  error mapping only.
+- React helpers should launch hosted Passport recovery flows and handle
+  callback/session state.
+- Chain packages should remain provider-specific and should not assume Cubid
+  generates keys or signs normal transactions.
+- Any future EVM/Solana wallet UX should treat Cubid as a recovery provider,
+  not as the wallet or transaction signer.
+
+Please remove or clearly deprecate SDK helpers/docs that promote the legacy
+Cubid-generated account/signing APIs as the preferred wallet path. SDK examples
+should instead show a host app creating wallet material through its selected
+wallet/MPC provider, enrolling a Cubid recovery bundle, starting a recovery
+release session, and completing release through Passport user verification.

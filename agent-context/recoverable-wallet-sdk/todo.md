@@ -128,12 +128,12 @@ Coordinate these codes with `Cubid-Me/cubid-sdk` through cross-repo comms.
 
 ### RW08. Coordinate SDK package direction
 
-- Status: Started
+- Status: Completed
 - Timestamp started: 2026-05-20T19:27:09Z
-- Timestamp completed: TBD
+- Timestamp completed: 2026-05-20T19:28:10Z
 - Feature branch: codex/recoverable-wallet-direction-reset
-- Head: 1c72827
-- Session-log reference(s): session: rw-v12
+- Head: TBD
+- Session-log reference(s): session: rw-v12, session: rw-v13
 
 Write a handoff note to `Cubid-Me/cubid-sdk` describing the new package family
 and boundaries from the spec. SDK work belongs there, not in this repo. The

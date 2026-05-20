@@ -7254,3 +7254,32 @@ concrete recovery-bundle APIs and error codes.
 
 - update the SDK direction cross-repo note with concrete backend route and
   package-boundary guidance
+
+### session: v226
+
+- timestamp: 2026-05-20T19:28:10Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`1c7c6fa`**
+- session name: **Implement RW08 SDK coordination**
+
+#### Objective
+
+Send concrete SDK package-boundary and route guidance now that the
+recoverable-wallet backend surfaces exist.
+
+#### Actions Taken
+
+- updated the Passport-owned recoverable wallet SDK direction cross-repo note
+- mirrored the sibling note in `cubid-sdk-v2` and intentionally left it dirty
+- documented the backend routes available for SDK wrapping
+- reiterated that the SDK should deprecate generated-wallet and normal-signing
+  helper direction
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- start `RW09` for the SmarTrust recovery-only handoff

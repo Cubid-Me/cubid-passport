@@ -371,3 +371,33 @@ taxonomy landed.
 
 - update cross-repo comms with the concrete recoverable-wallet package
   direction, route surfaces, and deprecated generated-wallet/signing helpers
+
+### session: rw-v13
+
+- timestamp: 2026-05-20T19:28:10Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`1c7c6fa`**
+- session name: **Implement RW08 SDK coordination**
+
+#### Objective
+
+Coordinate the public SDK package direction after Passport recoverable-wallet
+backend routes and error codes landed.
+
+#### Actions Taken
+
+- updated the Passport-owned recoverable wallet SDK direction cross-repo thread
+- mirrored the SDK sibling note so SDK agents see the updated route and package
+  guidance
+- listed the concrete backend routes now available for SDK wrapping
+- clarified that SDK work should deprecate generated-wallet/signing helpers and
+  build toward provider-abstract recovery helpers
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- start `RW09` by updating the SmarTrust recovery-only handoff
