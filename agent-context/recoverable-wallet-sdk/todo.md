@@ -142,12 +142,12 @@ helpers and build toward provider-abstract recoverable wallet packages.
 
 ### RW09. Reply to SmarTrust recovery-only handoff
 
-- Status: Started
+- Status: Completed
 - Timestamp started: 2026-05-20T19:28:42Z
-- Timestamp completed: TBD
+- Timestamp completed: 2026-05-20T19:29:37Z
 - Feature branch: codex/recoverable-wallet-direction-reset
-- Head: 571fa36
-- Session-log reference(s): session: rw-v14
+- Head: TBD
+- Session-log reference(s): session: rw-v14, session: rw-v15
 
 Update the SmarTrust sibling note with Cubid's committed direction, planned API
 names, what is blocked, and what SmarTrust should build itself. Reference

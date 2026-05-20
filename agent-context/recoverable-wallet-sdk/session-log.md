@@ -428,3 +428,34 @@ coordinated.
 
 - update the SmarTrust sibling thread with committed route names, blocked
   surfaces, SmarTrust-owned responsibilities, and smoke guidance
+
+### session: rw-v15
+
+- timestamp: 2026-05-20T19:29:37Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`32f4618`**
+- session name: **Implement RW09 SmarTrust handoff**
+
+#### Objective
+
+Reply to SmarTrust with Cubid's committed recovery-only direction, route names,
+blocked surfaces, ownership boundaries, and smoke guidance.
+
+#### Actions Taken
+
+- updated the Passport sibling note for the SmarTrust recovery-only handoff
+- mirrored the SmarTrust sibling note and intentionally left it dirty for their
+  agents
+- listed the current Passport recovery route names
+- clarified that Cubid-generated wallet creation and Cubid normal signing remain
+  blocked/deprecated
+- documented SmarTrust-owned responsibilities and smoke-test expectations
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- start `RW10` for hosted migration and smoke readiness after this branch lands

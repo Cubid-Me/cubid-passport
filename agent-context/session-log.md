@@ -7311,3 +7311,32 @@ coordinated.
 
 - update the SmarTrust cross-repo thread with current Passport recovery API
   contracts and SmarTrust-owned responsibilities
+
+### session: v228
+
+- timestamp: 2026-05-20T19:29:37Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`32f4618`**
+- session name: **Implement RW09 SmarTrust handoff**
+
+#### Objective
+
+Reply to SmarTrust with the current recovery-only Passport API contract and
+clear division of responsibilities.
+
+#### Actions Taken
+
+- updated the Passport-owned SmarTrust recovery-only cross-repo note
+- mirrored the SmarTrust sibling note and left it dirty in SmarTrust
+- listed current route names and smoke guidance
+- clarified blocked/deprecated generated-wallet and normal-signing surfaces
+- referenced SmarTrust-owned `AW-01`, `AW-09`, and `AW-12` responsibilities
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- start `RW10` for hosted migration and smoke readiness after review/merge
