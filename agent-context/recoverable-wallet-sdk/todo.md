@@ -73,7 +73,7 @@ envelope-encryption pattern.
 - Timestamp started: 2026-05-20T19:08:29Z
 - Timestamp completed: 2026-05-20T19:12:59Z
 - Feature branch: codex/recoverable-wallet-direction-reset
-- Head: TBD
+- Head: 9dbc7e3
 - Session-log reference(s): session: rw-v4, session: rw-v5
 
 Add dapp-authenticated API v3 routes for creating/updating a recovery bundle
@@ -84,12 +84,12 @@ timestamps, recovery eligibility, cooldown state, and audit references.
 
 ### RW05. Add user-authorized recovery release flow
 
-- Status: Not started
-- Timestamp started: TBD
+- Status: Started
+- Timestamp started: 2026-05-20T19:13:33Z
 - Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Feature branch: codex/recoverable-wallet-direction-reset
+- Head: 9dbc7e3
+- Session-log reference(s): session: rw-v6
 
 Add Passport-hosted recovery verification routes that release recovery material
 only to the browser/client path after Cubid-side user verification. The flow

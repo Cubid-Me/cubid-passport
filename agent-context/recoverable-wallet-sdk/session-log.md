@@ -163,3 +163,30 @@ material.
 #### Follow-up
 
 - start `RW05` by adding a user-authorized recovery release flow
+
+### session: rw-v6
+
+- timestamp: 2026-05-20T19:13:33Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`9dbc7e3`**
+- session name: **Start RW05 recovery release flow**
+
+#### Objective
+
+Start the user-authorized recovery release slice after API v3 recovery-bundle
+enrollment and status landed.
+
+#### Actions Taken
+
+- recorded the `RW04` implementation head
+- marked `RW05` started on the same feature branch
+
+#### Verification
+
+- not run; metadata handoff before implementation
+
+#### Follow-up
+
+- implement Passport-hosted recovery release sessions with user verification,
+  expiry, one-time release, and browser/client-path-only payload delivery

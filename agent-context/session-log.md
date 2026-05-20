@@ -7045,3 +7045,31 @@ inspect recovery-bundle state without retrieving recovery material.
 #### Follow-up
 
 - start `RW05` for user-authorized recovery release
+
+### session: v219
+
+- timestamp: 2026-05-20T19:13:33Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`9dbc7e3`**
+- session name: **Start RW05 recovery release flow**
+
+#### Objective
+
+Start the Passport-hosted, user-authorized recovery release follow-up after the
+backend enrollment/status API landed.
+
+#### Actions Taken
+
+- recorded the RW04 commit SHA in the recoverable-wallet roadmap
+- marked `RW05` started with current branch/head metadata
+- added the feature-folder session-log handoff entry
+
+#### Verification
+
+- not run; metadata-only handoff
+
+#### Follow-up
+
+- implement one-time recovery release sessions without backend credential
+  retrieval of recovery material
