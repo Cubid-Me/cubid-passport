@@ -67,3 +67,37 @@ then start the recovery-bundle schema slice.
 
 - implement `RW03` by adding private-schema recovery-bundle storage and
   Supabase Vault envelope-encryption support
+
+### session: rw-v3
+
+- timestamp: 2026-05-20T19:07:55Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`a2b82d8`**
+- session name: **Implement RW03 recovery-bundle storage**
+
+#### Objective
+
+Add the private-schema storage and encryption foundation for app-mediated
+recoverable wallet bundles.
+
+#### Actions Taken
+
+- added a Supabase migration for
+  `private.recoverable_wallet_recovery_bundles`
+- added the Vault helper function
+  `get_recoverable_wallet_recovery_bundle_wrapping_key_v1`
+- added server-side recovery-bundle envelope encryption/decryption helpers
+- documented the required Vault secret and service-role-only storage contract
+- added focused helper tests for round trip, wrong context, and wrong key
+  rejection
+
+#### Verification
+
+- `pnpm --filter @cubid/passport test`
+- `pnpm --filter @cubid/passport typecheck`
+- `git diff --check`
+
+#### Follow-up
+
+- start `RW04` by adding API v3 recovery-bundle enrollment and status routes

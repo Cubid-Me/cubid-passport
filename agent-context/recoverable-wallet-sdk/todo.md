@@ -55,10 +55,10 @@ visibility remains redacted.
 
 - Status: Started
 - Timestamp started: 2026-05-20T18:53:34Z
-- Timestamp completed: TBD
+- Timestamp completed: 2026-05-20T19:07:55Z
 - Feature branch: codex/recoverable-wallet-direction-reset
-- Head: 8593e12
-- Session-log reference(s): session: rw-v2
+- Head: TBD
+- Session-log reference(s): session: rw-v2, session: rw-v3
 
 Add service-role-only storage for app-scoped recovery bundle references and
 encrypted recovery payloads. The schema should support dapp id, dapp user UUID,

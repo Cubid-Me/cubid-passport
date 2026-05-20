@@ -6980,3 +6980,34 @@ and start the recovery-bundle schema follow-up.
 #### Follow-up
 
 - implement `RW03` recovery-bundle storage schema
+### session: v217
+
+- timestamp: 2026-05-20T19:07:55Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`a2b82d8`**
+- session name: **Implement RW03 recovery-bundle storage**
+
+#### Objective
+
+Add the storage and encryption foundation for Cubid recoverable-wallet recovery
+bundles.
+
+#### Actions Taken
+
+- added a private-schema recovery-bundle table with service-role-only access
+- added a Supabase Vault-backed wrapping-key helper function
+- added Passport server helpers for recovery-bundle envelope encryption and
+  decryption
+- documented the recovery-bundle storage contract and required Vault secret
+- added focused helper tests for encryption context binding
+
+#### Verification
+
+- `pnpm --filter @cubid/passport test`
+- `pnpm --filter @cubid/passport typecheck`
+- `git diff --check`
+
+#### Follow-up
+
+- start `RW04` for API v3 recovery-bundle enrollment and status routes

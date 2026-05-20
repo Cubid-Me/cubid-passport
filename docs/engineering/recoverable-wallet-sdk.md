@@ -55,6 +55,28 @@ Backend dapp credentials alone must never retrieve recovery material. Recovery
 material must release only through a user-authorized browser/client path after
 Cubid recovery verification.
 
+## Recovery Bundle Storage
+
+Recovery bundles are stored in
+`private.recoverable_wallet_recovery_bundles`, a service-role-only table. The
+table binds encrypted bundle material to:
+
+- dapp id
+- dapp user UUID
+- Cubid user id
+- provider key
+- recovery bundle id and version
+- status, expiry, rotation, revocation, stale, and release metadata
+
+The bundle payload uses AES-256-GCM envelope encryption with a Supabase
+Vault-backed wrapping key. Provision the Vault secret
+`passport_recoverable_wallet_recovery_bundle_wrapping_key_v1` as a
+base64/base64url encoded 32-byte key before enabling recovery-bundle writes.
+
+The backend may create, update, revoke, rotate, and report status for a bundle,
+but backend dapp credentials must not be able to read the decrypted payload.
+Decryption is reserved for a later user-authorized recovery release flow.
+
 ## Ownership Boundary
 
 SmarTrust or another host app owns:
@@ -82,4 +104,3 @@ the corrected wallet direction. The old SIWC roadmap is superseded for wallet
 generation and normal signing, but Login with Cubid, passkey ACR, selective
 disclosure, Admin policy patterns, and API v3 security baseline remain valid
 platform foundations.
-
