@@ -156,14 +156,31 @@ dirty so its agents see it.
 
 ### RW10. Hosted migration and smoke readiness
 
-- Status: Not started
-- Timestamp started: TBD
+- Status: Started
+- Timestamp started: 2026-05-20T22:49:51Z
 - Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Feature branch: codex/recoverable-wallet-direction-reset
+- Head: 9a314a3
+- Session-log reference(s): session: rw-v16
 
 After RW03-RW06 land, run protected migration delivery and hosted smoke checks
 for recovery enrollment, status lookup, user-authorized recovery release,
 revocation, and fail-closed backend-only recovery reads. Record evidence in
 repo status/docs before calling the recovery API ready.
+
+Hosted migration delivery evidence: protected Supabase `check` run
+`26194222009` found the two pending recoverable-wallet migrations,
+protected `apply` run `26194292885` applied
+`20260520185500_recoverable_wallet_recovery_bundles.sql` and
+`20260520191400_recoverable_wallet_recovery_sessions.sql` to `CubidDev`, and
+follow-up protected `check` run `26194319925` reported `Remote database is up
+to date`.
+
+Hosted smoke status: blocked, not complete. The current PR Vercel preview is
+behind Deployment Protection and returns Vercel's `Authentication Required`
+page to shell-based API smoke calls before requests reach Passport. The local
+checkout also has blank Firebase Admin private values, so this session could
+not mint a hosted Firebase ID token to complete the user-authorized release
+path. Finish RW10 after a Vercel automation bypass token or unprotected preview
+smoke target is available, and after a real Firebase ID-token path is available
+for the recovery release completion route.

@@ -459,3 +459,47 @@ blocked surfaces, ownership boundaries, and smoke guidance.
 #### Follow-up
 
 - start `RW10` for hosted migration and smoke readiness after this branch lands
+
+### session: rw-v16
+
+- timestamp: 2026-05-20T22:49:51Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`9a314a3`**
+- session name: **Start RW10 hosted migration and smoke readiness**
+
+#### Objective
+
+Run the protected hosted migration delivery path for the recoverable-wallet
+tables and begin hosted smoke readiness without overstating launch readiness.
+
+#### Actions Taken
+
+- dispatched protected Supabase `check` run `26194222009` against
+  `Preview – cubid-passport` / `CubidDev`
+- approved the GitHub Environment gate and confirmed the dry-run found pending
+  migrations `20260520185500` and `20260520191400`
+- dispatched protected Supabase `apply` run `26194292885`, approved the
+  environment gate, and applied both recoverable-wallet migrations
+- dispatched follow-up protected Supabase `check` run `26194319925`, approved
+  the environment gate, and confirmed `Remote database is up to date`
+- attempted hosted API smoke against the PR Passport preview and confirmed that
+  Vercel Deployment Protection returns `Authentication Required` before the
+  request reaches Passport
+- checked local env availability and confirmed Firebase Admin private values
+  are blank locally, blocking a real hosted Firebase ID-token flow for the
+  user-authorized recovery release completion route
+
+#### Verification
+
+- protected Supabase check run `26194222009`
+- protected Supabase apply run `26194292885`
+- protected Supabase post-apply check run `26194319925`
+- attempted PR preview API smoke; blocked by Vercel Deployment Protection
+
+#### Follow-up
+
+- finish RW10 hosted API smoke after either a Vercel automation bypass token or
+  unprotected smoke target is available
+- provide a real Firebase ID-token path for the recovery release completion
+  smoke, then run enroll/status/release/replay/revoke end to end

@@ -7415,3 +7415,45 @@ and stale SIWC doc metadata.
 
 - push the review-fix commit, then reply to and resolve the addressed PR
   threads
+
+### session: v231
+
+- timestamp: 2026-05-20T22:49:51Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`9a314a3`**
+- session name: **Run RW10 hosted migration readiness**
+
+#### Objective
+
+Run the RW10 hosted migration delivery path for recoverable-wallet schema and
+record the remaining hosted smoke blockers truthfully.
+
+#### Actions Taken
+
+- ran protected Supabase check `26194222009` for `CubidDev`
+- ran protected Supabase apply `26194292885` after dry-run identified the two
+  recoverable-wallet migrations
+- ran protected post-apply Supabase check `26194319925`, which reported
+  `Remote database is up to date`
+- attempted shell-based hosted Passport API smoke against the PR preview and
+  confirmed Vercel Deployment Protection blocks the request before Passport
+- confirmed local Firebase Admin private values are blank, so this shell cannot
+  mint the real Firebase ID token needed for user-authorized recovery release
+  completion smoke
+- updated recoverable-wallet todo metadata and repo status with the exact
+  migration evidence and smoke blockers
+
+#### Verification
+
+- protected Supabase check run `26194222009`
+- protected Supabase apply run `26194292885`
+- protected Supabase post-apply check run `26194319925`
+- attempted hosted PR preview API smoke; blocked by Vercel Deployment
+  Protection
+
+#### Follow-up
+
+- provide a Vercel automation bypass token or an unprotected preview smoke
+  target, plus a real Firebase ID-token path, then complete RW10 hosted API
+  smoke
