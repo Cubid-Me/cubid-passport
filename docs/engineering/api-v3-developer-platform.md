@@ -38,6 +38,13 @@ The current backend-owned API v3 routes are:
   wallet bundle enrollment backed by private-schema envelope encryption.
 - `POST /api/v3/recovery-bundles/status`: dapp-authenticated safe recovery
   bundle status lookup for one app-scoped dapp user.
+- `POST /api/v3/recovery-bundles/release/start`: dapp-authenticated
+  short-lived recovery release session creation for a previously enrolled
+  bundle.
+- `POST /api/recovery-bundles/release/complete`: Passport user-authenticated
+  one-time recovery release completion. This is intentionally not a dapp API v3
+  credential route because it may return recovery material to the verified
+  browser/client path.
 
 Existing `/api/v2/*` routes remain legacy compatibility surfaces unless a
 future todo explicitly promotes a capability into API v3. New developer-facing
@@ -172,6 +179,57 @@ Rules:
 - `provider_key` and `recovery_bundle_id` are optional filters.
 - Missing bundles return a successful `status: "not_enrolled"` response.
 - The route returns safe metadata only.
+
+### `POST /api/v3/recovery-bundles/release/start`
+
+Purpose: let a dapp request a user-authorized recovery release session for an
+existing active bundle. This route starts recovery, but does not retrieve or
+return recovery material.
+
+Request body:
+
+```json
+{
+  "api_key": "cubid_live_...",
+  "dapp_user_uuid": "00000000-0000-4000-8000-000000000000",
+  "recovery_bundle_id": "rw_bundle_...",
+  "provider_key": "cubid"
+}
+```
+
+Rules:
+
+- `Idempotency-Key` is required.
+- `dapp_user_uuid` must belong to the authenticated dapp.
+- The referenced bundle must exist, be active, and belong to the same dapp user.
+- The route creates a short-lived pending release session.
+- The response includes a Passport-hosted `recoveryUrl`; it never includes
+  recovery material or encrypted custody fields.
+
+### `POST /api/recovery-bundles/release/complete`
+
+Purpose: complete a recovery release from the Passport browser/client path
+after Cubid verifies the user. This route is user-authenticated, not
+dapp-authenticated.
+
+Request body:
+
+```json
+{
+  "recovery_session_id": "rw_release_..."
+}
+```
+
+Rules:
+
+- The request must include a valid Passport/Firebase bearer token.
+- The signed-in user must resolve to the Cubid user bound to the release
+  session.
+- The session must be pending, unexpired, and unconsumed.
+- On success, the session is consumed before returning the recovery bundle
+  material to the verified browser/client path.
+- Replays return `409 recovery_session_consumed`; expired sessions return
+  `410 recovery_session_expired`; wrong users return `403 wrong_user`.
 
 ### `POST /api/v3/accounts/generate`
 

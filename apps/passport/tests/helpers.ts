@@ -50,6 +50,7 @@ export class MockPassportSupabase {
   readonly oidcHumanSubjects: Array<Record<string, unknown>> = []
   readonly privateKeys: Array<Record<string, unknown>> = []
   readonly recoverableWalletRecoveryBundles: Array<Record<string, unknown>> = []
+  readonly recoverableWalletRecoverySessions: Array<Record<string, unknown>> = []
   readonly notificationChannels: Array<Record<string, unknown>> = []
   readonly notificationAppGrants: Array<Record<string, unknown>> = []
   readonly notificationAppPolicies: Array<Record<string, unknown>> = []
@@ -1247,6 +1248,8 @@ export class MockPassportSupabase {
         this.privateNotificationChannelDestinations,
       "private.recoverable_wallet_recovery_bundles":
         this.recoverableWalletRecoveryBundles,
+      "recoverable_wallet_recovery_sessions":
+        this.recoverableWalletRecoverySessions,
       "user_notification_channels": this.notificationChannels,
     }
 

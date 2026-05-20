@@ -7073,3 +7073,36 @@ backend enrollment/status API landed.
 
 - implement one-time recovery release sessions without backend credential
   retrieval of recovery material
+
+### session: v220
+
+- timestamp: 2026-05-20T19:17:18Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`558429f`**
+- session name: **Implement RW05 user-authorized recovery release**
+
+#### Objective
+
+Add a user-authorized recovery release path that keeps dapp backend credentials
+limited to release-session creation and status metadata.
+
+#### Actions Taken
+
+- added recovery release session persistence with service-role-only access
+- added dapp-authenticated API v3 release-session creation
+- added Passport user-authenticated release completion
+- verified the signed-in user owns the Cubid user bound to the session
+- enforced session expiry and one-time consumption
+- returned recovery material only from the user-authenticated completion route
+- documented the RW05 API contract
+
+#### Verification
+
+- `pnpm --filter @cubid/passport test`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+
+#### Follow-up
+
+- start `RW06` for recovery rotation and revocation

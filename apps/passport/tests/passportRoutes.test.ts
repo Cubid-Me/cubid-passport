@@ -32,7 +32,9 @@ import verifyEmailOtpHandler from "../pages/api/v2/email/verify_otp"
 import saveSecretV2Handler from "../pages/api/v2/save_secret"
 import generateAccountV3Handler from "../pages/api/v3/accounts/generate"
 import listAccountsV3Handler from "../pages/api/v3/accounts/list"
+import completeRecoveryReleaseHandler from "../pages/api/recovery-bundles/release/complete"
 import enrollRecoveryBundleV3Handler from "../pages/api/v3/recovery-bundles/enroll"
+import startRecoveryReleaseV3Handler from "../pages/api/v3/recovery-bundles/release/start"
 import recoveryBundleStatusV3Handler from "../pages/api/v3/recovery-bundles/status"
 import saveSecretV3Handler from "../pages/api/v3/save_secret"
 import cancelSiwcSigningRequestHandler from "../pages/api/v3/signing/requests/cancel"
@@ -3550,6 +3552,252 @@ test("Passport v3 recovery bundle APIs reject cross-dapp users and replay idempo
     "not_found"
   )
   assert.equal(supabase.recoverableWalletRecoveryBundles.length, 1)
+})
+
+test("Passport v3 recovery release start creates a user-only release session", async () => {
+  const supabase = new MockPassportSupabase()
+  const apiKey = addDappAuth(supabase)
+  const dappUserUuid = "00000000-0000-4000-8000-000000000264"
+  supabase.setUser({ email: "person@example.com", id: 1234 })
+  supabase.setDappUser({ dapp_id: 42, user_id: 1234, uuid: dappUserUuid })
+  setPassportSupabaseForTests(supabase as never)
+
+  await enrollRecoveryBundleV3Handler(
+    createApiRequest({
+      body: {
+        api_key: apiKey,
+        bundle_material: "release-session-client-share",
+        dapp_user_uuid: dappUserUuid,
+        recovery_bundle_id: "rw_bundle_release_start",
+      },
+      headers: {
+        "idempotency-key": "recovery-release-start-enroll",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/recovery-bundles/enroll",
+    }),
+    createApiResponse()
+  )
+
+  const res = createApiResponse()
+  await startRecoveryReleaseV3Handler(
+    createApiRequest({
+      body: {
+        api_key: apiKey,
+        dapp_user_uuid: dappUserUuid,
+        recovery_bundle_id: "rw_bundle_release_start",
+      },
+      headers: {
+        "idempotency-key": "recovery-release-start-primary",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/recovery-bundles/release/start",
+    }),
+    res
+  )
+
+  assert.equal(res.statusCode, 200)
+  const data = (res.body as DataResponse<Record<string, unknown>>).data
+  assert.equal(data.recoveryBundleId, "rw_bundle_release_start")
+  assert.equal(data.dappUserUuid, dappUserUuid)
+  assert.equal(data.status, "pending")
+  assert.equal(String(data.recoveryUrl).includes("/recovery/wallet"), true)
+  assert.equal(JSON.stringify(res.body).includes("client-share"), false)
+  assert.equal(JSON.stringify(res.body).includes("bundleMaterial"), false)
+  assert.equal(supabase.recoverableWalletRecoverySessions.length, 1)
+})
+
+test("Passport user recovery release returns bundle material once to the verified user", async () => {
+  const supabase = new MockPassportSupabase()
+  const apiKey = addDappAuth(supabase)
+  const dappUserUuid = "00000000-0000-4000-8000-000000000265"
+  supabase.setUser({ email: "person@example.com", id: 1234 })
+  supabase.setDappUser({ dapp_id: 42, user_id: 1234, uuid: dappUserUuid })
+  setPassportSupabaseForTests(supabase as never)
+  addFirebaseUserAuth()
+
+  await enrollRecoveryBundleV3Handler(
+    createApiRequest({
+      body: {
+        api_key: apiKey,
+        bundle_material: "verified-user-client-share",
+        dapp_user_uuid: dappUserUuid,
+        recovery_bundle_id: "rw_bundle_release_complete",
+      },
+      headers: {
+        "idempotency-key": "recovery-release-complete-enroll",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/recovery-bundles/enroll",
+    }),
+    createApiResponse()
+  )
+
+  const startRes = createApiResponse()
+  await startRecoveryReleaseV3Handler(
+    createApiRequest({
+      body: {
+        api_key: apiKey,
+        dapp_user_uuid: dappUserUuid,
+        recovery_bundle_id: "rw_bundle_release_complete",
+      },
+      headers: {
+        "idempotency-key": "recovery-release-complete-start",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/recovery-bundles/release/start",
+    }),
+    startRes
+  )
+
+  const recoverySessionId = String(
+    (startRes.body as DataResponse<Record<string, unknown>>).data
+      .recoverySessionId
+  )
+  const completeRes = createApiResponse()
+  await completeRecoveryReleaseHandler(
+    createApiRequest({
+      body: {
+        recovery_session_id: recoverySessionId,
+      },
+      headers: {
+        authorization: "Bearer firebase-test-token",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/recovery-bundles/release/complete",
+    }),
+    completeRes
+  )
+
+  assert.equal(completeRes.statusCode, 200)
+  const data = (completeRes.body as DataResponse<Record<string, unknown>>).data
+  assert.equal(data.recoverySessionId, recoverySessionId)
+  assert.equal(data.bundleMaterial, "verified-user-client-share")
+  assert.equal(data.status, "released")
+  assert.equal(supabase.recoverableWalletRecoverySessions[0].status, "released")
+  assert.equal(
+    typeof supabase.recoverableWalletRecoveryBundles[0].last_released_at,
+    "string"
+  )
+
+  const replayRes = createApiResponse()
+  await completeRecoveryReleaseHandler(
+    createApiRequest({
+      body: {
+        recovery_session_id: recoverySessionId,
+      },
+      headers: {
+        authorization: "Bearer firebase-test-token",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/recovery-bundles/release/complete",
+    }),
+    replayRes
+  )
+  assert.equal(replayRes.statusCode, 409)
+  assert.equal(
+    (replayRes.body as { error: { code: string } }).error.code,
+    "recovery_session_consumed"
+  )
+})
+
+test("Passport user recovery release rejects wrong users and expired sessions", async () => {
+  const supabase = new MockPassportSupabase()
+  const apiKey = addDappAuth(supabase)
+  const dappUserUuid = "00000000-0000-4000-8000-000000000266"
+  supabase.setUser({ email: "person@example.com", id: 1234 })
+  supabase.setUser({ email: "other@example.com", id: 9999 })
+  supabase.setDappUser({ dapp_id: 42, user_id: 1234, uuid: dappUserUuid })
+  setPassportSupabaseForTests(supabase as never)
+
+  await enrollRecoveryBundleV3Handler(
+    createApiRequest({
+      body: {
+        api_key: apiKey,
+        bundle_material: "wrong-user-client-share",
+        dapp_user_uuid: dappUserUuid,
+        recovery_bundle_id: "rw_bundle_release_guards",
+      },
+      headers: {
+        "idempotency-key": "recovery-release-guards-enroll",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/recovery-bundles/enroll",
+    }),
+    createApiResponse()
+  )
+
+  const startRes = createApiResponse()
+  await startRecoveryReleaseV3Handler(
+    createApiRequest({
+      body: {
+        api_key: apiKey,
+        dapp_user_uuid: dappUserUuid,
+        recovery_bundle_id: "rw_bundle_release_guards",
+      },
+      headers: {
+        "idempotency-key": "recovery-release-guards-start",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/recovery-bundles/release/start",
+    }),
+    startRes
+  )
+  const recoverySessionId = String(
+    (startRes.body as DataResponse<Record<string, unknown>>).data
+      .recoverySessionId
+  )
+
+  setPassportFirebaseAdminAuthForTests({
+    verifyIdToken: async () =>
+      ({
+        email: "other@example.com",
+        uid: "firebase_other",
+      }) as never,
+  })
+  const wrongUserRes = createApiResponse()
+  await completeRecoveryReleaseHandler(
+    createApiRequest({
+      body: {
+        recovery_session_id: recoverySessionId,
+      },
+      headers: {
+        authorization: "Bearer firebase-test-token",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/recovery-bundles/release/complete",
+    }),
+    wrongUserRes
+  )
+  assert.equal(wrongUserRes.statusCode, 403)
+  assert.equal(
+    (wrongUserRes.body as { error: { code: string } }).error.code,
+    "wrong_user"
+  )
+
+  supabase.recoverableWalletRecoverySessions[0].expires_at = new Date(
+    Date.now() - 1000
+  ).toISOString()
+  addFirebaseUserAuth()
+  const expiredRes = createApiResponse()
+  await completeRecoveryReleaseHandler(
+    createApiRequest({
+      body: {
+        recovery_session_id: recoverySessionId,
+      },
+      headers: {
+        authorization: "Bearer firebase-test-token",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/recovery-bundles/release/complete",
+    }),
+    expiredRes
+  )
+  assert.equal(expiredRes.statusCode, 410)
+  assert.equal(
+    (expiredRes.body as { error: { code: string } }).error.code,
+    "recovery_session_expired"
+  )
 })
 
 test.skip("legacy Cubid account generation encrypted private keys and linked the triggering dapp user", async () => {

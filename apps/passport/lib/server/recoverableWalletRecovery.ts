@@ -8,6 +8,9 @@ import {
   type Aes256GcmEnvelopePayload,
 } from "@cubid/auth/server"
 import type { SupabaseClient } from "@supabase/supabase-js"
+import type { DecodedIdToken } from "firebase-admin/auth"
+
+export const RECOVERABLE_WALLET_RELEASE_SESSION_TTL_MS = 15 * 60 * 1000
 
 export const RECOVERABLE_WALLET_BUNDLE_ALGORITHM =
   "aes-256-gcm-envelope" as const
@@ -55,6 +58,17 @@ export type RecoverableWalletBundleSafeStatus = {
   staleAt: string | null
   status: string
   updatedAt: string | null
+}
+
+export type RecoverableWalletRecoveryReleaseSession = {
+  createdAt: string
+  dappUserUuid: string
+  expiresAt: string
+  providerKey: string
+  recoveryBundleId: string
+  recoverySessionId: string
+  recoveryUrl: string
+  status: string
 }
 
 export const buildRecoverableWalletBundleContext = (
@@ -154,6 +168,9 @@ export function decryptRecoverableWalletBundleWithKey(
 
 const generateRecoveryBundleId = () =>
   `rw_bundle_${randomUUID().replace(/-/g, "")}`
+
+const generateRecoverySessionId = () =>
+  `rw_release_${randomUUID().replace(/-/g, "")}`
 
 const normalizeProviderKey = (value: string | null | undefined) =>
   (value ?? "cubid").trim().toLowerCase()
@@ -367,4 +384,290 @@ export async function getRecoverableWalletRecoveryBundleStatus(input: {
     data as Record<string, unknown> | null,
     input.dappUserUuid
   )
+}
+
+const mapRecoveryReleaseSession = (
+  row: Record<string, unknown>
+): RecoverableWalletRecoveryReleaseSession => {
+  const recoverySessionId = String(row.recovery_session_id)
+  return {
+    createdAt: String(row.created_at),
+    dappUserUuid: String(row.dapp_user_uuid),
+    expiresAt: String(row.expires_at),
+    providerKey: String(row.provider_key ?? "cubid"),
+    recoveryBundleId: String(row.recovery_bundle_id),
+    recoverySessionId,
+    recoveryUrl: `/recovery/wallet?recovery_session_id=${encodeURIComponent(
+      recoverySessionId
+    )}`,
+    status: String(row.status ?? "pending"),
+  }
+}
+
+export async function createRecoverableWalletRecoveryReleaseSession(input: {
+  actorIdentifier: string
+  dappId: number | string
+  dappUserUuid: string
+  providerKey?: string | null
+  recoveryBundleId?: string | null
+  requestId: string
+  supabase: SupabaseClient
+}): Promise<RecoverableWalletRecoveryReleaseSession> {
+  const dappUser = await assertDappUserForRecoverableWalletBundle({
+    dappId: input.dappId,
+    dappUserUuid: input.dappUserUuid,
+    supabase: input.supabase,
+  })
+  const providerKey = normalizeProviderKey(input.providerKey)
+  let bundleQuery = input.supabase
+    .schema("private")
+    .from("recoverable_wallet_recovery_bundles")
+    .select("*")
+    .eq("dapp_id", input.dappId)
+    .eq("dapp_user_uuid", input.dappUserUuid)
+    .eq("user_id", dappUser.user_id)
+    .eq("provider_key", providerKey)
+    .eq("status", "active")
+
+  if (input.recoveryBundleId) {
+    bundleQuery = bundleQuery.eq("recovery_bundle_id", input.recoveryBundleId)
+  }
+
+  const { data: bundle, error: bundleError } = await bundleQuery
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (bundleError) {
+    throw bundleError
+  }
+
+  if (!bundle) {
+    throw new ApiSecurityError(
+      404,
+      "not_found",
+      "Recovery bundle was not found for the authenticated app."
+    )
+  }
+
+  const now = new Date()
+  const expiresAt = new Date(
+    now.getTime() + RECOVERABLE_WALLET_RELEASE_SESSION_TTL_MS
+  ).toISOString()
+  const { data: session, error: sessionError } = await input.supabase
+    .from("recoverable_wallet_recovery_sessions")
+    .insert({
+      created_by_actor_identifier: input.actorIdentifier,
+      dapp_id: input.dappId,
+      dapp_user_uuid: input.dappUserUuid,
+      expires_at: expiresAt,
+      metadata: {
+        createdBy: "api_v3.recovery_bundles.release.start",
+        requestId: input.requestId,
+      },
+      provider_key: providerKey,
+      recovery_bundle_id: String(bundle.recovery_bundle_id),
+      recovery_session_id: generateRecoverySessionId(),
+      request_id: input.requestId,
+      status: "pending",
+      user_id: dappUser.user_id,
+    })
+    .select("*")
+    .maybeSingle()
+
+  if (sessionError) {
+    throw sessionError
+  }
+
+  return mapRecoveryReleaseSession(session as Record<string, unknown>)
+}
+
+async function resolveUserIdsFromFirebaseToken(
+  supabase: SupabaseClient,
+  token: DecodedIdToken
+) {
+  const userIds = new Set<string>()
+
+  if (token.email) {
+    const { data, error } = await supabase
+      .from("users")
+      .select("id")
+      .eq("email", token.email)
+      .maybeSingle()
+
+    if (error) {
+      throw error
+    }
+
+    if (data?.id != null) {
+      userIds.add(String(data.id))
+    }
+  }
+
+  if (token.phone_number) {
+    const { data, error } = await supabase
+      .from("users")
+      .select("id")
+      .eq("phone", token.phone_number)
+      .maybeSingle()
+
+    if (error) {
+      throw error
+    }
+
+    if (data?.id != null) {
+      userIds.add(String(data.id))
+    }
+  }
+
+  return userIds
+}
+
+export async function releaseRecoverableWalletRecoveryBundle(input: {
+  firebaseToken: DecodedIdToken
+  recoverySessionId: string
+  requestId: string
+  supabase: SupabaseClient
+}) {
+  const { data: session, error: sessionError } = await input.supabase
+    .from("recoverable_wallet_recovery_sessions")
+    .select("*")
+    .eq("recovery_session_id", input.recoverySessionId)
+    .maybeSingle()
+
+  if (sessionError) {
+    throw sessionError
+  }
+
+  if (!session) {
+    throw new ApiSecurityError(
+      404,
+      "not_found",
+      "Recovery session was not found."
+    )
+  }
+
+  if (session.status !== "pending" || session.consumed_at) {
+    throw new ApiSecurityError(
+      409,
+      "recovery_session_consumed",
+      "Recovery session has already been consumed."
+    )
+  }
+
+  if (new Date(String(session.expires_at)).getTime() <= Date.now()) {
+    await input.supabase
+      .from("recoverable_wallet_recovery_sessions")
+      .update({
+        status: "expired",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", session.id)
+
+    throw new ApiSecurityError(
+      410,
+      "recovery_session_expired",
+      "Recovery session has expired."
+    )
+  }
+
+  const userIds = await resolveUserIdsFromFirebaseToken(
+    input.supabase,
+    input.firebaseToken
+  )
+
+  if (!userIds.has(String(session.user_id))) {
+    throw new ApiSecurityError(
+      403,
+      "wrong_user",
+      "Signed-in Passport user does not match this recovery session."
+    )
+  }
+
+  const { data: bundle, error: bundleError } = await input.supabase
+    .schema("private")
+    .from("recoverable_wallet_recovery_bundles")
+    .select("*")
+    .eq("recovery_bundle_id", session.recovery_bundle_id)
+    .eq("dapp_id", session.dapp_id)
+    .eq("dapp_user_uuid", session.dapp_user_uuid)
+    .eq("user_id", session.user_id)
+    .eq("provider_key", session.provider_key)
+    .eq("status", "active")
+    .maybeSingle()
+
+  if (bundleError) {
+    throw bundleError
+  }
+
+  if (!bundle) {
+    throw new ApiSecurityError(
+      404,
+      "not_found",
+      "Active recovery bundle was not found for this session."
+    )
+  }
+
+  const wrappingKey = await getRecoverableWalletBundleWrappingKey(input.supabase)
+  const bundleMaterial = decryptRecoverableWalletBundleWithKey(
+    bundle as Record<string, unknown>,
+    wrappingKey,
+    {
+      bundleVersion: Number(bundle.bundle_version ?? 1),
+      dappId: String(bundle.dapp_id),
+      dappUserUuid: String(bundle.dapp_user_uuid),
+      providerKey: String(bundle.provider_key ?? "cubid"),
+      recoveryBundleId: String(bundle.recovery_bundle_id),
+      userId: String(bundle.user_id),
+    }
+  )
+  const releasedAt = new Date().toISOString()
+  const { data: updatedSession, error: updateSessionError } =
+    await input.supabase
+      .from("recoverable_wallet_recovery_sessions")
+      .update({
+        consumed_at: releasedAt,
+        released_at: releasedAt,
+        status: "released",
+        updated_at: releasedAt,
+      })
+      .eq("id", session.id)
+      .eq("status", "pending")
+      .select("*")
+      .maybeSingle()
+
+  if (updateSessionError) {
+    throw updateSessionError
+  }
+
+  if (!updatedSession) {
+    throw new ApiSecurityError(
+      409,
+      "recovery_session_consumed",
+      "Recovery session has already been consumed."
+    )
+  }
+
+  const { error: updateBundleError } = await input.supabase
+    .schema("private")
+    .from("recoverable_wallet_recovery_bundles")
+    .update({
+      last_released_at: releasedAt,
+      updated_at: releasedAt,
+    })
+    .eq("id", bundle.id)
+
+  if (updateBundleError) {
+    throw updateBundleError
+  }
+
+  return {
+    bundleMaterial,
+    dappUserUuid: String(session.dapp_user_uuid),
+    providerKey: String(session.provider_key ?? "cubid"),
+    recoveryBundleId: String(session.recovery_bundle_id),
+    recoverySessionId: String(session.recovery_session_id),
+    releasedAt,
+    status: "released",
+  }
 }

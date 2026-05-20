@@ -190,3 +190,37 @@ enrollment and status landed.
 
 - implement Passport-hosted recovery release sessions with user verification,
   expiry, one-time release, and browser/client-path-only payload delivery
+
+### session: rw-v7
+
+- timestamp: 2026-05-20T19:17:18Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`558429f`**
+- session name: **Implement RW05 user-authorized recovery release**
+
+#### Objective
+
+Add the first user-authorized recovery release flow while keeping backend dapp
+credentials unable to retrieve recovery material.
+
+#### Actions Taken
+
+- added service-role-only recovery release session storage
+- added dapp-authenticated release-session creation for active recovery bundles
+- added Passport user-authenticated release completion
+- enforced expiry, one-time consumption, and wrong-user denial
+- returned bundle material only through the verified Passport user route
+- documented the release start and completion contracts
+- added Passport tests for session start, verified release, replay denial,
+  wrong-user denial, and expiry denial
+
+#### Verification
+
+- `pnpm --filter @cubid/passport test`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+
+#### Follow-up
+
+- start `RW06` for recovery rotation and revocation

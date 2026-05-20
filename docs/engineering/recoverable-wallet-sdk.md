@@ -83,6 +83,8 @@ RW04 adds the first dapp-authenticated recovery-bundle APIs:
 
 - `POST /api/v3/recovery-bundles/enroll`
 - `POST /api/v3/recovery-bundles/status`
+- `POST /api/v3/recovery-bundles/release/start`
+- `POST /api/recovery-bundles/release/complete`
 
 Enrollment accepts a dapp API key, `dapp_user_uuid`, opaque bundle material,
 provider metadata, and an optional caller-provided `recovery_bundle_id`.
@@ -96,6 +98,17 @@ Status lookup accepts a dapp API key and `dapp_user_uuid`, with optional
 bundle status for that dapp user, or `status: "not_enrolled"` when no bundle
 exists. Backend credentials can inspect enrollment state, but cannot retrieve
 or decrypt recovery material.
+
+Release start is dapp-authenticated and creates a short-lived, one-time
+recovery session for an existing active bundle. It returns a Passport-hosted
+`recoveryUrl` and session metadata only. It does not return bundle material and
+does not give backend credentials any recovery read capability.
+
+Release completion is Passport user-authenticated. It verifies that the signed
+in user maps to the Cubid user bound to the recovery session, rejects expired or
+already-consumed sessions, decrypts the bundle, marks the session consumed, and
+returns the bundle material only to the verified browser/client path. This is
+the only RW05 path that returns recovery material.
 
 ## Ownership Boundary
 
