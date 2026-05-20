@@ -77,6 +77,26 @@ The backend may create, update, revoke, rotate, and report status for a bundle,
 but backend dapp credentials must not be able to read the decrypted payload.
 Decryption is reserved for a later user-authorized recovery release flow.
 
+## API v3 Recovery Bundle Routes
+
+RW04 adds the first dapp-authenticated recovery-bundle APIs:
+
+- `POST /api/v3/recovery-bundles/enroll`
+- `POST /api/v3/recovery-bundles/status`
+
+Enrollment accepts a dapp API key, `dapp_user_uuid`, opaque bundle material,
+provider metadata, and an optional caller-provided `recovery_bundle_id`.
+Enrollment requires `Idempotency-Key`, verifies that the dapp user belongs to
+the authenticated dapp, encrypts the bundle material, and returns only safe
+status metadata. It never returns plaintext bundle material, ciphertext,
+wrapped data keys, IVs, auth tags, raw Cubid user ids, or service-role fields.
+
+Status lookup accepts a dapp API key and `dapp_user_uuid`, with optional
+`recovery_bundle_id` or `provider_key` filters. It returns the latest safe
+bundle status for that dapp user, or `status: "not_enrolled"` when no bundle
+exists. Backend credentials can inspect enrollment state, but cannot retrieve
+or decrypt recovery material.
+
 ## Ownership Boundary
 
 SmarTrust or another host app owns:

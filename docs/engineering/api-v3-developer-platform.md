@@ -34,6 +34,10 @@ The current backend-owned API v3 routes are:
   listing for the authenticated app.
 - `POST /api/v3/signing/requests/cancel`: dapp-authenticated cancellation for
   pending signing requests.
+- `POST /api/v3/recovery-bundles/enroll`: dapp-authenticated recoverable
+  wallet bundle enrollment backed by private-schema envelope encryption.
+- `POST /api/v3/recovery-bundles/status`: dapp-authenticated safe recovery
+  bundle status lookup for one app-scoped dapp user.
 
 Existing `/api/v2/*` routes remain legacy compatibility surfaces unless a
 future todo explicitly promotes a capability into API v3. New developer-facing
@@ -94,6 +98,80 @@ Success response:
 
 No response may contain the raw secret, ciphertext, wrapped data key, IVs, auth
 tags, human subject keys, raw Cubid user ids, or service-role data.
+
+### `POST /api/v3/recovery-bundles/enroll`
+
+Purpose: store app-provided recoverable-wallet recovery bundle material using
+the private-schema Supabase Vault envelope-encryption pattern. This is Cubid's
+replacement direction for wallet-adjacent recovery support; it does not create
+wallets and does not enable normal transaction signing.
+
+Request body:
+
+```json
+{
+  "api_key": "cubid_live_...",
+  "dapp_user_uuid": "00000000-0000-4000-8000-000000000000",
+  "bundle_material": "opaque encrypted or sealed recovery material from the app",
+  "provider_key": "cubid",
+  "bundle_version": 1,
+  "recovery_bundle_id": "rw_bundle_...",
+  "recovery_reference": "optional provider reference"
+}
+```
+
+Rules:
+
+- `Idempotency-Key` is required.
+- `dapp_user_uuid` must belong to the authenticated dapp.
+- `bundle_material` is encrypted before storage in
+  `private.recoverable_wallet_recovery_bundles`.
+- Supplying an existing `recovery_bundle_id` updates the encrypted bundle
+  metadata for the authenticated dapp.
+- The route returns status metadata only.
+
+Success response shape:
+
+```json
+{
+  "data": {
+    "bundleVersion": 1,
+    "dappUserUuid": "00000000-0000-4000-8000-000000000000",
+    "providerKey": "cubid",
+    "recoveryBundleId": "rw_bundle_...",
+    "recoveryReference": "optional provider reference",
+    "status": "active",
+    "createdAt": "2026-05-20T00:00:00.000Z",
+    "updatedAt": "2026-05-20T00:00:00.000Z"
+  }
+}
+```
+
+No response may contain bundle plaintext, ciphertext, wrapped data keys, IVs,
+auth tags, raw Cubid user ids, or service-role metadata.
+
+### `POST /api/v3/recovery-bundles/status`
+
+Purpose: let a dapp inspect whether one of its dapp users has an active or
+historical Cubid recovery bundle, without exposing recovery material.
+
+Request body:
+
+```json
+{
+  "api_key": "cubid_live_...",
+  "dapp_user_uuid": "00000000-0000-4000-8000-000000000000",
+  "provider_key": "cubid",
+  "recovery_bundle_id": "rw_bundle_..."
+}
+```
+
+Rules:
+
+- `dapp_user_uuid` must belong to the authenticated dapp.
+- `provider_key` and `recovery_bundle_id` are optional filters.
+- Missing bundles return a successful `status: "not_enrolled"` response.
+- The route returns safe metadata only.
 
 ### `POST /api/v3/accounts/generate`
 

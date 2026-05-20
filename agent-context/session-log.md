@@ -7011,3 +7011,37 @@ bundles.
 #### Follow-up
 
 - start `RW04` for API v3 recovery-bundle enrollment and status routes
+
+### session: v218
+
+- timestamp: 2026-05-20T19:12:59Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`bcb2c37`**
+- session name: **Implement RW04 recovery-bundle APIs**
+
+#### Objective
+
+Add API v3 recovery-bundle enrollment and status routes that let dapps store and
+inspect recovery-bundle state without retrieving recovery material.
+
+#### Actions Taken
+
+- added dapp-authenticated recovery-bundle enrollment with `Idempotency-Key`
+  replay protection
+- added dapp-authenticated recovery-bundle status lookup
+- wired enrollment to the private-schema Vault envelope-encryption helper
+- kept responses limited to safe status metadata
+- updated API v3 and recoverable-wallet engineering docs
+- added Passport route tests for encryption, redaction, ownership, and
+  idempotency
+
+#### Verification
+
+- `pnpm --filter @cubid/passport test`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+
+#### Follow-up
+
+- start `RW05` for user-authorized recovery release

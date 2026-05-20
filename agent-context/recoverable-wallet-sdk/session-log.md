@@ -101,3 +101,65 @@ recoverable wallet bundles.
 #### Follow-up
 
 - start `RW04` by adding API v3 recovery-bundle enrollment and status routes
+
+### session: rw-v4
+
+- timestamp: 2026-05-20T19:08:29Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`bcb2c37`**
+- session name: **Start RW04 recovery-bundle APIs**
+
+#### Objective
+
+Start the API v3 recovery-bundle enrollment and status route slice after the
+private storage foundation landed.
+
+#### Actions Taken
+
+- recorded the `RW03` implementation head
+- marked `RW04` started on the same feature branch
+
+#### Verification
+
+- not run; metadata handoff before implementation
+
+#### Follow-up
+
+- implement dapp-authenticated recovery-bundle enroll and status routes without
+  exposing decrypted bundle material
+
+### session: rw-v5
+
+- timestamp: 2026-05-20T19:12:59Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`bcb2c37`**
+- session name: **Implement RW04 recovery-bundle APIs**
+
+#### Objective
+
+Add the API v3 enrollment and status surface for app-mediated recoverable wallet
+bundles without creating wallets, signing transactions, or exposing recovery
+material.
+
+#### Actions Taken
+
+- added dapp-authenticated `/api/v3/recovery-bundles/enroll`
+- added dapp-authenticated `/api/v3/recovery-bundles/status`
+- encrypted enrollment bundle material into
+  `private.recoverable_wallet_recovery_bundles`
+- returned only safe bundle status metadata to dapps
+- documented the recovery-bundle API contract
+- added route tests for encrypted storage, safe status responses, ownership
+  checks, and idempotent enrollment replay
+
+#### Verification
+
+- `pnpm --filter @cubid/passport test`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+
+#### Follow-up
+
+- start `RW05` by adding a user-authorized recovery release flow

@@ -1,4 +1,7 @@
+import { randomUUID } from "node:crypto"
+
 import {
+  ApiSecurityError,
   decodeAes256GcmEnvelopeKey,
   decryptAes256GcmEnvelope,
   encryptAes256GcmEnvelope,
@@ -36,6 +39,22 @@ export type EncryptedRecoverableWalletBundle = {
   wrapped_data_key: string
   wrapped_data_key_auth_tag: string
   wrapped_data_key_iv: string
+}
+
+export type RecoverableWalletBundleSafeStatus = {
+  bundleVersion: number | null
+  createdAt: string | null
+  dappUserUuid: string
+  expiresAt: string | null
+  lastReleasedAt: string | null
+  providerKey: string | null
+  recoveryBundleId: string | null
+  recoveryReference: string | null
+  revokedAt: string | null
+  rotatedAt: string | null
+  staleAt: string | null
+  status: string
+  updatedAt: string | null
 }
 
 export const buildRecoverableWalletBundleContext = (
@@ -133,3 +152,219 @@ export function decryptRecoverableWalletBundleWithKey(
   )
 }
 
+const generateRecoveryBundleId = () =>
+  `rw_bundle_${randomUUID().replace(/-/g, "")}`
+
+const normalizeProviderKey = (value: string | null | undefined) =>
+  (value ?? "cubid").trim().toLowerCase()
+
+const toIsoOrNull = (value: unknown) =>
+  typeof value === "string" && value.length > 0 ? value : null
+
+export const mapRecoverableWalletBundleStatus = (
+  row: Record<string, unknown> | null,
+  dappUserUuid: string
+): RecoverableWalletBundleSafeStatus => {
+  if (!row) {
+    return {
+      bundleVersion: null,
+      createdAt: null,
+      dappUserUuid,
+      expiresAt: null,
+      lastReleasedAt: null,
+      providerKey: null,
+      recoveryBundleId: null,
+      recoveryReference: null,
+      revokedAt: null,
+      rotatedAt: null,
+      staleAt: null,
+      status: "not_enrolled",
+      updatedAt: null,
+    }
+  }
+
+  return {
+    bundleVersion:
+      row.bundle_version == null ? null : Number(row.bundle_version),
+    createdAt: toIsoOrNull(row.created_at),
+    dappUserUuid: String(row.dapp_user_uuid ?? dappUserUuid),
+    expiresAt: toIsoOrNull(row.expires_at),
+    lastReleasedAt: toIsoOrNull(row.last_released_at),
+    providerKey: String(row.provider_key ?? "cubid"),
+    recoveryBundleId: String(row.recovery_bundle_id),
+    recoveryReference:
+      row.recovery_reference == null ? null : String(row.recovery_reference),
+    revokedAt: toIsoOrNull(row.revoked_at),
+    rotatedAt: toIsoOrNull(row.rotated_at),
+    staleAt: toIsoOrNull(row.stale_at),
+    status: String(row.status ?? "active"),
+    updatedAt: toIsoOrNull(row.updated_at),
+  }
+}
+
+export async function assertDappUserForRecoverableWalletBundle(input: {
+  dappId: number | string
+  dappUserUuid: string
+  supabase: SupabaseClient
+}) {
+  const { data, error } = await input.supabase
+    .from("dapp_users")
+    .select("uuid,dapp_id,user_id")
+    .eq("uuid", input.dappUserUuid)
+    .eq("dapp_id", input.dappId)
+    .maybeSingle()
+
+  if (error) {
+    throw error
+  }
+
+  if (!data || data.user_id == null) {
+    throw new ApiSecurityError(
+      404,
+      "not_found",
+      "Dapp user was not found for the authenticated app."
+    )
+  }
+
+  return data as {
+    dapp_id: number | string
+    user_id: number | string
+    uuid: string
+  }
+}
+
+export async function enrollRecoverableWalletRecoveryBundle(input: {
+  bundleMaterial: string
+  bundleVersion?: number | null
+  dappId: number | string
+  dappUserUuid: string
+  expiresAt?: string | null
+  metadata?: Record<string, unknown> | null
+  providerKey?: string | null
+  recoveryBundleId?: string | null
+  recoveryReference?: string | null
+  requestId: string
+  supabase: SupabaseClient
+}): Promise<RecoverableWalletBundleSafeStatus> {
+  const dappUser = await assertDappUserForRecoverableWalletBundle({
+    dappId: input.dappId,
+    dappUserUuid: input.dappUserUuid,
+    supabase: input.supabase,
+  })
+  const providerKey = normalizeProviderKey(input.providerKey)
+  const bundleVersion = Number(input.bundleVersion ?? 1)
+  const recoveryBundleId =
+    input.recoveryBundleId?.trim() || generateRecoveryBundleId()
+  const encryptedBundle = await encryptRecoverableWalletBundle(
+    input.supabase,
+    input.bundleMaterial,
+    {
+      bundleVersion,
+      dappId: input.dappId,
+      dappUserUuid: input.dappUserUuid,
+      providerKey,
+      recoveryBundleId,
+      userId: dappUser.user_id,
+    }
+  )
+
+  const row = {
+    ...encryptedBundle,
+    bundle_version: bundleVersion,
+    dapp_id: input.dappId,
+    dapp_user_uuid: input.dappUserUuid,
+    expires_at: input.expiresAt ?? null,
+    metadata: {
+      ...(input.metadata ?? {}),
+      createdBy: "api_v3.recovery_bundles.enroll",
+      requestId: input.requestId,
+    },
+    provider_key: providerKey,
+    recovery_bundle_id: recoveryBundleId,
+    recovery_reference: input.recoveryReference ?? null,
+    status: "active",
+    user_id: dappUser.user_id,
+  }
+
+  const { data: existingRow, error: existingError } = await input.supabase
+    .schema("private")
+    .from("recoverable_wallet_recovery_bundles")
+    .select("*")
+    .eq("recovery_bundle_id", recoveryBundleId)
+    .eq("dapp_id", input.dappId)
+    .maybeSingle()
+
+  if (existingError) {
+    throw existingError
+  }
+
+  const query = existingRow
+    ? input.supabase
+        .schema("private")
+        .from("recoverable_wallet_recovery_bundles")
+        .update({
+          ...row,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", existingRow.id)
+        .select("*")
+    : input.supabase
+        .schema("private")
+        .from("recoverable_wallet_recovery_bundles")
+        .insert(row)
+        .select("*")
+
+  const { data: storedRow, error: storeError } = await query.maybeSingle()
+
+  if (storeError) {
+    throw storeError
+  }
+
+  return mapRecoverableWalletBundleStatus(
+    storedRow as Record<string, unknown> | null,
+    input.dappUserUuid
+  )
+}
+
+export async function getRecoverableWalletRecoveryBundleStatus(input: {
+  dappId: number | string
+  dappUserUuid: string
+  providerKey?: string | null
+  recoveryBundleId?: string | null
+  supabase: SupabaseClient
+}): Promise<RecoverableWalletBundleSafeStatus> {
+  await assertDappUserForRecoverableWalletBundle({
+    dappId: input.dappId,
+    dappUserUuid: input.dappUserUuid,
+    supabase: input.supabase,
+  })
+
+  let query = input.supabase
+    .schema("private")
+    .from("recoverable_wallet_recovery_bundles")
+    .select("*")
+    .eq("dapp_id", input.dappId)
+    .eq("dapp_user_uuid", input.dappUserUuid)
+
+  if (input.recoveryBundleId) {
+    query = query.eq("recovery_bundle_id", input.recoveryBundleId)
+  }
+
+  if (input.providerKey) {
+    query = query.eq("provider_key", normalizeProviderKey(input.providerKey))
+  }
+
+  const { data, error } = await query
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (error) {
+    throw error
+  }
+
+  return mapRecoverableWalletBundleStatus(
+    data as Record<string, unknown> | null,
+    input.dappUserUuid
+  )
+}

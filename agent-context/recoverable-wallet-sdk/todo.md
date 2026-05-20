@@ -53,11 +53,11 @@ visibility remains redacted.
 
 ### RW03. Add recovery-bundle storage schema
 
-- Status: Started
+- Status: Completed
 - Timestamp started: 2026-05-20T18:53:34Z
 - Timestamp completed: 2026-05-20T19:07:55Z
 - Feature branch: codex/recoverable-wallet-direction-reset
-- Head: TBD
+- Head: bcb2c37
 - Session-log reference(s): session: rw-v2, session: rw-v3
 
 Add service-role-only storage for app-scoped recovery bundle references and
@@ -69,12 +69,12 @@ envelope-encryption pattern.
 
 ### RW04. Add API v3 recovery-bundle enrollment and status routes
 
-- Status: Not started
-- Timestamp started: TBD
-- Timestamp completed: TBD
-- Feature branch: TBD
+- Status: Completed
+- Timestamp started: 2026-05-20T19:08:29Z
+- Timestamp completed: 2026-05-20T19:12:59Z
+- Feature branch: codex/recoverable-wallet-direction-reset
 - Head: TBD
-- Session-log reference(s): TBD
+- Session-log reference(s): session: rw-v4, session: rw-v5
 
 Add dapp-authenticated API v3 routes for creating/updating a recovery bundle
 reference and checking recovery status without exposing bundle contents.

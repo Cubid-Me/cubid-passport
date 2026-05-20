@@ -32,6 +32,8 @@ import verifyEmailOtpHandler from "../pages/api/v2/email/verify_otp"
 import saveSecretV2Handler from "../pages/api/v2/save_secret"
 import generateAccountV3Handler from "../pages/api/v3/accounts/generate"
 import listAccountsV3Handler from "../pages/api/v3/accounts/list"
+import enrollRecoveryBundleV3Handler from "../pages/api/v3/recovery-bundles/enroll"
+import recoveryBundleStatusV3Handler from "../pages/api/v3/recovery-bundles/status"
 import saveSecretV3Handler from "../pages/api/v3/save_secret"
 import cancelSiwcSigningRequestHandler from "../pages/api/v3/signing/requests/cancel"
 import createSiwcSigningRequestHandler from "../pages/api/v3/signing/requests/create"
@@ -3355,6 +3357,199 @@ test("Passport v3 save_secret rejects dapp-id mismatches and rate-limit denials"
   )
   assert.equal(rateLimitedRes.statusCode, 429)
   assert.equal(supabase.privateDappUserSecrets.length, 0)
+})
+
+test("Passport v3 recovery bundle enrollment stores encrypted bundle metadata only", async () => {
+  const supabase = new MockPassportSupabase()
+  const apiKey = addDappAuth(supabase)
+  const dappUserUuid = "00000000-0000-4000-8000-000000000260"
+  supabase.setDappUser({ dapp_id: 42, user_id: 1234, uuid: dappUserUuid })
+  setPassportSupabaseForTests(supabase as never)
+
+  const res = createApiResponse()
+  await enrollRecoveryBundleV3Handler(
+    createApiRequest({
+      body: {
+        api_key: apiKey,
+        bundle_material: "recoverable-wallet-client-share",
+        bundle_version: 1,
+        dapp_user_uuid: dappUserUuid,
+        provider_key: "cubid",
+        recovery_bundle_id: "rw_bundle_test_primary",
+        recovery_reference: "provider-reference-1",
+      },
+      headers: {
+        "idempotency-key": "recovery-bundle-enroll-primary",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/recovery-bundles/enroll",
+    }),
+    res
+  )
+
+  assert.equal(res.statusCode, 200)
+  const data = (res.body as DataResponse<Record<string, unknown>>).data
+  assert.equal(data.recoveryBundleId, "rw_bundle_test_primary")
+  assert.equal(data.dappUserUuid, dappUserUuid)
+  assert.equal(data.providerKey, "cubid")
+  assert.equal(data.status, "active")
+  assert.equal(JSON.stringify(res.body).includes("bundle_material"), false)
+  assert.equal(JSON.stringify(res.body).includes("ciphertext"), false)
+  assert.equal(JSON.stringify(res.body).includes("wrapped_data_key"), false)
+  assert.equal(JSON.stringify(res.body).includes("auth_tag"), false)
+  assert.equal(supabase.recoverableWalletRecoveryBundles.length, 1)
+
+  const storedBundle = supabase.recoverableWalletRecoveryBundles[0]
+  assert.equal(
+    storedBundle.encryption_key_id,
+    "passport_recoverable_wallet_recovery_bundle_wrapping_key_v1"
+  )
+  assert.equal(storedBundle.encryption_algorithm, "aes-256-gcm-envelope")
+  assert.notEqual(
+    storedBundle.bundle_ciphertext,
+    "recoverable-wallet-client-share"
+  )
+  assert.equal(
+    String(storedBundle.bundle_ciphertext).includes(
+      "recoverable-wallet-client-share"
+    ),
+    false
+  )
+})
+
+test("Passport v3 recovery bundle status returns safe metadata and not enrolled state", async () => {
+  const supabase = new MockPassportSupabase()
+  const apiKey = addDappAuth(supabase)
+  const dappUserUuid = "00000000-0000-4000-8000-000000000261"
+  supabase.setDappUser({ dapp_id: 42, user_id: 1234, uuid: dappUserUuid })
+  setPassportSupabaseForTests(supabase as never)
+
+  const emptyRes = createApiResponse()
+  await recoveryBundleStatusV3Handler(
+    createApiRequest({
+      body: {
+        api_key: apiKey,
+        dapp_user_uuid: dappUserUuid,
+      },
+      headers: {
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/recovery-bundles/status",
+    }),
+    emptyRes
+  )
+
+  assert.equal(emptyRes.statusCode, 200)
+  assert.equal(
+    (emptyRes.body as DataResponse<Record<string, unknown>>).data.status,
+    "not_enrolled"
+  )
+
+  const enrollRes = createApiResponse()
+  await enrollRecoveryBundleV3Handler(
+    createApiRequest({
+      body: {
+        api_key: apiKey,
+        bundle_material: "status-visible-client-share",
+        dapp_user_uuid: dappUserUuid,
+        provider_key: "cubid",
+        recovery_bundle_id: "rw_bundle_status_visible",
+      },
+      headers: {
+        "idempotency-key": "recovery-bundle-status-visible",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/recovery-bundles/enroll",
+    }),
+    enrollRes
+  )
+
+  const statusRes = createApiResponse()
+  await recoveryBundleStatusV3Handler(
+    createApiRequest({
+      body: {
+        api_key: apiKey,
+        dapp_user_uuid: dappUserUuid,
+        recovery_bundle_id: "rw_bundle_status_visible",
+      },
+      headers: {
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/recovery-bundles/status",
+    }),
+    statusRes
+  )
+
+  assert.equal(statusRes.statusCode, 200)
+  const data = (statusRes.body as DataResponse<Record<string, unknown>>).data
+  assert.equal(data.recoveryBundleId, "rw_bundle_status_visible")
+  assert.equal(data.status, "active")
+  assert.equal(JSON.stringify(statusRes.body).includes("bundle_ciphertext"), false)
+  assert.equal(JSON.stringify(statusRes.body).includes("wrapped_data_key"), false)
+  assert.equal(JSON.stringify(statusRes.body).includes("client-share"), false)
+})
+
+test("Passport v3 recovery bundle APIs reject cross-dapp users and replay idempotent enrollment", async () => {
+  const supabase = new MockPassportSupabase()
+  const apiKey = addDappAuth(supabase)
+  const dappUserUuid = "00000000-0000-4000-8000-000000000262"
+  supabase.setDappUser({ dapp_id: 42, user_id: 1234, uuid: dappUserUuid })
+  supabase.setDappUser({
+    dapp_id: 99,
+    user_id: 9999,
+    uuid: "00000000-0000-4000-8000-000000000263",
+  })
+  setPassportSupabaseForTests(supabase as never)
+
+  const body = {
+    api_key: apiKey,
+    bundle_material: "idempotent-client-share",
+    dapp_user_uuid: dappUserUuid,
+    recovery_bundle_id: "rw_bundle_idempotent",
+  }
+  const makeReq = () =>
+    createApiRequest({
+      body,
+      headers: {
+        "idempotency-key": "recovery-bundle-idempotent",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/recovery-bundles/enroll",
+    })
+
+  const firstRes = createApiResponse()
+  await enrollRecoveryBundleV3Handler(makeReq(), firstRes)
+  const replayRes = createApiResponse()
+  await enrollRecoveryBundleV3Handler(makeReq(), replayRes)
+
+  assert.equal(firstRes.statusCode, 200)
+  assert.equal(replayRes.statusCode, 200)
+  assert.deepEqual(replayRes.body, firstRes.body)
+  assert.equal(supabase.recoverableWalletRecoveryBundles.length, 1)
+
+  const crossDappRes = createApiResponse()
+  await enrollRecoveryBundleV3Handler(
+    createApiRequest({
+      body: {
+        api_key: apiKey,
+        bundle_material: "cross-dapp-client-share",
+        dapp_user_uuid: "00000000-0000-4000-8000-000000000263",
+      },
+      headers: {
+        "idempotency-key": "recovery-bundle-cross-dapp",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/recovery-bundles/enroll",
+    }),
+    crossDappRes
+  )
+
+  assert.equal(crossDappRes.statusCode, 404)
+  assert.equal(
+    (crossDappRes.body as { error: { code: string } }).error.code,
+    "not_found"
+  )
+  assert.equal(supabase.recoverableWalletRecoveryBundles.length, 1)
 })
 
 test.skip("legacy Cubid account generation encrypted private keys and linked the triggering dapp user", async () => {
