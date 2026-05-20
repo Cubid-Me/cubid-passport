@@ -7133,3 +7133,37 @@ user-authorized release route landed.
 #### Follow-up
 
 - add rotation, revocation, visibility, and audit events for recovery bundles
+
+### session: v222
+
+- timestamp: 2026-05-20T19:21:16Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`154f668`**
+- session name: **Implement RW06 recovery lifecycle controls**
+
+#### Objective
+
+Add the recovery bundle lifecycle controls needed after enrollment and release:
+rotation, revocation, user-visible state, and audit events.
+
+#### Actions Taken
+
+- added dapp-authenticated recovery bundle rotation and revocation routes
+- added Passport user-authenticated recovery bundle list visibility
+- added lifecycle audit events for enroll, update, release, rotate, and revoke
+- kept all lifecycle responses redacted of bundle material and encrypted custody
+  fields
+- updated API v3 and recoverable-wallet docs
+- added Passport route coverage for rotation, revocation, visibility, and audit
+  evidence
+
+#### Verification
+
+- `pnpm --filter @cubid/passport test`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+
+#### Follow-up
+
+- start `RW07` for browser-safe recovery error taxonomy

@@ -85,6 +85,9 @@ RW04 adds the first dapp-authenticated recovery-bundle APIs:
 - `POST /api/v3/recovery-bundles/status`
 - `POST /api/v3/recovery-bundles/release/start`
 - `POST /api/recovery-bundles/release/complete`
+- `POST /api/v3/recovery-bundles/rotate`
+- `POST /api/v3/recovery-bundles/revoke`
+- `POST /api/recovery-bundles/list`
 
 Enrollment accepts a dapp API key, `dapp_user_uuid`, opaque bundle material,
 provider metadata, and an optional caller-provided `recovery_bundle_id`.
@@ -109,6 +112,16 @@ in user maps to the Cubid user bound to the recovery session, rejects expired or
 already-consumed sessions, decrypts the bundle, marks the session consumed, and
 returns the bundle material only to the verified browser/client path. This is
 the only RW05 path that returns recovery material.
+
+Rotation is dapp-authenticated and idempotent. It marks the current active
+bundle `rotated`, writes a new encrypted active bundle with an incremented
+version, and returns only safe metadata for the replacement bundle. Revocation
+is dapp-authenticated and marks the bundle `revoked`; revoked bundles cannot be
+released by the user completion flow.
+
+Passport users can list their recovery bundles through the user-authenticated
+visibility route. The list includes lifecycle state such as active, rotated, and
+revoked, but never includes bundle material or encrypted custody fields.
 
 ## Ownership Boundary
 

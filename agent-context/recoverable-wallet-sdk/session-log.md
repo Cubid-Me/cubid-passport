@@ -251,3 +251,37 @@ release landed.
 
 - add dapp-authenticated rotation/revocation APIs plus safe user/Admin
   visibility and lifecycle audit events
+
+### session: rw-v9
+
+- timestamp: 2026-05-20T19:21:16Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`154f668`**
+- session name: **Implement RW06 recovery lifecycle controls**
+
+#### Objective
+
+Add recovery bundle rotation, revocation, user-visible lifecycle state, and
+audit events without exposing recovery material or encrypted custody fields.
+
+#### Actions Taken
+
+- added dapp-authenticated recovery bundle rotation
+- added dapp-authenticated recovery bundle revocation
+- added Passport user-authenticated recovery bundle list visibility
+- added recovery lifecycle audit events for enroll, update, release, rotate,
+  and revoke
+- documented lifecycle routes and redaction requirements
+- added Passport tests for rotation, revocation, user visibility, redaction, and
+  lifecycle audit events
+
+#### Verification
+
+- `pnpm --filter @cubid/passport test`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+
+#### Follow-up
+
+- start `RW07` for the browser-safe recovery error taxonomy

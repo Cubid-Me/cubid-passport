@@ -99,12 +99,12 @@ recovery material through backend credentials alone.
 
 ### RW06. Add recovery rotation and revocation
 
-- Status: Started
+- Status: Completed
 - Timestamp started: 2026-05-20T19:17:50Z
-- Timestamp completed: TBD
+- Timestamp completed: 2026-05-20T19:21:16Z
 - Feature branch: codex/recoverable-wallet-direction-reset
-- Head: 9186853
-- Session-log reference(s): session: rw-v8
+- Head: TBD
+- Session-log reference(s): session: rw-v8, session: rw-v9
 
 Support stale bundle invalidation after recovery, passkey re-enrollment, or
 app-side rotation. Add routes and Admin/Passport visibility for revoked,

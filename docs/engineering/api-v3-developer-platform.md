@@ -45,6 +45,12 @@ The current backend-owned API v3 routes are:
   one-time recovery release completion. This is intentionally not a dapp API v3
   credential route because it may return recovery material to the verified
   browser/client path.
+- `POST /api/v3/recovery-bundles/rotate`: dapp-authenticated recovery bundle
+  rotation that retires the previous active bundle and stores a replacement.
+- `POST /api/v3/recovery-bundles/revoke`: dapp-authenticated recovery bundle
+  revocation.
+- `POST /api/recovery-bundles/list`: Passport user-authenticated redacted
+  recovery bundle lifecycle visibility.
 
 Existing `/api/v2/*` routes remain legacy compatibility surfaces unless a
 future todo explicitly promotes a capability into API v3. New developer-facing
@@ -230,6 +236,46 @@ Rules:
   material to the verified browser/client path.
 - Replays return `409 recovery_session_consumed`; expired sessions return
   `410 recovery_session_expired`; wrong users return `403 wrong_user`.
+
+### `POST /api/v3/recovery-bundles/rotate`
+
+Purpose: rotate an app-scoped recovery bundle after recovery, app-side share
+rotation, passkey changes, or provider-side refresh.
+
+Rules:
+
+- `Idempotency-Key` is required.
+- The old bundle must be active and belong to the authenticated dapp user.
+- The old bundle is marked `rotated`; the replacement is encrypted and stored
+  as the next bundle version.
+- The response returns only safe metadata for the replacement bundle.
+- A `recoverable_wallet.bundle.rotated` event is recorded.
+
+### `POST /api/v3/recovery-bundles/revoke`
+
+Purpose: invalidate an app-scoped recovery bundle so it can no longer be used
+for release.
+
+Rules:
+
+- `dapp_user_uuid` must belong to the authenticated dapp.
+- The target bundle is marked `revoked`.
+- The response returns only safe metadata.
+- A `recoverable_wallet.bundle.revoked` event is recorded.
+
+### `POST /api/recovery-bundles/list`
+
+Purpose: show a signed-in Passport user their recovery bundle lifecycle state.
+This is user-facing visibility, not dapp credential access.
+
+Rules:
+
+- The request must include a valid Passport/Firebase bearer token.
+- The route lists bundles for Cubid users resolved from the signed-in email or
+  phone.
+- The response may include lifecycle state and timestamps, but never includes
+  bundle material, ciphertext, wrapped keys, IVs, auth tags, raw Cubid user ids,
+  or service-role metadata.
 
 ### `POST /api/v3/accounts/generate`
 

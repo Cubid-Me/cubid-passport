@@ -250,7 +250,42 @@ export async function assertDappUserForRecoverableWalletBundle(input: {
   }
 }
 
+async function writeRecoverableWalletSecurityEvent(input: {
+  actorIdentifier?: string | null
+  actorType: "dapp" | "user"
+  dappId?: number | string | null
+  dappUserUuid?: string | null
+  eventType: string
+  outcome: "failure" | "success"
+  recoveryBundleId?: string | null
+  recoverySessionId?: string | null
+  requestId: string
+  route: string
+  supabase: SupabaseClient
+}) {
+  const { error } = await input.supabase.from("api_security_events").insert({
+    actor_identifier: input.actorIdentifier ?? null,
+    actor_type: input.actorType,
+    details: {
+      dappId: input.dappId == null ? null : String(input.dappId),
+      dappUserUuid: input.dappUserUuid ?? null,
+      recoveryBundleId: input.recoveryBundleId ?? null,
+      recoverySessionId: input.recoverySessionId ?? null,
+    },
+    event_id: `api_event_${randomUUID().replace(/-/g, "")}`,
+    event_type: input.eventType,
+    outcome: input.outcome,
+    request_id: input.requestId,
+    route: input.route,
+  })
+
+  if (error) {
+    throw error
+  }
+}
+
 export async function enrollRecoverableWalletRecoveryBundle(input: {
+  actorIdentifier?: string | null
   bundleMaterial: string
   bundleVersion?: number | null
   dappId: number | string
@@ -336,6 +371,21 @@ export async function enrollRecoverableWalletRecoveryBundle(input: {
   if (storeError) {
     throw storeError
   }
+
+  await writeRecoverableWalletSecurityEvent({
+    actorIdentifier: input.actorIdentifier ?? null,
+    actorType: "dapp",
+    dappId: input.dappId,
+    dappUserUuid: input.dappUserUuid,
+    eventType: existingRow
+      ? "recoverable_wallet.bundle.updated"
+      : "recoverable_wallet.bundle.enrolled",
+    outcome: "success",
+    recoveryBundleId,
+    requestId: input.requestId,
+    route: "v3.recovery_bundles.enroll",
+    supabase: input.supabase,
+  })
 
   return mapRecoverableWalletBundleStatus(
     storedRow as Record<string, unknown> | null,
@@ -661,6 +711,20 @@ export async function releaseRecoverableWalletRecoveryBundle(input: {
     throw updateBundleError
   }
 
+  await writeRecoverableWalletSecurityEvent({
+    actorIdentifier: input.firebaseToken.uid,
+    actorType: "user",
+    dappId: session.dapp_id,
+    dappUserUuid: String(session.dapp_user_uuid),
+    eventType: "recoverable_wallet.bundle.released",
+    outcome: "success",
+    recoveryBundleId: String(session.recovery_bundle_id),
+    recoverySessionId: String(session.recovery_session_id),
+    requestId: input.requestId,
+    route: "passport.recovery_bundles.release.complete",
+    supabase: input.supabase,
+  })
+
   return {
     bundleMaterial,
     dappUserUuid: String(session.dapp_user_uuid),
@@ -670,4 +734,193 @@ export async function releaseRecoverableWalletRecoveryBundle(input: {
     releasedAt,
     status: "released",
   }
+}
+
+export async function rotateRecoverableWalletRecoveryBundle(input: {
+  actorIdentifier: string
+  bundleMaterial: string
+  dappId: number | string
+  dappUserUuid: string
+  expiresAt?: string | null
+  metadata?: Record<string, unknown> | null
+  newRecoveryBundleId?: string | null
+  providerKey?: string | null
+  recoveryBundleId: string
+  recoveryReference?: string | null
+  requestId: string
+  supabase: SupabaseClient
+}) {
+  const dappUser = await assertDappUserForRecoverableWalletBundle({
+    dappId: input.dappId,
+    dappUserUuid: input.dappUserUuid,
+    supabase: input.supabase,
+  })
+  const providerKey = normalizeProviderKey(input.providerKey)
+  const { data: existingBundle, error: existingError } = await input.supabase
+    .schema("private")
+    .from("recoverable_wallet_recovery_bundles")
+    .select("*")
+    .eq("dapp_id", input.dappId)
+    .eq("dapp_user_uuid", input.dappUserUuid)
+    .eq("user_id", dappUser.user_id)
+    .eq("provider_key", providerKey)
+    .eq("recovery_bundle_id", input.recoveryBundleId)
+    .eq("status", "active")
+    .maybeSingle()
+
+  if (existingError) {
+    throw existingError
+  }
+
+  if (!existingBundle) {
+    throw new ApiSecurityError(
+      404,
+      "not_found",
+      "Active recovery bundle was not found for rotation."
+    )
+  }
+
+  const rotatedAt = new Date().toISOString()
+  const { error: rotateError } = await input.supabase
+    .schema("private")
+    .from("recoverable_wallet_recovery_bundles")
+    .update({
+      rotated_at: rotatedAt,
+      status: "rotated",
+      updated_at: rotatedAt,
+    })
+    .eq("id", existingBundle.id)
+
+  if (rotateError) {
+    throw rotateError
+  }
+
+  const nextVersion = Number(existingBundle.bundle_version ?? 1) + 1
+  const rotated = await enrollRecoverableWalletRecoveryBundle({
+    actorIdentifier: input.actorIdentifier,
+    bundleMaterial: input.bundleMaterial,
+    bundleVersion: nextVersion,
+    dappId: input.dappId,
+    dappUserUuid: input.dappUserUuid,
+    expiresAt: input.expiresAt ?? null,
+    metadata: {
+      ...(input.metadata ?? {}),
+      rotatedFromRecoveryBundleId: input.recoveryBundleId,
+    },
+    providerKey,
+    recoveryBundleId: input.newRecoveryBundleId ?? null,
+    recoveryReference: input.recoveryReference ?? null,
+    requestId: input.requestId,
+    supabase: input.supabase,
+  })
+
+  await writeRecoverableWalletSecurityEvent({
+    actorIdentifier: input.actorIdentifier,
+    actorType: "dapp",
+    dappId: input.dappId,
+    dappUserUuid: input.dappUserUuid,
+    eventType: "recoverable_wallet.bundle.rotated",
+    outcome: "success",
+    recoveryBundleId: input.recoveryBundleId,
+    requestId: input.requestId,
+    route: "v3.recovery_bundles.rotate",
+    supabase: input.supabase,
+  })
+
+  return rotated
+}
+
+export async function revokeRecoverableWalletRecoveryBundle(input: {
+  actorIdentifier: string
+  dappId: number | string
+  dappUserUuid: string
+  providerKey?: string | null
+  recoveryBundleId: string
+  requestId: string
+  supabase: SupabaseClient
+}) {
+  const dappUser = await assertDappUserForRecoverableWalletBundle({
+    dappId: input.dappId,
+    dappUserUuid: input.dappUserUuid,
+    supabase: input.supabase,
+  })
+  const revokedAt = new Date().toISOString()
+  const query = input.supabase
+    .schema("private")
+    .from("recoverable_wallet_recovery_bundles")
+    .update({
+      revoked_at: revokedAt,
+      status: "revoked",
+      updated_at: revokedAt,
+    })
+    .eq("dapp_id", input.dappId)
+    .eq("dapp_user_uuid", input.dappUserUuid)
+    .eq("user_id", dappUser.user_id)
+    .eq("recovery_bundle_id", input.recoveryBundleId)
+    .eq("provider_key", normalizeProviderKey(input.providerKey))
+    .select("*")
+
+  const { data: revokedBundle, error } = await query.maybeSingle()
+
+  if (error) {
+    throw error
+  }
+
+  if (!revokedBundle) {
+    throw new ApiSecurityError(
+      404,
+      "not_found",
+      "Recovery bundle was not found for revocation."
+    )
+  }
+
+  await writeRecoverableWalletSecurityEvent({
+    actorIdentifier: input.actorIdentifier,
+    actorType: "dapp",
+    dappId: input.dappId,
+    dappUserUuid: input.dappUserUuid,
+    eventType: "recoverable_wallet.bundle.revoked",
+    outcome: "success",
+    recoveryBundleId: input.recoveryBundleId,
+    requestId: input.requestId,
+    route: "v3.recovery_bundles.revoke",
+    supabase: input.supabase,
+  })
+
+  return mapRecoverableWalletBundleStatus(
+    revokedBundle as Record<string, unknown>,
+    input.dappUserUuid
+  )
+}
+
+export async function listRecoverableWalletRecoveryBundlesForUser(input: {
+  firebaseToken: DecodedIdToken
+  supabase: SupabaseClient
+}): Promise<RecoverableWalletBundleSafeStatus[]> {
+  const userIds = await resolveUserIdsFromFirebaseToken(
+    input.supabase,
+    input.firebaseToken
+  )
+
+  if (userIds.size === 0) {
+    return []
+  }
+
+  const { data, error } = await input.supabase
+    .schema("private")
+    .from("recoverable_wallet_recovery_bundles")
+    .select("*")
+    .in("user_id", [...userIds])
+    .order("updated_at", { ascending: false })
+
+  if (error) {
+    throw error
+  }
+
+  return (data ?? []).map((row) =>
+    mapRecoverableWalletBundleStatus(
+      row as Record<string, unknown>,
+      String(row.dapp_user_uuid)
+    )
+  )
 }

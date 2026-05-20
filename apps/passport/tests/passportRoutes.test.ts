@@ -33,8 +33,11 @@ import saveSecretV2Handler from "../pages/api/v2/save_secret"
 import generateAccountV3Handler from "../pages/api/v3/accounts/generate"
 import listAccountsV3Handler from "../pages/api/v3/accounts/list"
 import completeRecoveryReleaseHandler from "../pages/api/recovery-bundles/release/complete"
+import listRecoveryBundlesHandler from "../pages/api/recovery-bundles/list"
 import enrollRecoveryBundleV3Handler from "../pages/api/v3/recovery-bundles/enroll"
+import rotateRecoveryBundleV3Handler from "../pages/api/v3/recovery-bundles/rotate"
 import startRecoveryReleaseV3Handler from "../pages/api/v3/recovery-bundles/release/start"
+import revokeRecoveryBundleV3Handler from "../pages/api/v3/recovery-bundles/revoke"
 import recoveryBundleStatusV3Handler from "../pages/api/v3/recovery-bundles/status"
 import saveSecretV3Handler from "../pages/api/v3/save_secret"
 import cancelSiwcSigningRequestHandler from "../pages/api/v3/signing/requests/cancel"
@@ -3798,6 +3801,144 @@ test("Passport user recovery release rejects wrong users and expired sessions", 
     (expiredRes.body as { error: { code: string } }).error.code,
     "recovery_session_expired"
   )
+})
+
+test("Passport v3 recovery bundle rotation retires the prior active bundle", async () => {
+  const supabase = new MockPassportSupabase()
+  const apiKey = addDappAuth(supabase)
+  const dappUserUuid = "00000000-0000-4000-8000-000000000267"
+  supabase.setUser({ email: "person@example.com", id: 1234 })
+  supabase.setDappUser({ dapp_id: 42, user_id: 1234, uuid: dappUserUuid })
+  setPassportSupabaseForTests(supabase as never)
+
+  await enrollRecoveryBundleV3Handler(
+    createApiRequest({
+      body: {
+        api_key: apiKey,
+        bundle_material: "old-client-share",
+        dapp_user_uuid: dappUserUuid,
+        recovery_bundle_id: "rw_bundle_rotate_old",
+      },
+      headers: {
+        "idempotency-key": "recovery-rotate-enroll",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/recovery-bundles/enroll",
+    }),
+    createApiResponse()
+  )
+
+  const rotateRes = createApiResponse()
+  await rotateRecoveryBundleV3Handler(
+    createApiRequest({
+      body: {
+        api_key: apiKey,
+        bundle_material: "new-client-share",
+        dapp_user_uuid: dappUserUuid,
+        new_recovery_bundle_id: "rw_bundle_rotate_new",
+        recovery_bundle_id: "rw_bundle_rotate_old",
+      },
+      headers: {
+        "idempotency-key": "recovery-rotate-primary",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/recovery-bundles/rotate",
+    }),
+    rotateRes
+  )
+
+  assert.equal(rotateRes.statusCode, 200)
+  const data = (rotateRes.body as DataResponse<Record<string, unknown>>).data
+  assert.equal(data.recoveryBundleId, "rw_bundle_rotate_new")
+  assert.equal(data.bundleVersion, 2)
+  assert.equal(supabase.recoverableWalletRecoveryBundles.length, 2)
+  assert.equal(supabase.recoverableWalletRecoveryBundles[0].status, "rotated")
+  assert.equal(supabase.recoverableWalletRecoveryBundles[1].status, "active")
+  assert.equal(JSON.stringify(rotateRes.body).includes("new-client-share"), false)
+  assert.equal(
+    supabase.eventInserts.some(
+      (event) => event.event_type === "recoverable_wallet.bundle.rotated"
+    ),
+    true
+  )
+})
+
+test("Passport v3 recovery bundle revocation and user list return redacted lifecycle state", async () => {
+  const supabase = new MockPassportSupabase()
+  const apiKey = addDappAuth(supabase)
+  const dappUserUuid = "00000000-0000-4000-8000-000000000268"
+  supabase.setUser({ email: "person@example.com", id: 1234 })
+  supabase.setDappUser({ dapp_id: 42, user_id: 1234, uuid: dappUserUuid })
+  setPassportSupabaseForTests(supabase as never)
+  addFirebaseUserAuth()
+
+  await enrollRecoveryBundleV3Handler(
+    createApiRequest({
+      body: {
+        api_key: apiKey,
+        bundle_material: "revoked-client-share",
+        dapp_user_uuid: dappUserUuid,
+        recovery_bundle_id: "rw_bundle_revoke",
+      },
+      headers: {
+        "idempotency-key": "recovery-revoke-enroll",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/recovery-bundles/enroll",
+    }),
+    createApiResponse()
+  )
+
+  const revokeRes = createApiResponse()
+  await revokeRecoveryBundleV3Handler(
+    createApiRequest({
+      body: {
+        api_key: apiKey,
+        dapp_user_uuid: dappUserUuid,
+        recovery_bundle_id: "rw_bundle_revoke",
+      },
+      headers: {
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/recovery-bundles/revoke",
+    }),
+    revokeRes
+  )
+
+  assert.equal(revokeRes.statusCode, 200)
+  assert.equal(
+    (revokeRes.body as DataResponse<Record<string, unknown>>).data.status,
+    "revoked"
+  )
+  assert.equal(
+    supabase.eventInserts.some(
+      (event) => event.event_type === "recoverable_wallet.bundle.revoked"
+    ),
+    true
+  )
+
+  const listRes = createApiResponse()
+  await listRecoveryBundlesHandler(
+    createApiRequest({
+      body: {},
+      headers: {
+        authorization: "Bearer firebase-test-token",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/recovery-bundles/list",
+    }),
+    listRes
+  )
+
+  assert.equal(listRes.statusCode, 200)
+  const listData = (listRes.body as DataResponse<Array<Record<string, unknown>>>)
+    .data
+  assert.equal(listData.length, 1)
+  assert.equal(listData[0].status, "revoked")
+  assert.equal(listData[0].recoveryBundleId, "rw_bundle_revoke")
+  assert.equal(JSON.stringify(listRes.body).includes("revoked-client-share"), false)
+  assert.equal(JSON.stringify(listRes.body).includes("bundle_ciphertext"), false)
+  assert.equal(JSON.stringify(listRes.body).includes("wrapped_data_key"), false)
 })
 
 test.skip("legacy Cubid account generation encrypted private keys and linked the triggering dapp user", async () => {
