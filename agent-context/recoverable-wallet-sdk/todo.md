@@ -88,7 +88,7 @@ timestamps, recovery eligibility, cooldown state, and audit references.
 - Timestamp started: 2026-05-20T19:13:33Z
 - Timestamp completed: 2026-05-20T19:17:18Z
 - Feature branch: codex/recoverable-wallet-direction-reset
-- Head: TBD
+- Head: 9186853
 - Session-log reference(s): session: rw-v6, session: rw-v7
 
 Add Passport-hosted recovery verification routes that release recovery material
@@ -99,12 +99,12 @@ recovery material through backend credentials alone.
 
 ### RW06. Add recovery rotation and revocation
 
-- Status: Not started
-- Timestamp started: TBD
+- Status: Started
+- Timestamp started: 2026-05-20T19:17:50Z
 - Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Feature branch: codex/recoverable-wallet-direction-reset
+- Head: 9186853
+- Session-log reference(s): session: rw-v8
 
 Support stale bundle invalidation after recovery, passkey re-enrollment, or
 app-side rotation. Add routes and Admin/Passport visibility for revoked,

@@ -7106,3 +7106,30 @@ limited to release-session creation and status metadata.
 #### Follow-up
 
 - start `RW06` for recovery rotation and revocation
+
+### session: v221
+
+- timestamp: 2026-05-20T19:17:50Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`9186853`**
+- session name: **Start RW06 recovery rotation and revocation**
+
+#### Objective
+
+Start the recovery lifecycle-management follow-up after the Passport
+user-authorized release route landed.
+
+#### Actions Taken
+
+- recorded the RW05 commit SHA in the recoverable-wallet roadmap
+- marked `RW06` started with current branch/head metadata
+- added the feature-folder session-log handoff entry
+
+#### Verification
+
+- not run; metadata-only handoff
+
+#### Follow-up
+
+- add rotation, revocation, visibility, and audit events for recovery bundles

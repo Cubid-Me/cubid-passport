@@ -224,3 +224,30 @@ credentials unable to retrieve recovery material.
 #### Follow-up
 
 - start `RW06` for recovery rotation and revocation
+
+### session: rw-v8
+
+- timestamp: 2026-05-20T19:17:50Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`9186853`**
+- session name: **Start RW06 recovery rotation and revocation**
+
+#### Objective
+
+Start the recovery bundle lifecycle-management slice after user-authorized
+release landed.
+
+#### Actions Taken
+
+- recorded the `RW05` implementation head
+- marked `RW06` started on the same feature branch
+
+#### Verification
+
+- not run; metadata handoff before implementation
+
+#### Follow-up
+
+- add dapp-authenticated rotation/revocation APIs plus safe user/Admin
+  visibility and lifecycle audit events
