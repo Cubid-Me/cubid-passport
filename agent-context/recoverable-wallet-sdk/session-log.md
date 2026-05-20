@@ -401,3 +401,30 @@ backend routes and error codes landed.
 #### Follow-up
 
 - start `RW09` by updating the SmarTrust recovery-only handoff
+
+### session: rw-v14
+
+- timestamp: 2026-05-20T19:28:42Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`571fa36`**
+- session name: **Start RW09 SmarTrust handoff**
+
+#### Objective
+
+Start the SmarTrust recovery-only reply after SDK package direction was
+coordinated.
+
+#### Actions Taken
+
+- recorded the `RW08` implementation head
+- marked `RW09` started on the same feature branch
+
+#### Verification
+
+- not run; metadata handoff before implementation
+
+#### Follow-up
+
+- update the SmarTrust sibling thread with committed route names, blocked
+  surfaces, SmarTrust-owned responsibilities, and smoke guidance

@@ -132,7 +132,7 @@ Coordinate these codes with `Cubid-Me/cubid-sdk` through cross-repo comms.
 - Timestamp started: 2026-05-20T19:27:09Z
 - Timestamp completed: 2026-05-20T19:28:10Z
 - Feature branch: codex/recoverable-wallet-direction-reset
-- Head: TBD
+- Head: 571fa36
 - Session-log reference(s): session: rw-v12, session: rw-v13
 
 Write a handoff note to `Cubid-Me/cubid-sdk` describing the new package family
@@ -142,12 +142,12 @@ helpers and build toward provider-abstract recoverable wallet packages.
 
 ### RW09. Reply to SmarTrust recovery-only handoff
 
-- Status: Not started
-- Timestamp started: TBD
+- Status: Started
+- Timestamp started: 2026-05-20T19:28:42Z
 - Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Feature branch: codex/recoverable-wallet-direction-reset
+- Head: 571fa36
+- Session-log reference(s): session: rw-v14
 
 Update the SmarTrust sibling note with Cubid's committed direction, planned API
 names, what is blocked, and what SmarTrust should build itself. Reference

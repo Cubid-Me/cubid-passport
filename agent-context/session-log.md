@@ -7283,3 +7283,31 @@ recoverable-wallet backend surfaces exist.
 #### Follow-up
 
 - start `RW09` for the SmarTrust recovery-only handoff
+
+### session: v227
+
+- timestamp: 2026-05-20T19:28:42Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`571fa36`**
+- session name: **Start RW09 SmarTrust handoff**
+
+#### Objective
+
+Start the SmarTrust recovery-only handoff after SDK package direction was
+coordinated.
+
+#### Actions Taken
+
+- recorded the RW08 commit SHA in the recoverable-wallet roadmap
+- marked `RW09` started with current branch/head metadata
+- added the feature-folder session-log handoff entry
+
+#### Verification
+
+- not run; metadata-only handoff
+
+#### Follow-up
+
+- update the SmarTrust cross-repo thread with current Passport recovery API
+  contracts and SmarTrust-owned responsibilities
