@@ -7226,3 +7226,31 @@ coordinate the contract with the public SDK repo.
 #### Follow-up
 
 - start `RW08` for SDK package direction coordination
+
+### session: v225
+
+- timestamp: 2026-05-20T19:27:09Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`1c72827`**
+- session name: **Start RW08 SDK coordination**
+
+#### Objective
+
+Start coordinating the public SDK package direction now that Passport has
+concrete recovery-bundle APIs and error codes.
+
+#### Actions Taken
+
+- recorded the RW07 commit SHA in the recoverable-wallet roadmap
+- marked `RW08` started with current branch/head metadata
+- added the feature-folder session-log handoff entry
+
+#### Verification
+
+- not run; metadata-only handoff
+
+#### Follow-up
+
+- update the SDK direction cross-repo note with concrete backend route and
+  package-boundary guidance

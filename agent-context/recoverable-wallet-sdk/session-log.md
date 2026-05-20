@@ -344,3 +344,30 @@ without adding public SDK implementation to this repo.
 #### Follow-up
 
 - start `RW08` for SDK package direction coordination
+
+### session: rw-v12
+
+- timestamp: 2026-05-20T19:27:09Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`1c72827`**
+- session name: **Start RW08 SDK coordination**
+
+#### Objective
+
+Start SDK coordination after the backend recovery routes and browser-safe error
+taxonomy landed.
+
+#### Actions Taken
+
+- recorded the `RW07` implementation head
+- marked `RW08` started on the same feature branch
+
+#### Verification
+
+- not run; metadata handoff before implementation
+
+#### Follow-up
+
+- update cross-repo comms with the concrete recoverable-wallet package
+  direction, route surfaces, and deprecated generated-wallet/signing helpers

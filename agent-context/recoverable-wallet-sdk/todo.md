@@ -118,7 +118,7 @@ cooldown denial.
 - Timestamp started: 2026-05-20T19:21:49Z
 - Timestamp completed: 2026-05-20T19:26:38Z
 - Feature branch: codex/recoverable-wallet-direction-reset
-- Head: TBD
+- Head: 1c72827
 - Session-log reference(s): session: rw-v10, session: rw-v11
 
 Standardize public error codes for recovery flows: cancelled, expired, wrong
@@ -128,12 +128,12 @@ Coordinate these codes with `Cubid-Me/cubid-sdk` through cross-repo comms.
 
 ### RW08. Coordinate SDK package direction
 
-- Status: Not started
-- Timestamp started: TBD
+- Status: Started
+- Timestamp started: 2026-05-20T19:27:09Z
 - Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Feature branch: codex/recoverable-wallet-direction-reset
+- Head: 1c72827
+- Session-log reference(s): session: rw-v12
 
 Write a handoff note to `Cubid-Me/cubid-sdk` describing the new package family
 and boundaries from the spec. SDK work belongs there, not in this repo. The
