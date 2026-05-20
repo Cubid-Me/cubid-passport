@@ -6882,3 +6882,32 @@ for the flexible messaging MVP.
 #### Follow-up
 
 - continue with `FM09` auditability and delivery-status APIs
+### session: v214
+
+- timestamp: 2026-05-20T18:46:01Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`f288f35`**
+- session name: **Preserve recoverable wallet direction reset**
+
+#### Objective
+
+Anchor the new app-recoverable wallet direction before changing repo behavior.
+
+#### Actions Taken
+
+- preserved the recoverable wallet SDK agent specification as the new product
+  direction source for passkey-first, app-mediated, recoverable embedded
+  wallets
+- preserved the new SmarTrust recovery-only cross-repo handoff
+- preserved the old SmarTrust wallet-generation/signing thread as archived and
+  superseded
+
+#### Verification
+
+- `git diff --check`
+
+#### Follow-up
+
+- rewrite wallet/SIWC docs and roadmap metadata, then hard-disable Cubid
+  wallet generation and normal signing surfaces
