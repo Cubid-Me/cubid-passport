@@ -285,3 +285,30 @@ audit events without exposing recovery material or encrypted custody fields.
 #### Follow-up
 
 - start `RW07` for the browser-safe recovery error taxonomy
+
+### session: rw-v10
+
+- timestamp: 2026-05-20T19:21:49Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`0afeb5e`**
+- session name: **Start RW07 recovery error taxonomy**
+
+#### Objective
+
+Start the browser-safe recovery error taxonomy slice after recovery lifecycle
+controls landed.
+
+#### Actions Taken
+
+- recorded the `RW06` implementation head
+- marked `RW07` started on the same feature branch
+
+#### Verification
+
+- not run; metadata handoff before implementation
+
+#### Follow-up
+
+- standardize recovery error codes in docs and backend constants, then send the
+  SDK-facing handoff through cross-repo comms

@@ -7167,3 +7167,31 @@ rotation, revocation, user-visible state, and audit events.
 #### Follow-up
 
 - start `RW07` for browser-safe recovery error taxonomy
+
+### session: v223
+
+- timestamp: 2026-05-20T19:21:49Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`0afeb5e`**
+- session name: **Start RW07 recovery error taxonomy**
+
+#### Objective
+
+Start standardizing recovery error codes after rotation, revocation, and
+user-visible lifecycle state landed.
+
+#### Actions Taken
+
+- recorded the RW06 commit SHA in the recoverable-wallet roadmap
+- marked `RW07` started with current branch/head metadata
+- added the feature-folder session-log handoff entry
+
+#### Verification
+
+- not run; metadata-only handoff
+
+#### Follow-up
+
+- document and code the browser-safe recovery error taxonomy, then coordinate
+  SDK impact through cross-repo comms
