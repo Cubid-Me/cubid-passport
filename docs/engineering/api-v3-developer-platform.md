@@ -237,6 +237,20 @@ Rules:
 - Replays return `409 recovery_session_consumed`; expired sessions return
   `410 recovery_session_expired`; wrong users return `403 wrong_user`.
 
+Browser-safe recovery error taxonomy:
+
+- `verification_required`
+- `wrong_user`
+- `recovery_session_expired`
+- `recovery_session_consumed`
+- `recovery_cancelled`
+- `unsupported_app_context`
+- `recovery_bundle_not_found`
+- `bundle_revoked`
+- `unavailable_credential`
+- `cooldown_active`
+- `provider_outage`
+
 ### `POST /api/v3/recovery-bundles/rotate`
 
 Purpose: rotate an app-scoped recovery bundle after recovery, app-side share

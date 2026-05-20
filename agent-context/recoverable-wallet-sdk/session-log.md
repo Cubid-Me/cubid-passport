@@ -312,3 +312,35 @@ controls landed.
 
 - standardize recovery error codes in docs and backend constants, then send the
   SDK-facing handoff through cross-repo comms
+
+### session: rw-v11
+
+- timestamp: 2026-05-20T19:26:38Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`9a86130`**
+- session name: **Implement RW07 recovery error taxonomy**
+
+#### Objective
+
+Standardize browser-safe recovery error codes and coordinate the SDK impact
+without adding public SDK implementation to this repo.
+
+#### Actions Taken
+
+- added shared backend constants for recoverable-wallet error codes
+- updated recovery routes to emit specific app-context, bundle-not-found,
+  consumed, expired, wrong-user, and revoked-bundle codes
+- documented the taxonomy in the recoverable-wallet and API v3 engineering docs
+- added a cross-repo comms note for `Cubid-Me/cubid-sdk` agents
+- extended Passport tests to assert the new app-context and revoked-bundle codes
+
+#### Verification
+
+- `pnpm --filter @cubid/passport test`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+
+#### Follow-up
+
+- start `RW08` for SDK package direction coordination

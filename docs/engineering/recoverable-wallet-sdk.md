@@ -123,6 +123,30 @@ Passport users can list their recovery bundles through the user-authenticated
 visibility route. The list includes lifecycle state such as active, rotated, and
 revoked, but never includes bundle material or encrypted custody fields.
 
+## Browser-Safe Error Taxonomy
+
+Recovery routes expose stable, browser-safe error codes so SDKs and host apps
+can decide whether to retry, restart, ask the user to sign in, or stop hard:
+
+- `verification_required`: the user must complete Passport/Cubid verification.
+- `wrong_user`: the signed-in Passport user does not match the recovery session.
+- `recovery_session_expired`: the recovery session is past its expiry.
+- `recovery_session_consumed`: the one-time recovery session was already used.
+- `recovery_cancelled`: the user or app cancelled the recovery flow.
+- `unsupported_app_context`: the dapp user or app context is not valid for the
+  authenticated app.
+- `recovery_bundle_not_found`: no matching bundle exists for the app/user.
+- `bundle_revoked`: the bundle exists but was revoked before release.
+- `unavailable_credential`: the needed passkey, account, or local credential is
+  unavailable in the browser context.
+- `cooldown_active`: recovery is temporarily blocked by cooldown policy.
+- `provider_outage`: a configured wallet/recovery provider is unavailable.
+
+Backend routes should avoid leaking whether a different app owns a user or
+bundle. SDKs should treat `unsupported_app_context` and
+`recovery_bundle_not_found` as hard app-context failures unless the user
+explicitly restarts enrollment.
+
 ## Ownership Boundary
 
 SmarTrust or another host app owns:

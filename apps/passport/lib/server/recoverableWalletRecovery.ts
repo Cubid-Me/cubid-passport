@@ -10,6 +10,8 @@ import {
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { DecodedIdToken } from "firebase-admin/auth"
 
+import { RECOVERABLE_WALLET_ERROR_CODES } from "./recoverableWalletErrors"
+
 export const RECOVERABLE_WALLET_RELEASE_SESSION_TTL_MS = 15 * 60 * 1000
 
 export const RECOVERABLE_WALLET_BUNDLE_ALGORITHM =
@@ -238,7 +240,7 @@ export async function assertDappUserForRecoverableWalletBundle(input: {
   if (!data || data.user_id == null) {
     throw new ApiSecurityError(
       404,
-      "not_found",
+      RECOVERABLE_WALLET_ERROR_CODES.unsupportedAppContext,
       "Dapp user was not found for the authenticated app."
     )
   }
@@ -493,9 +495,31 @@ export async function createRecoverableWalletRecoveryReleaseSession(input: {
   }
 
   if (!bundle) {
+    if (input.recoveryBundleId) {
+      const { data: unavailableBundle, error: unavailableError } =
+        await input.supabase
+          .schema("private")
+          .from("recoverable_wallet_recovery_bundles")
+          .select("status")
+          .eq("recovery_bundle_id", input.recoveryBundleId)
+          .maybeSingle()
+
+      if (unavailableError) {
+        throw unavailableError
+      }
+
+      if (unavailableBundle?.status === "revoked") {
+        throw new ApiSecurityError(
+          409,
+          RECOVERABLE_WALLET_ERROR_CODES.bundleRevoked,
+          "Recovery bundle has been revoked."
+        )
+      }
+    }
+
     throw new ApiSecurityError(
       404,
-      "not_found",
+      RECOVERABLE_WALLET_ERROR_CODES.bundleNotFound,
       "Recovery bundle was not found for the authenticated app."
     )
   }
@@ -592,7 +616,7 @@ export async function releaseRecoverableWalletRecoveryBundle(input: {
   if (!session) {
     throw new ApiSecurityError(
       404,
-      "not_found",
+      RECOVERABLE_WALLET_ERROR_CODES.bundleNotFound,
       "Recovery session was not found."
     )
   }
@@ -600,7 +624,7 @@ export async function releaseRecoverableWalletRecoveryBundle(input: {
   if (session.status !== "pending" || session.consumed_at) {
     throw new ApiSecurityError(
       409,
-      "recovery_session_consumed",
+      RECOVERABLE_WALLET_ERROR_CODES.consumed,
       "Recovery session has already been consumed."
     )
   }
@@ -616,7 +640,7 @@ export async function releaseRecoverableWalletRecoveryBundle(input: {
 
     throw new ApiSecurityError(
       410,
-      "recovery_session_expired",
+      RECOVERABLE_WALLET_ERROR_CODES.expired,
       "Recovery session has expired."
     )
   }
@@ -629,7 +653,7 @@ export async function releaseRecoverableWalletRecoveryBundle(input: {
   if (!userIds.has(String(session.user_id))) {
     throw new ApiSecurityError(
       403,
-      "wrong_user",
+      RECOVERABLE_WALLET_ERROR_CODES.wrongUser,
       "Signed-in Passport user does not match this recovery session."
     )
   }
@@ -652,9 +676,9 @@ export async function releaseRecoverableWalletRecoveryBundle(input: {
 
   if (!bundle) {
     throw new ApiSecurityError(
-      404,
-      "not_found",
-      "Active recovery bundle was not found for this session."
+      409,
+      RECOVERABLE_WALLET_ERROR_CODES.bundleRevoked,
+      "Recovery bundle is no longer active for this session."
     )
   }
 
@@ -693,7 +717,7 @@ export async function releaseRecoverableWalletRecoveryBundle(input: {
   if (!updatedSession) {
     throw new ApiSecurityError(
       409,
-      "recovery_session_consumed",
+      RECOVERABLE_WALLET_ERROR_CODES.consumed,
       "Recovery session has already been consumed."
     )
   }
@@ -775,7 +799,7 @@ export async function rotateRecoverableWalletRecoveryBundle(input: {
   if (!existingBundle) {
     throw new ApiSecurityError(
       404,
-      "not_found",
+      RECOVERABLE_WALLET_ERROR_CODES.bundleNotFound,
       "Active recovery bundle was not found for rotation."
     )
   }
@@ -869,7 +893,7 @@ export async function revokeRecoverableWalletRecoveryBundle(input: {
   if (!revokedBundle) {
     throw new ApiSecurityError(
       404,
-      "not_found",
+      RECOVERABLE_WALLET_ERROR_CODES.bundleNotFound,
       "Recovery bundle was not found for revocation."
     )
   }

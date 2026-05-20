@@ -114,12 +114,12 @@ cooldown denial.
 
 ### RW07. Define browser-safe recovery error taxonomy
 
-- Status: Started
+- Status: Completed
 - Timestamp started: 2026-05-20T19:21:49Z
-- Timestamp completed: TBD
+- Timestamp completed: 2026-05-20T19:26:38Z
 - Feature branch: codex/recoverable-wallet-direction-reset
-- Head: 0afeb5e
-- Session-log reference(s): session: rw-v10
+- Head: TBD
+- Session-log reference(s): session: rw-v10, session: rw-v11
 
 Standardize public error codes for recovery flows: cancelled, expired, wrong
 user, unavailable credential, unsupported app context, cooldown active,

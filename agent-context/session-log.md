@@ -7195,3 +7195,34 @@ user-visible lifecycle state landed.
 
 - document and code the browser-safe recovery error taxonomy, then coordinate
   SDK impact through cross-repo comms
+
+### session: v224
+
+- timestamp: 2026-05-20T19:26:38Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`9a86130`**
+- session name: **Implement RW07 recovery error taxonomy**
+
+#### Objective
+
+Make recoverable-wallet errors stable for browsers and SDK consumers, and
+coordinate the contract with the public SDK repo.
+
+#### Actions Taken
+
+- added recoverable-wallet error code constants
+- updated backend recovery flows to emit browser-safe error codes
+- documented the taxonomy and route mapping
+- added a live cross-repo comms handoff note for SDK agents
+- covered the changed error codes in Passport route tests
+
+#### Verification
+
+- `pnpm --filter @cubid/passport test`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+
+#### Follow-up
+
+- start `RW08` for SDK package direction coordination

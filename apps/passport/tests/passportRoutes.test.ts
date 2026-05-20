@@ -3552,7 +3552,7 @@ test("Passport v3 recovery bundle APIs reject cross-dapp users and replay idempo
   assert.equal(crossDappRes.statusCode, 404)
   assert.equal(
     (crossDappRes.body as { error: { code: string } }).error.code,
-    "not_found"
+    "unsupported_app_context"
   )
   assert.equal(supabase.recoverableWalletRecoveryBundles.length, 1)
 })
@@ -3889,6 +3889,24 @@ test("Passport v3 recovery bundle revocation and user list return redacted lifec
     createApiResponse()
   )
 
+  const startRes = createApiResponse()
+  await startRecoveryReleaseV3Handler(
+    createApiRequest({
+      body: {
+        api_key: apiKey,
+        dapp_user_uuid: dappUserUuid,
+        recovery_bundle_id: "rw_bundle_revoke",
+      },
+      headers: {
+        "idempotency-key": "recovery-revoke-start-before-revoke",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/recovery-bundles/release/start",
+    }),
+    startRes
+  )
+  assert.equal(startRes.statusCode, 200)
+
   const revokeRes = createApiResponse()
   await revokeRecoveryBundleV3Handler(
     createApiRequest({
@@ -3915,6 +3933,29 @@ test("Passport v3 recovery bundle revocation and user list return redacted lifec
       (event) => event.event_type === "recoverable_wallet.bundle.revoked"
     ),
     true
+  )
+
+  const revokedReleaseRes = createApiResponse()
+  await completeRecoveryReleaseHandler(
+    createApiRequest({
+      body: {
+        recovery_session_id: String(
+          (startRes.body as DataResponse<Record<string, unknown>>).data
+            .recoverySessionId
+        ),
+      },
+      headers: {
+        authorization: "Bearer firebase-test-token",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/recovery-bundles/release/complete",
+    }),
+    revokedReleaseRes
+  )
+  assert.equal(revokedReleaseRes.statusCode, 409)
+  assert.equal(
+    (revokedReleaseRes.body as { error: { code: string } }).error.code,
+    "bundle_revoked"
   )
 
   const listRes = createApiResponse()
