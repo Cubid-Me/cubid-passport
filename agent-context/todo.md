@@ -751,7 +751,7 @@ Translate the backgrounder’s product constraints into concrete engineering wor
 - Head: 969385a
 - Session-log reference(s): session: v160, session: v175
 
-Promote the SIWC side-roadmap into the main execution backlog as the next wallet-adjacent platform track. The Cubid foundation covers OIDC Login with Cubid, passkey-first auth, app-scoped identity, selective disclosure, API v3 encrypted dapp-user secrets, generated app-scoped blockchain accounts, signed webhook infrastructure, Passport-hosted signing approval, Admin signing policy controls, and SIWC production-readiness runbooks. This track delivered the backend/API-contract foundation for app-scoped custody and message or typed-data signing while keeping transaction signing, smart accounts, session keys, paymasters, and public SDK implementation explicitly deferred.
+Promote the SIWC side-roadmap into the main execution backlog as the wallet-adjacent platform track. This track originally delivered API-contract foundations for app-scoped generated accounts and Cubid normal signing, but that wallet-generation/signing direction is now superseded by the recoverable wallet SDK direction. Keep the still-valid foundations: OIDC Login with Cubid, passkey-first auth, app-scoped identity, selective disclosure, encrypted dapp-user secrets, signed webhook infrastructure, Admin policy patterns, and production-readiness runbooks. Treat Cubid-generated accounts and normal signing as legacy/quarantined surfaces, not the future product path.
 
 ### SIWC01. Define the v3 signing and transaction authorization architecture
 
@@ -774,6 +774,25 @@ Design the first decision-complete signing architecture for app-scoped custody a
 - Session-log reference(s): session: v161, session: v162, session: v163
 
 Add Admin-side controls that let operators configure whether an app may request generated accounts, which chains are enabled, whether signing is enabled, and which approval rules apply. This should extend the existing Admin control-plane pattern rather than creating a separate wallet dashboard. Include fields for allowed chains, custody mode, signing status, allowed signature types, transaction limits, optional contract allowlists, required passkey ACR, webhook event subscriptions, and sandbox/production behavior. Admin list/detail views must not expose private keys, ciphertext, wrapped data keys, Vault key material, or cross-app user identifiers. This todo should also decide how policy names and versions are surfaced to API v3 responses and audit logs, and should treat policy changes as SDK-impacting only when they alter public route or webhook semantics.
+
+### RW. Build Cubid recoverable wallet recovery-provider infrastructure
+
+- Status: Started
+- Timestamp started: 2026-05-20T18:46:01Z
+- Timestamp completed: TBD
+- Feature branch: codex/recoverable-wallet-direction-reset
+- Head: bd9de8e
+- Session-log reference(s): session: v214, session: rw-v1
+
+Replace the earlier Cubid-generated-wallet direction with passkey-first,
+app-mediated, recoverable embedded wallets. Cubid Passport should not generate
+wallets, perform normal signing, or hold itself out as a typical third-party
+wallet provider. The host app or specialist threshold/MPC infrastructure owns
+wallet creation, normal signing, and transaction broadcasting. Cubid owns
+identity-bound recovery-bundle storage/release, Passport recovery verification,
+auditability, and API/SDK coordination. Use
+`agent-context/recoverable-wallet-sdk/todo.md` as the active side roadmap for
+RW01-RW10.
 
 ## F. Hosted Delivery and Release Operations
 

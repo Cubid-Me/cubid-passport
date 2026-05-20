@@ -138,11 +138,12 @@ export default function SiwcPolicy() {
     <div className="p-3 text-white">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-xl">SIWC Policy</h2>
+          <h2 className="text-xl">Legacy SIWC Policy</h2>
           <p className="mt-1 max-w-3xl text-sm text-gray-400">
-            Configure whether each app can use app-scoped account custody and
-            future signing. These controls do not execute signing yet; they
-            define the policy SIWC signing routes must enforce later.
+            Historical app-scoped custody and signing policy visibility. Cubid
+            generated wallets and normal signing are deprecated; new wallet
+            work should use app-mediated recoverable wallets with Cubid
+            recovery bundles.
           </p>
           {generatedAt ? (
             <p className="mt-2 text-xs text-gray-500">
@@ -242,21 +243,27 @@ export default function SiwcPolicy() {
               <div className="mt-4 grid gap-3 md:grid-cols-3">
                 <PolicyCheckbox
                   checked={policy.custodyEnabled}
-                  label="Custody enabled"
+                  label="Legacy custody enabled"
                   onChange={() =>
-                    updatePolicy(policy.dappId, {
-                      custodyEnabled: !policy.custodyEnabled,
-                    })
+                    policy.custodyEnabled
+                      ? updatePolicy(policy.dappId, { custodyEnabled: false })
+                      : toast.info(
+                          'Legacy custody cannot be enabled for new integrations.'
+                        )
                   }
                 />
                 <PolicyCheckbox
                   checked={policy.signingEnabled}
-                  label="Signing enabled"
+                  label="Legacy signing enabled"
                   onChange={() =>
-                    updatePolicy(policy.dappId, {
-                      requiredAcr: !policy.signingEnabled ? PASSKEY_ACR : null,
-                      signingEnabled: !policy.signingEnabled,
-                    })
+                    policy.signingEnabled
+                      ? updatePolicy(policy.dappId, {
+                          requiredAcr: null,
+                          signingEnabled: false,
+                        })
+                      : toast.info(
+                          'Legacy signing cannot be enabled for new integrations.'
+                        )
                   }
                 />
                 <PolicyCheckbox

@@ -1,6 +1,6 @@
 # SIWC Roadmap: Sign In With Cubid
 
-Sign In With Cubid is the passkey-first, privacy-preserving, app-scoped identity and wallet-adjacent platform layer for Cubid. The product should combine OIDC login, hosted Passport UX, Admin policy controls, app-scoped identity, selective disclosure, proof-of-personhood signals, and optional app-scoped custody accounts without becoming a generic embedded-wallet clone.
+Sign In With Cubid is the passkey-first, privacy-preserving, app-scoped identity layer for Cubid. The older wallet-adjacent custody/signing direction in this file is now superseded for wallet generation and normal signing by `agent-context/recoverable-wallet-sdk/` and `docs/engineering/recoverable-wallet-sdk.md`.
 
 Source note: this file replaces a generic competitor-research implementation guide with a repo-grounded side roadmap. It should stay separate from `agent-context/todo.md` until the team chooses which SIWC work to promote into the main execution backlog.
 
@@ -10,12 +10,12 @@ Source note: this file replaces a generic competitor-research implementation gui
 - Passkey work is already substantially implemented: Passport login UX, fallback/recovery framing, passkey registration, device lifecycle, rename/revoke, Profile visibility, Admin read-only passkey ops, and passkey-required ACR semantics exist.
 - App-scoped identity and selective disclosure are now first-class backend concepts: app-scoped subjects, disclosure grants, Allow Page persistence, OIDC consent persistence, SDK-facing route filtering, webhook filtering, non-OIDC disclosure history/revocation, and Admin disclosure ops exist.
 - API v3 custody exists for encrypted dapp-user secrets and generated app-scoped blockchain accounts across EVM, NEAR, Solana, and Sui. Private material is stored through Supabase Vault-backed envelope encryption and is not returned to dapps, browsers, or Admin list views.
-- The SIWC backend foundation now includes app-scoped account generation/listing, Admin signing policy controls, Passport account visibility, message and typed-data signing requests, passkey step-up, transaction-risk denial evidence, signed wallet webhooks, and an operator runbook. Transaction signing, signer recovery, transaction simulation, smart accounts, session keys, and paymasters remain deferred.
+- The SIWC backend foundation included app-scoped account generation/listing, Admin signing policy controls, Passport account visibility, message and typed-data signing requests, passkey step-up, transaction-risk denial evidence, signed wallet webhooks, and an operator runbook. That wallet-generation and normal-signing implementation is now quarantined as legacy because Cubid should act as recovery provider, not as the wallet generator or normal signer.
 - Public SDK and UI package implementation belongs in `Cubid-Me/cubid-sdk`, not this repo. This repo owns backend behavior, migrations, Passport/Admin/OIDC runtime, API/webhook contracts, and handoff notes for SDK agents.
 
 ## Recommended Direction
 
-Keep Login with Cubid centered on standards and privacy: OIDC for sign-in, Passport for hosted human auth and consent UX, Admin for policy and client control, and API v3 for backend app integration. Treat wallets/accounts as app-scoped custody accounts by default, not universal identities. The strongest Cubid positioning is not "Privy or Magic with different branding"; it is app-scoped identity, passkey-first authentication, proof-of-personhood signals, selective disclosure, and optional app-scoped account custody that avoids cross-app correlation.
+Keep Login with Cubid centered on standards and privacy: OIDC for sign-in, Passport for hosted human auth and consent UX, Admin for policy and client control, and API v3 for backend app integration. Treat recoverable wallets as app-mediated assisted self-custody where Cubid supplies identity-bound recovery, not normal wallet custody. The strongest Cubid positioning is not "Privy or Magic with different branding"; it is app-scoped identity, passkey-first authentication, proof-of-personhood signals, selective disclosure, and recovery-provider infrastructure.
 
 The generic recommendation to build new `/api/v2/wallets/*` routes should be replaced with API v3 contracts. Any SDK-visible changes must be coordinated through `Cubid-Me/cubid-sdk` by writing a handoff note in that repo; no new public SDK implementation should be added here.
 

@@ -241,14 +241,13 @@ views. Provision the Supabase Vault secret
 `passport_webhook_signing_secret_wrapping_key_v1` before creating encrypted
 webhook subscriptions or running the legacy webhook backfill script.
 
-Blockchain private keys use the C05 envelope model in the v3 account custody
-surface. `/api/v3/accounts/generate` creates EVM, NEAR, or Solana accounts for
-an authenticated dapp user, stores public metadata in `user_accounts`, stores
-the encrypted key envelope in `private.private_keys`, and links visibility
-through `dapp_user_accounts`. Provision the Supabase Vault secret
-`passport_blockchain_private_key_wrapping_key_v1` before enabling v3 account
-generation. V3 responses never return raw private keys or encrypted key
-material.
+Blockchain private keys from the earlier v3 account custody surface are now a
+legacy quarantine surface. `/api/v3/accounts/generate` is deprecated and should
+fail closed for new integrations; historical `user_accounts`,
+`dapp_user_accounts`, and `private.private_keys` rows remain in place until
+hosted data is reviewed and a destructive cleanup migration is explicitly
+approved. New wallet work should use app-mediated recoverable wallets with
+Cubid recovery bundles rather than Cubid-generated private keys.
 
 ### Admin
 

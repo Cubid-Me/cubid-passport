@@ -6911,3 +6911,46 @@ Anchor the new app-recoverable wallet direction before changing repo behavior.
 
 - rewrite wallet/SIWC docs and roadmap metadata, then hard-disable Cubid
   wallet generation and normal signing surfaces
+### session: v215
+
+- timestamp: 2026-05-20T18:53:13Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`bd9de8e`**
+- session name: **Quarantine legacy Cubid wallet generation and signing**
+
+#### Objective
+
+Pivot the repo away from Cubid-generated wallets and Cubid normal signing while
+preserving historical data surfaces and establishing the recoverable-wallet
+roadmap.
+
+#### Actions Taken
+
+- added the recoverable wallet roadmap and engineering direction doc
+- marked SIWC generated-wallet and normal-signing docs as superseded or legacy
+  quarantine surfaces
+- hard-disabled new `/api/v3/accounts/generate`,
+  `/api/v3/signing/requests/create`, and Passport SIWC signing approval
+  traffic with structured `410` errors
+- updated Admin SIWC policy helpers/UI to prevent enabling legacy custody or
+  signing controls
+- added Passport/Admin tests for fail-closed behavior and updated legacy route
+  tests to preserve read-only visibility
+- created SDK and SmarTrust cross-repo handoff notes for the recovery-only
+  direction
+
+#### Verification
+
+- `pnpm --filter @cubid/passport test`
+- `pnpm --filter @cubid/admin test`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/admin typecheck`
+- `pnpm --filter @cubid/passport build`
+- `pnpm --filter @cubid/admin build`
+- `git diff --check`
+
+#### Follow-up
+
+- close RW01/RW02 metadata with the implementation commit SHA, then continue
+  with RW03 recovery-bundle storage schema

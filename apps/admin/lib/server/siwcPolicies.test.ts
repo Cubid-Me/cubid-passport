@@ -74,33 +74,39 @@ const createAdminContext = (supabase: unknown, uid = 'admin_uid') =>
 
 const createUpsertSupabase = (existingPolicyVersion?: number) => {
   const eventInsert = jest.fn(async () => ({ error: null }));
+  let lastPayload: Record<string, unknown> | null = null;
   const policyResult = {
     select: () => ({
       maybeSingle: async () => ({
         data: {
-          allowed_chains: ['evm'],
-          allowed_request_types: ['message'],
-          contract_allowlist: [],
+          allowed_chains: lastPayload?.allowed_chains ?? ['evm'],
+          allowed_request_types: lastPayload?.allowed_request_types ?? ['message'],
+          contract_allowlist: lastPayload?.contract_allowlist ?? [],
           created_at: '2026-05-05T00:00:00.000Z',
-          custody_enabled: true,
+          custody_enabled: lastPayload?.custody_enabled ?? false,
           dapp_id: 42,
           id: 'policy_42',
-          metadata: {},
-          policy_name: 'Production signing',
+          metadata: lastPayload?.metadata ?? {},
+          policy_name: lastPayload?.policy_name ?? 'Legacy SIWC disabled',
           policy_version: existingPolicyVersion ? existingPolicyVersion + 1 : 1,
-          required_acr: 'urn:cubid:acr:passkey',
-          sandbox_mode: true,
-          signing_enabled: true,
-          status: 'enabled',
-          transaction_value_limit_usd: null,
+          required_acr: lastPayload?.required_acr ?? null,
+          sandbox_mode: lastPayload?.sandbox_mode ?? true,
+          signing_enabled: lastPayload?.signing_enabled ?? false,
+          status: lastPayload?.status ?? 'disabled',
+          transaction_value_limit_usd:
+            lastPayload?.transaction_value_limit_usd ?? null,
           updated_at: '2026-05-05T01:00:00.000Z',
-          webhook_event_subscriptions: [],
+          webhook_event_subscriptions:
+            lastPayload?.webhook_event_subscriptions ?? [],
         },
         error: null,
       }),
     }),
   };
-  const policyWrite = jest.fn((_payload?: unknown) => policyResult);
+  const policyWrite = jest.fn((payload?: unknown) => {
+    lastPayload = (payload ?? {}) as Record<string, unknown>;
+    return policyResult;
+  });
 
   return {
     eventInsert,
@@ -192,7 +198,7 @@ describe('SIWC policy helpers', () => {
     expect(overview.policies).toEqual([]);
   });
 
-  it('creates a passkey-required signing policy and writes an audit event', async () => {
+  it('creates a disabled legacy policy and writes an audit event', async () => {
     const { eventInsert, policyWrite, supabase } = createUpsertSupabase();
     const policy = await upsertSiwcPolicy(
       {
@@ -205,26 +211,28 @@ describe('SIWC policy helpers', () => {
       {
         allowedChains: ['evm'],
         allowedRequestTypes: ['message'],
-        custodyEnabled: true,
+        custodyEnabled: false,
         dappId: 42,
-        policyName: 'Production signing',
-        requiredAcr: 'urn:cubid:acr:passkey',
+        policyName: 'Legacy SIWC disabled',
+        requiredAcr: null,
         sandboxMode: true,
-        signingEnabled: true,
-        status: 'enabled',
+        signingEnabled: false,
+        status: 'disabled',
       }
     );
 
     expect(policy).toMatchObject({
       dappId: 42,
       policyVersion: 1,
-      requiredAcr: 'urn:cubid:acr:passkey',
-      signingEnabled: true,
+      requiredAcr: null,
+      signingEnabled: false,
+      status: 'disabled',
     });
     expect(policyWrite).toHaveBeenCalledWith(
       expect.objectContaining({
         policy_version: 1,
-        required_acr: 'urn:cubid:acr:passkey',
+        required_acr: null,
+        signing_enabled: false,
       })
     );
     expect(eventInsert).toHaveBeenCalledWith(
@@ -248,13 +256,13 @@ describe('SIWC policy helpers', () => {
       {
         allowedChains: ['evm'],
         allowedRequestTypes: ['message'],
-        custodyEnabled: true,
+        custodyEnabled: false,
         dappId: 42,
-        policyName: 'Production signing',
-        requiredAcr: 'urn:cubid:acr:passkey',
+        policyName: 'Legacy SIWC disabled',
+        requiredAcr: null,
         sandboxMode: true,
-        signingEnabled: true,
-        status: 'enabled',
+        signingEnabled: false,
+        status: 'disabled',
       }
     );
 
@@ -296,7 +304,7 @@ describe('SIWC policy helpers', () => {
     ).toThrow(/allowedRequestTypes/);
   });
 
-  it('fails closed when signing is enabled without passkey ACR', () => {
+  it('fails closed when legacy custody or signing is enabled', () => {
     expect(() =>
       normalizeSiwcPolicyInput({
         allowedChains: ['evm'],
@@ -309,6 +317,6 @@ describe('SIWC policy helpers', () => {
         signingEnabled: true,
         status: 'enabled',
       })
-    ).toThrow(/passkey ACR/);
+    ).toThrow(/deprecated/);
   });
 });

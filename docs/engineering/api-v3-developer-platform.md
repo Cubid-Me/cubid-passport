@@ -1,7 +1,7 @@
 # API v3 Developer Platform
 
-Last updated: 2026-05-06
-Status: E02.5 canonical contract
+Last updated: 2026-05-20
+Status: E02.5 canonical contract with recoverable-wallet correction
 
 ## Purpose
 
@@ -22,13 +22,12 @@ The current backend-owned API v3 routes are:
 
 - `POST /api/v3/save_secret`: dapp-authenticated encrypted dapp-user secret
   write path backed by `private.dapp_user_secrets`.
-- `POST /api/v3/accounts/generate`: dapp-authenticated custodial account
-  generation for supported chains, storing encrypted private-key material in
-  the `private` schema and returning only public account metadata.
+- `POST /api/v3/accounts/generate`: legacy Cubid-generated wallet creation
+  endpoint. This route is deprecated and fails closed for new use.
 - `POST /api/v3/accounts/list`: dapp-authenticated account metadata listing
-  scoped to the target dapp user.
-- `POST /api/v3/signing/requests/create`: dapp-authenticated creation of a
-  Passport-hosted signing request for an app-scoped account.
+  scoped to the target dapp user, retained for historical visibility.
+- `POST /api/v3/signing/requests/create`: legacy Cubid normal-signing request
+  creation endpoint. This route is deprecated and fails closed for new use.
 - `POST /api/v3/signing/requests/get`: dapp-authenticated signing request
   status lookup.
 - `POST /api/v3/signing/requests/list`: dapp-authenticated signing request
@@ -101,6 +100,11 @@ tags, human subject keys, raw Cubid user ids, or service-role data.
 Purpose: generate a Cubid-custodied blockchain account for one dapp user and
 store the private key using the v3 encrypted private-key custody model.
 
+Current status: **deprecated and fail-closed**. Cubid no longer generates
+wallets for new integrations. Host apps should create app-mediated
+recoverable wallets using audited threshold/MPC infrastructure and enroll
+Cubid recovery bundles instead.
+
 Request body:
 
 ```json
@@ -141,8 +145,20 @@ Success response shape:
 }
 ```
 
-The route never returns the raw private key, encrypted private-key material,
-wrapped data keys, or internal custody metadata.
+Current failure response:
+
+```json
+{
+  "error": {
+    "code": "cubid_generated_wallets_deprecated",
+    "message": "Cubid-generated wallet creation is deprecated. Use app-mediated recoverable wallets with Cubid recovery bundles instead.",
+    "requestId": "passport_..."
+  }
+}
+```
+
+The route must not create new account rows, private-key rows, dapp-user-account
+links, or `wallet.created` webhook events.
 
 ### `POST /api/v3/accounts/list`
 
@@ -197,6 +213,11 @@ custodial account. The route records the request, evaluates the current Admin
 SIWC policy, and returns a polling-safe state. It does not sign until the
 Passport user approves the request.
 
+Current status: **deprecated and fail-closed**. Cubid no longer performs normal
+wallet signing for host apps. Normal signing belongs to the host app or a
+specialized threshold/MPC signing service; Cubid should provide recovery-bundle
+storage and release.
+
 Request body:
 
 ```json
@@ -248,15 +269,20 @@ Success response shape:
 }
 ```
 
-Responses must not include private keys, encrypted custody material, Vault key
-material, raw Cubid user ids, human subject keys, or the raw `payload` field.
+Current failure response:
 
-Transaction responses may include `riskLevel`, `riskReasons`,
-`transactionOperationType`, `transactionRecipient`,
-`transactionContractAddress`, and `transactionDeclaredValueUsd`. These are
-non-secret summaries for SDKs and Passport UI. They are not a transaction
-simulation result, and they do not mean Cubid will sign the transaction in this
-slice.
+```json
+{
+  "error": {
+    "code": "cubid_signing_deprecated",
+    "message": "Cubid normal wallet signing is deprecated. Use app-mediated threshold signing with Cubid recovery bundles instead.",
+    "requestId": "passport_..."
+  }
+}
+```
+
+The route must not create new signing requests, decrypt private-key material,
+or emit signing lifecycle webhooks for new product traffic.
 
 ### `POST /api/v3/signing/requests/get`
 
