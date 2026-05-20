@@ -3532,6 +3532,39 @@ test("Passport v3 recovery bundle APIs reject cross-dapp users and replay idempo
   assert.deepEqual(replayRes.body, firstRes.body)
   assert.equal(supabase.recoverableWalletRecoveryBundles.length, 1)
 
+  supabase.setDappUser({
+    dapp_id: 42,
+    user_id: 4321,
+    uuid: "00000000-0000-4000-8000-000000000269",
+  })
+  const reboundRes = createApiResponse()
+  await enrollRecoveryBundleV3Handler(
+    createApiRequest({
+      body: {
+        api_key: apiKey,
+        bundle_material: "rebound-client-share",
+        dapp_user_uuid: "00000000-0000-4000-8000-000000000269",
+        recovery_bundle_id: "rw_bundle_idempotent",
+      },
+      headers: {
+        "idempotency-key": "recovery-bundle-rebind",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/recovery-bundles/enroll",
+    }),
+    reboundRes
+  )
+  assert.equal(reboundRes.statusCode, 409)
+  assert.equal(
+    (reboundRes.body as { error: { code: string } }).error.code,
+    "unsupported_app_context"
+  )
+  assert.equal(supabase.recoverableWalletRecoveryBundles.length, 1)
+  assert.equal(
+    supabase.recoverableWalletRecoveryBundles[0].dapp_user_uuid,
+    dappUserUuid
+  )
+
   const crossDappRes = createApiResponse()
   await enrollRecoveryBundleV3Handler(
     createApiRequest({
@@ -3608,6 +3641,50 @@ test("Passport v3 recovery release start creates a user-only release session", a
   assert.equal(JSON.stringify(res.body).includes("client-share"), false)
   assert.equal(JSON.stringify(res.body).includes("bundleMaterial"), false)
   assert.equal(supabase.recoverableWalletRecoverySessions.length, 1)
+})
+
+test("Passport v3 recovery release start does not leak revoked bundles across app contexts", async () => {
+  const supabase = new MockPassportSupabase()
+  const apiKey = addDappAuth(supabase)
+  const dappUserUuid = "00000000-0000-4000-8000-000000000270"
+  supabase.setUser({ email: "person@example.com", id: 1234 })
+  supabase.setDappUser({ dapp_id: 42, user_id: 1234, uuid: dappUserUuid })
+  supabase.recoverableWalletRecoveryBundles.push({
+    created_at: new Date().toISOString(),
+    dapp_id: 99,
+    dapp_user_uuid: "00000000-0000-4000-8000-000000000271",
+    id: "foreign-revoked-bundle",
+    provider_key: "cubid",
+    recovery_bundle_id: "rw_bundle_foreign_revoked",
+    status: "revoked",
+    updated_at: new Date().toISOString(),
+    user_id: 9999,
+  })
+  setPassportSupabaseForTests(supabase as never)
+
+  const res = createApiResponse()
+  await startRecoveryReleaseV3Handler(
+    createApiRequest({
+      body: {
+        api_key: apiKey,
+        dapp_user_uuid: dappUserUuid,
+        recovery_bundle_id: "rw_bundle_foreign_revoked",
+      },
+      headers: {
+        "idempotency-key": "recovery-release-foreign-revoked",
+        origin: "https://passport.cubid.me",
+      },
+      url: "/api/v3/recovery-bundles/release/start",
+    }),
+    res
+  )
+
+  assert.equal(res.statusCode, 404)
+  assert.equal(
+    (res.body as { error: { code: string } }).error.code,
+    "recovery_bundle_not_found"
+  )
+  assert.equal(supabase.recoverableWalletRecoverySessions.length, 0)
 })
 
 test("Passport user recovery release returns bundle material once to the verified user", async () => {

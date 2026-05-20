@@ -345,11 +345,24 @@ export async function enrollRecoverableWalletRecoveryBundle(input: {
     .from("recoverable_wallet_recovery_bundles")
     .select("*")
     .eq("recovery_bundle_id", recoveryBundleId)
-    .eq("dapp_id", input.dappId)
     .maybeSingle()
 
   if (existingError) {
     throw existingError
+  }
+
+  if (
+    existingRow &&
+    (String(existingRow.dapp_id) !== String(input.dappId) ||
+      String(existingRow.dapp_user_uuid) !== String(input.dappUserUuid) ||
+      String(existingRow.user_id) !== String(dappUser.user_id) ||
+      String(existingRow.provider_key ?? "cubid") !== providerKey)
+  ) {
+    throw new ApiSecurityError(
+      409,
+      RECOVERABLE_WALLET_ERROR_CODES.unsupportedAppContext,
+      "Recovery bundle id is already bound to a different app context."
+    )
   }
 
   const query = existingRow
@@ -501,6 +514,10 @@ export async function createRecoverableWalletRecoveryReleaseSession(input: {
           .schema("private")
           .from("recoverable_wallet_recovery_bundles")
           .select("status")
+          .eq("dapp_id", input.dappId)
+          .eq("dapp_user_uuid", input.dappUserUuid)
+          .eq("user_id", dappUser.user_id)
+          .eq("provider_key", providerKey)
           .eq("recovery_bundle_id", input.recoveryBundleId)
           .maybeSingle()
 
@@ -630,13 +647,17 @@ export async function releaseRecoverableWalletRecoveryBundle(input: {
   }
 
   if (new Date(String(session.expires_at)).getTime() <= Date.now()) {
-    await input.supabase
+    const { error: expireSessionError } = await input.supabase
       .from("recoverable_wallet_recovery_sessions")
       .update({
         status: "expired",
         updated_at: new Date().toISOString(),
       })
       .eq("id", session.id)
+
+    if (expireSessionError) {
+      throw expireSessionError
+    }
 
     throw new ApiSecurityError(
       410,
@@ -722,32 +743,29 @@ export async function releaseRecoverableWalletRecoveryBundle(input: {
     )
   }
 
-  const { error: updateBundleError } = await input.supabase
-    .schema("private")
-    .from("recoverable_wallet_recovery_bundles")
-    .update({
-      last_released_at: releasedAt,
-      updated_at: releasedAt,
-    })
-    .eq("id", bundle.id)
-
-  if (updateBundleError) {
-    throw updateBundleError
-  }
-
-  await writeRecoverableWalletSecurityEvent({
-    actorIdentifier: input.firebaseToken.uid,
-    actorType: "user",
-    dappId: session.dapp_id,
-    dappUserUuid: String(session.dapp_user_uuid),
-    eventType: "recoverable_wallet.bundle.released",
-    outcome: "success",
-    recoveryBundleId: String(session.recovery_bundle_id),
-    recoverySessionId: String(session.recovery_session_id),
-    requestId: input.requestId,
-    route: "passport.recovery_bundles.release.complete",
-    supabase: input.supabase,
-  })
+  await Promise.allSettled([
+    input.supabase
+      .schema("private")
+      .from("recoverable_wallet_recovery_bundles")
+      .update({
+        last_released_at: releasedAt,
+        updated_at: releasedAt,
+      })
+      .eq("id", bundle.id),
+    writeRecoverableWalletSecurityEvent({
+      actorIdentifier: input.firebaseToken.uid,
+      actorType: "user",
+      dappId: session.dapp_id,
+      dappUserUuid: String(session.dapp_user_uuid),
+      eventType: "recoverable_wallet.bundle.released",
+      outcome: "success",
+      recoveryBundleId: String(session.recovery_bundle_id),
+      recoverySessionId: String(session.recovery_session_id),
+      requestId: input.requestId,
+      route: "passport.recovery_bundles.release.complete",
+      supabase: input.supabase,
+    }),
+  ])
 
   return {
     bundleMaterial,
@@ -804,21 +822,6 @@ export async function rotateRecoverableWalletRecoveryBundle(input: {
     )
   }
 
-  const rotatedAt = new Date().toISOString()
-  const { error: rotateError } = await input.supabase
-    .schema("private")
-    .from("recoverable_wallet_recovery_bundles")
-    .update({
-      rotated_at: rotatedAt,
-      status: "rotated",
-      updated_at: rotatedAt,
-    })
-    .eq("id", existingBundle.id)
-
-  if (rotateError) {
-    throw rotateError
-  }
-
   const nextVersion = Number(existingBundle.bundle_version ?? 1) + 1
   const rotated = await enrollRecoverableWalletRecoveryBundle({
     actorIdentifier: input.actorIdentifier,
@@ -837,6 +840,22 @@ export async function rotateRecoverableWalletRecoveryBundle(input: {
     requestId: input.requestId,
     supabase: input.supabase,
   })
+
+  const rotatedAt = new Date().toISOString()
+  const { error: rotateError } = await input.supabase
+    .schema("private")
+    .from("recoverable_wallet_recovery_bundles")
+    .update({
+      rotated_at: rotatedAt,
+      status: "rotated",
+      updated_at: rotatedAt,
+    })
+    .eq("id", existingBundle.id)
+    .eq("status", "active")
+
+  if (rotateError) {
+    throw rotateError
+  }
 
   await writeRecoverableWalletSecurityEvent({
     actorIdentifier: input.actorIdentifier,

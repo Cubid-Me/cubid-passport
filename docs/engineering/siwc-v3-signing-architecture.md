@@ -1,6 +1,6 @@
 # SIWC V3 Signing And Transaction Authorization Architecture
 
-Last updated: 2026-05-06
+Last updated: 2026-05-20
 Status: Superseded for wallet generation and normal signing on 2026-05-20
 
 ## Superseded Direction Notice

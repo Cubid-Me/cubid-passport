@@ -7374,3 +7374,44 @@ on direct implementation until Cubid SDK orchestration support lands.
 
 - keep the SmarTrust sibling note dirty so SmarTrust agents see the updated
   guidance
+
+### session: v230
+
+- timestamp: 2026-05-20T20:02:49Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`1fa38ac`**
+- session name: **Address PR 169 recovery review comments**
+
+#### Objective
+
+Patch the PR review findings around recoverable-wallet bundle ownership,
+revoked-bundle lookup scoping, release-session state handling, rotation safety,
+and stale SIWC doc metadata.
+
+#### Actions Taken
+
+- scoped recovery bundle re-enrollment to the full app/user/provider ownership
+  tuple
+- tightened revoked-bundle checks so other app contexts do not leak bundle
+  lifecycle state
+- checked expired recovery-session update errors before returning expiry
+  failures
+- made post-release bundle bookkeeping and security-event writes non-blocking
+  after the release session is durably consumed
+- reordered bundle rotation so the replacement is written before the old bundle
+  is marked rotated
+- updated SIWC signing architecture metadata and added regression tests for the
+  ownership and cross-app leak cases
+
+#### Verification
+
+- `pnpm --filter @cubid/passport test`
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- push the review-fix commit, then reply to and resolve the addressed PR
+  threads
