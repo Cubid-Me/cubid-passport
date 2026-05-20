@@ -7340,3 +7340,37 @@ clear division of responsibilities.
 #### Follow-up
 
 - start `RW10` for hosted migration and smoke readiness after review/merge
+
+### session: v229
+
+- timestamp: 2026-05-20T19:35:52Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`ac5edcd`**
+- session name: **Clarify SmarTrust recovery handoff timing**
+
+#### Objective
+
+Clarify the SmarTrust cross-repo recovery handoff so SmarTrust agents hold off
+on direct implementation until Cubid SDK orchestration support lands.
+
+#### Actions Taken
+
+- rewrote the latest SmarTrust recovery-only handoff entry in the Passport
+  sibling note
+- mirrored the same clarification into the SmarTrust sibling note and left it
+  dirty for their agents
+- clarified that Cubid SDK support will cover much of the recovery
+  orchestration
+- clarified that SmarTrust still owns wallet/MPC policy, backend state,
+  business logic, retries, escrow logic, and product UX
+
+#### Verification
+
+- `git diff --check`
+- `git -C /Users/botmaster/src/smartrust/smartrust-monorepo diff --check -- agent-context/cross-repo-comms/2026-05-20-app-recoverable-wallet-recovery-handoff.md`
+
+#### Follow-up
+
+- keep the SmarTrust sibling note dirty so SmarTrust agents see the updated
+  guidance

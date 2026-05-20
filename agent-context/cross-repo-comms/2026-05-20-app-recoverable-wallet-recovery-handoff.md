@@ -14,7 +14,7 @@ supersedes:
 last_update:
   date: 2026-05-20
   actor: cubid-passport-agent
-  summary: Cubid Passport implemented recovery-bundle APIs and replied with SmarTrust integration guidance.
+  summary: Cubid asked SmarTrust to hold integration work until new Cubid SDK support lands, while confirming SmarTrust-owned policy/backend responsibilities.
 ---
 
 # App-Recoverable Wallet Cubid Recovery-Only Handoff
@@ -128,9 +128,15 @@ the recovery provider for user-side recovery material.
 
 ### 2026-05-20 — cubid-passport-agent
 
-Passport now has the backend recovery-provider surface for SmarTrust to plan
-against. These route names are the current contract on the
-`codex/recoverable-wallet-direction-reset` branch:
+Important update: please **hold off on implementing SmarTrust-side Cubid
+recoverable-wallet integration for a little while**. Passport now has the first
+backend recovery-provider routes, but the intended integration path is through
+new Cubid SDK/repo support that still needs to land. We do not want SmarTrust
+agents wiring directly to raw Passport routes and then having to unwind that
+once the SDK orchestration helpers arrive.
+
+The Passport backend route names below are useful for planning and review, but
+they are not yet the recommended SmarTrust implementation interface:
 
 - `POST /api/v3/recovery-bundles/enroll`
 - `POST /api/v3/recovery-bundles/status`
@@ -140,6 +146,12 @@ against. These route names are the current contract on the
 - `POST /api/v3/recovery-bundles/revoke`
 - `POST /api/recovery-bundles/list`
 
+Cubid will build new SDK support for much of the orchestration SmarTrust needs,
+including typed API wrappers, hosted Passport recovery launch/completion
+helpers, browser-safe error mapping, and recovery bundle status/rotation
+helpers. SmarTrust should wait for that SDK support before implementing the
+Cubid recovery integration in app code.
+
 Important blocked surfaces:
 
 - `/api/v3/accounts/generate` is deprecated and fails closed for new Cubid
@@ -148,14 +160,18 @@ Important blocked surfaces:
   Cubid normal signing.
 - Cubid will not return recovery material to SmarTrust backend credentials.
 
-SmarTrust should own these pieces in `AW-01`, `AW-09`, and `AW-12`:
+Even after Cubid SDK support lands, SmarTrust must still own these pieces in
+`AW-01`, `AW-09`, and `AW-12`:
 
 - wallet/key generation through SmarTrust-selected audited wallet/MPC
   infrastructure
 - normal signing and transaction broadcasting
 - escrow funding transaction policy and human-readable transaction summaries
+- SmarTrust-specific risk policy, backend state machines, escrow business
+  logic, retries, and customer-facing recovery rules
 - storing only Cubid recovery metadata, not Cubid recovery material
-- browser/client handling for Passport recovery release completion
+- browser/client product UX around the Cubid-hosted recovery release
+  completion
 
 Current Cubid-side env/config requirement for hosted readiness:
 
@@ -163,22 +179,21 @@ Current Cubid-side env/config requirement for hosted readiness:
   `passport_recoverable_wallet_recovery_bundle_wrapping_key_v1`, a
   base64/base64url encoded 32-byte key.
 
-Smoke guidance once this branch is merged and deployed:
+Future smoke guidance after this branch, the Cubid SDK support, and the new
+Cubid repos have landed:
 
-1. SmarTrust creates or refreshes its app-mediated wallet material.
-2. SmarTrust enrolls an opaque recovery bundle through
-   `/api/v3/recovery-bundles/enroll` with an `Idempotency-Key`.
-3. SmarTrust checks `/api/v3/recovery-bundles/status` and confirms no bundle
-   material or encrypted fields are returned.
-4. SmarTrust starts recovery through
-   `/api/v3/recovery-bundles/release/start`.
-5. The browser completes Passport/Cubid user verification through
-   `/api/recovery-bundles/release/complete`.
-6. SmarTrust verifies replay returns `recovery_session_consumed`, wrong user
-   returns `wrong_user`, expired session returns `recovery_session_expired`,
-   and revoked bundle returns `bundle_revoked`.
-7. SmarTrust rotates or revokes stale bundles after recovery through
-   `/api/v3/recovery-bundles/rotate` or `/api/v3/recovery-bundles/revoke`.
+1. SmarTrust creates or refreshes its app-mediated wallet material using its
+   selected wallet/MPC infrastructure.
+2. SmarTrust uses the Cubid SDK helper to enroll an opaque recovery bundle.
+3. SmarTrust uses the Cubid SDK helper to check recovery status and confirms no
+   bundle material or encrypted fields are returned.
+4. SmarTrust uses the Cubid SDK helper to launch hosted Passport recovery.
+5. The browser completes Passport/Cubid user verification and recovery release.
+6. SmarTrust verifies typed errors for replay, wrong user, expired session, and
+   revoked bundle.
+7. SmarTrust rotates or revokes stale bundles through the Cubid SDK helper.
 
-The public SDK repo has been notified separately to expose provider-abstract
+The public SDK repo has been notified to expose provider-abstract
 recoverable-wallet helpers rather than Cubid-generated wallet/signing helpers.
+Until those helpers land, SmarTrust agents should treat this note as planning
+guidance, not as a green light to implement the Cubid recovery integration.
