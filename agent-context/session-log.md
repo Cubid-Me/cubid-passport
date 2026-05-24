@@ -7463,3 +7463,53 @@ record the remaining hosted smoke blockers truthfully.
 - provide a Vercel automation bypass token or an unprotected preview smoke
   target, plus a real Firebase ID-token path, then complete RW10 hosted API
   smoke
+
+### session: v232
+
+- timestamp: 2026-05-24T19:31:50Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`a61a9fc`**
+- session name: **Complete RW10 hosted recoverable-wallet smoke**
+
+#### Objective
+
+Complete the hosted RW10 smoke pass for the recoverable wallet recovery-provider
+track and update repo status to reflect the new operational truth.
+
+#### Actions Taken
+
+- used the operator-approved browser session to finish CubidDev/Supabase Data
+  API configuration by exposing the service-role-only `private` schema
+- provisioned the missing Supabase Vault wrapping key for recoverable wallet
+  bundles without printing the generated secret
+- used Vercel branch-level Preview envs and redeployed the protected Passport PR
+  preview so the branch could read Supabase and Firebase Admin config
+- minted a Firebase ID token from the operator-provided local service account
+  for the hosted user-authorized recovery release smoke
+- created and later deleted a temporary hosted smoke dapp, hashed dapp API key,
+  dapp-user link, recovery bundle, release session, idempotency rows, and
+  related security events
+- verified recoverable wallet enroll/status/release/list/revoke happy paths and
+  fail-closed deprecated wallet-generation/signing paths
+- marked RW10 and the main RW parent complete and updated repo status
+
+#### Verification
+
+- direct Supabase service-role query confirmed
+  `private.recoverable_wallet_recovery_bundles` is reachable
+- `POST /api/recovery-bundles/list`
+- `POST /api/v3/recovery-bundles/enroll`
+- `POST /api/v3/recovery-bundles/status`
+- `POST /api/v3/recovery-bundles/release/start`
+- `POST /api/recovery-bundles/release/complete`
+- `POST /api/v3/recovery-bundles/revoke`
+- `POST /api/v3/accounts/generate` fail-closed check
+- `POST /api/v3/signing/requests/create` fail-closed check
+- temporary smoke data cleanup confirmed by delete counts
+
+#### Follow-up
+
+- publish the metadata/status update through the open PR
+- keep production readiness gated on production env/secrets, production
+  Supabase delivery, SDK sync, and production-domain smoke checks

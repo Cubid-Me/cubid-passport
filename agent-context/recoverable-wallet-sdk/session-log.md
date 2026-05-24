@@ -509,3 +509,62 @@ tables and begin hosted smoke readiness without overstating launch readiness.
   unprotected smoke target is available
 - provide a real Firebase ID-token path for the recovery release completion
   smoke, then run enroll/status/release/replay/revoke end to end
+
+### session: rw-v17
+
+- timestamp: 2026-05-24T19:31:50Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`a61a9fc`**
+- session name: **Complete RW10 hosted recoverable-wallet smoke**
+
+#### Objective
+
+Finish RW10 by provisioning the remaining CubidDev runtime prerequisites and
+running hosted recoverable-wallet smoke checks against the protected Passport PR
+preview.
+
+#### Actions Taken
+
+- added the missing Passport Preview branch Supabase and Firebase Admin runtime
+  env values in Vercel without printing secrets
+- exposed the `private` schema through Supabase Data API so service-role-only
+  recovery tables are reachable by the hosted app
+- provisioned the Supabase Vault wrapping key
+  `passport_recoverable_wallet_recovery_bundle_wrapping_key_v1` using a
+  database-generated 32-byte value
+- minted a Firebase ID token for `hubert.cormac@gmail.com` from the local
+  service-account file provided by the operator
+- created a temporary hosted smoke dapp, hashed dapp API key, and dapp-user
+  link, then removed all temporary rows after validation
+- smoked recovery enrollment, status lookup, release-session start,
+  user-authorized release completion, user bundle listing, and revocation
+- verified deprecated Cubid-generated wallet creation and Cubid normal signing
+  creation fail closed with stable structured errors
+
+#### Verification
+
+- protected CubidDev migrations already current through workflow run
+  `26194319925`
+- direct service-role query confirmed `private.recoverable_wallet_recovery_bundles`
+  is reachable through Supabase Data API
+- `POST /api/recovery-bundles/list` returned `{ "data": [] }` before smoke
+  enrollment and a redacted bundle list after release
+- `POST /api/v3/recovery-bundles/enroll` returned active safe bundle metadata
+- `POST /api/v3/recovery-bundles/status` returned the active safe bundle status
+- `POST /api/v3/recovery-bundles/release/start` returned a pending release
+  session and Passport recovery URL
+- `POST /api/recovery-bundles/release/complete` returned the test bundle only
+  to the Firebase-authenticated user path
+- `POST /api/v3/recovery-bundles/revoke` returned revoked safe bundle metadata
+- `POST /api/v3/accounts/generate` returned
+  `cubid_generated_wallets_deprecated`
+- `POST /api/v3/signing/requests/create` returned `cubid_signing_deprecated`
+- temporary smoke dapp, key, dapp-user, bundle, session, idempotency, and
+  security-event rows were deleted
+
+#### Follow-up
+
+- yeet the RW10 metadata/status update when ready
+- keep production launch gated on production env/secrets, production Supabase
+  delivery, SDK sync, and production-domain smoke checks

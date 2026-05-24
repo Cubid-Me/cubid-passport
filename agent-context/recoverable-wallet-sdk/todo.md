@@ -156,12 +156,12 @@ dirty so its agents see it.
 
 ### RW10. Hosted migration and smoke readiness
 
-- Status: Started
+- Status: Completed
 - Timestamp started: 2026-05-20T22:49:51Z
-- Timestamp completed: TBD
+- Timestamp completed: 2026-05-24T19:31:50Z
 - Feature branch: codex/recoverable-wallet-direction-reset
-- Head: 9a314a3
-- Session-log reference(s): session: rw-v16
+- Head: a61a9fc
+- Session-log reference(s): session: rw-v16, session: rw-v17
 
 After RW03-RW06 land, run protected migration delivery and hosted smoke checks
 for recovery enrollment, status lookup, user-authorized recovery release,
@@ -176,14 +176,15 @@ protected `apply` run `26194292885` applied
 follow-up protected `check` run `26194319925` reported `Remote database is up
 to date`.
 
-Hosted smoke status: blocked, not complete. The current PR Vercel preview is
-behind Deployment Protection and returns Vercel's `Authentication Required`
-page to shell-based API smoke calls before requests reach Passport. The local
-checkout also has blank Firebase Admin private values, so this session could
-not mint a hosted Firebase ID token to complete the user-authorized release
-path. A follow-up Chrome-authenticated attempt against Vercel deployment
-`2Fp9gPxYho8vCKCE6hMRhC9Zwn75` could inspect the Vercel deployment page, but
-the local Chrome profile blocked both the preview app URL and the Vercel SSO
-handoff with `ERR_BLOCKED_BY_CLIENT`. Finish RW10 after a Vercel automation
-bypass token or unblocked preview smoke target is available, and after a real
-Firebase ID-token path is available for the recovery release completion route.
+Hosted smoke evidence: completed on 2026-05-24 against the protected Vercel PR
+preview after provisioning the missing Passport Preview branch runtime
+environment values, exposing the `private` schema through the Supabase Data API,
+and creating the required Supabase Vault wrapping key
+`passport_recoverable_wallet_recovery_bundle_wrapping_key_v1`. Smoke created a
+temporary dapp, hashed dapp API key, and dapp-user link for user
+`hubert.cormac@gmail.com`, then verified recovery enrollment, status lookup,
+user-authorized release completion with a Firebase ID token, Passport user
+bundle listing, revocation, and cleanup of all temporary smoke rows. The same
+preview also verified the legacy Cubid-generated wallet and Cubid normal
+signing creation routes fail closed with `cubid_generated_wallets_deprecated`
+and `cubid_signing_deprecated`.
