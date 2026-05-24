@@ -7570,3 +7570,39 @@ environment files stay out of Git.
 
 - commit the ignore hardening, then start Passport locally to inspect the
   recoverable-wallet recovery UI surface
+
+### session: v235
+
+- timestamp: 2026-05-24T21:27:50Z
+- agent: **OpenAI Codex**
+- branch: **codex/gitignore-env-hardening**
+- head: **`3bc1090`**
+- session name: **Add recoverable wallet recovery page**
+
+#### Objective
+
+Add the missing Passport-hosted `/recovery/wallet` page so recovery session
+URLs created by the API have a user-facing approval and release surface.
+
+#### Actions Taken
+
+- added an App Router recovery page that reads `recovery_session_id`
+- requires an explicit user click before calling the release-complete API
+- obtains the Firebase ID token from the signed-in browser session and sends it
+  as a bearer token to the existing user-authenticated API
+- shows safe request metadata, error states, release status, and guarded reveal
+  and copy controls for the released recovery material
+- added a safe post-login redirect in the Guest auth wrapper so users can sign
+  in and return to the recovery URL
+- opened the local page and confirmed it renders instead of the previous 404
+
+#### Verification
+
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+- local browser check at `/recovery/wallet?recovery_session_id=demo`
+- `git diff --check`
+
+#### Follow-up
+
+- commit the page and decide whether to yeet this small branch to `dev`

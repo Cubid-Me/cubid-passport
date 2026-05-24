@@ -19,7 +19,17 @@ export const Guest = ({ children, allowAuthenticated = false }: GuestProps) => {
     }
 
     if (user && !allowAuthenticated) {
-      router.push('/app')
+      const postLoginRedirect = localStorage.getItem(
+        "passport_post_login_redirect"
+      )
+
+      if (postLoginRedirect?.startsWith("/")) {
+        localStorage.removeItem("passport_post_login_redirect")
+        router.push(postLoginRedirect)
+        return
+      }
+
+      router.push("/app")
     } else {
       setUnverified(true)
     }
