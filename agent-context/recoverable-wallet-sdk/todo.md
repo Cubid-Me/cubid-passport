@@ -181,8 +181,8 @@ preview after provisioning the missing Passport Preview branch runtime
 environment values, exposing the `private` schema through the Supabase Data API,
 and creating the required Supabase Vault wrapping key
 `passport_recoverable_wallet_recovery_bundle_wrapping_key_v1`. Smoke created a
-temporary dapp, hashed dapp API key, and dapp-user link for user
-`hubert.cormac@gmail.com`, then verified recovery enrollment, status lookup,
+temporary dapp, hashed dapp API key, and dapp-user link for a consenting
+operator-owned test identity, then verified recovery enrollment, status lookup,
 user-authorized release completion with a Firebase ID token, Passport user
 bundle listing, revocation, and cleanup of all temporary smoke rows. The same
 preview also verified the legacy Cubid-generated wallet and Cubid normal

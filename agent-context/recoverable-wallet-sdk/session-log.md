@@ -533,8 +533,8 @@ preview.
 - provisioned the Supabase Vault wrapping key
   `passport_recoverable_wallet_recovery_bundle_wrapping_key_v1` using a
   database-generated 32-byte value
-- minted a Firebase ID token for `hubert.cormac@gmail.com` from the local
-  service-account file provided by the operator
+- minted a Firebase ID token for a consenting operator-owned test identity from
+  the local service-account file provided by the operator
 - created a temporary hosted smoke dapp, hashed dapp API key, and dapp-user
   link, then removed all temporary rows after validation
 - smoked recovery enrollment, status lookup, release-session start,

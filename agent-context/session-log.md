@@ -7513,3 +7513,32 @@ track and update repo status to reflect the new operational truth.
 - publish the metadata/status update through the open PR
 - keep production readiness gated on production env/secrets, production
   Supabase delivery, SDK sync, and production-domain smoke checks
+
+### session: v233
+
+- timestamp: 2026-05-24T20:43:41Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`a3384a1`**
+- session name: **Address PR 170 PII review comment**
+
+#### Objective
+
+Remove unnecessary personal email exposure from the RW10 hosted-smoke metadata
+artifacts called out in PR #170 review.
+
+#### Actions Taken
+
+- replaced the specific smoke-user email in the recoverable-wallet todo with a
+  non-identifying operator-owned test identity description
+- replaced the same email in the recoverable-wallet session log
+- searched tracked agent/docs artifacts for remaining copies of the address
+
+#### Verification
+
+- `rg -n "hubert\\.cormac@gmail\\.com|hubert\\.cormac|gmail\\.com" agent-context docs README.md AGENTS.md -S`
+- `git diff --check`
+
+#### Follow-up
+
+- push the patch, reply to the PR thread, and resolve it
