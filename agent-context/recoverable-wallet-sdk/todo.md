@@ -156,14 +156,35 @@ dirty so its agents see it.
 
 ### RW10. Hosted migration and smoke readiness
 
-- Status: Not started
-- Timestamp started: TBD
-- Timestamp completed: TBD
-- Feature branch: TBD
-- Head: TBD
-- Session-log reference(s): TBD
+- Status: Completed
+- Timestamp started: 2026-05-20T22:49:51Z
+- Timestamp completed: 2026-05-24T19:31:50Z
+- Feature branch: codex/recoverable-wallet-direction-reset
+- Head: a61a9fc
+- Session-log reference(s): session: rw-v16, session: rw-v17
 
 After RW03-RW06 land, run protected migration delivery and hosted smoke checks
 for recovery enrollment, status lookup, user-authorized recovery release,
 revocation, and fail-closed backend-only recovery reads. Record evidence in
 repo status/docs before calling the recovery API ready.
+
+Hosted migration delivery evidence: protected Supabase `check` run
+`26194222009` found the two pending recoverable-wallet migrations,
+protected `apply` run `26194292885` applied
+`20260520185500_recoverable_wallet_recovery_bundles.sql` and
+`20260520191400_recoverable_wallet_recovery_sessions.sql` to `CubidDev`, and
+follow-up protected `check` run `26194319925` reported `Remote database is up
+to date`.
+
+Hosted smoke evidence: completed on 2026-05-24 against the protected Vercel PR
+preview after provisioning the missing Passport Preview branch runtime
+environment values, exposing the `private` schema through the Supabase Data API,
+and creating the required Supabase Vault wrapping key
+`passport_recoverable_wallet_recovery_bundle_wrapping_key_v1`. Smoke created a
+temporary dapp, hashed dapp API key, and dapp-user link for a consenting
+operator-owned test identity, then verified recovery enrollment, status lookup,
+user-authorized release completion with a Firebase ID token, Passport user
+bundle listing, revocation, and cleanup of all temporary smoke rows. The same
+preview also verified the legacy Cubid-generated wallet and Cubid normal
+signing creation routes fail closed with `cubid_generated_wallets_deprecated`
+and `cubid_signing_deprecated`.

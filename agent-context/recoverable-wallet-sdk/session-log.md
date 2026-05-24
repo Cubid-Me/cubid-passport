@@ -459,3 +459,112 @@ blocked surfaces, ownership boundaries, and smoke guidance.
 #### Follow-up
 
 - start `RW10` for hosted migration and smoke readiness after this branch lands
+
+### session: rw-v16
+
+- timestamp: 2026-05-20T22:49:51Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`9a314a3`**
+- session name: **Start RW10 hosted migration and smoke readiness**
+
+#### Objective
+
+Run the protected hosted migration delivery path for the recoverable-wallet
+tables and begin hosted smoke readiness without overstating launch readiness.
+
+#### Actions Taken
+
+- dispatched protected Supabase `check` run `26194222009` against
+  `Preview – cubid-passport` / `CubidDev`
+- approved the GitHub Environment gate and confirmed the dry-run found pending
+  migrations `20260520185500` and `20260520191400`
+- dispatched protected Supabase `apply` run `26194292885`, approved the
+  environment gate, and applied both recoverable-wallet migrations
+- dispatched follow-up protected Supabase `check` run `26194319925`, approved
+  the environment gate, and confirmed `Remote database is up to date`
+- attempted hosted API smoke against the PR Passport preview and confirmed that
+  Vercel Deployment Protection returns `Authentication Required` before the
+  request reaches Passport
+- checked local env availability and confirmed Firebase Admin private values
+  are blank locally, blocking a real hosted Firebase ID-token flow for the
+  user-authorized recovery release completion route
+- after the operator shared Vercel deployment `2Fp9gPxYho8vCKCE6hMRhC9Zwn75`,
+  attempted Chrome-authenticated preview access; Chrome could inspect the
+  Vercel deployment but blocked both the preview app URL and Vercel SSO handoff
+  with `ERR_BLOCKED_BY_CLIENT`
+
+#### Verification
+
+- protected Supabase check run `26194222009`
+- protected Supabase apply run `26194292885`
+- protected Supabase post-apply check run `26194319925`
+- attempted PR preview API smoke; blocked by Vercel Deployment Protection
+- attempted Chrome-authenticated preview access; blocked locally by
+  `ERR_BLOCKED_BY_CLIENT`
+
+#### Follow-up
+
+- finish RW10 hosted API smoke after either a Vercel automation bypass token or
+  unprotected smoke target is available
+- provide a real Firebase ID-token path for the recovery release completion
+  smoke, then run enroll/status/release/replay/revoke end to end
+
+### session: rw-v17
+
+- timestamp: 2026-05-24T19:31:50Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`a61a9fc`**
+- session name: **Complete RW10 hosted recoverable-wallet smoke**
+
+#### Objective
+
+Finish RW10 by provisioning the remaining CubidDev runtime prerequisites and
+running hosted recoverable-wallet smoke checks against the protected Passport PR
+preview.
+
+#### Actions Taken
+
+- added the missing Passport Preview branch Supabase and Firebase Admin runtime
+  env values in Vercel without printing secrets
+- exposed the `private` schema through Supabase Data API so service-role-only
+  recovery tables are reachable by the hosted app
+- provisioned the Supabase Vault wrapping key
+  `passport_recoverable_wallet_recovery_bundle_wrapping_key_v1` using a
+  database-generated 32-byte value
+- minted a Firebase ID token for a consenting operator-owned test identity from
+  the local service-account file provided by the operator
+- created a temporary hosted smoke dapp, hashed dapp API key, and dapp-user
+  link, then removed all temporary rows after validation
+- smoked recovery enrollment, status lookup, release-session start,
+  user-authorized release completion, user bundle listing, and revocation
+- verified deprecated Cubid-generated wallet creation and Cubid normal signing
+  creation fail closed with stable structured errors
+
+#### Verification
+
+- protected CubidDev migrations already current through workflow run
+  `26194319925`
+- direct service-role query confirmed `private.recoverable_wallet_recovery_bundles`
+  is reachable through Supabase Data API
+- `POST /api/recovery-bundles/list` returned `{ "data": [] }` before smoke
+  enrollment and a redacted bundle list after release
+- `POST /api/v3/recovery-bundles/enroll` returned active safe bundle metadata
+- `POST /api/v3/recovery-bundles/status` returned the active safe bundle status
+- `POST /api/v3/recovery-bundles/release/start` returned a pending release
+  session and Passport recovery URL
+- `POST /api/recovery-bundles/release/complete` returned the test bundle only
+  to the Firebase-authenticated user path
+- `POST /api/v3/recovery-bundles/revoke` returned revoked safe bundle metadata
+- `POST /api/v3/accounts/generate` returned
+  `cubid_generated_wallets_deprecated`
+- `POST /api/v3/signing/requests/create` returned `cubid_signing_deprecated`
+- temporary smoke dapp, key, dapp-user, bundle, session, idempotency, and
+  security-event rows were deleted
+
+#### Follow-up
+
+- yeet the RW10 metadata/status update when ready
+- keep production launch gated on production env/secrets, production Supabase
+  delivery, SDK sync, and production-domain smoke checks

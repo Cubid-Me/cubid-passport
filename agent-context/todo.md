@@ -777,12 +777,12 @@ Add Admin-side controls that let operators configure whether an app may request 
 
 ### RW. Build Cubid recoverable wallet recovery-provider infrastructure
 
-- Status: Started
+- Status: Completed
 - Timestamp started: 2026-05-20T18:46:01Z
-- Timestamp completed: TBD
+- Timestamp completed: 2026-05-24T19:31:50Z
 - Feature branch: codex/recoverable-wallet-direction-reset
-- Head: bd9de8e
-- Session-log reference(s): session: v214, session: rw-v1
+- Head: a61a9fc
+- Session-log reference(s): session: v214, session: rw-v1, session: rw-v17
 
 Replace the earlier Cubid-generated-wallet direction with passkey-first,
 app-mediated, recoverable embedded wallets. Cubid Passport should not generate
@@ -792,7 +792,11 @@ wallet creation, normal signing, and transaction broadcasting. Cubid owns
 identity-bound recovery-bundle storage/release, Passport recovery verification,
 auditability, and API/SDK coordination. Use
 `agent-context/recoverable-wallet-sdk/todo.md` as the active side roadmap for
-RW01-RW10.
+RW01-RW10. Completion note: RW01-RW10 are complete for repo-side backend
+contracts and CubidDev hosted smoke. The old Cubid-generated wallet and Cubid
+normal signing routes are fail-closed, while the recovery-bundle enrollment,
+status, user-authorized release, list, and revoke paths were smoked against the
+protected PR preview on 2026-05-24.
 
 ## F. Hosted Delivery and Release Operations
 

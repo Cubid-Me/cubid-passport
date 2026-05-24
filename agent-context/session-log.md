@@ -7415,3 +7415,130 @@ and stale SIWC doc metadata.
 
 - push the review-fix commit, then reply to and resolve the addressed PR
   threads
+
+### session: v231
+
+- timestamp: 2026-05-20T22:49:51Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`9a314a3`**
+- session name: **Run RW10 hosted migration readiness**
+
+#### Objective
+
+Run the RW10 hosted migration delivery path for recoverable-wallet schema and
+record the remaining hosted smoke blockers truthfully.
+
+#### Actions Taken
+
+- ran protected Supabase check `26194222009` for `CubidDev`
+- ran protected Supabase apply `26194292885` after dry-run identified the two
+  recoverable-wallet migrations
+- ran protected post-apply Supabase check `26194319925`, which reported
+  `Remote database is up to date`
+- attempted shell-based hosted Passport API smoke against the PR preview and
+  confirmed Vercel Deployment Protection blocks the request before Passport
+- confirmed local Firebase Admin private values are blank, so this shell cannot
+  mint the real Firebase ID token needed for user-authorized recovery release
+  completion smoke
+- after the operator shared Vercel deployment `2Fp9gPxYho8vCKCE6hMRhC9Zwn75`,
+  attempted Chrome-authenticated preview access and confirmed the local Chrome
+  profile blocks both the preview app URL and Vercel SSO handoff with
+  `ERR_BLOCKED_BY_CLIENT`
+- updated recoverable-wallet todo metadata and repo status with the exact
+  migration evidence and smoke blockers
+
+#### Verification
+
+- protected Supabase check run `26194222009`
+- protected Supabase apply run `26194292885`
+- protected Supabase post-apply check run `26194319925`
+- attempted hosted PR preview API smoke; blocked by Vercel Deployment
+  Protection
+- attempted Chrome-authenticated preview access; blocked locally by
+  `ERR_BLOCKED_BY_CLIENT`
+
+#### Follow-up
+
+- provide a Vercel automation bypass token or an unprotected preview smoke
+  target, plus a real Firebase ID-token path, then complete RW10 hosted API
+  smoke
+
+### session: v232
+
+- timestamp: 2026-05-24T19:31:50Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`a61a9fc`**
+- session name: **Complete RW10 hosted recoverable-wallet smoke**
+
+#### Objective
+
+Complete the hosted RW10 smoke pass for the recoverable wallet recovery-provider
+track and update repo status to reflect the new operational truth.
+
+#### Actions Taken
+
+- used the operator-approved browser session to finish CubidDev/Supabase Data
+  API configuration by exposing the service-role-only `private` schema
+- provisioned the missing Supabase Vault wrapping key for recoverable wallet
+  bundles without printing the generated secret
+- used Vercel branch-level Preview envs and redeployed the protected Passport PR
+  preview so the branch could read Supabase and Firebase Admin config
+- minted a Firebase ID token from the operator-provided local service account
+  for the hosted user-authorized recovery release smoke
+- created and later deleted a temporary hosted smoke dapp, hashed dapp API key,
+  dapp-user link, recovery bundle, release session, idempotency rows, and
+  related security events
+- verified recoverable wallet enroll/status/release/list/revoke happy paths and
+  fail-closed deprecated wallet-generation/signing paths
+- marked RW10 and the main RW parent complete and updated repo status
+
+#### Verification
+
+- direct Supabase service-role query confirmed
+  `private.recoverable_wallet_recovery_bundles` is reachable
+- `POST /api/recovery-bundles/list`
+- `POST /api/v3/recovery-bundles/enroll`
+- `POST /api/v3/recovery-bundles/status`
+- `POST /api/v3/recovery-bundles/release/start`
+- `POST /api/recovery-bundles/release/complete`
+- `POST /api/v3/recovery-bundles/revoke`
+- `POST /api/v3/accounts/generate` fail-closed check
+- `POST /api/v3/signing/requests/create` fail-closed check
+- temporary smoke data cleanup confirmed by delete counts
+
+#### Follow-up
+
+- publish the metadata/status update through the open PR
+- keep production readiness gated on production env/secrets, production
+  Supabase delivery, SDK sync, and production-domain smoke checks
+
+### session: v233
+
+- timestamp: 2026-05-24T20:43:41Z
+- agent: **OpenAI Codex**
+- branch: **codex/recoverable-wallet-direction-reset**
+- head: **`a3384a1`**
+- session name: **Address PR 170 PII review comment**
+
+#### Objective
+
+Remove unnecessary personal email exposure from the RW10 hosted-smoke metadata
+artifacts called out in PR #170 review.
+
+#### Actions Taken
+
+- replaced the specific smoke-user email in the recoverable-wallet todo with a
+  non-identifying operator-owned test identity description
+- replaced the same email in the recoverable-wallet session log
+- searched tracked agent/docs artifacts for remaining copies of the address
+
+#### Verification
+
+- `rg -n "hubert\\.cormac@gmail\\.com|hubert\\.cormac|gmail\\.com" agent-context docs README.md AGENTS.md -S`
+- `git diff --check`
+
+#### Follow-up
+
+- push the patch, reply to the PR thread, and resolve it
