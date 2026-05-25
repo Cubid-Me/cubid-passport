@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 
-import firebase from '../lib/firebase';
+import firebase, { firebaseConfigError } from '../lib/firebase';
 import { login, logout } from '../redux/userSlice';
 
 export const useAuth = () => {
@@ -10,6 +10,11 @@ export const useAuth = () => {
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
+    if (firebaseConfigError) {
+      setLoading(false);
+      return undefined;
+    }
+
     const unsubscribe = firebase.auth().onAuthStateChanged((user) => {
       if (user) {
         const setUserData = {

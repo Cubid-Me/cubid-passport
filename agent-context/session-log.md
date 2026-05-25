@@ -7704,3 +7704,41 @@ keeping API-key reads and rotations anchored on `dapp_api_keys`.
 - push the branch so Vercel can build a fresh Admin preview, then add
   branch-specific Preview Firebase Admin server envs if the preview needs
   authenticated Admin API smoke after sign-in
+
+### session: v239
+
+- timestamp: 2026-05-25T06:56:00Z
+- agent: **OpenAI Codex**
+- branch: **codex/admin-dapp-api-key-ux**
+- head: **`ca097f9`**
+- session name: **Fail closed for missing Admin Firebase config**
+
+#### Objective
+
+Prevent Admin deployments with missing Firebase public config from rendering a
+blank white page while keeping sign-in disabled until the deployment is
+properly configured.
+
+#### Actions Taken
+
+- changed the Admin Firebase client helper to expose missing-config state
+  instead of throwing at module import time
+- made Admin auth hooks and authenticated API helpers fail closed when Firebase
+  config is unavailable
+- added an operator-facing sign-in message for deployments missing Firebase
+  public settings
+- verified the Admin Vercel project has Preview public Firebase settings and
+  populated missing Production environment settings from the existing Preview
+  contract
+
+#### Verification
+
+- `pnpm --filter @cubid/admin test`
+- `pnpm --filter @cubid/admin typecheck`
+- `pnpm --filter @cubid/admin build`
+- `git diff --check`
+
+#### Follow-up
+
+- push the fail-closed patch and trigger a fresh Admin Preview deployment to
+  verify the blank-page crash is gone

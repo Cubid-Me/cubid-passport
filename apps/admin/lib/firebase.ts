@@ -10,11 +10,14 @@ const requiredFirebaseEnv = [
   'NEXT_PUBLIC_FIREBASE_APP_ID',
 ] as const;
 
-const missingFirebaseEnv = requiredFirebaseEnv.filter((key) => !process.env[key]?.trim());
+export const missingFirebaseEnv = requiredFirebaseEnv.filter(
+  (key) => !process.env[key]?.trim()
+);
 
-if (missingFirebaseEnv.length > 0) {
-  throw new Error(`Missing Firebase environment configuration: ${missingFirebaseEnv.join(', ')}`);
-}
+export const firebaseConfigError =
+  missingFirebaseEnv.length > 0
+    ? `Missing Firebase environment configuration: ${missingFirebaseEnv.join(', ')}`
+    : null;
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -26,7 +29,7 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-if (!firebase.apps.length) {
+if (!firebaseConfigError && !firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
 }
 
