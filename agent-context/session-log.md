@@ -7668,3 +7668,39 @@ protocol-relative or malformed localStorage values.
 #### Follow-up
 
 - push the patch, reply to both review threads, and resolve them
+
+### session: v238
+
+- timestamp: 2026-05-25T06:45:33Z
+- agent: **OpenAI Codex**
+- branch: **codex/admin-dapp-api-key-ux**
+- head: **`49fc9d5`**
+- session name: **Restore Admin dapp API key UX**
+
+#### Objective
+
+Repair Admin app/key management after the legacy `dapps.apikey` removal while
+keeping API-key reads and rotations anchored on `dapp_api_keys`.
+
+#### Actions Taken
+
+- normalized missing active key rows to explicit non-secret metadata
+- updated the Admin app list to show API-key status instead of legacy key copy
+- rotated keys by stable numeric dapp id rather than public `uid`
+- added Admin route and UI tests for metadata-only listing, missing-key display,
+  one-time rotation behavior, and absence of legacy plaintext key exposure
+- audited the Admin Vercel project env state and copied the configured Preview
+  Admin env contract into Production settings without printing secret values
+
+#### Verification
+
+- `pnpm --filter @cubid/admin test`
+- `pnpm --filter @cubid/admin typecheck`
+- `pnpm --filter @cubid/admin build`
+- `git diff --check`
+
+#### Follow-up
+
+- push the branch so Vercel can build a fresh Admin preview, then add
+  branch-specific Preview Firebase Admin server envs if the preview needs
+  authenticated Admin API smoke after sign-in

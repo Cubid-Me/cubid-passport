@@ -14,17 +14,55 @@ interface SuperApp {
   apiKeyPrefix?: string | null;
   apiKeyRotatedAt?: string | null;
   apiKeyStatus?: string | null;
-  uid: string;
+  uid?: string | null;
   appname: string;
-  id: string;
+  id: number | string;
   admin_uid: string;
 }
+
+const getAppDisplayId = (app: SuperApp) => app.uid ?? String(app.id);
+
+const getApiKeyStatusLabel = (app: SuperApp) => {
+  if (app.apiKeyPrefix) {
+    return `${app.apiKeyPrefix}...`;
+  }
+
+  if (app.apiKeyStatus === 'missing') {
+    return 'Missing active key';
+  }
+
+  if (app.apiKeyStatus === 'revoked') {
+    return 'No active key';
+  }
+
+  return 'Key metadata unavailable';
+};
+
+const getApiKeyStatusDetail = (app: SuperApp) => {
+  if (app.apiKeyPrefix) {
+    return [
+      app.apiKeyStatus ?? 'active',
+      app.apiKeyRotatedAt ? `rotated ${app.apiKeyRotatedAt}` : null,
+      app.apiKeyLastUsedAt ? `last used ${app.apiKeyLastUsedAt}` : null,
+    ]
+      .filter(Boolean)
+      .join(' • ');
+  }
+
+  if (app.apiKeyStatus === 'missing') {
+    return 'Rotate this app key to create a new one-time API key.';
+  }
+
+  return app.apiKeyStatus ?? 'unavailable';
+};
 
 export default function AppList() {
   const [superApps, setSuperApps] = useState<SuperApp[]>([]);
   const { user } = useAuth();
   const [loading, setLoading] = useState<boolean>(true);
-  const [apiKeyToRotate, setApiKeyToRotate] = useState<string | null>(null);
+  const [apiKeyToRotate, setApiKeyToRotate] = useState<number | string | null>(
+    null
+  );
   const [oneTimeApiKey, setOneTimeApiKey] = useState<string | null>(null);
 
   const fetchSuperApps = useCallback(async () => {
@@ -50,9 +88,11 @@ export default function AppList() {
     fetchSuperApps();
   }, [fetchSuperApps]);
 
-  const rotateApiKeys = async (uuidSupabase: string) => {
+  const rotateApiKeys = async (dappId: number | string) => {
     try {
-      const selectedApp = superApps.find((item) => item.uid === uuidSupabase);
+      const selectedApp = superApps.find(
+        (item) => String(item.id) === String(dappId)
+      );
 
       if (!selectedApp) {
         throw new Error('Unable to find app to rotate');
@@ -63,7 +103,7 @@ export default function AppList() {
           apiKey?: string;
         };
       }>('/api/admin/apps/rotate-key', {
-        dappId: selectedApp.id,
+        dappId,
       });
       if (response.data.data.apiKey) {
         setOneTimeApiKey(response.data.data.apiKey);
@@ -130,7 +170,7 @@ export default function AppList() {
               <tr>
                 <th scope="col" className="px-6 py-3">App Name</th>
                 <th scope="col" className="px-6 py-3">App ID</th>
-                <th scope="col" className="px-6 py-3">API Key</th>
+                <th scope="col" className="px-6 py-3">API key status</th>
                 <th scope="col" className="px-6 py-3">Actions</th>
               </tr>
             </thead>
@@ -143,30 +183,31 @@ export default function AppList() {
                 </tr>
               ) : (
                 superApps.map((item) => (
-                  <React.Fragment key={item.uid}>
+                  <React.Fragment key={String(item.id)}>
                     <tr className="border-b border-gray-700 bg-gray-800">
                       <th scope="row" className="whitespace-nowrap px-6 py-4 font-medium text-gray-500">
                         {item.appname}
                       </th>
-                      <td className="px-6 py-4">{item.uid}</td>
+                      <td className="px-6 py-4">{getAppDisplayId(item)}</td>
                       <td className="px-6 py-4">
                         <div>
                           <p className="font-mono text-xs">
-                            {item.apiKeyPrefix
-                              ? `${item.apiKeyPrefix}...`
-                              : 'No active key'}
+                            {getApiKeyStatusLabel(item)}
                           </p>
                           <p className="text-xs text-gray-500">
-                            {item.apiKeyStatus ?? 'missing'}
+                            {getApiKeyStatusDetail(item)}
                           </p>
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center  space-x-2">
-                          <Tooltip placement="left" trigger={['hover']} overlay={<span>Rotate API KEYS</span>}>
-                            <button onClick={() => setApiKeyToRotate(item.uid)}>
+                          <Tooltip placement="left" trigger={['hover']} overlay={<span>Rotate API key</span>}>
+                            <button
+                              aria-label={`Rotate API key for ${item.appname}`}
+                              onClick={() => setApiKeyToRotate(item.id)}
+                            >
                               <svg xmlns="http://www.w3.org/2000/svg" height="20px" width="20px" viewBox="0 0 24 24" >
-                                <path xmlns="http://www.w3.org/2000/svg" d="M20.5 9.00006C19 5.00024 15.5334 3.00122 11.9991 3.00122C7.36722 3.00122 3.55265 6.50073 3.05499 11.0001M20.9428 13.005C20.4434 17.5025 16.6297 21 11.9991 21C8.46723 21 5 19.0001 3.5 15.0002M21 5.00006V9.00006H17M3 19.0001V15.0001H7M12 8.00006V13.0001M12 16.0001H12.01" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                <path xmlns="http://www.w3.org/2000/svg" d="M20.5 9.00006C19 5.00024 15.5334 3.00122 11.9991 3.00122C7.36722 3.00122 3.55265 6.50073 3.05499 11.0001M20.9428 13.005C20.4434 17.5025 16.6297 21 11.9991 21C8.46723 21 5 19.0001 3.5 15.0002M21 5.00006V9.00006H17M3 19.0001V15.0001H7M12 8.00006V13.0001M12 16.0001H12.01" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                               </svg>
                             </button>
                           </Tooltip>

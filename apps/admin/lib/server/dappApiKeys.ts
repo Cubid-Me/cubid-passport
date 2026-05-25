@@ -8,6 +8,13 @@ export type DappApiKeySummary = {
   apiKeyStatus: string | null;
 };
 
+export const MISSING_DAPP_API_KEY_SUMMARY: DappApiKeySummary = {
+  apiKeyLastUsedAt: null,
+  apiKeyPrefix: null,
+  apiKeyRotatedAt: null,
+  apiKeyStatus: 'missing',
+};
+
 export const createDappApiKey = async (
   supabase: SupabaseClient,
   dappId: number
@@ -72,9 +79,17 @@ export const rotateDappApiKey = async (
 
 export const mapDappApiKeySummary = (
   row: Record<string, unknown> | null | undefined
-): DappApiKeySummary => ({
-  apiKeyLastUsedAt: typeof row?.last_used_at === 'string' ? row.last_used_at : null,
-  apiKeyPrefix: typeof row?.key_prefix === 'string' ? row.key_prefix : null,
-  apiKeyRotatedAt: typeof row?.rotated_at === 'string' ? row.rotated_at : null,
-  apiKeyStatus: typeof row?.status === 'string' ? row.status : null,
-});
+): DappApiKeySummary => {
+  if (!row) {
+    return MISSING_DAPP_API_KEY_SUMMARY;
+  }
+
+  return {
+    apiKeyLastUsedAt:
+      typeof row.last_used_at === 'string' ? row.last_used_at : null,
+    apiKeyPrefix: typeof row.key_prefix === 'string' ? row.key_prefix : null,
+    apiKeyRotatedAt:
+      typeof row.rotated_at === 'string' ? row.rotated_at : null,
+    apiKeyStatus: typeof row.status === 'string' ? row.status : 'unavailable',
+  };
+};
