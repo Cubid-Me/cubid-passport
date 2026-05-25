@@ -7606,3 +7606,34 @@ URLs created by the API have a user-facing approval and release surface.
 #### Follow-up
 
 - commit the page and decide whether to yeet this small branch to `dev`
+
+### session: v236
+
+- timestamp: 2026-05-25T02:43:30Z
+- agent: **OpenAI Codex**
+- branch: **codex/gitignore-env-hardening**
+- head: **`ede4beb`**
+- session name: **Send recoverable wallet SDK handoff**
+
+#### Objective
+
+Tell the public SDK agents what Passport has built for recoverable wallets and
+what package updates/releases are needed before downstream apps integrate.
+
+#### Actions Taken
+
+- updated the recoverable-wallet SDK direction cross-repo thread with a concise
+  package split for `@cubid/core`, `@cubid/browser` or a future
+  `@cubid/wallet-recovery`, `@cubid/react`, auth packages, and chain packages
+- linked the SDK agents to the relevant Passport architecture, roadmap, session
+  log, runtime docs, hosted UI, routes, helpers, and error taxonomy
+- copied the same note into the SDK repo as an intentionally dirty sibling note
+
+#### Verification
+
+- pending `git diff --check`
+
+#### Follow-up
+
+- commit the Passport-side note while leaving the SDK-side note dirty for the
+  SDK agents to pick up

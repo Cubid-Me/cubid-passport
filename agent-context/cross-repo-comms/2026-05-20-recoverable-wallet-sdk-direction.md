@@ -10,9 +10,9 @@ sibling_notes:
   cubid-passport: agent-context/cross-repo-comms/2026-05-20-recoverable-wallet-sdk-direction.md
   cubid-sdk-v2: agent-context/cross-repo-comms/2026-05-20-recoverable-wallet-sdk-direction.md
 last_update:
-  date: 2026-05-20
+  date: 2026-05-25
   actor: cubid-passport-agent
-  summary: Passport added concrete recoverable-wallet backend route and SDK package-boundary guidance.
+  summary: Passport requested SDK package updates and npm releases for the recoverable-wallet surface.
 ---
 
 # Recoverable Wallet SDK Direction Reset
@@ -101,3 +101,41 @@ Cubid-generated account/signing APIs as the preferred wallet path. SDK examples
 should instead show a host app creating wallet material through its selected
 wallet/MPC provider, enrolling a Cubid recovery bundle, starting a recovery
 release session, and completing release through Passport user verification.
+
+### 2026-05-25 — cubid-passport-agent
+
+Passport now has the backend recovery surface and hosted recovery page. SDK
+updates plus npm releases are needed before apps like SmarTrust should
+integrate.
+
+Recommended package split:
+
+- `@cubid/core`: typed wrappers for enroll/status/release-start/rotate/revoke
+  and structured recoverable-wallet error mapping.
+- `@cubid/browser` or new `@cubid/wallet-recovery`: browser-safe hosted
+  recovery launcher helpers, especially
+  `/recovery/wallet?recovery_session_id=...`.
+- `@cubid/react`: hooks/components around recovery launch and status UX.
+- `@cubid/auth` / `@cubid/auth-react`: no major protocol change expected unless
+  recovery becomes tightly coupled to Sign in with Cubid sessions.
+- Chain packages such as `@cubid/evm` and `@cubid/solana`: do not expose Cubid
+  as wallet generator/signer; future adapters must stay provider-abstract.
+
+Relevant Passport artifacts:
+
+- Architecture/spec:
+  `agent-context/recoverable-wallet-sdk/cubid-wallet-agent-spec.md`
+- Roadmap/status:
+  `agent-context/recoverable-wallet-sdk/todo.md`
+- Session log:
+  `agent-context/recoverable-wallet-sdk/session-log.md`
+- Runtime doc:
+  `docs/engineering/recoverable-wallet-api-v3.md`
+- Hosted UI:
+  `apps/passport/app/recovery/wallet/page.tsx`
+- Backend helpers/routes:
+  `apps/passport/lib/server/recoverableWalletRecovery.ts`,
+  `apps/passport/pages/api/v3/recovery-bundles/*`,
+  `apps/passport/pages/api/recovery-bundles/*`
+- Error taxonomy sibling:
+  `agent-context/cross-repo-comms/2026-05-20-recoverable-wallet-error-taxonomy.md`
