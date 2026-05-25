@@ -7637,3 +7637,34 @@ what package updates/releases are needed before downstream apps integrate.
 
 - commit the Passport-side note while leaving the SDK-side note dirty for the
   SDK agents to pick up
+
+### session: v237
+
+- timestamp: 2026-05-25T02:57:50Z
+- agent: **OpenAI Codex**
+- branch: **codex/gitignore-env-hardening**
+- head: **`589247c`**
+- session name: **Address PR 171 redirect review**
+
+#### Objective
+
+Fix the review feedback that the post-login redirect guard could accept
+protocol-relative or malformed localStorage values.
+
+#### Actions Taken
+
+- added an explicit app-internal path validator for the recovery post-login
+  redirect
+- rejected protocol-relative paths and backslash-containing paths
+- cleared the stored redirect before validation so invalid values cannot linger
+  across sessions
+
+#### Verification
+
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- push the patch, reply to both review threads, and resolve them
