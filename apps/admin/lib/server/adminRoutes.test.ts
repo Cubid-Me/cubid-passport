@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
+import listApps from '../../pages/api/admin/apps/list';
 import rotateKey from '../../pages/api/admin/apps/rotate-key';
 import syncAdminUser from '../../pages/api/admin/auth/sync';
 import disclosureOpsOverviewRoute from '../../pages/api/admin/disclosures/operations/overview';
@@ -20,6 +21,8 @@ const ensureAdminUserRecordMock = jest.fn();
 const getOwnedDappMock = jest.fn();
 const getOwnedDappIdsMock = jest.fn();
 const getPlatformUserByEmailMock = jest.fn();
+const createDappApiKeyMock = jest.fn();
+const mapDappApiKeySummaryMock = jest.fn();
 const rotateDappApiKeyMock = jest.fn();
 const updateOidcClientOpsMock = jest.fn();
 const loadDisclosureOpsOverviewMock = jest.fn();
@@ -59,6 +62,9 @@ jest.mock('./disclosureOperations', () => ({
 }));
 
 jest.mock('./dappApiKeys', () => ({
+  createDappApiKey: (...args: unknown[]) => createDappApiKeyMock(...args),
+  mapDappApiKeySummary: (...args: unknown[]) =>
+    mapDappApiKeySummaryMock(...args),
   rotateDappApiKey: (...args: unknown[]) => rotateDappApiKeyMock(...args),
 }));
 
@@ -100,6 +106,12 @@ const createResponse = () => {
 describe('Admin route baseline wiring', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mapDappApiKeySummaryMock.mockImplementation((row) => ({
+      apiKeyLastUsedAt: row?.last_used_at ?? null,
+      apiKeyPrefix: row?.key_prefix ?? null,
+      apiKeyRotatedAt: row?.rotated_at ?? null,
+      apiKeyStatus: row?.status ?? 'missing',
+    }));
   });
 
   it('uses the user actor and auth-sync rate limit for auth/sync', async () => {
@@ -190,6 +202,92 @@ describe('Admin route baseline wiring', () => {
         }),
       })
     );
+  });
+
+  it('lists apps with dapp_api_keys metadata and no legacy apikey field', async () => {
+    const dapps = [
+      {
+        admin_uid: 'admin_uid',
+        apikey: 'legacy-plaintext-key',
+        appname: 'App With Key',
+        id: 42,
+        uid: 'public-app-uid-42',
+      },
+      {
+        admin_uid: 'admin_uid',
+        apikey: 'legacy-missing-key',
+        appname: 'App Missing Key',
+        id: 43,
+        uid: 'public-app-uid-43',
+      },
+    ];
+    const activeKeys = [
+      {
+        dapp_id: 42,
+        key_prefix: 'prefix42',
+        last_used_at: null,
+        rotated_at: '2026-04-27T00:00:00.000Z',
+        status: 'active',
+      },
+    ];
+    const supabase = {
+      from: jest.fn((table: string) => {
+        if (table === 'dapps') {
+          return {
+            select: () => ({
+              match: async () => ({ data: dapps, error: null }),
+            }),
+          };
+        }
+
+        if (table === 'dapp_api_keys') {
+          return {
+            select: () => ({
+              in: () => ({
+                eq: async () => ({ data: activeKeys, error: null }),
+              }),
+            }),
+          };
+        }
+
+        throw new Error(`Unexpected table ${table}`);
+      }),
+    };
+
+    prepareAdminApiRequestMock.mockResolvedValue({
+      body: {},
+      context: {
+        adminUser: { uid: 'admin_uid' },
+        supabase,
+      },
+      requestId: 'admin_request_apps_list',
+    });
+
+    const response = createResponse();
+    await listApps({} as NextApiRequest, response);
+
+    expect(supabase.from).toHaveBeenCalledWith('dapp_api_keys');
+    expect(response.status).toHaveBeenCalledWith(200);
+    expect(response.json).toHaveBeenCalledWith({
+      data: [
+        expect.objectContaining({
+          apiKeyPrefix: 'prefix42',
+          apiKeyStatus: 'active',
+          appname: 'App With Key',
+          id: 42,
+        }),
+        expect.objectContaining({
+          apiKeyPrefix: null,
+          apiKeyStatus: 'missing',
+          appname: 'App Missing Key',
+          id: 43,
+        }),
+      ],
+    });
+    const payload = (response.json as jest.Mock).mock.calls[0][0];
+    expect(JSON.stringify(payload)).not.toContain('legacy-plaintext-key');
+    expect(payload.data[0].apikey).toBeUndefined();
+    expect(payload.data[1].apikey).toBeUndefined();
   });
 
   it('uses the sensitive policy for OIDC client ops updates', async () => {

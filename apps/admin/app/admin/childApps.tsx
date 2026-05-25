@@ -10,7 +10,7 @@ interface ChildPage {
 
 interface ChildAppsProps {
   fetchSuperApps: () => Promise<void>;
-  parentDappId: string;
+  parentDappId: number | string;
 }
 
 export const ChildApps = ({ parentDappId, fetchSuperApps }: ChildAppsProps) => {

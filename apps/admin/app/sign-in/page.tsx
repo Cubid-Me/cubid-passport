@@ -5,7 +5,7 @@ import { useRef } from 'react';
 import { toast } from 'react-toastify';
 
 import { authedPost } from '../../lib/api';
-import firebase from '../../lib/firebase';
+import firebase, { firebaseConfigError } from '../../lib/firebase';
 
 interface OwnIdLoginPayload {
   idToken: string;
@@ -37,6 +37,16 @@ export default function SignIn() {
               <h1 className='text-xl font-bold leading-tight tracking-tight text-gray-900 dark:text-white md:text-2xl'>
                 Sign in
               </h1>
+              {firebaseConfigError ? (
+                <div className="rounded border border-red-500 bg-red-950/40 p-3 text-sm text-red-100">
+                  <p className="font-semibold">Admin sign-in is not configured.</p>
+                  <p className="mt-1">
+                    A deployment environment variable is missing. Ask an
+                    operator to configure the Admin Firebase public settings and
+                    redeploy this environment.
+                  </p>
+                </div>
+              ) : null}
               <form className='space-y-4 md:space-y-6'>
                 <div>
                   <label
@@ -71,22 +81,24 @@ export default function SignIn() {
                   />
                 </div>
 
-                <OwnID
-                  type='login'
-                  options={{
-                    appId: process.env.NEXT_PUBLIC_OWNID_APP_ID ?? '',
-                    variant: 'ownid-auth-button',
-                    infoTooltip: true,
-                    widgetPosition: 'start',
-                  }}
-                  onLogin={submit}
-                  infoTooltip={true}
-                  passwordField={passwordField}
-                  loginIdField={emailField}
-                  onError={() => {
-                    toast.error('Authentication failed');
-                  }}
-                />
+                {!firebaseConfigError ? (
+                  <OwnID
+                    type='login'
+                    options={{
+                      appId: process.env.NEXT_PUBLIC_OWNID_APP_ID ?? '',
+                      variant: 'ownid-auth-button',
+                      infoTooltip: true,
+                      widgetPosition: 'start',
+                    }}
+                    onLogin={submit}
+                    infoTooltip={true}
+                    passwordField={passwordField}
+                    loginIdField={emailField}
+                    onError={() => {
+                      toast.error('Authentication failed');
+                    }}
+                  />
+                ) : null}
               </form>
             </div>
           </div>

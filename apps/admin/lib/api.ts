@@ -1,10 +1,14 @@
 import axios from 'axios';
 
-import firebase from './firebase';
+import firebase, { firebaseConfigError } from './firebase';
 
 type RequestBody = Record<string, unknown> | undefined;
 
 const getAuthHeaders = async () => {
+  if (firebaseConfigError) {
+    throw new Error(firebaseConfigError);
+  }
+
   const currentUser = firebase.auth().currentUser;
 
   if (!currentUser) {
