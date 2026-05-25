@@ -44,3 +44,4 @@ apps/passport/.env.local
 .env
 
 
+.env*

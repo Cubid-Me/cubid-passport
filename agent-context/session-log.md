@@ -7542,3 +7542,129 @@ artifacts called out in PR #170 review.
 #### Follow-up
 
 - push the patch, reply to the PR thread, and resolve it
+
+### session: v234
+
+- timestamp: 2026-05-24T21:21:50Z
+- agent: **OpenAI Codex**
+- branch: **codex/gitignore-env-hardening**
+- head: **`68feae9`**
+- session name: **Commit env ignore hardening**
+
+#### Objective
+
+Preserve the local `.env*` ignore hardening tweak on a feature branch so local
+environment files stay out of Git.
+
+#### Actions Taken
+
+- created a small follow-up branch from current `dev`
+- kept the `.gitignore` change that ignores `.env*`
+- added this session-log entry before committing
+
+#### Verification
+
+- pending `git diff --check`
+
+#### Follow-up
+
+- commit the ignore hardening, then start Passport locally to inspect the
+  recoverable-wallet recovery UI surface
+
+### session: v235
+
+- timestamp: 2026-05-24T21:27:50Z
+- agent: **OpenAI Codex**
+- branch: **codex/gitignore-env-hardening**
+- head: **`3bc1090`**
+- session name: **Add recoverable wallet recovery page**
+
+#### Objective
+
+Add the missing Passport-hosted `/recovery/wallet` page so recovery session
+URLs created by the API have a user-facing approval and release surface.
+
+#### Actions Taken
+
+- added an App Router recovery page that reads `recovery_session_id`
+- requires an explicit user click before calling the release-complete API
+- obtains the Firebase ID token from the signed-in browser session and sends it
+  as a bearer token to the existing user-authenticated API
+- shows safe request metadata, error states, release status, and guarded reveal
+  and copy controls for the released recovery material
+- added a safe post-login redirect in the Guest auth wrapper so users can sign
+  in and return to the recovery URL
+- opened the local page and confirmed it renders instead of the previous 404
+
+#### Verification
+
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+- local browser check at `/recovery/wallet?recovery_session_id=demo`
+- `git diff --check`
+
+#### Follow-up
+
+- commit the page and decide whether to yeet this small branch to `dev`
+
+### session: v236
+
+- timestamp: 2026-05-25T02:43:30Z
+- agent: **OpenAI Codex**
+- branch: **codex/gitignore-env-hardening**
+- head: **`ede4beb`**
+- session name: **Send recoverable wallet SDK handoff**
+
+#### Objective
+
+Tell the public SDK agents what Passport has built for recoverable wallets and
+what package updates/releases are needed before downstream apps integrate.
+
+#### Actions Taken
+
+- updated the recoverable-wallet SDK direction cross-repo thread with a concise
+  package split for `@cubid/core`, `@cubid/browser` or a future
+  `@cubid/wallet-recovery`, `@cubid/react`, auth packages, and chain packages
+- linked the SDK agents to the relevant Passport architecture, roadmap, session
+  log, runtime docs, hosted UI, routes, helpers, and error taxonomy
+- copied the same note into the SDK repo as an intentionally dirty sibling note
+
+#### Verification
+
+- pending `git diff --check`
+
+#### Follow-up
+
+- commit the Passport-side note while leaving the SDK-side note dirty for the
+  SDK agents to pick up
+
+### session: v237
+
+- timestamp: 2026-05-25T02:57:50Z
+- agent: **OpenAI Codex**
+- branch: **codex/gitignore-env-hardening**
+- head: **`589247c`**
+- session name: **Address PR 171 redirect review**
+
+#### Objective
+
+Fix the review feedback that the post-login redirect guard could accept
+protocol-relative or malformed localStorage values.
+
+#### Actions Taken
+
+- added an explicit app-internal path validator for the recovery post-login
+  redirect
+- rejected protocol-relative paths and backslash-containing paths
+- cleared the stored redirect before validation so invalid values cannot linger
+  across sessions
+
+#### Verification
+
+- `pnpm --filter @cubid/passport typecheck`
+- `pnpm --filter @cubid/passport build`
+- `git diff --check`
+
+#### Follow-up
+
+- push the patch, reply to both review threads, and resolve them
