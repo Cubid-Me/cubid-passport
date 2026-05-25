@@ -7742,3 +7742,37 @@ properly configured.
 
 - push the fail-closed patch and trigger a fresh Admin Preview deployment to
   verify the blank-page crash is gone
+
+### session: v240
+
+- timestamp: 2026-05-25T06:59:37Z
+- agent: **OpenAI Codex**
+- branch: **codex/admin-dapp-api-key-ux**
+- head: **`ffa4583`**
+- session name: **Fix Admin Firebase public env detection**
+
+#### Objective
+
+Fix the Admin Firebase readiness check so Vercel-provided
+`NEXT_PUBLIC_FIREBASE_*` values are detected correctly in browser bundles.
+
+#### Actions Taken
+
+- replaced dynamic `process.env[key]` lookup with explicit static
+  `process.env.NEXT_PUBLIC_*` references
+- preserved the fail-closed missing-config message for genuinely unconfigured
+  deployments
+- confirmed Vercel can pull the Admin Preview Firebase env values for the
+  branch
+
+#### Verification
+
+- `pnpm --filter @cubid/admin test`
+- `pnpm --filter @cubid/admin typecheck`
+- `pnpm --filter @cubid/admin build`
+- `git diff --check`
+
+#### Follow-up
+
+- push the static env detection fix and verify the fresh Admin Preview no
+  longer shows the Firebase configuration warning
